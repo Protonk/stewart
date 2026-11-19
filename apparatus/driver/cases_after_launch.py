@@ -9,7 +9,7 @@ the fake Messages API on loopback (run_support.provider) with the reacting
 auditor or a fixed script, then `status` and `close`, and judges the result
 against the driver's own witnesses:
 
-- the expected return package (manifest.json, answer.json, answer.md and every
+- the expected return package (manifest.json, question.md, answer.json, answer.md and every
   artifact member) computed by answer_witness from what the auditor recorded,
   never from Stewart's records. Only the seal's time (`sealed_at`) and, after a
   kill, the answer revision come from Stewart's replies, because nothing else
@@ -53,7 +53,7 @@ STATUS_DELIVERY_KEYS = ("attempt", "by", "destination", "destination_source", "p
                         "cause", "verified_members", "unverified_members", "losses", "confirmation")
 SEAL_VIEW_KEYS = ("state", "actor", "handle", "sealed_at", "revision", "manifest_sha256", "unproduced")
 LOSS_KEYS = ("loss", "member", "role", "failure", "stage")
-RUN_LAST_KEYS = ("number", "started_at", "ending", "cause", "ended_at", "recorded_by")
+RUN_LAST_KEYS = ("number", "started_at", "ending", "cause", "message", "ended_at", "recorded_by")
 # 5.8 "data of a completed reply, by path", after launch.
 CLOSE_UNFINISHED_KEYS = ("closure", "unfinished_reason", "headline", "runs", "seal", "delivery", "confirmation",
                          "holder", "allowances", "summary")
@@ -167,18 +167,18 @@ def pkg_path(sub, attempt, dest=None):
     return os.path.join(dest or sub.dest, pkg_name(sub, attempt))
 
 
-def expected_package(entries, revision, *, audit_id, store, family_id, writer, actor, sealed_at):
+def expected_package(entries, revision, *, question_body, audit_id, store, family_id, writer, actor, sealed_at):
     """member name -> expected bytes of a return package (INTERFACE 8.2, QUESTION-FORMS)."""
     aj = aw.answer_json(revision, entries)
     md = aw.render(entries)
-    files = {"answer.json": aj}
+    files = {"question.md": question_body, "answer.json": aj}
     if md is not None:
         files["answer.md"] = md
     for e in entries:
         if e.kind == "record_artifact" and not e.unproduced:
             files[e.member] = e.data
     files["manifest.json"] = aw.manifest(audit_id, store, family_id, writer, actor, sealed_at, revision,
-                                         aw.members(entries, aj, md), aw.unproduced(entries))
+                                         aw.members(entries, aj, md, question_body), aw.unproduced(entries))
     return files
 
 
@@ -190,7 +190,7 @@ def set_expected(t, a, entries, revision, actor, sealed_at, name):
     if not t.check(name + ".witness-inputs", ok, {"sealed_at": sealed_at, "revision": revision}):
         a.files = None
         return
-    a.files = expected_package(a.entries, revision, audit_id=a.sub.audit, store=a.sub.store,
+    a.files = expected_package(a.entries, revision, question_body=a.sub.body, audit_id=a.sub.audit, store=a.sub.store,
                                family_id=a.sub.family + "/1", writer=t.bin["sha256"], actor=actor,
                                sealed_at=sealed_at)
 
@@ -205,7 +205,7 @@ def member_names(a):
     """verified_members of a complete attempt: manifest.json, then the manifest's members (8.3)."""
     if not a.files:
         return None
-    return ["manifest.json"] + [m[0] for m in aw.members(a.entries, a.files["answer.json"], a.files.get("answer.md"))]
+    return ["manifest.json"] + [m[0] for m in aw.members(a.entries, a.files["answer.json"], a.files.get("answer.md"), a.sub.body)]
 
 
 def unproduced_names(a):
@@ -717,8 +717,8 @@ def check_status_obj(t, a, name, obj, *, condition, sealed="none", delivered=Non
     t.check(name + ".runs.last.started_at", isinstance(lst.get("started_at"), str)
             and bool(AT_RE.match(lst["started_at"])), lst.get("started_at"))
     if last is None:
-        t.eq(name + ".runs.last.no-ending", [lst.get(k) for k in ("ending", "cause", "ended_at", "recorded_by")],
-             [None] * 4)
+        t.eq(name + ".runs.last.no-ending", [lst.get(k) for k in ("ending", "cause", "message", "ended_at", "recorded_by")],
+             [None] * 5)
     else:
         t.eq(name + ".runs.last.ending", [lst.get("ending"), lst.get("cause"), lst.get("recorded_by")],
              [last.get("ending"), last.get("cause"), last.get("recorded_by")])
@@ -816,6 +816,11 @@ def status_point(t, a, name, *, human=True, again=False, cwd=None, **exp):
     time has passed must report the same facts (C16: elapsed time establishes nothing)."""
     rep = t.status(a.sub, name=name, cwd=cwd)
     check_status_obj(t, a, name, rep.obj, **exp)
+    last = (rep.data.get("runs") or {}).get("last")
+    if last and exp.get("last"):
+        record = log_record(t, a.sub, "run_ended", lambda b: b.get("run") == last.get("number"))
+        t.require(name + ".ended-record", record is not None, last)
+        t.eq(name + ".recorded-message", last.get("message"), record[2].get("message"))
     if human:
         hum = t.cmd(["status", a.sub.ref], json_reply=False, envelope=False, name=name + ".human", cwd=cwd)
         check_human_agrees(t, name, rep.rc, rep.data, hum.rc, hum.stdout)
@@ -943,7 +948,7 @@ def ended_record_name(t, sub):
 def c_package(t):
     """Pass: the reacting auditor records five goals (a quoted and a ranged citation, a draft
     replaced, a text and a binary artifact), inspects both prepared views and submits; the run
-    delivers attempt 1. The package holds exactly manifest.json, answer.json, answer.md and the
+    delivers attempt 1. The package holds exactly manifest.json, question.md, answer.json, answer.md and the
     two artifact members, each equal to the witness bytes, mode 0700/0600; it verifies from its
     own manifest; answer.md re-renders from the delivered answer.json and artifacts; the bytes
     are the ones the auditor read before confirming; the manifest digest the run printed at seal
@@ -1020,6 +1025,59 @@ def deliver_and_close(t, a, name, cwd=None, env=None):
     return path
 
 
+@case("c5.question-capture", ["C5", "C8", "C15", "C21"],
+      "return binds the accepted body; damaged front matter causes a named delivery loss, damaged binding prevents a seal",
+      needs=("loopback",))
+def c_question_capture(t):
+    body = b"\xef\xbb\xbfRead the two files.\r\nWhich claim follows?"
+    for defect in ("capture", "receipt"):
+        name = "question." + defect
+        a = audit(t, name, body=body)
+        with_script(t, a, [end_step("End."), end_step("Still ended.")])
+        run_scripted_ending(t, a, name + ".run")
+        attempts = t.intake_dirs(a.sub)
+        t.require(name + ".one-intake", len(attempts) == 1, attempts)
+        directory = os.path.join(a.sub.audit_dir, "intake", attempts[0])
+        if defect == "receipt":
+            # Only the untrusted live file still agrees with the original. No fresh seal can rely on it.
+            t.flip_bit(os.path.join(directory, "receipt.json"))
+            rep = t.cmd(["close", a.sub.ref], name=name + ".close")
+            t.check(name + ".failed-binding", rep.outcome in ("failed", "refused") or rep.data.get("closure") == "unfinished",
+                    rep.obj)
+            t.check(name + ".binding-identified", re.search(r"receipt|question.body|commission.*bind",
+                    short(rep.obj, 10000), re.I) is not None, rep.obj)
+            t.check(name + ".no-seal", "seal" not in t.log_kinds(a.sub), t.log_kinds(a.sub))
+            t.eq(name + ".no-delivery", os.listdir(a.sub.dest), [])
+            continue
+        # Damage only the captured header. The body and the entire live source still match their witnesses.
+        capture = os.path.join(directory, "q.bin")
+        t.require(name + ".original", read_bytes(capture) == a.sub.question, capture)
+        t.flip_bit(capture, 0)
+        rep = close_cmd(t, a, name + ".close")
+        manager_sealed(t, a, rep.data.get("seal"), name + ".seal", [], 0)
+        t.require(name + ".witness-present", a.files is not None, rep.obj)
+        rec = log_record(t, a.sub, "delivery_ended", lambda b: b.get("attempt") == 1)
+        t.require(name + ".delivery-ended", rec is not None, t.log_kinds(a.sub))
+        loss = token_of(a.sub.store, a.sub.audit, "loss", "loss.question-md", a.manifest, rec[1])
+        losses = [{"member": "question.md", "role": "manager_question", "stage": "delivery", "failure": "damaged",
+                   "loss": loss}]
+        check_delivery_view(t, name + ".delivery", rep.data.get("delivery"), a, attempt=1, outcome="verified_with_losses",
+                            verified=["manifest.json", "answer.json", "answer.md"],
+                            unverified=[{"name": "question.md", "failure": "source_damaged"}], losses=losses)
+        path = pkg_path(a.sub, 1)
+        rs.check_package(t, path, {n: data for n, data in a.files.items() if n != "question.md"}, name + ".package")
+        plan = strict_loads(read_bytes(os.path.join(a.sub.audit_dir, "delivery", "1.json")))["body"]
+        member = {"name": "question.md", "role": "manager_question", "size": len(body), "sha256": sha256_hex(body),
+                  "source": "intake/" + attempts[0] + "/q.bin"}
+        t.eq(name + ".plan-source", plan["members"][1], member)
+        token = cf_token(t, a, 1)
+        t.require(name + ".known-token", token is not None, rep.data)
+        t.eq(name + ".offered-confirmation", rep.data.get("confirmation"), token)
+        close_cmd(t, a, name + ".unsurrendered", ["--confirm", token], expect="refused", reason="surrender_required")
+        confirm_and_close(t, a, name + ".surrender", token, actor="manager", losses=[loss],
+                          outcome="closed_with_surrendered_losses", delivery="verified_with_losses")
+
+
 @case("c5.partial-delivery", ["C5", "C6", "C8", "C16"],
       "a partial delivery keeps its package and names its missing member; close copies afresh; verification catches "
       "a corrupted member", mode="test", needs=("loopback",),
@@ -1027,7 +1085,7 @@ def deliver_and_close(t, a, name, cwd=None, env=None):
                 Control("remove_partial_package", [r"^c5\.partial\.kept\.", r"^inventory\."])])
 def c_partial(t):
     """The run seals as the auditor; delivery.member_write:answer.md=eio makes attempt 1
-    partial: manifest.json and answer.json written and verified (the witness bytes), answer.md
+    partial: manifest.json, question.md and answer.json written and verified (the witness bytes), answer.md
     named write_failed, cause given; the run still ends sealed. Status: sealed_undelivered, next
     close offering --destination. Close with delivery.member_corrupt:answer.json=corrupt makes
     attempt 2 (replaces 1) partial with answer.json not_verified: verification reads members
@@ -1041,18 +1099,18 @@ def _partial(t, a):
     with_auditor(t, a, goals(a.sub, artifacts=False))
     rep = run_sealed(t, a, "c5.partial.run", delivery="partial", fault="delivery.member_write:answer.md=eio")
     check_delivery_view(t, "c5.partial.run.delivery", rep.data.get("delivery"), a, attempt=1, outcome="partial",
-                        verified=["manifest.json", "answer.json"],
+                        verified=["manifest.json", "question.md", "answer.json"],
                         unverified=[{"name": "answer.md", "failure": "write_failed"}])
     t.check("c5.partial.run.offers-destination", offers_destination(rep.obj), rep.next)
     p1 = pkg_path(a.sub, 1)
-    for n in ("manifest.json", "answer.json"):
+    for n in ("manifest.json", "question.md", "answer.json"):
         t.check("c5.partial.package-1." + n, a.files is not None and rs.read_package_member(p1, n) == a.files[n], n)
     kept1 = tree_digest(p1)
     t.check("c5.partial.package-1.kept", kept1 is not None, p1)
     status_point(t, a, "c5.partial.status", condition="sealed_undelivered", sealed="auditor",
                  last={"ending": "sealed", "cause": None, "recorded_by": "run"}, seal="auditor",
                  deliveries=[dict(attempt=1, outcome="partial", by="run", source="commissioned", replaces=None,
-                                  verified=["manifest.json", "answer.json"],
+                                  verified=["manifest.json", "question.md", "answer.json"],
                                   unverified=[{"name": "answer.md", "failure": "write_failed"}])],
                  next_cmds=("close",), destination_offered=True)
     n_ex = len(a.fx.exchanges)
@@ -1062,7 +1120,7 @@ def _partial(t, a):
                     actor="auditor", attempt=2, delivery="partial", destination_offered=True,
                     runs={"count": 1, "held": False, "last_ending": "sealed"})
     check_delivery_view(t, "c5.partial.corrupt.close.delivery", rep.data.get("delivery"), a, attempt=2,
-                        outcome="partial", verified=["manifest.json", "answer.md"],
+                        outcome="partial", verified=["manifest.json", "question.md", "answer.md"],
                         unverified=[{"name": "answer.json", "failure": "not_verified"}])
     t.eq("c5.partial.kept.001-after-2", tree_digest(p1), kept1)
     p2 = pkg_path(a.sub, 2)
@@ -1081,10 +1139,10 @@ def _partial(t, a):
                  delivered={"verified": True, "confirmed": False, "location": pkg_path(a.sub, 3)}, closed="unfinished",
                  last={"ending": "sealed", "cause": None, "recorded_by": "run"}, seal="auditor",
                  deliveries=[dict(attempt=1, outcome="partial", by="run", source="commissioned", replaces=None,
-                                  verified=["manifest.json", "answer.json"],
+                                  verified=["manifest.json", "question.md", "answer.json"],
                                   unverified=[{"name": "answer.md", "failure": "write_failed"}]),
                              dict(attempt=2, outcome="partial", by="close", source="commissioned", replaces=1,
-                                  verified=["manifest.json", "answer.md"],
+                                  verified=["manifest.json", "question.md", "answer.md"],
                                   unverified=[{"name": "answer.json", "failure": "not_verified"}]),
                              dict(attempt=3, outcome="verified", by="close", source="commissioned", replaces=2,
                                   token=tok)],
@@ -2347,7 +2405,7 @@ def _st_partial(t, a):
     status_point(t, a, "c16.partial.status", condition="sealed_undelivered", sealed="auditor",
                  last={"ending": "sealed", "cause": None, "recorded_by": "run"}, seal="auditor",
                  deliveries=[dict(attempt=1, outcome="partial", by="run", source="commissioned", replaces=None,
-                                  verified=["manifest.json", "answer.json"],
+                                  verified=["manifest.json", "question.md", "answer.json"],
                                   unverified=[{"name": "answer.md", "failure": "write_failed"}])],
                  next_cmds=("close",), destination_offered=True, again=True)
 
@@ -2410,6 +2468,7 @@ class _Sub:
         self.writer = "/opt/stewart/bin/stewart"
         self.ref = "stw1:%s:%s:%s" % (self.audit, self.store, self.archive)
         self.family, self.limits = "open-inquiry", (200, 20000000, 400000)
+        self.body = QUESTION
 
     @property
     def audit_dir(self):
@@ -2457,11 +2516,16 @@ def _selftest_packages():
         set_expected(st, a, _specimen_entries(), 7, "auditor", "2026-11-02T15:20:04.118Z", "s")
         good = dict(a.files)
         out.append(("after-launch.package.members", sorted(good) == ["answer.json", "answer.md", "artifact-e4.bin",
-                                                                    "artifact-e5.bin", "manifest.json"], sorted(good)))
+                                                                    "artifact-e5.bin", "manifest.json", "question.md"], sorted(good)))
         fails = _package_round(root, "good", good, a)
         out.append(("after-launch.package.pass", not fails, fails))
         # The sabotage controls of C5, simulated on the package itself: each must fail its target.
         variants = {
+            "missing_question": ({n: b for n, b in good.items() if n != "question.md"}, r"\.package-members$"),
+            "substituted_question": (dict(good, **{"question.md": b"---\nformat: question/2\n---\n" + sub.body}),
+                                     r"member-bytes\.question\.md$"),
+            "question_attributed_to_auditor": (dict(good, **{"manifest.json": good["manifest.json"].replace(
+                b'"role":"manager_question"', b'"role":"answer"')}), r"member-bytes\.manifest\.json$"),
             "deliver_conversation": (dict(good, **{"conversation.json": b"[]\n"}), r"\.package-members$|\.exactly-listed$"),
             "regenerate_rendering": (dict(good, **{"answer.md": b"Rendered again.\n" + good["answer.md"].split(b"\n", 1)[1]}),
                                      r"member-bytes\.answer\.md$|\.member\.answer\.md$"),
@@ -2492,7 +2556,7 @@ def _selftest_packages():
         out.append(("after-launch.package.unproduced-rendered-fails", any(f.endswith(".not-rendered") for f in fails),
                     fails))
         out.append(("after-launch.package.unproduced-names", unproduced_names(c) == ["e2", "answer.md"]
-                    and member_names(c) == ["manifest.json", "answer.json", "artifact-e4.bin", "artifact-e5.bin"],
+                    and member_names(c) == ["manifest.json", "question.md", "answer.json", "artifact-e4.bin", "artifact-e5.bin"],
                     (unproduced_names(c), member_names(c))))
         # An empty selection: the honest empty return.
         e = Audit(_ST(), "e", sub)
@@ -2570,6 +2634,7 @@ def _status_specimen(a, *, condition, sealed, delivered, closed, last, seal=None
                      "evidence": [{"fact": "launched", "evidence": "run_started log/5.json"}],
                      "runs": {"count": 1, "held": False, "holder": None,
                               "last": {"number": 1, "started_at": at, "ending": last, "cause": None,
+                                       "message": "The auditor ended." if last else None,
                                        "ended_at": at if last else None, "recorded_by": "run" if last else None}},
                      "allowances": None, "answer": {"revision": 7, "entries": 4}, "seal": seal if seal is not None else seal_observation(),
                      "deliveries": list(deliveries), "closure": closure, "diagnostics": [],

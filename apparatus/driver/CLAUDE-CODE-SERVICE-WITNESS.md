@@ -31,11 +31,12 @@ escaped its ownership. An unknown stop blocks further starts.
 inputs, provenance)` writes a fresh read-only witness file and returns its
 SHA-256 pin. `entries` contains specification-derived `answer_witness.Entry`
 objects with known produced payloads. `inputs` maps names to exact outside
-witness bytes. `provenance` requires nonempty `kind` and `description` strings;
+witness bytes and must include the original body as `question-body`.
+`provenance` requires nonempty `kind` and `description` strings;
 the caller is responsible for their truth. This writer confers no independent
 authenticity on the supplied evidence.
 
-The `stewart.claude-code.service-witness/1` document contains:
+The `stewart.claude-code.service-witness/2` document contains:
 
 | Member | Attribution |
 | --- | --- |
@@ -46,7 +47,8 @@ The `stewart.claude-code.service-witness/1` document contains:
 | `manager_observations` | Exact status bytes and reference. Audit/store identifiers and seal timestamp are learned through the manager interface, not independently predicted. |
 
 `expected_package(value)` validates these bindings and reconstructs
-`answer.json`, `answer.md`, all selected artifacts and the exact manifest using
+`question.md` from the original body, along with `answer.json`, `answer.md`,
+all selected artifacts and the exact manifest using
 the independent [answer witness](answer_witness.py). This initial reviewer
 expects produced entries and complete delivery; loss/surrender comparisons are
 outside its current scope. Artifact encodings are `utf-8` for a `text` input and

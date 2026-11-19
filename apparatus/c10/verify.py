@@ -879,14 +879,14 @@ def _verify(e, report, check):
               and seal['rendering_sha256'] == digest(expected_render), 'seal_digests')
         expected_manifest = answer.manifest(audit, receipt['store'], versioned_family, binding['binary_sha256'],
             seal['actor'], manifest['seal']['sealed_at'], revision,
-            answer.members(list(selected.values()), expected_answer, expected_render))
+            answer.members(list(selected.values()), expected_answer, expected_render, qbody))
         check(manifest_raw == expected_manifest, 'manifest_from_witnessed_selection')
         delivered = [r['body'] for r in records if r['kind']=='delivery_ended' and r['body']['outcome']=='verified']
         if delivered:
             delivery = delivered[-1]
             check(Path(delivery['package']).parent == Path(binding['destination']), 'delivery_destination')
             package = 'returns/' + Path(delivery['package']).name + '/'
-            members = {'manifest.json': manifest_raw, 'answer.json': expected_answer, 'answer.md': expected_render}
+            members = {'manifest.json': manifest_raw, 'question.md': qbody, 'answer.json': expected_answer, 'answer.md': expected_render}
             members.update({entry.member: entry.data for entry in selected.values() if entry.kind == 'record_artifact'})
             check(delivery['manifest_sha256'] == digest(manifest_raw) and not delivery['losses'], 'delivery_seal_binding')
             check({n[len(package):] for n in e.names if n.startswith(package)} == set(members), 'delivery_membership')

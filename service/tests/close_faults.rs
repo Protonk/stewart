@@ -132,7 +132,7 @@ fn a_partial_delivery_keeps_its_package_and_close_makes_a_fresh_copy() {
     assert_eq!(s(&j, &["data", "unfinished_reason"]), "delivery_incomplete");
     assert_eq!(
         strs(&j, &["data", "delivery", "verified_members"]),
-        ["manifest.json", "answer.json"]
+        ["manifest.json", "question.md", "answer.json"]
     );
     let unverified = at(&j, &["data", "delivery", "unverified_members"])
         .as_arr()
@@ -142,10 +142,10 @@ fn a_partial_delivery_keeps_its_package_and_close_makes_a_fresh_copy() {
     assert_eq!(s(&unverified[0], &["failure"]), "write_failed");
     assert_eq!(s(&j, &["data", "delivery", "cause", "error"]), "EIO");
     let first = package(&e, r, 1);
-    assert_eq!(package_members(&first), ["answer.json", "manifest.json"]);
+    assert_eq!(package_members(&first), ["answer.json", "manifest.json", "question.md"]);
     let ended = e.log_record(r, e.log_kinds(r).len());
     assert_eq!(
-        s(&ended, &["body", "members", "3", "failure"]),
+        s(&ended, &["body", "members", "4", "failure"]),
         "not_attempted"
     );
 
@@ -156,7 +156,7 @@ fn a_partial_delivery_keeps_its_package_and_close_makes_a_fresh_copy() {
     );
     assert!(s(&j, &["data", "confirmation"]).starts_with("cf2."));
     assert_package(&package(&e, r, 2), &sealed);
-    assert_eq!(package_members(&first), ["answer.json", "manifest.json"]);
+    assert_eq!(package_members(&first), ["answer.json", "manifest.json", "question.md"]);
     let planned = e.log_record(r, e.log_kinds(r).len() - 1);
     assert_eq!(at(&planned, &["body", "replaces"]).as_u64(), Some(1));
 }
@@ -166,7 +166,7 @@ fn a_kill_during_delivery_is_reconciled_and_copied_afresh() {
     let e = Env::new();
     let (sc, sealed) = sealed_by_auditor(&e);
     let r = &sc.r;
-    let o = close_with(&e, r, &[], "delivery.after_member:2=kill");
+    let o = close_with(&e, r, &[], "delivery.after_member:3=kill");
     assert!(killed(&o));
     assert_eq!(e.log_kinds(r).last().unwrap(), "delivery_planned");
     let j = status(&e, r);
@@ -193,7 +193,7 @@ fn a_kill_during_delivery_is_reconciled_and_copied_afresh() {
     assert!(at(&gone, &["body", "members"]).is_null());
     assert_eq!(
         package_members(&package(&e, r, 1)),
-        ["answer.json", "manifest.json"],
+        ["answer.json", "manifest.json", "question.md"],
         "the interrupted package is kept as it was"
     );
     assert_package(&package(&e, r, 2), &sealed);

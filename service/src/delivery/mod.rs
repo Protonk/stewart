@@ -463,6 +463,13 @@ fn plan_members(
     }];
     for m in &manifest.members {
         let source = match m.role.as_str() {
+            "manager_question" => {
+                let Some(log::Body::Accepted { attempt, .. }) = state.accepted().map(|r| &r.body)
+                else {
+                    return Err("the seal has no readable accepted commission".into());
+                };
+                format!("intake/{attempt}/q.bin")
+            }
             "answer" => format!("{prepared}/answer.json"),
             "rendering" => format!("{prepared}/answer.md"),
             _ => {
@@ -550,6 +557,24 @@ impl SourceFailure {
 /// `delivery.source_read:<member>`).
 fn read_source(audit: &Audit, m: &PlanMember) -> Result<Vec<u8>, SourceFailure> {
     crate::fault!("delivery.source_read", &m.name).map_err(|_| SourceFailure::Unreadable)?;
+    if m.role == "manager_question" {
+        use crate::ops::receipt::{self, Check};
+        let (accepted, _, _, _) = receipt::accepted(audit).map_err(|f| match f.reason {
+            "item_missing" => SourceFailure::Missing,
+            "item_damaged" => SourceFailure::Damaged,
+            _ => SourceFailure::Unreadable,
+        })?;
+        let question = receipt::question_body(&accepted);
+        if m.source != question.file || m.size != question.size || m.sha256 != question.sha256 {
+            return Err(SourceFailure::Damaged);
+        }
+        return match receipt::check(audit, &question) {
+            Check::Verified(bytes) => Ok(bytes),
+            Check::Missing => Err(SourceFailure::Missing),
+            Check::Damaged(_) => Err(SourceFailure::Damaged),
+            Check::Unsupported(_) | Check::Unreadable(_) => Err(SourceFailure::Unreadable),
+        };
+    }
     let (dir_rel, file) = m.source.rsplit_once('/').unwrap_or(("", m.source.as_str()));
     let mut dir = audit
         .dir

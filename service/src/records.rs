@@ -588,10 +588,10 @@ pub fn decode_receipt(bytes: &[u8]) -> Result<Receipt, String> {
         ])?;
         let question = QInfo {
             file_bytes: q.u64("file_bytes", u64::MAX)?,
-            file_sha256: q.str("file_sha256")?.to_string(),
+            file_sha256: q.sha256("file_sha256")?.to_string(),
             body_offset: q.u64("body_offset", u64::MAX)?,
             body_bytes: q.u64("body_bytes", u64::MAX)?,
-            body_sha256: q.str("body_sha256")?.to_string(),
+            body_sha256: q.sha256("body_sha256")?.to_string(),
             mtime: String::new(),
         };
         let settings = decode_settings(&b.obj("settings")?)?;

@@ -25,7 +25,7 @@ import rawjson
 from driver_core import pinned_json_string, selftest
 
 ANSWER_SCHEMA = "stewart.answer/1"
-RETURN_SCHEMA = "stewart.return/1"
+RETURN_SCHEMA = "stewart.return/2"
 RENDERER = "stewart.render/1"
 RENDER_FIRST_LINE = "Rendered by Stewart. Entry text is attributed to the auditor."
 EMPTY_RENDERING = b"No answer entries recorded.\n"
@@ -260,10 +260,11 @@ def render(entries):
     return b"".join(out)
 
 
-def members(entries, answer_bytes, rendering_bytes):
-    """The manifest's members (8.2): answer.json, answer.md unless unproduced, then each
+def members(entries, answer_bytes, rendering_bytes, question_body):
+    """The manifest binds the accepted question body, answer.json, answer.md unless unproduced, and each
     produced artifact in selection order."""
-    out = [("answer.json", "answer", len(answer_bytes), sha(answer_bytes))]
+    out = [("question.md", "manager_question", len(question_body), sha(question_body)),
+           ("answer.json", "answer", len(answer_bytes), sha(answer_bytes))]
     if rendering_bytes is not None:
         out.append(("answer.md", "rendering", len(rendering_bytes), sha(rendering_bytes)))
     for e in entries:
@@ -398,13 +399,15 @@ def answer_witness_selftests():
     out.append(("witness.render.rules", render(arts) == want, {"got": render(arts), "want": want}))
     out.append(("witness.render.empty", render([]) == b"No answer entries recorded.\n"))
     out.append(("witness.render.unproduced", render([Entry("e1", 1, "record_limit", "", b"", unproduced="damaged")]) is None))
-    # The manifest example of INTERFACE 8.2 (its digests and writer are "…").
+    # INTERFACE 8.2 uses the literal example question and abbreviates the other digests.
     itf = _doc("INTERFACE.md")
-    m = re.search(r"The manifest \(`stewart.return/1`\).*?```\n(.*?)```", itf or "", re.S)
+    m = re.search(r"The manifest \(`stewart.return/2`\).*?```\n(.*?)```", itf or "", re.S)
     ex_man = m.group(1).encode("utf-8") if m else None
+    question = b"Audit our app to make sure there are no bugs.\n"
     got = manifest("aqm3x7kd2hz5vw4ny", "s7tq2bk6xm3ra4pfe", "open-inquiry/1", "3f1c…", "auditor",
                    "2026-11-02T15:20:04.118Z", 9,
-                   [("answer.json", "answer", 3904, "…"), ("answer.md", "rendering", 2210, "…"),
+                   [("question.md", "manager_question", len(question), sha(question)),
+                    ("answer.json", "answer", 3904, "…"), ("answer.md", "rendering", 2210, "…"),
                     ("artifact-e4.bin", "artifact", 120, "…")])
     out.append(("witness.manifest.example", ex_man is not None and got == ex_man, {"expected": ex_man, "got": got}))
     un = unproduced([Entry("e3", 1, "record_observation", "", b"", unproduced="damaged", sha256="h", size=1)])

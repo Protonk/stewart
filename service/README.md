@@ -31,6 +31,7 @@ each tool call, then `delivery/` and `ops/close.rs`.
 
 - `main.rs`: the binary's entry point; it calls `cli::main`.
 - `cli.rs`: exact argument parsing and presentation (5.1).
+- `effects.rs`: compiled descriptions shared by `describe` and `help commands` (5.10).
 - `manager_mcp/`: the read-only preparation server on stdio (5.11). It
   applies commissioning rules to caller-supplied question text and inventory.
   `rpc.rs` decodes the protocol envelope and leaves metadata opaque.

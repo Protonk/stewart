@@ -42,7 +42,7 @@ import traceback
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from driver_core import (CONTINUATION, FAMILY_TEXT, FAMILY_TOOLS, ORIENTATION, REMINDER, REPLY_SCHEMA,
-                         check_advice, check_commissioning, expected_tools, iter_values,
+                         check_advice, check_commissioning, check_description, expected_tools, iter_values,
                          parse_reference, reading_problem, strict_loads)
 from rawjson import compact, parse
 
@@ -2100,6 +2100,8 @@ class Driver:
 
     def help_and_presentation(self):
         # The build notice and the added topic.
+        effects = self.cmd("help.describe-run", ["describe", "run"])
+        check_description(self, "help.describe-run", effects, "run", gated=True)
         status, overview, _ = self.plain("help.overview", ["help"])
         self.eq("help.overview-exit", status, 0)
         notice = overview.split("\n\n", 1)[0]
@@ -2330,6 +2332,7 @@ class Driver:
                         + compact({"id": "e1", "version": 1, "kind": "record_account", "label": "",
                                    "text": ACCOUNT, "citations": []}) + b']}\n')
         (f["witness"] / "expected-answer.json").write_bytes(expected)
+        self.eq(f["label"] + ".returned-question", (package / "question.md").read_bytes(), f["body"])
         self.eq(f["label"] + ".faithful-answer", (package / "answer.json").read_bytes().decode(), expected.decode())
         return package
 
@@ -3261,6 +3264,30 @@ class Driver:
         status_reply = self.inspect_runtime(f)
         self.eq(label + ".retained-entry", (status_reply["data"].get("answer") or {}).get("entries"), 1)
         self.eq(label + ".no-seal", status_reply["data"].get("seal", {}).get("state"), "absent")
+        _, ended = self.run_ended_record(f, 1)
+        self.require(label + ".ending-record", ended is not None, self.log_kinds(f))
+        message = ended["body"].get("message")
+        self.require(label + ".recorded-cause", isinstance(message, str) and message.strip(), ended["body"])
+        last = status_reply["data"]["runs"]["last"]
+        self.eq(label + ".last-message", last.get("message"), message)
+        listing = self.cmd(label + ".archive-status", ["status", "--archive", f["archive"]])
+        rows = [row for row in iter_values(listing["data"]) if isinstance(row, dict)
+                and row.get("reference") == f["reference"]]
+        self.require(label + ".archive-row", len(rows) == 1, rows)
+        self.eq(label + ".archive-last", rows[0].get("last_run"), last)
+        self.check(label + ".archive-summary", isinstance(rows[0].get("summary"), str)
+                   and bool(rows[0]["summary"].strip()), rows[0].get("summary"))
+        history = [d for d in status_reply["data"]["diagnostics"] if str(d.get("record", "")).startswith("diag/")]
+        self.check(label + ".archive-diagnostics", isinstance(rows[0].get("diagnostics"), list)
+                   and all(d in rows[0]["diagnostics"] for d in history), rows[0].get("diagnostics"))
+        self.check(label + ".archive-stopping", "stopping" in rows[0], rows[0])
+        self.eq(label + ".archive-next", rows[0].get("next"), status_reply.get("next"))
+        for view, args in (("reference", [f["reference"]]), ("archive", ["--archive", f["archive"]])):
+            for level, flags in (("brief", []), ("details", ["--details"])):
+                suffix = label + "." + view + "-" + level
+                rc, output, _ = self.plain(suffix, ["status", *args, *flags])
+                self.eq(suffix + ".exit", rc, 0)
+                self.check(suffix + ".recorded-boundary", message in output, output[:1800])
         # The synthetic model sleeps after killing its relay and never exits by
         # itself, so observed group absence is Stewart's stop.
         killed = any(e["event"] == "relay-killed" for e in events)
@@ -3966,11 +3993,11 @@ class Driver:
         ids = parse_reference(f["reference"]) or {}
         seal = status["data"].get("seal") or {}
         manifest = aw.manifest(ids.get("audit"), ids.get("store"), f["family"] + "/1", sha(self.binary.read_bytes()),
-                               actor, seal.get("sealed_at"), revision, aw.members(entries, answer, rendering))
+                               actor, seal.get("sealed_at"), revision, aw.members(entries, answer, rendering, f["body"]))
         self.eq(label + ".manifest", (package / "manifest.json").read_bytes().decode(), manifest.decode())
         artifacts = {e.member: e.data for e in entries if e.kind == "record_artifact"}
         self.eq(label + ".members", sorted(p.name for p in package.iterdir()),
-                sorted(["manifest.json", "answer.json", "answer.md"] + list(artifacts)))
+                sorted(["manifest.json", "question.md", "answer.json", "answer.md"] + list(artifacts)))
         for member, data in artifacts.items():
             self.eq(label + "." + member, (package / member).read_bytes().hex(), data.hex())
         return package

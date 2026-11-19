@@ -84,7 +84,7 @@ impl Input {
         if bytes.is_empty() {
             return Err(fail(
                 "provider_key_missing",
-                "The selected provider credential is empty or absent.",
+                "The selected provider credential is empty or absent. Supply it through --key-fd FD or ANTHROPIC_API_KEY.",
             ));
         }
         if bytes.len() > KEY_LIMIT || !bytes.iter().all(|b| (0x21..=0x7e).contains(b)) {

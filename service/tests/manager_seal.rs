@@ -71,7 +71,8 @@ fn manager_seal_through_the_answer_interface() {
             "answer.json",
             "answer.md",
             "artifact-e3.bin",
-            "manifest.json"
+            "manifest.json",
+            "question.md"
         ]
     );
     let manifest = std::fs::read(format!("{pkg}/manifest.json")).unwrap();
@@ -129,7 +130,10 @@ fn manager_seal_through_the_answer_interface() {
         ["e3", "answer.md"]
     );
     let pkg = package(&e, r, 1);
-    assert_eq!(package_members(&pkg), ["answer.json", "manifest.json"]);
+    assert_eq!(
+        package_members(&pkg),
+        ["answer.json", "manifest.json", "question.md"]
+    );
     let answer = std::fs::read_to_string(format!("{pkg}/answer.json")).unwrap();
     assert!(answer.contains("\"unproduced\":{"), "{answer}");
     let token = s(&j, &["data", "confirmation"]).to_string();
@@ -176,4 +180,38 @@ fn manager_seal_through_the_answer_interface() {
         b"No answer entries recorded.\n"
     );
     assert!(matches!(at(&j, &["data", "seal", "revision"]).v, V::Int(0)));
+}
+
+#[test]
+fn losing_the_accepted_receipt_blocks_a_new_seal_but_preserves_an_existing_one() {
+    for previously_sealed in [false, true] {
+        let e = Env::new();
+        let sc = launched_with_entries(&e);
+        let r = &sc.r;
+        if previously_sealed {
+            let sealed = seal(&sc.audit, stewart::bodies::Actor::Auditor, None, 1);
+            end_run(&sc.audit, 1, "sealed", None, Some(sealed.record));
+        } else {
+            end_run(&sc.audit, 1, "ended_unsubmitted", None, None);
+        }
+        std::fs::remove_file(format!("{}/intake/1/receipt.json", e.audit_dir(r))).unwrap();
+        let result = close(&e, r, &[]);
+        let reply = result.json();
+        if previously_sealed {
+            assert_eq!(s(&reply, &["effects", "seal"]), "existing");
+            assert_eq!(s(&reply, &["effects", "delivery"]), "verified_with_losses");
+            let loss = &at(&reply, &["data", "delivery", "losses"])
+                .as_arr()
+                .unwrap()[0];
+            assert_eq!(s(loss, &["member"]), "question.md");
+            assert_eq!(s(loss, &["stage"]), "delivery");
+            assert_eq!(s(loss, &["role"]), "manager_question");
+            assert_eq!(s(loss, &["failure"]), "missing");
+        } else {
+            assert_eq!(s(&reply, &["effects", "seal"]), "none");
+            assert_eq!(s(&reply, &["reason"]), "item_missing");
+            assert!(s(&reply, &["message"]).contains("intake/1/receipt.json"));
+            assert!(!e.log_kinds(r).iter().any(|k| k == "seal"));
+        }
+    }
 }

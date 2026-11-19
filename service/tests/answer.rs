@@ -1175,7 +1175,7 @@ fn a_manager_seal_names_unreadable_entries_and_never_renders_around_them() {
     assert!(rec.rendering_sha256.is_none());
     let (m, _) =
         stewart::returns::load_manifest(&l.audit, &rec.manifest, &s.manifest_sha256).unwrap();
-    assert_eq!(m.member_names(), ["answer.json"]);
+    assert_eq!(m.member_names(), ["question.md", "answer.json"]);
     assert_eq!(m.unproduced[0].name, "e2");
     assert_eq!(
         m.unproduced[1].dependency.as_deref(),

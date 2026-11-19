@@ -20,6 +20,7 @@ usage: stewart new FOLDER [--archive ROOT] [--json]
        stewart status --archive ROOT [--details | --json]
        stewart run REF [--key-fd FD] [--details | --json]
        stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--details | --json]
+       stewart describe COMMAND [--json]
        stewart manager-mcp
        stewart help [commands | forms | limits | reader | close]";
 
@@ -134,6 +135,28 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
     };
     let rest = &argv[1..];
     match cmd.as_str() {
+        "describe" => {
+            let a = parse(rest, &["--json"], &[], &[])?;
+            a.exactly(1, "one command name")?;
+            let name = &a.positionals[0];
+            let unknown = || usage(format!("unknown command {name:?}"));
+            if !a.flag("--json") {
+                return crate::effects::human(name)
+                    .map(Plan::Text)
+                    .ok_or_else(unknown);
+            }
+            Ok(Plan::Reply {
+                reply: Reply::completed(
+                    "describe",
+                    vec![],
+                    crate::effects::data(name).ok_or_else(unknown)?,
+                ),
+                json: true,
+                details: false,
+                reference: None,
+                mutating: false,
+            })
+        }
         "manager-mcp" => {
             let a = parse(rest, &[], &[], &[])?;
             a.exactly(0, "no arguments for the read-only manager MCP server")?;

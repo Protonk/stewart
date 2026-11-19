@@ -567,7 +567,10 @@ fn a_changed_selection_is_refused_then_a_fresh_preparation_commissions() {
     let rec = e.log_record(&r, 6);
     assert_eq!(s(&rec, &["body", "outcome"]), "selection_changed");
     let o = e.run(&["status", &r, "--json"]);
-    assert_eq!(s(&o.json(), &["data", "condition"]), "intake_failed");
+    let status = o.json();
+    assert_eq!(s(&status, &["data", "condition"]), "intake_failed");
+    assert!(s(&status, &["next", "1", "why"]).contains("restored the exact prepared selection"));
+    assert_eq!(s(&status, &["data", "diagnostics", "0", "effects", "acceptance"]), "absent");
 
     let o = e.run(&["prepare", &r, "--json"]);
     let h2 = s(&o.json(), &["data", "prepared"]).to_string();

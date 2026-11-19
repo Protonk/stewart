@@ -47,7 +47,8 @@ include a submission you can copy and prepare.
    verifies the prepared selection. Later source edits cannot change the audit.
 4. **Run:** `stewart run REF` starts the auditor, which reads and records through
    Stewart's tools. Explicit submission seals the answer and initiates delivery, which
-   Stewart verifies by reading the copy back.
+   Stewart verifies by reading the copy back. The package includes the exact
+   accepted question body in `question.md` alongside the answer.
 5. **Close:** `stewart close REF` ends authoring and reports what remains to close
    the audit. After launch, it preserves any unsubmitted work with manager
    attribution. If it requests confirmation, inspect the delivered copy and
@@ -59,7 +60,8 @@ no provider key, so they check a new installation without spending anything.
 An interrupted run can continue the same audit with its recorded work and
 cumulative limits intact. `stewart receipt REF` recovers the accepted commission;
 `stewart status REF` distinguishes execution, submission, delivery and closure.
-`stewart help` explains the commands. The [CLI interface](docs/INTERFACE.md)
+`stewart describe COMMAND` shows what a command can read, write or send before
+you invoke it. The [CLI interface](docs/INTERFACE.md)
 also defines structured JSON replies for scripts and agent managers.
 
 Before preparing files, a manager can use the optional `stewart manager-mcp`

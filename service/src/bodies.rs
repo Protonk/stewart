@@ -67,7 +67,7 @@ pub const INCOMPLETE_OUTCOMES: [&str; 3] = ["partial", "failed", "name_taken"];
 pub const VERIFIED_OUTCOMES: [&str; 2] = ["verified", "verified_with_losses"];
 pub const DESTINATION_SOURCES: [&str; 2] = ["commissioned", "replacement"];
 /// Roles of return members (8.2) and of delivery members (8.3).
-pub const MEMBER_ROLES: [&str; 4] = ["manifest", "answer", "rendering", "artifact"];
+pub const MEMBER_ROLES: [&str; 5] = ["manifest", "manager_question", "answer", "rendering", "artifact"];
 pub const MEMBER_FAILURES: [&str; 6] = [
     "source_missing",
     "source_unreadable",
@@ -77,7 +77,7 @@ pub const MEMBER_FAILURES: [&str; 6] = [
     "not_attempted",
 ];
 /// Roles a loss can have: an unproduced entry, or a member the return owes.
-pub const LOSS_ROLES: [&str; 4] = ["entry", "answer", "rendering", "artifact"];
+pub const LOSS_ROLES: [&str; 5] = ["entry", "manager_question", "answer", "rendering", "artifact"];
 pub const LOSS_FAILURES: [&str; 4] = ["missing", "unreadable", "damaged", "not_rendered"];
 pub const LOSS_STAGES: [&str; 2] = ["seal", "delivery"];
 pub const CLOSED_BEFORE_LAUNCH: [&str; 2] = [

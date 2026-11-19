@@ -562,7 +562,11 @@ pub fn view(audit: &Audit, state: &LogState) -> View {
         if let Some(h) = &latest_handle {
             next.push(n(
                 &["commission", r, h, "--i-am-finished"],
-                "Commission the latest preparation (it is refused if the folder changed since).",
+                if last.outcome() == Some("selection_changed") && latest_prep.is_some_and(|p| p.n < last.planned.n) {
+                    "Use this handle only if you restored the exact prepared selection. To accept the changed folder, prepare it for a fresh handle."
+                } else {
+                    "Commission the latest preparation if the folder still matches it."
+                },
             ));
         }
         next.push(n(
@@ -741,7 +745,9 @@ pub(crate) fn recorded_diagnostics(audit: &Audit) -> Vec<J> {
                         .with("at", rec.at.as_str())
                         .with("operation", b.str("operation").unwrap_or(""))
                         .with("reason", b.str_or_null("reason").ok().flatten())
-                        .with("message", b.str_or_null("message").ok().flatten()),
+                        .with("message", b.str_or_null("message").ok().flatten())
+                        .with("effects", b.get("effects").map(|v| v.to_j()))
+                        .with("retained", b.get("retained").map(|v| v.to_j())),
                 );
             }
             Err(e) => out.push(
@@ -777,6 +783,7 @@ fn runs_j(state: &LogState, lock: Lock) -> J {
                 .with("started_at", p.started.at.as_str())
                 .with("ending", e.map(|(_, e)| e.ending.as_str()))
                 .with("cause", e.and_then(|(_, e)| e.cause.as_deref()))
+                .with("message", e.map(|(_, e)| e.message.as_str()))
                 .with("ended_at", e.map(|(r, _)| r.at.as_str()))
                 .with("recorded_by", e.map(|(_, e)| e.recorded_by.as_str()))
         }
@@ -1062,7 +1069,12 @@ fn archive_inner(root_path: &str) -> Result<Reply, Fail> {
                         .with("inquiry", inquiry)
                         .with("varies", varies)
                         .with("headline", v.headline)
-                        .with("condition", v.condition),
+                        .with("condition", v.condition)
+                        .with("summary", v.summary)
+                        .with("last_run", runs_j(&state, v.lock).get("last").cloned())
+                        .with("diagnostics", J::Arr(v.diagnostics))
+                        .with("stopping", v.stop_unknown.lines())
+                        .with("next", J::Arr(v.next.iter().map(|n| n.to_j()).collect())),
                 )
             }
             Err(f) => (

@@ -1566,70 +1566,11 @@ fn ensure_seal(
 /// answer before launch.
 #[cfg(feature = "sabotage")]
 fn sabotage_empty_return(audit: &Audit) {
-    use crate::bodies::{Actor, SealRec};
-    use crate::returns::{Manifest, Member};
-    let st = log::read(audit);
-    let Some(settings) = st.settings() else {
+    let state = log::read(audit);
+    let Some(settings) = state.settings() else {
         return;
     };
-    let family = crate::forms::family(&settings.family)
-        .map(|f| f.versioned_id())
-        .unwrap_or_default();
-    let answer = b"{\"schema\":\"stewart.answer/1\",\"revision\":0,\"entries\":[]}\n".to_vec();
-    let rendering = b"No answer entries recorded.\n".to_vec();
-    let Ok((n, dir)) = crate::names::claim_prepared(audit) else {
-        return;
-    };
-    let (Ok(a_sha), Ok(r_sha)) = (
-        crate::names::write_prepared_file(audit, &dir, n, "answer.json", &answer),
-        crate::names::write_prepared_file(audit, &dir, n, "answer.md", &rendering),
-    ) else {
-        return;
-    };
-    let manifest = Manifest {
-        audit: audit.id.clone(),
-        store: audit.archive.store.clone(),
-        family,
-        renderer: crate::forms::RENDERER_ID.to_string(),
-        writer: audit
-            .exe
-            .as_ref()
-            .map(|e| e.sha256.clone())
-            .unwrap_or_default(),
-        actor: Actor::Manager,
-        sealed_at: util::now_utc(),
-        revision: 0,
-        members: vec![
-            Member {
-                name: "answer.json".into(),
-                role: "answer".into(),
-                size: answer.len() as u64,
-                sha256: a_sha.clone(),
-            },
-            Member {
-                name: "answer.md".into(),
-                role: "rendering".into(),
-                size: rendering.len() as u64,
-                sha256: r_sha.clone(),
-            },
-        ],
-        unproduced: vec![],
-    };
-    let bytes = manifest.bytes();
-    let Ok((_, name)) = crate::names::write_manifest(audit, &bytes) else {
-        return;
-    };
-    let seal = SealRec {
-        actor: Actor::Manager,
-        prepared: n,
-        answer_sha256: a_sha,
-        rendering_sha256: Some(r_sha),
-        revision: 0,
-        manifest: name,
-        manifest_sha256: util::sha256_hex(&bytes),
-        invocation: None,
-    };
-    if log::publish(audit, "seal", |_| Ok(seal.to_j())).is_err() {
+    if ensure_seal(audit, &state, "unfinished").is_err() {
         return;
     }
     let request = Request {

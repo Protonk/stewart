@@ -138,8 +138,8 @@ submit({"prepared": "ap1.3eizdd", "confirm": true})
 
 After a confirmed submit the run delivers the return package and ends, so this
 reply is recorded but not sent to the auditor. The return manifest
-(`stewart.return/1`) identifies the actual sealer, the family
-`inquiry-framing/1`, the renderer and the prepared members `answer.json` and
+(`stewart.return/2`) identifies the actual sealer, the family
+`inquiry-framing/1`, the renderer, the manager’s accepted question body in `question.md`, and the prepared members `answer.json` and
 `answer.md`. No digest or delivery record is invented in this document.
 
 ## Readable return

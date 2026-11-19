@@ -25,6 +25,17 @@ pub struct Item {
     pub within: Option<(u64, u64, String)>,
 }
 
+pub(crate) fn question_body(r: &Receipt) -> Item {
+    let q = &r.manifest.question;
+    Item {
+        id: "question-body".into(),
+        size: q.body_bytes,
+        sha256: q.body_sha256.clone(),
+        file: r.question_capture.clone(),
+        within: Some((q.body_offset, q.file_bytes, q.file_sha256.clone())),
+    }
+}
+
 pub fn items(r: &Receipt) -> Vec<Item> {
     let q = &r.manifest.question;
     let mut v = vec![
@@ -35,13 +46,7 @@ pub fn items(r: &Receipt) -> Vec<Item> {
             file: r.question_capture.clone(),
             within: None,
         },
-        Item {
-            id: "question-body".into(),
-            size: q.body_bytes,
-            sha256: q.body_sha256.clone(),
-            file: r.question_capture.clone(),
-            within: Some((q.body_offset, q.file_bytes, q.file_sha256.clone())),
-        },
+        question_body(r),
         Item {
             id: "arrangement".into(),
             size: r.manifest.arrangement_size,
@@ -165,20 +170,27 @@ pub fn check(audit: &Audit, it: &Item) -> Check {
     }
     match &it.within {
         Some((offset, _, _)) => {
-            let body = bytes.get(*offset as usize..).unwrap_or(&[]).to_vec();
-            if body.len() as u64 != it.size || util::sha256_hex(&body) != it.sha256 {
+            let Some(body) = usize::try_from(*offset)
+                .ok()
+                .and_then(|start| bytes.get(start..))
+            else {
+                return Check::Damaged(
+                    "the accepted body offset exceeds the question capture".into(),
+                );
+            };
+            if body.len() as u64 != it.size || util::sha256_hex(body) != it.sha256 {
                 return Check::Damaged(
                     "the question body does not match its recorded digest".into(),
                 );
             }
-            Check::Verified(body)
+            Check::Verified(body.to_vec())
         }
         None => Check::Verified(bytes),
     }
 }
 
 /// Locate the accepted commission and its receipt.
-fn accepted(audit: &Audit) -> Result<(Receipt, String, String, String), Fail> {
+pub(crate) fn accepted(audit: &Audit) -> Result<(Receipt, String, String, String), Fail> {
     let state = log::read(audit);
     let Some(rec) = state.accepted() else {
         let f = if state.damaged() {
@@ -200,7 +212,8 @@ fn accepted(audit: &Audit) -> Result<(Receipt, String, String, String), Fail> {
         receipt,
         receipt_sha256,
         prepared,
-        ..
+        attempt,
+        prep,
     } = &rec.body
     else {
         unreachable!("accepted record")
@@ -210,6 +223,17 @@ fn accepted(audit: &Audit) -> Result<(Receipt, String, String, String), Fail> {
             .retain(audit.abs(receipt))
             .next(Next::new(audit.argv(&["status", &audit.reference]), "See the audit's state and diagnostics."))
     })?;
+    let question = &r.manifest.question;
+    if r.attempt != *attempt
+        || r.prep != *prep
+        || r.prepared != *prepared
+        || r.question_capture != format!("intake/{attempt}/q.bin")
+        || question.body_offset.checked_add(question.body_bytes) != Some(question.file_bytes)
+    {
+        return Err(Fail::refused("item_damaged", format!(
+            "The accepted record {} binds {receipt}, but its preparation, question capture or body range does not match that binding.", rec.name()
+        )).retain(audit.abs(receipt)));
+    }
     Ok((r, rec.at.clone(), receipt_sha256.clone(), prepared.clone()))
 }
 

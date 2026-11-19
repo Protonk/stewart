@@ -48,7 +48,7 @@ The manager's path:
        Copies and verifies exactly the prepared selection. Acceptance fixes that
        copy; later edits to the folder cannot change it.
   4. stewart run REF
-       The receipt's run line. Only run uses the network and the provider key.
+       The receipt's run line. For Messages, run uses the provider key and network.
   5. stewart close REF
        Ends the reference from any state. Before launch it creates no answer.
 
@@ -61,6 +61,7 @@ Read-only at any time:
   stewart receipt REF --read ITEM    the exact captured bytes of one item
   stewart status REF                 where the audit stands, with evidence
   stewart status --archive ROOT      every reference in an archive
+  stewart describe COMMAND           possible effects of one command in this build
 
 Audit commands take --json for one machine-readable reply on stdout, except
 receipt --read, which writes the exact item bytes and accepts no --json option.
@@ -84,7 +85,7 @@ Topics: stewart help commands | forms | limits | reader | close
 
 pub fn topic(name: &str) -> Option<String> {
     Some(match name {
-        "commands" => commands(),
+        "commands" => commands() + &crate::effects::help(),
         "forms" => forms_text(),
         "limits" => limits(),
         "reader" => reader(),
@@ -163,11 +164,15 @@ Commands
       --details includes the underlying observations and evidence; --json gives
       the complete structured reply. Neither option changes the audit.
   stewart run REF [--key-fd FD] [--details | --json]
-      Place the auditor, in the foreground until the placement ends. Needs
-      a provider credential and the network. Prefer --key-fd FD, an inherited
+      Place the auditor in the foreground until the placement ends. For Anthropic
+      Messages, supply a provider credential and network access. Prefer --key-fd FD, an inherited
       descriptor (0 or at least 3) carrying 1–4096 visible ASCII bytes and an
       optional final LF, then EOF within five seconds. Stewart consumes and
       closes it. ANTHROPIC_API_KEY is an alternative; combining sources refuses.
+      With an existing secret store, pipe one key directly to descriptor 0:
+        secret-tool lookup service anthropic | env -u ANTHROPIC_API_KEY stewart run REF --key-fd 0
+        security find-generic-password -w -s anthropic | env -u ANTHROPIC_API_KEY stewart run REF --key-fd 0
+      Use your stored item label. The secret stays out of command arguments.
       Linux runs disable core dumps and ordinary process inspection before
       reading the key. Environment input retains the operating system's
       environment exposure; descriptor input avoids putting the key there.

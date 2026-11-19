@@ -838,13 +838,13 @@ def expected_return(aud, revision, *, audit, store, family_id, writer, actor, se
     ents = aud.expected_selection(revision)
     aj = aw.answer_json(revision, ents)
     md = aw.render(ents)
-    files = {"answer.json": aj}
+    files = {"question.md": aud.question, "answer.json": aj}
     if md is not None:
         files["answer.md"] = md
     for e in ents:
         if e.kind == "record_artifact" and not e.unproduced:
             files[e.member] = e.data
-    man = aw.manifest(audit, store, family_id, writer, actor, sealed_at, revision, aw.members(ents, aj, md),
+    man = aw.manifest(audit, store, family_id, writer, actor, sealed_at, revision, aw.members(ents, aj, md, aud.question),
                       aw.unproduced(ents))
     files["manifest.json"] = man
     return files

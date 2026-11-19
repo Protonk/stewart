@@ -761,7 +761,8 @@ def review(packet, placement=1):
                     'auditor submission or verified delivery missing')
             pin = witness.write_witness(review_dir / 'WITNESS.json', entries, revision,
                   family='open-inquiry/1', writer=p.read_file(Path(manifest['writer']), limit=None, hash_only=True)[0],
-                  actor='auditor', reference=manifest['reference'], status_raw=status_raw, inputs=sources,
+                  actor='auditor', reference=manifest['reference'], status_raw=status_raw,
+                  inputs={**sources, 'question-body': sources['question']},
                   provenance={'kind': 'service-owned-capture-correlation', 'description': report['scope']})
             package_review = witness.review_package(out / 'package', review_dir / 'WITNESS.json', review_dir / 'package',
                   witness_sha256=pin, archive_root=Path(manifest['archive']))

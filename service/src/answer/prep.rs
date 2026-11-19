@@ -670,7 +670,17 @@ pub fn seal(
         .exe
         .as_ref()
         .map_or(audit.refile.writer_sha256.clone(), |e| e.sha256.clone());
-    let mut members = vec![prepared.answer.clone()];
+    let (receipt, _, _, _) = crate::ops::receipt::accepted(audit).map_err(SealError::Refused)?;
+    let question = crate::ops::receipt::question_body(&receipt);
+    let mut members = vec![
+        Member {
+            name: returns::QUESTION_MEMBER.into(),
+            role: "manager_question".into(),
+            size: question.size,
+            sha256: question.sha256,
+        },
+        prepared.answer.clone(),
+    ];
     members.extend(prepared.rendering.clone());
     members.extend(prepared.artifacts.iter().map(|(m, _)| m.clone()));
     let manifest = Manifest {

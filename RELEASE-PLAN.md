@@ -1,11 +1,10 @@
 # Release and work plan
 
-The file-only CLI and the read-only preparation MCP share the `question/2`
-commissioning rules. Linux acceptance passed on native aarch64 and emulated
-x86_64 at `c3ab38e`, including the comparison between CLI preparation and MCP
-assessment. The next manager task is the independent CLI path, including
-command-effect inspection and returning the accepted question. Endpoint
-alignment and release qualification remain open. No live packet is active.
+The standalone CLI now describes command effects, reports recorded stop reasons
+and returns the accepted question body alongside the answer. Its Linux
+qualification is in progress. The read-only preparation MCP and CLI share the
+`question/2` commissioning rules. Candidate assembly is the next implementation
+stage.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
@@ -17,7 +16,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Complete the independent CLI additions, implement candidate assembly in the preparation MCP, and demonstrate integration with the fake provider. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
+| Current | Qualify the standalone CLI additions, implement candidate assembly in the preparation MCP, and demonstrate integration with the fake provider. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separate release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |

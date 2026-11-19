@@ -305,6 +305,9 @@ pub fn summary(state: &LogState, headline: &J, allowances: &J) -> String {
             }
         };
         lines.push(format!("{prefix} {} {ending}.", p.run));
+        if let Some((_, end)) = p.ended {
+            lines.push(end.message.clone());
+        }
     } else if state.damaged() {
         lines.push("Run: whether execution started is unknown.".into());
     } else {

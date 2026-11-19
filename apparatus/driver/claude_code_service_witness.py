@@ -25,7 +25,7 @@ import answer_witness as answer
 import claude_code as runtime
 from rawjson import compact
 
-WITNESS_SCHEMA = "stewart.claude-code.service-witness/1"
+WITNESS_SCHEMA = "stewart.claude-code.service-witness/2"
 REVIEW_SCHEMA = "stewart.claude-code.service-package-review/1"
 MAX_FILE = 64 * 1024 * 1024
 MAX_PACKAGE = 256 * 1024 * 1024
@@ -171,6 +171,8 @@ def write_witness(path, entries, revision, *, family, writer, actor, reference, 
     seal time come from manager replies and are identified separately as such.
     This function grants no authenticity to a caller's provenance declaration.
     """
+    if "question-body" not in inputs:
+        raise ValueError("witness inputs require original question-body bytes")
     if any(entry.unproduced for entry in entries):
         raise ValueError("this comparison requires produced witness entries")
     status = runtime.transport_loads(status_raw)
@@ -264,10 +266,11 @@ def expected_package(value):
                                     bytes.fromhex(entry["data_hex"]), entry["citations"], entry["encoding"]))
     raw = answer.answer_json(revision, entries)
     rendering = answer.render(entries)
-    files = {"answer.json": raw, "answer.md": rendering}
+    question = _unblob(value["inputs"]["question-body"])
+    files = {"question.md": question, "answer.json": raw, "answer.md": rendering}
     files.update({entry.member: entry.data for entry in entries if entry.kind == "record_artifact"})
     files["manifest.json"] = answer.manifest(binding["audit"], binding["store"], binding["family"],
-        binding["writer"], binding["actor"], binding["sealed_at"], revision, answer.members(entries, raw, rendering))
+        binding["writer"], binding["actor"], binding["sealed_at"], revision, answer.members(entries, raw, rendering, question))
     return files
 
 
@@ -660,7 +663,7 @@ def self_test():
     witness = root / "WITNESS.json"
     pin = write_witness(witness, entries, 3, family="open-inquiry/1", writer="1" * 64,
         actor="auditor", reference="stw1:synthetic-audit:synthetic-store:" + str(archive), status_raw=compact(status),
-        inputs={"question": b"Inspect this synthetic claim.\n", "material": b"A supplied claim.\n"},
+        inputs={"question-body": b"Inspect this synthetic claim.\n", "material": b"A supplied claim.\n"},
         provenance={"kind": "synthetic-self-test", "description": "expected Entry bytes supplied by this no-process control"})
     original = witness.read_bytes()
     value = runtime.transport_loads(original)
@@ -696,6 +699,8 @@ def self_test():
           and unchanged["inventory"] == first["inventory"] and witness.read_bytes() == original
           and (baseline / "artifact-e3.bin").read_bytes() == utf8_artifact)
     mutations = {
+        "question-change": lambda p: (p / "question.md").write_bytes(b"Changed question"),
+        "missing-question": lambda p: (p / "question.md").unlink(),
         "answer-change": lambda p: (p / "answer.json").write_bytes(b"{}\n"),
         "rendering-change": lambda p: (p / "answer.md").write_bytes(b"changed rendering\n"),
         "artifact-change": lambda p: (p / "artifact-e2.bin").write_bytes(b"changed artifact"),
@@ -710,6 +715,7 @@ def self_test():
         "wrong-package-mode": lambda p: p.chmod(0o755),
     }
     intended = {
+        "question-change": "exact-bytes:question.md", "missing-question": "member-inventory",
         "answer-change": "exact-bytes:answer.json", "rendering-change": "exact-bytes:answer.md",
         "artifact-change": "exact-bytes:artifact-e2.bin", "missing-member": "member-inventory",
         "extra-member": "member-inventory", "duplicate-entry": "exact-bytes:answer.json",
@@ -730,7 +736,7 @@ def self_test():
               and (root / ("review-" + name) / "REVIEW.json").is_file(),
               {"expected_failure": intended[name], "failed_checks": sorted(failed_checks), "diagnostics": result["diagnostics"]})
     corrupt = copy.deepcopy(value)
-    corrupt["inputs"]["question"]["sha256"] = "0" * 64
+    corrupt["inputs"]["question-body"]["sha256"] = "0" * 64
     changed = root / "wrong-input.json"
     _save(changed, corrupt)
     result = review("input-binding", selected=changed, digest=runtime.sha(changed.read_bytes()))

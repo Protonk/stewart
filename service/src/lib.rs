@@ -61,6 +61,7 @@ pub mod forms;
 pub mod frontmatter;
 pub mod fsx;
 pub mod gate;
+mod effects;
 pub mod help;
 pub mod ids;
 pub mod intake;

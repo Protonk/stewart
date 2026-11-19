@@ -1,4 +1,4 @@
-//! The return: its manifest (`stewart.return/1`, INTERFACE 8.2), written at
+//! The return: its manifest (`stewart.return/2`, INTERFACE 8.2), written at
 //! seal, and the plan of each delivery attempt (`delivery_plan`, 8.3).
 //!
 //! The manifest is not a `stewart.record/1` record. It is one line of
@@ -18,8 +18,9 @@ use crate::json::{self, J, JsonError, Obj};
 use crate::names;
 use crate::util;
 
-pub const RETURN_SCHEMA: &str = "stewart.return/1";
+pub const RETURN_SCHEMA: &str = "stewart.return/2";
 pub const MANIFEST_MEMBER: &str = "manifest.json";
+pub const QUESTION_MEMBER: &str = "question.md";
 pub const ANSWER_MEMBER: &str = "answer.json";
 pub const RENDERING_MEMBER: &str = "answer.md";
 /// Failures of an unproduced entry.
@@ -31,7 +32,7 @@ const NUM_MAX: u64 = 1 << 48;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Member {
     pub name: String,
-    /// `answer`, `rendering` or `artifact`.
+    /// `manager_question`, `answer`, `rendering` or `artifact`.
     pub role: String,
     pub size: u64,
     pub sha256: String,
@@ -67,7 +68,7 @@ pub struct Manifest {
     pub sealed_at: String,
     /// The sealed selection's answer revision.
     pub revision: u64,
-    /// `answer.json`, then `answer.md` unless unproduced, then each produced
+    /// `question.md`, `answer.json`, then `answer.md` unless unproduced, then each produced
     /// artifact in selection order.
     pub members: Vec<Member>,
     /// Each unproduced entry in selection order, then an unproduced rendering.
@@ -140,7 +141,7 @@ impl Manifest {
         let v = json::parse(bytes).map_err(|e| format!("not strict control JSON: {e}"))?;
         let m = decode_value(&v.obj("").map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
         if m.bytes() != bytes {
-            return Err("the manifest is not in the stewart.return/1 layout (one compact line, keys in order, an LF)".into());
+            return Err("the manifest is not in the stewart.return/2 layout (one compact line, keys in order, an LF)".into());
         }
         Ok(m)
     }
@@ -187,7 +188,10 @@ fn decode_value(o: &Obj) -> Result<Manifest, JsonError> {
         members.push(Member {
             name: m.str("name")?.to_string(),
             role: m
-                .one_of("role", &["answer", "rendering", "artifact"])?
+                .one_of(
+                    "role",
+                    &["manager_question", "answer", "rendering", "artifact"],
+                )?
                 .to_string(),
             size: m.u64("size", NUM_MAX)?,
             sha256: m.sha256("sha256")?.to_string(),
@@ -218,9 +222,12 @@ fn decode_value(o: &Obj) -> Result<Manifest, JsonError> {
             dependency,
         });
     }
-    // Membership order: answer.json, answer.md unless unproduced, artifacts.
+    // Membership order: question.md, answer.json, answer.md unless unproduced, artifacts.
     let rendering_unproduced = unproduced.iter().any(|u| u.role == "rendering");
-    let mut want = vec![(ANSWER_MEMBER, "answer")];
+    let mut want = vec![
+        (QUESTION_MEMBER, "manager_question"),
+        (ANSWER_MEMBER, "answer"),
+    ];
     if !rendering_unproduced {
         want.push((RENDERING_MEMBER, "rendering"));
     }
@@ -240,7 +247,7 @@ fn decode_value(o: &Obj) -> Result<Manifest, JsonError> {
     if heads != want || !artifacts_ok {
         return Err(o.invalid(
             "members",
-            "members are answer.json, then answer.md unless it is unproduced, then artifact-<id>.bin members",
+            "members are question.md, answer.json, then answer.md unless it is unproduced, then artifact-<id>.bin members",
         ));
     }
     Ok(Manifest {
@@ -480,12 +487,20 @@ mod tests {
 
     fn manifest(unproduced: bool) -> Manifest {
         let h = |c: char| c.to_string().repeat(64);
-        let mut members = vec![Member {
-            name: ANSWER_MEMBER.into(),
-            role: "answer".into(),
-            size: 3904,
-            sha256: h('1'),
-        }];
+        let mut members = vec![
+            Member {
+                name: QUESTION_MEMBER.into(),
+                role: "manager_question".into(),
+                size: 46,
+                sha256: "96bb1920cba63505a4e03c579c4ccceb74f95893df57eef775e0b6b5ec21d36e".into(),
+            },
+            Member {
+                name: ANSWER_MEMBER.into(),
+                role: "answer".into(),
+                size: 3904,
+                sha256: h('1'),
+            },
+        ];
         if !unproduced {
             members.push(Member {
                 name: RENDERING_MEMBER.into(),
@@ -539,7 +554,7 @@ mod tests {
         assert_eq!(
             String::from_utf8(b.clone()).unwrap(),
             format!(
-                "{{\"schema\":\"stewart.return/1\",\"audit\":\"aqm3x7kd2hz5vw4ny\",\"store\":\"s7tq2bk6xm3ra4pfe\",\"family\":\"open-inquiry/1\",\"renderer\":\"stewart.render/1\",\"writer\":\"{}\",\"seal\":{{\"actor\":\"auditor\",\"sealed_at\":\"2026-11-02T15:20:04.118Z\"}},\"revision\":9,\"members\":[{{\"name\":\"answer.json\",\"role\":\"answer\",\"size\":3904,\"sha256\":\"{}\"}},{{\"name\":\"answer.md\",\"role\":\"rendering\",\"size\":2210,\"sha256\":\"{}\"}},{{\"name\":\"artifact-e4.bin\",\"role\":\"artifact\",\"size\":120,\"sha256\":\"{}\"}}],\"unproduced\":[]}}\n",
+                "{{\"schema\":\"stewart.return/2\",\"audit\":\"aqm3x7kd2hz5vw4ny\",\"store\":\"s7tq2bk6xm3ra4pfe\",\"family\":\"open-inquiry/1\",\"renderer\":\"stewart.render/1\",\"writer\":\"{}\",\"seal\":{{\"actor\":\"auditor\",\"sealed_at\":\"2026-11-02T15:20:04.118Z\"}},\"revision\":9,\"members\":[{{\"name\":\"question.md\",\"role\":\"manager_question\",\"size\":46,\"sha256\":\"96bb1920cba63505a4e03c579c4ccceb74f95893df57eef775e0b6b5ec21d36e\"}},{{\"name\":\"answer.json\",\"role\":\"answer\",\"size\":3904,\"sha256\":\"{}\"}},{{\"name\":\"answer.md\",\"role\":\"rendering\",\"size\":2210,\"sha256\":\"{}\"}},{{\"name\":\"artifact-e4.bin\",\"role\":\"artifact\",\"size\":120,\"sha256\":\"{}\"}}],\"unproduced\":[]}}\n",
                 h('f'),
                 h('1'),
                 h('2'),

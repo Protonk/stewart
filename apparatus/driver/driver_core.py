@@ -58,6 +58,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import errno
 import fnmatch
 import hashlib
@@ -149,6 +150,7 @@ OP_EFFECTS = {
     "commission": ("acceptance", "attempt"),
     "receipt": (),
     "status": (),
+    "describe": (),
     "run": ("run", "answer", "seal", "delivery"),
     "close": ("run", "seal", "delivery", "closure"),
 }
@@ -164,6 +166,90 @@ TOOL_EFFECTS = {
     "what_am_i_working_with": ("raw_capture",),
     "prepare": ("raw_capture",),
 }
+
+
+def check_observation(t, name, reply):
+    t.eq(name + ".inspection-effects", reply.get("effects"), {})
+    t.eq(name + ".inspection-next", reply.get("next"), [])
+
+
+def effect_text(variants):
+    return " ".join(str(effect.get(k, "")) for v in variants for effect in v["possible"]
+                    for k in ("when", "description"))
+
+
+def forecast(t, name, text, patterns):
+    for topic, pattern in patterns.items():
+        t.check(name + "." + topic, bool(re.search(pattern, text, re.I)), text)
+
+
+def check_commission_forecast(t, name, text):
+    forecast(t, name, text, {"partial": r"partial|incomplete|retain(ed|s)? (?:an? |the )?(?:intake|attempt|capture)",
+                             "reconcile": r"status|receipt",
+                             "repeat": r"repeat|retry|same (?:prepared )?handle"})
+
+
+def check_description(t, name, reply, command, gated=False):
+    check_observation(t, name, reply)
+    data = reply.get("data", {})
+    t.eq(name + ".keys", set(data), {"schema", "command", "variants"})
+    t.eq(name + ".schema", data.get("schema"), "stewart.command-effects/1")
+    t.eq(name + ".command", data.get("command"), command)
+    variants = data.get("variants")
+    t.require(name + ".variants", isinstance(variants, list) and variants, variants)
+    for i, v in enumerate(variants):
+        label = "%s.variant-%d" % (name, i)
+        t.require(label + ".shape", isinstance(v, dict) and set(v) == {"form", "runtime", "possible"}, v)
+        t.check(label + ".form", isinstance(v["form"], str) and command in v["form"], v["form"])
+        t.check(label + ".runtime", v["runtime"] in ({"common", "messages", "claude-code"} if gated
+                                                       else {"common", "messages"}), v["runtime"])
+        t.require(label + ".possible", isinstance(v["possible"], list), v)
+        for j, effect in enumerate(v["possible"]):
+            e = "%s.effect-%d" % (label, j)
+            t.require(e + ".shape", isinstance(effect, dict) and set(effect) == {"when", "kind", "description"}, effect)
+            t.check(e + ".text", all(isinstance(effect[k], str) and effect[k].strip()
+                                     for k in ("when", "description")), effect)
+            t.check(e + ".kind", effect["kind"] in COMMAND_EFFECT_KINDS, effect)
+    whole = effect_text(variants)
+    if command in ("new", "prepare", "commission", "close"):
+        kinds = {e["kind"] for v in variants for e in v["possible"]}
+        t.check(name + ".observes-and-writes", {"read", "write"}.issubset(kinds), sorted(kinds))
+    if command == "commission":
+        check_commission_forecast(t, name, whole)
+    elif command == "run":
+        messages = [v for v in variants if v["runtime"] == "messages"]
+        t.check(name + ".messages", bool(messages), variants)
+        forecast(t, name + ".messages", effect_text(messages), {
+            "key-env": "ANTHROPIC_API_KEY", "key-fd": "--key-fd", "question": "question", "tool-result": "tool",
+            "conditional-retry": "retry|retries|retried", "output-cap": "16,?000", "thinking": "thinking",
+            "cumulative": "cumulative|across (all )?(runs|placements)",
+            "interrupt": "interrupt|signal", "delivery": "deliver|placement of the return"})
+        if gated:
+            runtime = [v for v in variants if v["runtime"] == "claude-code"]
+            t.check(name + ".claude-code", bool(runtime), variants)
+            forecast(t, name + ".claude-code", effect_text(runtime), {
+                "process": "harness|process", "authentication": "login|logged.in|subscription|authenticat",
+                "deadline": "deadline|time.?out", "usage": "usage|accounting",
+                "retry": "retr(y|ies)", "unlisted-tool": "unlisted|outside (?:the )?(?:tool |commissioned )?inventory",
+                "uncertain-usage": "partial|unknown|incomplete", "read-limit": "read page|inline|result limit",
+                "local-failures": "relay|socket|local network"})
+    elif command == "receipt":
+        read = [v for v in variants if "--read" in v["form"]]
+        verify = [v for v in variants if "--verify" in v["form"]]
+        t.check(name + ".receipt-modes", len(variants) >= 3 and bool(read) and bool(verify), variants)
+        forecast(t, name + ".read", effect_text(read), {"verify": "verif|hash|digest", "bytes": "bytes",
+                                                        "stdout": "stdout|standard output"})
+    elif command == "status":
+        t.check(name + ".status-modes", len(variants) >= 2 and any("--archive" in v["form"] for v in variants), variants)
+    elif command == "close":
+        forms = " ".join(v["form"] for v in variants)
+        t.check(name + ".close-modes", len(variants) >= 2 and all(flag in forms for flag in
+                ("--destination", "--confirm", "--surrender")), variants)
+    elif command == "manager-mcp":
+        for tool in ("discover", "explain", "assess"):
+            t.check(name + "." + tool, any(tool in (v["form"] + " " + effect_text([v])).lower() for v in variants),
+                    variants)
+    return whole
 
 
 def tool_effect_keys(tool):
@@ -213,8 +299,9 @@ STATUS_CLOSURE_KEYS = ("requested_at", "before_launch", "accepted", "unfinished_
                        "placement", "surrendered")
 API_VERSION = "2026-10-21"
 MAX_TOKENS_PER_REQUEST = 16000
-COMMANDS = ("new", "prepare", "commission", "receipt", "status", "run", "close", "help")
-READ_ONLY_OPS = ("status", "receipt", "receipt-read", "help", "usage")
+COMMANDS = ("new", "prepare", "commission", "receipt", "status", "run", "close", "help", "describe", "manager-mcp")
+COMMAND_EFFECT_KINDS = {"read", "write", "process", "network", "credential", "transmit", "limit", "repeat", "interruption", "custody"}
+READ_ONLY_OPS = ("status", "receipt", "receipt-read", "help", "describe", "usage")
 LOG_KINDS = ("reference", "prepared", "intake_planned", "intake_ended", "accepted",
              "run_started", "entry", "seal", "run_ended", "delivery_planned",
              "delivery_ended", "notice", "close_requested", "closed")
@@ -1705,7 +1792,7 @@ class T:
 
     def cmd(self, args, *, op=None, json_reply=True, binary=None, env=None, fault=None, cwd=None,
             timeout=120, readonly=None, expect=None, reason=None, name=None, writer=_DEFAULT,
-            envelope=True, prefix=None, stdin=None, pass_fds=()):
+            envelope=True, prefix=None, stdin=None, pass_fds=(), observation=None):
         """Run one command with inventories before and after. writer is the path every
         suggested argv must begin with (default: this variant's binary; None skips it)."""
         binary = binary or self.bin["path"]
@@ -1717,8 +1804,10 @@ class T:
         full_env = self.env(env, fault)
         cwd = cwd or self.cwd
         self.sync("before " + name)
-        proc = Proc(argv, full_env, cwd, timeout, stdin=stdin, pass_fds=pass_fds)
-        res = proc.wait()
+        # Keep the driver's own before/after inventory reads outside any independent access observation.
+        with observation if observation is not None else contextlib.nullcontext():
+            proc = Proc(argv, full_env, cwd, timeout, stdin=stdin, pass_fds=pass_fds)
+            res = proc.wait()
         if readonly is None:
             readonly = op in READ_ONLY_OPS
         self.sync("after " + name, readonly=readonly)

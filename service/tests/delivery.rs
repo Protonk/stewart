@@ -118,6 +118,7 @@ fn t8_an_ordinary_ending_is_sealed_by_the_manager_delivered_and_confirmed() {
         strs(&j, &["data", "delivery", "verified_members"]),
         [
             "manifest.json",
+            "question.md",
             "answer.json",
             "answer.md",
             "artifact-e3.bin"
@@ -150,7 +151,7 @@ fn t8_an_ordinary_ending_is_sealed_by_the_manager_delivered_and_confirmed() {
     .unwrap();
     assert_eq!(s(&plan, &["kind"]), "delivery_plan");
     assert_eq!(
-        s(&plan, &["body", "members", "3", "source"]),
+        s(&plan, &["body", "members", "4", "source"]),
         sc.entries[2].payload
     );
 
@@ -1104,5 +1105,45 @@ fn status_counts_a_live_placement_by_its_records_and_a_gone_one_with_its_estimat
     let after = status(&e, &r);
     for k in ["turns", "input_tokens", "output_tokens"] {
         assert_eq!(allowance(&after, k), allowance(&gone, k), "{k}");
+    }
+}
+
+#[test]
+fn status_preserves_the_recorded_stopping_message_in_every_view() {
+    let e = Env::new();
+    let reference = accepted(&e);
+    let audit = open(&reference);
+    start_run(&audit, 1);
+    // Replay the recorded startup boundary: the placement exists, with zero
+    // requests and no authentication or model observation.
+    let message = "private launch directory has project/configuration ancestry at /project; choose a temporary_directory outside it";
+    put(
+        &audit,
+        "run_ended",
+        stewart::bodies::RunEnded {
+            run: 1,
+            ending: "interrupted".into(),
+            cause: Some("protocol_anomaly".into()),
+            recorded_by: "run".into(),
+            provider: None,
+            requests: 0,
+            attempts: 0,
+            usage: Default::default(),
+            notices: vec![],
+            seal: None,
+            message: message.into(),
+        }
+        .to_j(),
+    );
+    for target in [vec![reference.as_str()], vec!["--archive", &e.archive]] {
+        for detail in [None, Some("--details"), Some("--json")] {
+            let mut args = vec!["status"];
+            args.extend_from_slice(&target);
+            args.extend(detail);
+            let output = e.run(&args);
+            assert_eq!(output.code, Some(0));
+            assert!(output.text().contains(message), "{args:?}");
+            assert!(output.text().contains("protocol_anomaly"), "{args:?}");
+        }
     }
 }

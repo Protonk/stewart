@@ -22,10 +22,19 @@ use stewart::bodies::{
 };
 use stewart::json::{self, J};
 use stewart::log;
-use stewart::returns::{Manifest, Member, Unproduced};
 use stewart::usage::{Split, Usage};
 
 use crate::common::Env;
+
+const QUESTION: &[u8] = b"Audit our app to make sure there are no bugs.\n";
+
+fn member(name: &str, role: &str, bytes: &[u8]) -> J {
+    J::obj()
+        .with("name", name)
+        .with("role", role)
+        .with("size", bytes.len() as u64)
+        .with("sha256", stewart::util::sha256_hex(bytes))
+}
 
 pub fn open(r: &str) -> Audit {
     match Audit::open(r) {
@@ -356,20 +365,15 @@ pub fn seal(a: &Audit, actor: Actor, through: Option<u64>, run: u64) -> Sealed {
         }
         rendering.extend_from_slice(format!("{title}\n\n").as_bytes());
         if v.is_artifact() {
-            let member = stewart::names::artifact_member(&v.id);
+            let name = format!("artifact-{}.bin", v.id);
             lines.push(format!(
-                "{head},\"encoding\":{},\"member\":\"{member}\",\"size\":{},\"sha256\":\"{}\"}}",
+                "{head},\"encoding\":{},\"member\":\"{name}\",\"size\":{},\"sha256\":\"{}\"}}",
                 json::quote(v.encoding.as_deref().unwrap_or("utf-8")),
                 v.payload.size,
                 v.payload.sha256
             ));
-            members_after.push(Member {
-                name: member.clone(),
-                role: "artifact".into(),
-                size: v.payload.size,
-                sha256: v.payload.sha256.clone(),
-            });
-            artifacts.push((member, bytes.clone()));
+            members_after.push(member(&name, "artifact", &bytes));
+            artifacts.push((name, bytes.clone()));
         } else {
             lines.push(format!(
                 "{head},\"text\":{},\"citations\":[]}}",
@@ -405,54 +409,55 @@ pub fn seal(a: &Audit, actor: Actor, through: Option<u64>, run: u64) -> Sealed {
     let (n, dir) = stewart::names::claim_prepared(a).unwrap_or_else(|c| panic!("{}", c.error));
     let answer_sha = stewart::names::write_prepared_file(a, &dir, n, "answer.json", &answer)
         .unwrap_or_else(|c| panic!("{}", c.error));
-    let mut members = vec![Member {
-        name: "answer.json".into(),
-        role: "answer".into(),
-        size: answer.len() as u64,
-        sha256: answer_sha.clone(),
-    }];
+    let mut members = vec![
+        member("question.md", "manager_question", QUESTION),
+        member("answer.json", "answer", &answer),
+    ];
     let rendering_sha = rendering.as_ref().map(|r| {
         let sha = stewart::names::write_prepared_file(a, &dir, n, "answer.md", r)
             .unwrap_or_else(|c| panic!("{}", c.error));
-        members.push(Member {
-            name: "answer.md".into(),
-            role: "rendering".into(),
-            size: r.len() as u64,
-            sha256: sha.clone(),
-        });
+        members.push(member("answer.md", "rendering", r));
         sha
     });
     members.extend(members_after);
-    let mut unproduced_m: Vec<Unproduced> = unproduced
+    let mut losses: Vec<J> = unproduced
         .iter()
-        .map(|(id, f)| Unproduced {
-            name: id.clone(),
-            role: "entry".into(),
-            failure: f.clone(),
-            dependency: None,
+        .map(|(id, f)| {
+            J::obj()
+                .with("name", id.as_str())
+                .with("role", "entry")
+                .with("failure", f.as_str())
+                .with("dependency", J::Null)
         })
         .collect();
     if !unproduced.is_empty() {
-        unproduced_m.push(Unproduced {
-            name: "answer.md".into(),
-            role: "rendering".into(),
-            failure: "not_rendered".into(),
-            dependency: Some(unproduced.iter().map(|(id, _)| id.clone()).collect()),
-        });
+        let ids: Vec<_> = unproduced.iter().map(|(id, _)| id.as_str()).collect();
+        losses.push(
+            J::obj()
+                .with("name", "answer.md")
+                .with("role", "rendering")
+                .with("failure", "not_rendered")
+                .with("dependency", json::strs(&ids)),
+        );
     }
-    let manifest = Manifest {
-        audit: a.id.clone(),
-        store: a.archive.store.clone(),
-        family: "open-inquiry/1".into(),
-        renderer: "stewart.render/1".into(),
-        writer: a.refile.writer_sha256.clone(),
-        actor,
-        sealed_at: stewart::util::now_utc(),
-        revision,
-        members,
-        unproduced: unproduced_m,
-    };
-    let bytes = manifest.bytes();
+    let mut bytes = J::obj()
+        .with("schema", "stewart.return/2")
+        .with("audit", a.id.as_str())
+        .with("store", a.archive.store.as_str())
+        .with("family", "open-inquiry/1")
+        .with("renderer", "stewart.render/1")
+        .with("writer", a.refile.writer_sha256.as_str())
+        .with(
+            "seal",
+            J::obj()
+                .with("actor", actor.name())
+                .with("sealed_at", stewart::util::now_utc()),
+        )
+        .with("revision", revision)
+        .with("members", J::Arr(members))
+        .with("unproduced", J::Arr(losses))
+        .bytes();
+    bytes.push(b'\n');
     let (_, name) =
         stewart::names::write_manifest(a, &bytes).unwrap_or_else(|c| panic!("{}", c.error));
     let manifest_sha256 = stewart::util::sha256_hex(&bytes);
@@ -559,7 +564,11 @@ pub fn package_members(path: &str) -> Vec<String> {
 /// answer, the rendering (unless unproduced) and the produced artifacts,
 /// byte for byte.
 pub fn assert_package(path: &str, s: &Sealed) {
-    let mut want = vec!["answer.json".to_string(), "manifest.json".to_string()];
+    let mut want = vec![
+        "question.md".to_string(),
+        "answer.json".to_string(),
+        "manifest.json".to_string(),
+    ];
     if s.rendering.is_some() {
         want.push("answer.md".to_string());
     }
@@ -570,6 +579,7 @@ pub fn assert_package(path: &str, s: &Sealed) {
     assert_eq!(package_members(path), want, "package {path}");
     let read = |n: &str| std::fs::read(format!("{path}/{n}")).unwrap();
     assert_eq!(read("manifest.json"), s.manifest);
+    assert_eq!(read("question.md"), QUESTION);
     assert_eq!(read("answer.json"), s.answer);
     if let Some(r) = &s.rendering {
         assert_eq!(&read("answer.md"), r);

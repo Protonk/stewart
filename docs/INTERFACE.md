@@ -34,7 +34,7 @@ another.
 | `question/2` | Front matter grammar of `question.md` |
 | `stewart.record/1` | Archive record header (4.3) |
 | `stewart.preparation/2`, `stewart.arrangement/3`, `stewart.receipt/2` | Manager preparation, pinned arrangement, acceptance receipt |
-| `stewart.answer/1`, `stewart.return/1` | Structured answer, return manifest |
+| `stewart.answer/1`, `stewart.return/2` | Structured answer, return manifest |
 | `open-inquiry/1`, `inquiry-framing/1`, `comparison/1` | Families: instructions, recording tools, coverage sections |
 | `stewart.orientation/1`, `stewart.render/1` | Auditor orientation text; Markdown renderer |
 | `utf8-text/1` | The material reader: exact UTF-8 bytes, no transformation |
@@ -140,7 +140,7 @@ Each operation reports exactly these keys:
 | `new` | `reference` |
 | `prepare` | `preparation` |
 | `commission` | `acceptance`, `attempt` |
-| `receipt`, `status` | none: `effects` is the empty object |
+| `describe`, `receipt`, `status` | none: `effects` is the empty object |
 | `run` | `run`, `answer`, `seal`, `delivery` |
 | `close` | `run`, `seal`, `delivery`, `closure` |
 | `record_<kind>`, `record_artifact`, `replace`, `delete` | `answer`, `raw_capture` |
@@ -796,6 +796,7 @@ replacement attempt (5.8). `replaces` is as 8.3 states.
 {"prev": "…", "attempt": 1, "outcome": "verified_with_losses", "recorded_by": "close", "cause": null,
  "manifest_sha256": "…", "package": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001",
  "members": [{"name": "manifest.json", "role": "manifest", "written": true, "verified": true, "failure": null},
+             {"name": "question.md", "role": "manager_question", "written": true, "verified": true, "failure": null},
              {"name": "answer.json", "role": "answer", "written": true, "verified": true, "failure": null}],
  "losses": [{"member": "e3", "role": "entry", "failure": "damaged", "stage": "seal"},
             {"member": "answer.md", "role": "rendering", "failure": "not_rendered", "stage": "seal"}]}
@@ -1040,6 +1041,8 @@ stewart status REF [--details | --json]
 stewart status --archive ROOT [--details | --json]
 stewart run REF [--key-fd FD] [--details | --json]
 stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--details | --json]
+stewart describe COMMAND [--json]
+stewart manager-mcp
 stewart help [commands | forms | limits | reader | close]
 ```
 
@@ -1207,7 +1210,7 @@ Warnings and suggestions belong to assessment and preparation. The archived
 arrangement lets a manager recover their basis. They create no refusal or
 separate diagnostic record. Actual refused operations still appear in status
 after a later success. Present each as a dated past invocation, keeping its
-reason, operation and retained location. A historical refusal alone supplies
+reason, operation, recorded effects and retained locations. A historical refusal alone supplies
 no present impediment or retry instruction. MCP assessment records no audit
 diagnostic.
 
@@ -1361,7 +1364,7 @@ and whose run delivered the return:
                        {"fact": "delivery 1 verified", "evidence": "delivery_ended log/32.json"}],
           "runs": {"count": 2, "held": false, "holder": null,
                    "last": {"number": 2, "started_at": "2026-11-02T15:01:12.204Z", "ending": "sealed", "cause": null,
-                            "ended_at": "2026-11-02T15:20:09.551Z", "recorded_by": "run"}},
+                            "message": "The auditor sealed the answer.", "ended_at": "2026-11-02T15:20:09.551Z", "recorded_by": "run"}},
           "allowances": {"turns": {"used": 41, "reported": 40, "estimated": 1, "limit": 200},
                          "input_tokens": {"used": 1830211, "reported": 1801300, "estimated": 28911, "limit": 20000000},
                          "output_tokens": {"used": 59214, "reported": 51022, "estimated": 8192, "limit": 400000}},
@@ -1371,7 +1374,7 @@ and whose run delivered the return:
           "deliveries": [{"attempt": 1, "by": "run", "destination": "/home/ana/returns",
                           "destination_source": "commissioned", "package": "stewart-return-aqm3x7kd2hz5vw4ny-001",
                           "replaces": null, "outcome": "verified", "cause": null,
-                          "verified_members": ["manifest.json", "answer.json", "answer.md"],
+                          "verified_members": ["manifest.json", "question.md", "answer.json", "answer.md"],
                           "unverified_members": [], "losses": [], "confirmation": null}],
           "closure": null, "diagnostics": [],
           "provider_url_override": null, "provider_proxy": null,
@@ -1395,8 +1398,8 @@ The other members of `data`, in order after `evidence`:
   placement holds the active lock now; `holder`, that placement's
   `run_started` observations while it holds the lock, else null; and `last`,
   null before launch, else the latest placement's `number` and `started_at`
-  with `ending`, `cause`, `ended_at` and `recorded_by` from its `run_ended`,
-  those four null while it has none.
+  with `ending`, `cause`, `message`, `ended_at` and `recorded_by` from its `run_ended`,
+  all five are null while it has no recorded ending.
 - `allowances`: null when acceptance is established absent, the string
   `unknown` only when acceptance or its settings/limits cannot be established,
   otherwise the object below. Each known limit remains numeric when its usage
@@ -1505,8 +1508,12 @@ lists interrupted publications (stage files no record shares, 4.3, 4.5),
 unpublished candidates (4.3) and the diagnostics recorded in `diag/`.
 
 `stewart status --archive ROOT` lists every reference in the archive in
-creation order with its folder, `inquiry` label, `varies` note and headline. It
-selects nothing.
+creation order. Each row includes its folder, `inquiry`, `varies`, headline,
+condition and summary. `last_run` carries the same last placement observation as
+reference status. `diagnostics`, `stopping` and `next` give the recorded
+history, any outstanding stopping uncertainty and supported calls for that
+reference. A start records a placement. Authentication and contact with a
+provider require separate observations.
 
 ### 5.7 `run`
 
@@ -1565,7 +1572,7 @@ for an `interrupted` ending and 0 for any other recorded ending (1.7).
                    "revision": 9, "manifest_sha256": "…", "unproduced": []},
           "delivery": {"attempt": 1, "outcome": "verified",
                        "location": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001",
-                       "verified_members": ["manifest.json", "answer.json", "answer.md"],
+                       "verified_members": ["manifest.json", "question.md", "answer.json", "answer.md"],
                        "unverified_members": [], "losses": [], "cause": null},
           "notices": [{"type": "reminder", "sent": "sent"}],
           "headline": {"accepted": "yes", "launched": "yes",
@@ -1774,7 +1781,7 @@ A closed reply has no next calls; the receipt stays readable through status's
                    "revision": 7, "manifest_sha256": "…", "unproduced": []},
           "delivery": {"attempt": 1, "outcome": "verified",
                        "location": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001",
-                       "verified_members": ["manifest.json", "answer.json", "answer.md"],
+                       "verified_members": ["manifest.json", "question.md", "answer.json", "answer.md"],
                        "unverified_members": [], "losses": [], "cause": null},
           "confirmation": "cf1.h3d7ws", "holder": null,
           "allowances": {"turns": {…}, "input_tokens": {…}, "output_tokens": {…}},
@@ -1792,14 +1799,13 @@ archive.
 
 ### 5.10 Prospective command effects
 
-Specified for the manager interface, pending implementation.
 `stewart describe COMMAND [--json]` describes one command in this binary.
 COMMAND is exactly `new`, `prepare`, `commission`, `receipt`, `status`,
 `run`, `close`, `help`, `describe` or `manager-mcp`. An absent/unknown
 command, a reference, extra operands or unsupported flags give the ordinary
 CLI usage error. The operation reads compiled descriptions and needs no
 reference, source, environment setting, credential or network connection.
-Ordinary command help presents the same facts.
+Run `stewart help commands` for the same descriptions in readable form.
 
 JSON uses the manager reply envelope with `operation:"describe"`,
 `outcome:"completed"`, `effects:{}`, `next:[]`. The keys of `data` are
@@ -1823,7 +1829,7 @@ and tool results, conditional retry, cumulative allowances, the 16,000-token
 per-response cap (including thinking), interruption and delivery. Describe the
 gated runtime's actual process/authentication and accounting separately when
 built. Describe each distinct mode of receipt, status, close and manager MCP,
-including dry-run and partial writes. Audience/output flags which change only
+including conditional writes and retained partials. The read-only MCP has discovery, explanation and assessment variants. Audience/output flags which change only
 presentation can share a variant. No example needs a real credential value.
 
 ### 5.11 Manager preparation MCP
@@ -2602,7 +2608,7 @@ a new `prepared/<n>`, and seals that. To seal, Stewart:
 
 1. re-verifies the preparation's files against their digests, and each selected
    payload's size and digest;
-2. writes `seal/manifest-<k>.json` (8.2) as an exclusive file, claiming `k`;
+2. resolves the accepted receipt and question-body identity, then writes `seal/manifest-<k>.json` (8.2) as an exclusive file, claiming `k`;
 3. publishes the `seal` record naming the preparation, the manifest and its
    digest (4.4).
 
@@ -2625,22 +2631,20 @@ A package is a new directory `stewart-return-<audit-id>-<nnn>` inside the
 destination, where `nnn` is the delivery attempt number, zero-padded to at least
 three digits (attempt 1 is `001`). It is created with mode 0700 and its files
 with 0600. The current format contains only the members below.
-[Returned question and answer](../CONTRACTS.md#returned-question-and-answer)
-owns the separate accepted-question member committed for the later return
-format; that addition is not implemented here.
 
 | Member | Role | Content |
 | --- | --- | --- |
 | `manifest.json` | `manifest`, in delivery records only | The seal manifest, byte for byte |
+| `question.md` | `manager_question` | The exact accepted question body |
 | `answer.json` | `answer` | The structured answer (`stewart.answer/1`, QUESTION-FORMS) |
 | `answer.md` | `rendering` | The prepared rendering |
 | `artifact-<id>.bin` | `artifact` | Each selected artifact's exact bytes (`artifact-e4.bin`); a text artifact's are UTF-8 |
 
-The manifest (`stewart.return/1`) is one line of compact JSON followed by an LF,
+The manifest (`stewart.return/2`) is one line of compact JSON followed by an LF,
 with keys in the order shown and strings escaped as in `stewart.answer/1`:
 
 ```
-{"schema":"stewart.return/1","audit":"aqm3x7kd2hz5vw4ny","store":"s7tq2bk6xm3ra4pfe","family":"open-inquiry/1","renderer":"stewart.render/1","writer":"3f1c…","seal":{"actor":"auditor","sealed_at":"2026-11-02T15:20:04.118Z"},"revision":9,"members":[{"name":"answer.json","role":"answer","size":3904,"sha256":"…"},{"name":"answer.md","role":"rendering","size":2210,"sha256":"…"},{"name":"artifact-e4.bin","role":"artifact","size":120,"sha256":"…"}],"unproduced":[]}
+{"schema":"stewart.return/2","audit":"aqm3x7kd2hz5vw4ny","store":"s7tq2bk6xm3ra4pfe","family":"open-inquiry/1","renderer":"stewart.render/1","writer":"3f1c…","seal":{"actor":"auditor","sealed_at":"2026-11-02T15:20:04.118Z"},"revision":9,"members":[{"name":"question.md","role":"manager_question","size":46,"sha256":"96bb1920cba63505a4e03c579c4ccceb74f95893df57eef775e0b6b5ec21d36e"},{"name":"answer.json","role":"answer","size":3904,"sha256":"…"},{"name":"answer.md","role":"rendering","size":2210,"sha256":"…"},{"name":"artifact-e4.bin","role":"artifact","size":120,"sha256":"…"}],"unproduced":[]}
 ```
 
 - `audit` and `store` are the identifiers; `family` is the family ID and
@@ -2649,7 +2653,7 @@ with keys in the order shown and strings escaped as in `stewart.answer/1`:
 - `seal.actor` is `auditor` or `manager`. `sealed_at` is when Stewart wrote the
   manifest, immediately before publishing the seal (UTC, milliseconds).
 - `revision` is the sealed selection's answer revision.
-- `members` lists `answer.json`, then `answer.md` unless it is unproduced, then
+- `members` lists `question.md`, then `answer.json`, then `answer.md` unless it is unproduced, then
   each artifact of a produced entry in selection order, each with `name`,
   `role`, `size` and `sha256`. Digests are lowercase hex.
 - `unproduced` lists, in selection order, each unproduced entry as
@@ -2660,19 +2664,11 @@ with keys in the order shown and strings escaped as in `stewart.answer/1`:
   `artifact-<id>.bin`. It is `[]` when everything was produced.
 
 The seal handle binds the manifest (2.3) and stays outside it. The manifest
-verifies the package without the archive. Revision 1 excludes the question,
-receipt, arrangement, access log, run summaries and conversations.
+verifies the package without the archive. The receipt, arrangement, access log, run summaries and conversations stay in the archive.
 
 #### Returned question in revision 2
 
-`stewart.return/2` is specified, pending implementation. In the 8.2 manifest
-replace the schema ID and insert the following as the **first** member of
-`members`. The remaining members keep their order and bytes.
-
-```json
-{"name":"question.md","role":"manager_question","size":46,"sha256":"…"}
-```
-
+The `question.md` member comes first in the manifest.
 Its role attributes the question to the manager. The member is exactly the
 accepted question body, including any body BOM, CRLF or absent final newline.
 Its expected length and digest come from the accepted commission. The seal
@@ -2701,6 +2697,7 @@ creates no package. Revision 2 replaces revision 1 in the implementing writer.
     "destination": {"path": "/home/ana/returns2", "source": "replacement", "device": 64769, "inode": 1835011},
     "package": "stewart-return-aqm3x7kd2hz5vw4ny-003", "replaces": 2, "by": "close",
     "members": [{"name": "manifest.json", "role": "manifest", "size": 611, "sha256": "…", "source": "seal/manifest-1.json"},
+                {"name": "question.md", "role": "manager_question", "size": 46, "sha256": "…", "source": "intake/1/q.bin"},
                 {"name": "answer.json", "role": "answer", "size": 3904, "sha256": "…", "source": "prepared/3/answer.json"},
                 {"name": "answer.md", "role": "rendering", "size": 2210, "sha256": "…", "source": "prepared/3/answer.md"},
                 {"name": "artifact-e4.bin", "role": "artifact", "size": 120, "sha256": "…", "source": "payload/e4.v1.bin"}]}

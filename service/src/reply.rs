@@ -150,10 +150,11 @@ pub const EFFECT_VALUES: [(&str, &[&str]); 11] = [
 
 /// The effect keys each manager operation reports, in order (1.4).
 /// `diagnostic` may follow any of them.
-pub const MANAGER_EFFECTS: [(&str, &[&str]); 7] = [
+pub const MANAGER_EFFECTS: [(&str, &[&str]); 8] = [
     ("new", &["reference"]),
     ("prepare", &["preparation"]),
     ("commission", &["acceptance", "attempt"]),
+    ("describe", &[]),
     ("receipt", &[]),
     ("status", &[]),
     ("run", &["run", "answer", "seal", "delivery"]),
@@ -598,9 +599,21 @@ fn render_archive(data: &J, out: &mut String) {
                 out.push_str(&line);
             }
             let mut detail = J::obj();
-            for key in ["folder", "inquiry", "varies", "condition", "diagnostic"] {
+            for key in [
+                "folder",
+                "inquiry",
+                "varies",
+                "last_run",
+                "diagnostic",
+                "diagnostics",
+                "stopping",
+                "next",
+            ] {
                 if let Some(value) = row.get(key) {
-                    if !matches!(value, J::Null) {
+                    if !matches!(value, J::Null)
+                        && !matches!(value, J::Arr(items) if items.is_empty())
+                        && !matches!(value, J::Str(s) if s.is_empty())
+                    {
                         detail.push(key, value.clone());
                     }
                 }
@@ -644,6 +657,11 @@ fn render(v: &J, depth: usize, s: &mut String) {
         J::Obj(m) => {
             for (k, val) in m {
                 let label = k.replace('_', " ");
+                if k == "run_needs" {
+                    s.push_str(&format!("{pad}{label}:\n"));
+                    render(val, depth + 1, s);
+                    continue;
+                }
                 match scalar(val) {
                     Some(x) => s.push_str(&format!("{pad}{label}: {x}\n")),
                     None => {

@@ -4,8 +4,9 @@
 manager contracts are specified. Both runtimes bind the manager's `question/2` role declarations
 and family descriptor in the arrangement. CLI preparation reports reference
 errors and family-specific advice. The read-only preparation MCP supports
-discovery, explanation and prospective assessment. CLI command descriptions,
-the returned-question member and MCP candidate assembly remain open.
+discovery, explanation and prospective assessment. The standalone CLI exposes
+command effects and delivers the accepted question with the answer. MCP candidate
+assembly remains open.
 Live trials require a separate bounded commission.
 
 This plan owns the manager CLI, optional preparation MCP server, question-type
@@ -27,8 +28,8 @@ This inventory distinguishes existing behavior from work still owed.
 | MCP boundary | The stdio server discovers families, explains them and assesses a supplied question and inventory. | Add dry-run and explicit creation of candidate files. |
 | Shared rules | The CLI and MCP use the same parser, material bounds, role assessment and family descriptors. | Use these rules for candidate assembly and retain independent acceptance checks. |
 | Material roles | Families have different purposes, instructions and recording tools. Empty materials and intellectual insufficiency remain admissible. | Validate declared role structure and references; give type-specific warnings for missing evidence roles and suggestions for improvements. Do not introduce an evidence-completeness gate. |
-| Documentary output | CLI has structured replies, observed effects and specified help. | Add versioned MCP schemas, per-call detail, and prospective CLI effect descriptions available without executing or inspecting an audit. |
-| Return context | Returning the exact accepted question body with the answer is decided but unimplemented. | Implement the [returned-question contract](../CONTRACTS.md#returned-question-and-answer), with separate manager/auditor attribution and independent package checks. |
+| Documentary output | Help and `describe` expose the same compiled command effects. The preparation MCP has versioned schemas and per-call detail. | Describe candidate assembly when the MCP gains workspace access. |
+| Return context | The [returned-question contract](../CONTRACTS.md#returned-question-and-answer) binds the accepted question body separately from the auditor’s answer. | Apply the same package checks to MCP-assisted commissions. |
 | Lifecycle | Custody, interruption, continuation, delivery and close use one operation core. | Extend comparison coverage across file-only/MCP-assisted construction, direct/wrapped CLI invocation and both implemented runtime arrangements. |
 | Runtime evidence | [Current demonstrations](../README.md#status) and [retained evidence](../apparatus/qualified.md) identify the reviewed native service use and synthetic acceptance coverage. | Reuse the apparatus for bounded question-family trials. Fake-provider evidence establishes the manager-interface boundary; live trials establish only the additional mechanisms actually witnessed. |
 
@@ -103,47 +104,20 @@ explanation expose the family descriptors. The independent driver compares
 the two callers on a one-sided comparison, a misspelled source and its
 correction, including the facts and effects at both detail levels.
 
-### 3. Complete the independent CLI path
+### 3. Independent CLI path
 
-- [ ] Make the complete file-only workflow usable without starting MCP. Keep
-  `prepare` and explicit `commission` distinct; no command is replaced by a
-  preparation-server interaction.
-- [ ] Add effect descriptions to ordinary help and a side-effect-free structured
-  inspection operation. Cover every public entry point, including commands whose
-  effects are conditional: reads, writes and durable state; provider/network
-  contact; authentication route and credential use; transmitted material;
-  resource limits/stops; retries; interruption and repeat behavior; inspection,
-  execution and custody. Distinguish possible effects from observed outcomes.
-  Describe where the two runtime arrangements differ for a manager: request
-  retries, an unlisted tool name, usage after a submitted audit, full `read`
-  pages against the harness's result limit, and local network failures.
-  Inspection reads compiled descriptions, not audit state or credential stores,
-  and neither launches providers nor creates references or prepares a selection.
-- [ ] Keep provider identity and authentication mode explicit, with descriptions
-  matching the actual build. Fake-provider tests and the gated subscription
-  adapter exercise the same custody core; neither introduces an approval bypass.
-  Name both credential routes in the missing-key refusal and add `run --key-fd`
-  help recipes using an existing secret tool, without secret
-  persistence or a credential-store dependency. A hidden prompt remains deferred.
-- [ ] Implement the accepted question body in the returned package. Verify exact
-  bytes and provenance separately from the auditor's answer; do not add supplied
-  materials, guidance or operating history as return context. Rewrite the shared
-  post-launch return fixture from literal forms with independent expected bytes.
-- [ ] Present recorded stop causes, refused-call effects and supported remedies
-  consistently across status forms. Use `.scratch/readiness-l0-01/RESULT.json`
-  for the startup-ancestry case: the remedy in `run_ended.message` must reach
-  status without implying that `run_started` proves an authentication/model
-  process ran. Cover relay loss and runtime-specific stopping/usage uncertainty.
-- [ ] Exercise direct commands and shell wrappers from different working
-  directories and fresh environments. Reconcile repeated/interrupted operations
-  against durable records, including reply loss after effects, failed acceptance,
-  authentication failure and provider failure. Preserve exact writer and handle
-  bindings, uncertainty and supported recovery without manual archive repair.
+`stewart describe COMMAND` and `help commands` show this build's possible
+effects. Direct and wrapped file-only commissions use the existing lifecycle
+commands. Status retains the last recorded cause and message, prior refusal
+effects, and the supported recovery calls.
 
-**Complete when:** file-only commissioning, execution, readback and custody work
-with MCP unavailable, and effect inspection accurately describes those operations
-while making none of their durable or network effects. No classifier-specific
-approval choreography or prediction is part of the interface or test claim.
+The `stewart.return/2` manifest binds the exact accepted question body
+separately from the answer. Delivery verifies the entire accepted capture
+before copying the body. Independent comparisons cover a changed header, a
+missing receipt, partial intake, lost replies, and substituted package members.
+
+- [ ] Qualify the standalone CLI and updated package witnesses on both Linux
+  architectures and rehearse the changed C10 reviewer with the qualified writer.
 
 ### 4. Implement the bounded manager MCP surface
 

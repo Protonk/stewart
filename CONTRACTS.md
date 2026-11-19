@@ -765,8 +765,7 @@ remains an empirical question, separate from endpoint alignment.
 
 ## Returned question and answer
 
-**Decided default, pending implementation:** return the original commissioned
-question alongside the auditor's recorded answer. The added context is the exact
+Stewart returns the original commissioned question alongside the auditor's recorded answer. The added context is the exact
 accepted question body as a separate package member, attributed to the manager
 separately from the auditor's answer. Stewart adds no supplied materials,
 guidance or operating history to provide that context. This does not expand
@@ -778,9 +777,8 @@ rendering nor the question member says whether the auditor submitted the
 selection or the manager sealed it; a reader who needs that fact reads
 `seal.actor` in the manifest.
 
-The current package omits the question. [INTERFACE 8.2](docs/INTERFACE.md#returned-question-in-revision-2)
-specifies the new member, its binding and delivery failure semantics.
-Implementation and independent acceptance checks remain outstanding.
+[INTERFACE 8.2](docs/INTERFACE.md#returned-question-in-revision-2) defines the
+accepted identity bound by the seal and the per-member delivery check.
 
 ## Readable answer rendering
 
@@ -900,15 +898,14 @@ recorded work with manager attribution.
 
 ## The return and its delivery
 
-The return is the sealed manifest and exactly the members it lists: the recorded
-structured answer/artifacts and prepared Markdown rendering. The manifest binds
+The return is the sealed manifest and exactly the members it lists: the
+accepted question body, recorded answer and artifacts, and prepared Markdown rendering. The manifest binds
 the audit, family/form and renderer versions, ordered member identities and exact
 sizes/digests, writer identity and actual sealer. It is independently verifiable
 without the original process, sources or archive. References inside an answer do
 not recursively add material to the package.
 
-The current package omits the question; its planned addition is specified once
-in [Returned question and answer](#returned-question-and-answer). Stewart does
+[Returned question and answer](#returned-question-and-answer) defines attribution. Stewart does
 not append the receipt, arrangement, access log, run summary or conversation.
 Those stay in the archive; operating refusals/gaps reach the manager through
 status and records, not fabricated answer members. Auditor-authored content may
