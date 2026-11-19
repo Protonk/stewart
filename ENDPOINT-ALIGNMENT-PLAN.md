@@ -25,13 +25,10 @@ open audits and their exact writers until closure or explicit disposition.
 
 ## 1. Specify the alignment check
 
-- [ ] Fix the Messages run set the tier requires: one audit per implemented
-  family to the auditor's own submission, one compaction run past the pinned
-  trigger in [INTERFACE 6.2](docs/INTERFACE.md#62-requests-and-responses), and
-  one run with each manager-selectable request setting such as effort. Name each
-  run's specimen, the mechanisms it must reach and the evidence that shows them;
-  reuse the prepared specimens. A run that leaves a mechanism unreached reports
-  it unexercised rather than counting it.
+- [ ] Select bounded Messages specimens that cover the alignment claims.
+  Identify the endpoint behavior and witness for each comparison, including
+  compaction at the [pinned trigger](docs/INTERFACE.md#62-requests-and-responses).
+  Record which mechanisms the commissioned runs actually reach.
 - [ ] List the endpoint assumptions to compare: each response, usage, error,
   compaction and stop shape the adapter decodes and the fake provider replays,
   with the dated primary documentation they rest on (model, API and beta
@@ -70,7 +67,7 @@ and record fields, and estimates the cost of the proposed run set.
 - [ ] Add a Linux route for the harness. Today `pin.py` and `profile.py` verify an
   Apple code signature against a native macOS pin; Linux binaries have none, and
   the signed manifest is their integrity check. Pin a Linux executable against
-  the manifest, prepare a `linux-x86_64` or `linux-aarch64` profile and run its
+  the manifest, prepare a profile for the selected Linux executable and run its
   check on Linux, rehearsing offline first. Keep the route short enough for a
   person outside this checkout to follow.
 - [ ] Feed captures back as stand-in fixtures with provenance, as
@@ -95,10 +92,6 @@ its offline controls fire, and the retired apparatus is gone.
   fixture or a stated release limitation before counting the record as current.
 - [ ] Align the harness pin the development build uses, through the Linux route,
   producing its profile check.
-
-Real-model repetition, effort comparisons and killed-and-continued placements,
-which the former conformance matrix required, are experiment-tier questions, not
-alignment tasks.
 
 Complete this plan when the mechanism is built, each model the first release
 names and the harness pin have current alignment records, and the enduring

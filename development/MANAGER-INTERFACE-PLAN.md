@@ -30,7 +30,7 @@ This inventory distinguishes existing behavior from work still owed.
 | Material roles | Families have different purposes, instructions and recording tools. Empty materials and intellectual insufficiency remain admissible. | Validate declared role structure and references; give type-specific warnings for missing evidence roles and suggestions for improvements. Do not introduce an evidence-completeness gate. |
 | Documentary output | Help and `describe` expose the same compiled command effects. The preparation MCP has versioned schemas and per-call detail. | Describe candidate assembly when the MCP gains workspace access. |
 | Return context | The [returned-question contract](../CONTRACTS.md#returned-question-and-answer) binds the accepted question body separately from the auditor’s answer. | Apply the same package checks to MCP-assisted commissions. |
-| Lifecycle | Custody, interruption, continuation, delivery and close use one operation core. | Extend comparison coverage across file-only/MCP-assisted construction, direct/wrapped CLI invocation and both implemented runtime arrangements. |
+| Lifecycle | Custody, interruption, continuation, delivery and close use one operation core. | Demonstrate that optional preparation preserves CLI authority, custody and recovery. |
 | Runtime evidence | [Current demonstrations](../README.md#status) and [retained evidence](../apparatus/qualified.md) identify the reviewed native service use and synthetic acceptance coverage. | Reuse the apparatus for bounded question-family trials. Fake-provider evidence establishes the manager-interface boundary; live trials establish only the additional mechanisms actually witnessed. |
 
 The MCP boundary is a separate entry point in the shipped `stewart` binary,
@@ -92,11 +92,9 @@ introduces none of those changes to the auditor's interface.
 
 ### 2. Implement one set of production rules
 
-The file-only path, packet producers and independent drivers use `question/2`.
-Both runtime arrangement tests compare the previous fields against their original
-digests for all three families and supplied open-inquiry guidance. The worked
-packets exercise complete and limited evidence. Captured runtime originals keep
-their historical bytes.
+The file-only path and packet producers use `question/2`. Family instructions,
+tool definitions and selected guidance retain their pinned bytes. The worked
+packets exercise complete and limited evidence.
 
 The MCP uses the same parser, material checks and role assessment as CLI
 preparation. It takes a prospective inventory directly. Discovery and
@@ -116,14 +114,10 @@ separately from the answer. Delivery verifies the entire accepted capture
 before copying the body. Independent comparisons cover a changed header, a
 missing receipt, partial intake, lost replies, and substituted package members.
 
-The [qualification record](../apparatus/qualified.md) identifies
-`split-matrix-release-01` at `9b0afe6` as the Linux release run for this
-stage. Both architectures passed all 158 cases and fired every control.
-
-- [ ] When work resumes, run and review the
+- [ ] Run and review the
   [offline C10 rehearsal](../apparatus/c10/README.md#run-the-offline-checks)
-  with qualification ID `split-matrix-release-01`. C10 has only native
-  development results for this change.
+  with the qualified standalone CLI writer. Select its retained Linux aarch64
+  release entry in the [qualification record](../apparatus/qualified.md).
 
 ### 4. Implement the bounded manager MCP surface
 
@@ -185,29 +179,15 @@ assessment as acceptance, sufficient evidence or an assured answer.
 
 ### 6. Demonstrate integration without a real model
 
-Extend the independent acceptance driver from the specifications. An author who
-has read `service/src` or `service/tests` cannot edit that driver in the same
-session. Shared production rules must not become a shared test oracle.
+Use the [manager acceptance criteria](../ACCEPTANCE.md#c21--manager-preparation-and-command-inspection)
+to compare an MCP-created candidate with an equivalent file-only commission.
+Exercise the preparation boundary, family-specific remedies and the filesystem
+effects of assembly. Compare advertised command effects with observed custody,
+interruption and recovery through the CLI. Keep independent originals through
+delivery and close.
 
-| Comparison | Positive and differing cases | Invariance and firing control |
-| --- | --- | --- |
-| Optionality | Construct equivalent ordinary-file and MCP-assisted commissions; execute both through CLI with the fake provider. | Same normalized selection, rules, attribution and durable effects, apart from explicit content and generated identities/times. Change or omit a real required field and show both routes refuse for the same reason. No MCP-use marker is required. |
-| Independence | Run every manager MCP capability with operational CLI dispatch, providers, auditor and credentials inaccessible; run every CLI lifecycle operation without MCP. | Observe actual filesystem/process/network access, not just requested settings. A deliberately attempted forbidden access must be detected; changing unrelated audit state cannot affect MCP output. |
-| Type consequences | Test all three families' role structures, guidance arrangements and distinct remedies. Comparison distinguishes alternatives/criterion; framing permits an undeveloped concern; open inquiry permits a broad question and explicitly selected guidance. | Invalid declared roles/references fail where specified; empty/unequal/insufficient evidence remains accepted. Renaming valid files or changing irrelevant prose cannot change a role's meaning. Missing roles produce useful type-specific advice. |
-| Documentary contract | Validate every reply, version, error and detail variant; compare stated requirements with CLI enforcement. | Mutated required fields, wrong versions and misleading required/advisory labels are detected. Detail changes explanation, not authority or acceptance. |
-| Candidate effects | Inspect dry-run and explicit creation, including refusal, partial failure, repeat calls and path races/aliases. | Independently compare directory membership and bytes before/after. Dry-run leaves them unchanged; existing candidates and audits stay unchanged; a deliberate write makes the non-mutation control fail. |
-| CLI effects and interruption | Direct/wrapped invocation, fresh working directory/environment, lost replies, repeated calls, failed authorization/authentication/provider interactions and interruption at durable boundaries. | Match observed effects and recovery to descriptions; detect omitted partial effects, duplicated acceptance, reset limits or a false clean state. Unknown results are reconciled before retry. |
-| Custody and autonomy | Fake audits with complete, needs-evidence/reframe, empty, unsubmitted, limited, interrupted and damaged/missing outcomes; close before/after launch and after delivery. | No continuation after ordinary ending, submission or exhausted allowance; dead-placement recovery preserves work and cumulative limits. Controls fire for missing return members, changed question/answer bytes, wrong actor, duplicate entries and unconfirmed delivery. Close does not delete retained archive bytes. |
-
-Use independent original inputs and provider/transport witnesses outside the
-archive, with observation scope and timing recorded. Carry package inventories
-through delivery, close and repeated close. Unexercised behavior, an absent
-witness, failed export or incomplete inspection cannot count as a pass.
-
-**Complete when:** native checks pass and the Linux container
-suites qualify the exact release binary on both architectures for the manager
-boundary and lifecycle claims. Test the gated runtime separately with its
-synthetic harness. Real-model release obligations retain their own acceptance scope.
+**Complete when:** the qualified release binary demonstrates the manager
+boundary and lifecycle claims.
 
 ## Additional Claude Code subscription testing
 
@@ -303,13 +283,8 @@ needs its own matching reviewed check. Procedures and profiles grant no starts.
 
 ## Verification and completion
 
-Use [DEVELOPMENT's check table](DEVELOPMENT.md#what-to-run-for-what-you-changed)
-for every implementation change, retaining outputs through review. Markdown-only
-plan edits need the link check. Changed specifications/pinned texts, service,
-driver and apparatus need their respective named checks; new source is not
-qualified by an older suite. Record exact counts, failures, skips and unexercised
-mechanisms. Unavailable loopback or another skipped prerequisite cannot be
-reported as a passing test.
+Use the [development checks for the change](DEVELOPMENT.md#what-to-run-for-what-you-changed)
+and the [acceptance criteria](../ACCEPTANCE.md) to verify the work.
 
 The manager interface is ready when a manager can construct a conforming
 commission through ordinary files; optionally obtain type-specific guidance,

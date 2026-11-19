@@ -7,19 +7,15 @@ binary to an independently verified return. Scripted ordinary paths replace
 the provider; failure and sabotage controls use the specified test-build features.
 Endpoint alignment uses the real provider.
 
-Every case below is read under the accepted machine interface:
-[docs/INTERFACE.md](docs/INTERFACE.md) and
-[docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) give the exact schemas and
-fixtures, the deterministic failure-injection points and the supported
-filesystem and writer populations. Do not
-turn an illustrative command spelling, old form or arbitrary test quantity into
-a new product obligation. No model-consuming run is commissioned here.
+[INTERFACE](docs/INTERFACE.md) and [QUESTION-FORMS](docs/QUESTION-FORMS.md)
+define the schemas, fixtures, failure points and supported filesystem and
+writer populations used by these comparisons. Live work requires a bounded
+commission.
 
 ## Acceptance claims
 
-Each claim below is something Stewart promises. A test passes only when it
-shows the claim holding *and* shows that the same check would have caught it
-failing.
+For each claim, show the promised behavior and establish that the witness
+detects a violation.
 
 | # | Claim |
 | --- | --- |
@@ -70,12 +66,10 @@ and never block a release.
 
 ## Rules every check follows
 
-- **It can fail.** Each claim has a *sabotage control*: a deliberately broken
-  input, or a test-only build flag that breaks exactly that property. The suite
-  must catch it. A check whose control passes is itself broken.
-- **It isolates what it measures.** Next to the passing case there is a *differing
-  case* that changes only the property under test, and an *invariance case* that
-  changes something the property must ignore.
+- **It can fail.** For each property, demonstrate that the witness detects a
+  deliberately broken input or implementation and identifies the violated property.
+- **It isolates what it measures.** Change the measured property to show the
+  expected difference. Vary an irrelevant condition to show what stays the same.
 - **The witness lives outside Stewart.** The test driver keeps its own copies of
   everything it supplied (question, material) and everything the fake auditor sent
   (each element's bytes, each citation). It compares the delivered return against
@@ -222,17 +216,17 @@ authoring request is handed down as part of the auditor's answer.
 - **Sabotage:** omit an element, truncate without continuation, omit the last
   page, mix revisions or reset allowances after compaction. Each must fail.
   These checks preserve recorded work, not thoughts never submitted to the ledger.
-  Also omit the summary request, alter its signed block, retain pre-summary
-  context, and ignore compaction usage: each provider-compaction check must fire.
+  Show that the compaction witness detects an omitted request, an altered
+  signed block, retained pre-summary context and ignored compaction usage.
 
 ### C5 — The return is complete and faithful
 
 - **Pass:** the driver compares each delivered return against its witness: every
   element's bytes and order, the typed structure and artifact identities, the form and version named, the
   audit reference, and who sealed it. The manifest digest printed at seal equals
-  the delivered one. In return revision 1 the package holds the manifest,
-  the structured answer, the rendering and artifact members, and nothing else:
-  no question, receipt, arrangement, access log, run summary or conversation. The preparation-generated Markdown rendering
+  the delivered one. Verify exact membership against the
+  [return specification](docs/INTERFACE.md#returned-question-in-revision-2).
+  The preparation-generated Markdown rendering
   is a sealed member, attributed to Stewart and reproducible from the exact
   structured answer and elements under the pinned rendering rules. The auditor
   can inspect those same bytes before confirming submission.
@@ -259,9 +253,8 @@ authoring request is handed down as part of the auditor's answer.
   answer; also one that regenerates the rendering at delivery under a different
   form or silently adds a substantive conclusion.
 
-For the specified [return revision 2](docs/INTERFACE.md#returned-question-in-revision-2),
-the expected inventory gains the exact manager question body. Keep an original
-outside the archive. Compare all members and their attribution on auditor and
+Keep the manager's original question outside the archive and compare its
+body with the delivered bytes. Compare all members and their attribution on auditor and
 manager seals, delivery, replacement delivery and repeated close. Include an
 empty answer, edited or removed live question, CRLF, multibyte text and no
 final newline. Detect a substituted question, leaked front matter, missing or
@@ -294,13 +287,13 @@ closed design, not open policy choices.
   or reduced service. For the specified registry, compare the original
   question file, full inventory, declared role bindings and exact effective
   guidance with the pinned arrangement and receipt readback. Replacing source
-  bytes after acceptance cannot alter that view. Exercise both runtime mappings.
+  bytes after acceptance cannot alter that view.
 - **Differing:** selecting inquiry framing explicitly commissions formulation
   and investigation within the same undertaking. The original request and the
   auditor's working question remain distinguishable.
 - **Invariance:** changing the family never silently rewrites the question or
   expands material access, tools beyond the declared form, budget or
-  investigation. When material roles are implemented, missing declared mappings
+  investigation. Missing declared mappings
   must not block commissioning or become claims that no attached file contains
   evidence.
 - **Permitted answers:** the latitude in
@@ -369,9 +362,8 @@ launch; each must fail.
 
 ### C9 — Response times and certainty
 
-- **Response times.** Report observed command and protocol timings on each
-  platform, including observations on material at the size limits. These
-  measurements describe the run and carry no pass/fail threshold.
+- **Response times.** Report observed command and protocol timings with the
+  workload and platform that produced them.
 - **Progress.** Manager preparation and source scanning report scope and
   progress. Intake, commission readback, full search and delivery state their
   known size and report progress. Raw readback keeps its byte stream free of
@@ -657,27 +649,23 @@ These are scripted obligations for the specified manager interface.
   accepted advice with structural refusals, including useful field/remedy and
   the effect of a prior refusal on later status. Detect a role inferred from a
   filename, required advisory mapping, omitted material or changed guidance.
-  During extraction compare existing family tool order and schemas, system
-  blocks, section notices and both runtime arrangements against fixed originals.
-  Account separately for each specified new version/member.
+  Verify that the commissioned arrangement preserves the selected family's
+  pinned tools, instructions and section notices.
 - Run discovery, explanation, assessment and assembly with audit operations,
   auditor processes, credentials and provider unavailable. Run every CLI
   lifecycle operation with MCP unavailable. Use the independent peer,
   process/filesystem witnesses and controls that actually detect forbidden
   access. Changing unrelated audit state cannot affect preparation assistance.
-- Compare the prospective command descriptions against actual effects through
-  success, refusal, interruption and reply loss in direct and wrapped CLI runs.
-  Include each build's supported variants and a request made with an empty
-  environment. Inspection itself must have no audit, credential or network
+- Compare the prospective command descriptions with observed effects after
+  success, refusal, interruption and reply loss. Show that wrapping the CLI
+  preserves its authority. Inspection itself must have no audit, credential or network
   access. Detect an omitted partial effect or forecast reported as execution.
 - Inventory inputs, workspace and destinations before and after dry-run,
   explicit creation, collision, alias, concurrent creation and interrupted
   creation. Detect an unexpected write, an unreported partial and a changed
   pre-existing file. Follow a lost creation reply with ordinary inspection
-  and an exclusive retry. Compare repeated close and preserved archive bytes
-  through interrupted, unsubmitted, limited and verified-return workflows.
-  Include the separate gated synthetic-harness comparisons. Human review of
-  prose and a live model's conclusions supply no scripted oracle.
+  and an exclusive retry. Show that a commission prepared with assistance
+  preserves the ordinary CLI's custody and close guarantees.
 
 ### Platforms
 
@@ -686,11 +674,9 @@ runtime adapter that the distributed binary excludes owes the evidence its own
 leaf contract states, from cases an independent author derives from that
 contract. Results under one runtime or credential route qualify no other.
 
-Run the scripted tier on Linux aarch64 and x86_64 in the test image. On the
-development Mac these are native aarch64 and emulated x86_64 Linux containers.
-Record the source commit, binary and image digests, architecture, filesystem
-types, case counts, timings and firing controls. Archive placement follows
-the filesystem type observed under INTERFACE 4.1. Apple-silicon macOS is a
+Qualify the distributed binary in Linux containers on aarch64 and x86_64.
+Identify the source, binaries, images, architecture, execution environment
+and observed archive filesystem for each result. Apple-silicon macOS is a
 native build and development-test target.
 
 ### Credential handling
@@ -725,17 +711,14 @@ procedure and form, never answer quality.
 beta versions, or a request setting the release pins changes. A record stays
 current while those inputs are unchanged.
 
-**Runs.** For each model: one commission per implemented family, small enough
-to finish within modest limits and including an inadequate-evidence case among
-them; one compaction run long enough to reach the arrangement's pinned trigger;
-and one run with each request setting a manager can choose, such as effort.
-These are planning quantities, not authorization to spend; each alignment
-commission fixes its model coverage and budget before launch.
+**Coverage.** For each named model, demonstrate auditor submission for each
+implemented family, including a question with inadequate evidence. Exercise
+provider compaction at the pinned trigger and each manager-selectable request
+setting. Fix the model coverage and budget in the commission before launch.
 
-The compaction run must show an actual provider summary request, the signed
-summary reused unchanged on the next ordinary request, the replaced context and
-its accounted usage, and recorded work preserved across it; forgetting state
-inside the fake auditor is not real-model compaction evidence.
+For compaction, witness the actual provider summary request, the signed summary
+reused unchanged on the next ordinary request, the replaced context and its
+accounted usage, and the recorded work preserved across it.
 
 **Comparison.** Every response, usage, error, compaction and stop shape a run
 observes is compared with what the adapter decodes and what the fake provider

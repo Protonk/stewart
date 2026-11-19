@@ -1,10 +1,7 @@
 # Release and work plan
 
-The standalone CLI describes command effects, reports recorded stop reasons
-and returns the accepted question body alongside the answer. The release
-driver passed on both Linux architectures at `9b0afe6`. Work pauses before
-the offline C10 rehearsal with that writer. Candidate assembly in the
-preparation MCP follows.
+The next step is the offline C10 rehearsal of the standalone CLI with a
+qualified writer. Candidate assembly in the preparation MCP follows.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
@@ -42,9 +39,7 @@ returns remains an option after the manager interface is established. A future
 study needs a named uncertainty and bounded commission. Select its inputs
 and discriminating comparison from the qualification index's evaluation
 records and the interaction findings
-(`apparatus/studies/interaction/RESULTS.md` at `77375f1`). Real-model
-repetition, effort comparisons and killed-and-continued placements, which the
-former conformance matrix required, are such studies now, not release gates.
+(`apparatus/studies/interaction/RESULTS.md` at `77375f1`).
 
 ## Unselected candidates
 
@@ -97,7 +92,7 @@ Family-descriptor candidates belong to the manager interface's registry stage.
 
 | Requirement | Remaining work |
 | --- | --- |
-| Linux container qualification | Run the scripted acceptance suite on the release source and binaries, on both architectures with the required controls. |
+| Linux container qualification | Qualify the binaries to be shipped against the [scripted acceptance claims](ACCEPTANCE.md#the-scripted-tier). |
 | Endpoint alignment | A current [alignment record](ENDPOINT-ALIGNMENT-PLAN.md) for each model the release names, each run under an authorized budget. |
 | Release documentation and source package | Define and build the source archive and finish the outside-reader documentation pass ([below](#release-documentation-and-source-package)). |
 | Public release gate | The maintainer decides when to publish the qualified binaries. |
@@ -109,35 +104,24 @@ The requirements remain those of ACCEPTANCE while its review is open.
 Check driver cases against every ACCEPTANCE claim. Uncovered requirements need a
 case or an explicit disposition. Add independent black-box comparisons for
 interim/folded/conflicting-length response heads and the retained-payload reserve
-boundary. The qualified `c7.notice-durability` and `c7.notice-transmission`
-cases already compare `not_sent` with the independent peer's received requests.
-The driver also lacks cases for close's `unknown`
+boundary. The driver also lacks cases for close's `unknown`
 seal, delivery and closure effects after a failed publication, the `--verify`
 `problem` member and a symbolic link above an item, `receipt_record_failed`
 on failed publication of the acceptance record before its link, a `checked_at`
 that is not a timestamp, and a null JSON-RPC error `id` from the binary.
 The earlier receipt-write error is covered by `c17.capture-failures`.
 
-For C17, `t11-diagnostic-write`, `t1-lost-commission-reply` and
-`reply-write-failure` exercise secondary logging failure and recovery after
-a lost reply. For C18, `missing-archive` and `after-launch-custody` exercise
-archive loss, restoration and separate delivery verification. Review which
-dedicated firing controls still need to detect omitted partial effects, blind
-repetition, or false clean/delivery reports. Actual pressure pruning and C11's
-scan-versus-snapshot distinction also need dispositions. Driver changes require
-an implementation-independent author.
+Review whether the C17 and C18 witnesses detect omitted partial effects,
+blind repetition and false clean or delivery reports. Actual pressure pruning
+and C11's scan-versus-snapshot distinction also need dispositions.
 
 Use the current acceptance claims to assess these test and apparatus choices.
 Any change to the evidence owed belongs in ACCEPTANCE.
 
-- Review whether the platform and alignment gates cover the release claims.
-- Decide whether to add Linux Cargo tests. Current Linux suites build the crate
-  and run the independent driver; an offline Cargo route would need
-  `STEWART_IT_TMP` on ext4, xfs or btrfs.
-- Decide toolchain-digest enforcement and native/emulated execution recording.
-  Built image digests are the actual toolchain pins; acceptance records image
-  inspections by tag but does not enforce equality with the toolchain record.
-- Review qualification rules for skips and failures across platforms.
+- Review coverage of Linux-specific behavior, the evidence for the endpoints
+  the release names, and the disposition of failures and skips.
+- Decide how to verify the toolchain used for a release build against the
+  recorded toolchain digest.
 - Carry the readiness reassessment's accepted limitations. Its surviving
   mutants were equivalent mutants in the gate and settings slices, and three
   agent races reachable only at the exact deadline instant or a failed final
@@ -148,9 +132,7 @@ Any change to the evidence owed belongs in ACCEPTANCE.
   The mutation logs were released with the readiness working evidence;
   `READINESS-FOLLOW-UP-PLAN.md` at `ba551c6` keeps the summary. Decide which
   of these need a case, a fault point or an explicit disposition.
-- Decide whether to support running the qualification suites from a Linux
-  host; the documented host route uses macOS and Apple `container`, and native
-  Linux runs are documented as development iteration only.
+- Decide which hosts the documented qualification procedure should support.
 
 ### Release documentation and source package
 

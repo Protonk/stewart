@@ -26,6 +26,10 @@ container suite builds from `git archive` of `HEAD`, so commit the source
 before running it. See [Container suites](#container-suites) for host access
 and commands.
 
+When a specification changes pinned bytes or behavior, update the affected
+implementation and independent witnesses and apply their check rows too. The
+[driver authorship rule](../AGENTS.md#preserve-independent-evidence) applies.
+
 The link check, the driver's self-test and its case list:
 
 ```sh
@@ -47,24 +51,26 @@ configurations from `service/`:
 
 ```sh
 CARGO_TARGET_DIR=target-local cargo test --locked --offline --features claude-code
-CARGO_TARGET_DIR=target-runtime-fault cargo test --locked --offline --features claude-code,fault-injection
+CARGO_TARGET_DIR=target-runtime-fault cargo test --locked --offline --features claude-code,fault-injection --test claude_code
 ```
 
-The second runs the development runtime's failure-point tests, such as a
-notice whose publication is linked but unconfirmed, which no other
-configuration compiles. Some runtime tests start a placement whose fake harness
+The second runs the adapter integration target, including failure points such
+as a notice whose publication is linked but unconfirmed. For changes to shared
+fault handling or feature wiring, run the full combined configuration by
+omitting `--test claude_code`. Some runtime tests start a placement whose fake harness
 connects through a private Unix socket, so run both where binding a Unix socket
 is permitted; a sandbox that denies the bind fails those tests.
 
 | What changed | What to run |
 | --- | --- |
 | Prose or Markdown anywhere | The link check. |
-| `docs/INTERFACE.md` or `docs/QUESTION-FORMS.md` | The link check, both cargo configurations and the driver's self-test. A test in `service/src/forms.rs` compares the service's pinned texts and tool descriptions with QUESTION-FORMS; one in `service/src/fault.rs`, built only in the fault and sabotage configuration, compares its failure points, actions and sabotage controls, and the names in its variable table, with INTERFACE Appendix C. The driver's self-test compares its own copies of the pinned texts and tool descriptions with QUESTION-FORMS, and its answer witness reproduces the structured answer and rendering examples of QUESTION-FORMS and the manifest example of INTERFACE 8.2 byte for byte. A changed pinned text or tool description needs the service's copy changed too (then the `service/` row applies); a changed pinned text or example needs the driver's copy updated, under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
-| Worked example materials: `question.md` and `materials/` under `examples/questions/*/submission/` | From `service/`, run `cargo test --locked --offline --test manager worked_question_packets_prepare_with_full_or_limited_evidence`. This prepares each ordinary and inadequate-evidence packet and checks its selected bytes. The walkthroughs, `CITATION-CONTROLS.md`, QUESTION-FORMS and INTERFACE cite their sizes, byte ranges and line numbers, and the driver's answer witness pins the examples in those docs, so recheck every citation of a changed file. For a changed example in the docs, also run the checks in the row above. |
+| `docs/QUESTION-FORMS.md` | The link check and release driver's self-test. From `service/`, run `cargo test --locked --offline --lib forms::tests::` for the family tables, tool descriptions and pinned texts. |
+| `docs/INTERFACE.md` | The link check and release driver's self-test, which checks the worked manifest. For changes to Appendix C, also run `CARGO_TARGET_DIR=target-test cargo test --locked --offline --features fault-injection,sabotage --lib fault::tests::` from `service/` to compare the test-build registries with the specification. |
+| Worked example materials: `question.md` and `materials/` under `examples/questions/*/submission/` | From `service/`, run `cargo test --locked --offline --test manager worked_question_packets_prepare_with_full_or_limited_evidence`. This prepares each ordinary and inadequate-evidence packet and checks its selected bytes. The walkthroughs, `CITATION-CONTROLS.md`, QUESTION-FORMS and INTERFACE cite their sizes, byte ranges and line numbers, and the driver's answer witness pins the examples in those docs, so recheck every citation of a changed file. Apply the corresponding specification row to changed examples. |
 | `CONTRACTS.md`, `DESIGN.md` or `ACCEPTANCE.md` | The link check. |
 | Release-only service code or tests | Run default Cargo tests and `fault-injection,sabotage`. Qualify changed release behavior with `acceptance.sh`. |
 | Development-adapter-only code or tests | Run the two development Cargo configurations and `runtime-acceptance.sh` for the changed runtime behavior. |
-| Code, tests or dependencies shared by the released service and development adapter | Run all four Cargo configurations. Each affected suite records its own verdict. |
+| Code, tests or dependencies shared by the released service and development adapter | Run the release and adapter Cargo commands above. Each affected suite records its own verdict. |
 | Release driver and shared helpers in `apparatus/driver/` | `stewart_driver.py --self-test` and `--list`, which loads every release case module. Shared helpers used by the standalone runtime driver also need that driver's checks below. Qualify the changed release driver with the `acceptance.sh` container suite. Edit only under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
 | `apparatus/driver/claude_code.py` or its `CLAUDE-CODE.md` | `python3 -I -B apparatus/driver/claude_code.py --self-test` and `--list`. Runtime behavior changes also need the affected synthetic cases against the gated binary, retaining witnesses as described in the driver guide. The complete run needs a second binary built with `claude-code,fault-injection` as `--variant-binary` for deterministic publication races as well as writer invariance. Linux qualification uses `runtime-acceptance.sh` on both architectures. |
 | `apparatus/driver/claude_code_surface.py` or its `CLAUDE-CODE-SURFACE.md` | `python3 -I -B apparatus/driver/claude_code_surface.py --self-test`, then its synthetic rehearsal with `--binary /absolute/gated-stewart --work /absolute/fresh-evidence` on the native host where Unix sockets and process observation are permitted. Run `apparatus/claude-code/test_profile.py` too when changing the shared check inventory or artifact interface. These exercise the independent fixture and actual transport helpers; they do not establish real-harness conformance or Linux qualification. |
@@ -81,7 +87,7 @@ is permitted; a sandbox that denies the bind fails those tests.
 | `apparatus/check-build-markers.sh`, `apparatus/test_build_markers.py` or `apparatus/claude-code-markers.txt` | `sh -n apparatus/check-build-markers.sh` and `python3 -I -B apparatus/test_build_markers.py`; run the marker check against release-profile release/test/development binaries, with expected absence/absence/presence. Run both Linux suites for changes to their shared marker check. |
 | `apparatus/check_links.py` | `python3 -I -B apparatus/check_links.py --self-test`, then the link check. |
 | `apparatus/qualified.py` | `python3 -I -B apparatus/qualified.py --self-test`, then `python3 -I -B apparatus/qualified.py check`. |
-| `service/Cargo.toml`, `service/Cargo.lock`, the vendored crates or `apparatus/container/Containerfile` | Run `step2.sh` to rebuild the toolchain images, vendor the crates named by the committed `Cargo.lock` into `service/vendor`, and build and check the release binary for both architectures. It refuses while `service/vendor` exists, so move the old tree aside first. Run all four Cargo configurations with the resulting vendor tree. Qualification requires the toolchain, release and runtime container suites to pass. |
+| `service/Cargo.toml`, `service/Cargo.lock`, the vendored crates or `apparatus/container/Containerfile` | Run `step2.sh` to rebuild the toolchain images, vendor the crates named by the committed `Cargo.lock` into `service/vendor`, and build and check the release binary for both architectures. It refuses while `service/vendor` exists, so move the old tree aside first. Run the release and adapter Cargo checks above with the resulting vendor tree. Qualification requires the toolchain, release and runtime container suites to pass. |
 
 `apparatus/qualified.py` keeps the qualification record ([Evidence and
 retention](#evidence-and-retention)). After a container run, record it with

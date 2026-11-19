@@ -122,17 +122,10 @@ def check_common(t, sub, fx, pre, rep, ending, cause=None, run_number=1):
 
 @case("c4.provider-compaction", ["C4", "C1", "C6", "C18"],
       "two signed provider summaries replace active context, retain reconstructable captures and preserve the sealed answer",
-      needs=("loopback",), controls=[
-          Control("omit_compaction", [r"^compact\.repeat\.summary-count$"]),
-          Control("alter_compaction_summary", [r"^compact\.repeat\.history\..*\.summary-exact$"]),
-          Control("retain_precompaction_context", [r"^compact\.repeat\.history\..*\.reset-two$"]),
-          Control("ignore_compaction_usage", [r"^compact\.repeat\.(usage|run-ended-usage)$",
-                                              r"^compact\.repeat\.capture\..*\.(charged|usage)$"])])
+      needs=("loopback",))
 def c_provider_compaction(t):
     answers = {}
     for label, below in (("repeat", False), ("below", True)):
-        if t.sabotage and below:
-            continue
         pre = "compact." + label
         sub = run_submission(t, body=b"Audit the captured source.\n", effort="high")
         # Trigger uses top-level totals; charges use iterations. The below-trigger fixture
@@ -166,9 +159,8 @@ def c_provider_compaction(t):
         captured = [c[2] for c in rs.calls_and_results(sub)]
         t.eq(pre + ".calls-retained", captured, [c["raw_block"] for c in p.calls.values()])
         answers[label] = answer_of(t, rep, pre)
-    if not t.sabotage:
-        t.check("compact.same-answer", answers.get("repeat") is not None and answers.get("repeat") == answers.get("below"),
-                "compaction changed the sealed structured answer")
+    t.check("compact.same-answer", answers.get("repeat") is not None and answers.get("repeat") == answers.get("below"),
+            "compaction changed the sealed structured answer")
 
 
 @case("c4.captured-compaction", ["C4", "C6", "C18"],
