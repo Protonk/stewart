@@ -1,10 +1,10 @@
 # Release and work plan
 
-The standalone CLI now describes command effects, reports recorded stop reasons
-and returns the accepted question body alongside the answer. Its Linux
-qualification is in progress. The read-only preparation MCP and CLI share the
-`question/2` commissioning rules. Candidate assembly is the next implementation
-stage.
+The standalone CLI describes command effects, reports recorded stop reasons
+and returns the accepted question body alongside the answer. Qualification is
+paused. The corrected source at `5b33d59` passed its development checks.
+Resume with a fresh two-architecture Linux acceptance run, then rehearse C10
+with its qualified writer. Candidate assembly in the preparation MCP follows.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and

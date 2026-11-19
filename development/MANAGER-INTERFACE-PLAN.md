@@ -116,8 +116,23 @@ separately from the answer. Delivery verifies the entire accepted capture
 before copying the body. Independent comparisons cover a changed header, a
 missing receipt, partial intake, lost replies, and substituted package members.
 
-- [ ] Qualify the standalone CLI and updated package witnesses on both Linux
-  architectures and rehearse the changed C10 reviewer with the qualified writer.
+Linux qualification is paused. At `fbc1333`, `standalone-cli-acceptance-02`
+passed on aarch64. On emulated x86_64 all 159 release cases passed, then the
+synthetic runtime driver timed out before its peer sent the confirmed submit.
+The driver now times publication from witnessed transmission (`9660b01`).
+A separate deadline comparison found an accepted call whose result was missing
+after the transport drain expired. Stewart now retains the worker's result
+through shutdown (`5b33d59`). All four native Cargo configurations passed
+(1,496 tests passed, 44 ignored). Four independent synthetic cases passed all
+3,942 checks with all 12 controls firing, including both deadline refusals.
+
+- [ ] Restart the [Linux acceptance suite](DEVELOPMENT.md#container-suites) in
+  a fresh directory such as `.scratch/standalone-cli-acceptance-04`.
+  Attempt 03 stopped during the aarch64 build, before either driver ran.
+  Both architectures still owe a complete pass on the corrected source.
+- [ ] Extract and check the passing [qualification record](../apparatus/qualified.md),
+  then run and review the [offline C10 rehearsal](../apparatus/c10/README.md#run-the-offline-checks)
+  with that qualification ID. C10 has only native development results for this change.
 
 ### 4. Implement the bounded manager MCP surface
 
