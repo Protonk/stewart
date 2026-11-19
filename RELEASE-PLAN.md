@@ -1,10 +1,11 @@
 # Release and work plan
 
-The current task is to implement the specified manager interface, with the shared
-`question/2` rules now in use by the file-only path. Linux acceptance qualified
-the readiness fixtures on both architectures at `ba551c6`. The offline C10
-rehearsal passed with that aarch64 writer. Endpoint alignment and release
-qualification remain open. No live packet is active.
+The file-only commissioning path uses the shared `question/2` rules. Linux
+acceptance passed on native aarch64 and emulated x86_64 at `6edd911`, and the
+offline C10 and sanity rehearsals passed with that aarch64 writer. The next
+manager task is to use the same rules for prospective assessment through the
+preparation MCP. Endpoint alignment and release qualification remain open.
+No live packet is active.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
@@ -16,7 +17,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Implement shared commissioning rules, the independent CLI additions and optional preparation MCP, and demonstrate their integration with the fake provider. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
+| Current | Use the shared commissioning rules in the optional preparation MCP, complete the independent CLI additions, and demonstrate their integration with the fake provider. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separate release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |

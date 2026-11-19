@@ -20,8 +20,8 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [acceptance-readiness-04](#acceptance-readiness-04) | 2026-11-18T18:29:19Z | `ba551c6` | qualified | latest |
-| acceptance | linux-x86_64 | [acceptance-readiness-04](#acceptance-readiness-04) | 2026-11-18T18:29:19Z | `ba551c6` | qualified | latest |
+| acceptance | linux-aarch64 | [acceptance-question2-01](#acceptance-question2-01) | 2026-11-19T03:18:24Z | `6edd911` | qualified | latest |
+| acceptance | linux-x86_64 | [acceptance-question2-01](#acceptance-question2-01) | 2026-11-19T03:18:24Z | `6edd911` | qualified | latest |
 | toolchain | linux-aarch64 | [toolchain-runtime-01](#toolchain-runtime-01) | 2026-11-12T03:48:38Z | `31bced7` | qualified | latest |
 | toolchain | linux-x86_64 | [toolchain-runtime-01](#toolchain-runtime-01) | 2026-11-12T03:48:38Z | `31bced7` | qualified | latest |
 
@@ -108,6 +108,47 @@ not carry them.
 | Synthetic runtime RESULT.json SHA-256 | `314eee461e611eff869d8ed352946a3f3579b2334ef1b86ec71baa107b3c6ca8` | `7d6b4bd86598c571115d6bcaa07f34013ea504becb9051fdac5bf26d06609eac` |
 | Synthetic runtime evidence listing SHA-256 | `5b1312cd63922b2b2d19c563c9293e0afd8af27d13ccec959ed6097e29dbd609` | `fb741eb500acc66d8fc577af14f8c19d01f22160d69ad589e7439df6fbe7d868` |
 | Synthetic runtime work archive SHA-256 | `f9c291cd54c44d890aaed222a9a5370efc64df5131893553c96899056d861f50` | `64637301cc475523f012b606803eac6b13d2c003c4f51caca095b7e89a2b35bb` |
+
+### acceptance-question2-01
+
+- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `4088d3dab41a8b090348010c20c4b4f12282d08379c315bbdf102a6708f0774d` at the source commit)
+- Source commit: `6edd9114c924f09d4f4f6e3149cc13c2f9e04da2`; archive SHA-256 `ca3eadbeb40486b2d410b232ee6475d2ac0e94090c817089149cb02caff2ab88`
+- Finished: 2026-11-19T03:18:24Z
+- Outcome: **qualified**
+- Run-level failures: none
+- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
+- Evidence: `.scratch/acceptance-question2-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Preserve the exact aarch64 writer for the retained question/2 C10 and sanity audits.; until The retained audits are disposed of or their exact writer is preserved with them elsewhere.
+
+| | linux-aarch64 | linux-x86_64 |
+| --- | --- | --- |
+| Execution | native | emulated (Rosetta) |
+| Outcome | **qualified** | **qualified** |
+| Failures | none | none |
+| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
+| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
+| Script checks (exit records) | 41/41, controls 11/11 | 41/41, controls 11/11 |
+| Driver self-test | 573/573 | 573/573 |
+| Cases passed | 152/152 | 150/150 |
+| Cases | selected 152, ran 152, passed 152, failed 0, skipped 0 | selected 150, ran 150, passed 150, failed 0, skipped 0 |
+| Variants (a fired control's variant fails) | ran 289, passed 192, failed 97, skipped 0 | ran 289, passed 192, failed 97, skipped 0 |
+| Checks | passed 251036, failed outside controls 0, failed inside controls 1396 | passed 251036, failed outside controls 0, failed inside controls 1396 |
+| Sabotage control variants fired (INTERFACE C.2) | 97/97 | 97/97 |
+| Driver controls fired | 21/21 | 21/21 |
+| Timing gate | on, passed: commands worst 2.176 ms (threshold 100.0 ms); protocol worst 100.677 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 45.681 ms (threshold 100.0 ms); protocol worst 151.083 ms (threshold 200.0 ms) |
+| End to end (`e2e.reacting-audit`) | pass, 872/872 checks | pass, 872/872 checks |
+| Release binary SHA-256 | `55cf407ea688671d975bc0067b81ba630716d6cba55602e87eb7a39ba9507700` | `63d8be7b73014df19b1e6bc1123af187f5b99d1b588fe552087b093305d4dfca` |
+| Test binary SHA-256 | `dcc034a2315133862ff75a89565337d2b72f426adcd3475b399e32b5e91acbec` | `1208ffbeb593c61a41074d492907770f1e20098f145d5305ba274d50c0bc061e` |
+| RESULT.json SHA-256 | `ce5d53d69bd8470ffe8a1f212537d59017fc206f16c230d308295f7aca3fd99b` | `1eae57a6a72e655cd76ca3d548e02707b267ba1e9b49b4186bec04e36aeb1aeb` |
+| Synthetic runtime cases | cases 48, passed 48, failed 0, skipped 0 | cases 48, passed 48, failed 0, skipped 0 |
+| Synthetic runtime checks | checks 108575, checks passed 108575, checks failed 0 | checks 108575, checks passed 108575, checks failed 0 |
+| Synthetic runtime controls | 125/125 | 125/125 |
+| Synthetic runtime self-test | passed 500, failed 0, skipped 0 | passed 500, failed 0, skipped 0 |
+| Development binary SHA-256 | `aef3698170b3a7b6ce010b9821d3e37e98dfff8f4d012391efaf8761fd0b07e6` | `9fdd6c80497fd5904ae2be0bcc9e35d951f84fa9f5ee9ca5b7c3444df07a3ed9` |
+| Second development binary SHA-256 | `071035dd9c4f7277e4dfaa6e9f0ed13618c72b60240b727d52d6dfb63a1aa997` | `87cbe1909dc579777419e6d2c465e84c2432dd60e7cfb8ccc4a5ebec6e0a0deb` |
+| Synthetic runtime RESULT.json SHA-256 | `57504c5b59f70b4e419d57988f454ae185fd0a7ad613c1c986df123851fdaa87` | `a4ac554144d47ce412afa90ad48ec7f1e7cff612573e4acc682a908c54e265e1` |
+| Synthetic runtime evidence listing SHA-256 | `189f5ce74fdd042b80014102530a5f8a5b69c8c55efaca35c0c1d129fe71043e` | `f74c9140924a3990a0d589669bbb806b94f56ae2593eb9cba3282d30aa950ca5` |
+| Synthetic runtime work archive SHA-256 | `302f6c89d1d119dc581771d362d6272828e27b414625808a405abfae215e229c` | `df641fc90d84050c10f555ed67953c7bfcf4ed4906da328f74db2aac8753044c` |
 
 ### toolchain-runtime-01
 
@@ -860,3 +901,59 @@ Second placement of control-reminder-unused in the retained offline C10 rehearsa
 
 - Evidence: `.scratch/c10-readiness-04-control-reminder-unused-p2/host/RESULT.json` (recorded 2026-11-18T18:37:09Z).
 - Retained purpose: The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.; until The c10-readiness-04 rehearsal is released.
+
+### c10-q2-01
+
+Offline question/2 rehearsal passed for 22 first placements and six continuations. Review verified 28 exported snapshots and the three deliberate export controls.
+
+- Evidence: `.scratch/c10-q2-01/.` (recorded 2026-11-19T03:25:20Z).
+- Retained purpose: Retain the file-only commissioning comparison and private evidence for the current manager interface work.; until A reviewed successor covers the comparison and remaining private custody is resolved.
+
+### c10-q2-01-control-continue-cap-p2
+
+Verified the original second-placement receipt for control-continue-cap.
+
+- Evidence: `.scratch/c10-q2-01-control-continue-cap-p2/host/RESULT.json` (recorded 2026-11-19T03:25:20Z).
+- Retained purpose: The retained c10-q2-01 rehearsal checks this host receipt against its placement export.; until The c10-q2-01 rehearsal is released.
+
+### c10-q2-01-control-continue-entries-p2
+
+Verified the original second-placement receipt for control-continue-entries.
+
+- Evidence: `.scratch/c10-q2-01-control-continue-entries-p2/host/RESULT.json` (recorded 2026-11-19T03:25:20Z).
+- Retained purpose: The retained c10-q2-01 rehearsal checks this host receipt against its placement export.; until The c10-q2-01 rehearsal is released.
+
+### c10-q2-01-control-reminder-spent-p2
+
+Verified the original second-placement receipt for control-reminder-spent.
+
+- Evidence: `.scratch/c10-q2-01-control-reminder-spent-p2/host/RESULT.json` (recorded 2026-11-19T03:25:20Z).
+- Retained purpose: The retained c10-q2-01 rehearsal checks this host receipt against its placement export.; until The c10-q2-01 rehearsal is released.
+
+### c10-q2-01-control-reminder-spent-submits-p2
+
+Verified the original second-placement receipt for control-reminder-spent-submits.
+
+- Evidence: `.scratch/c10-q2-01-control-reminder-spent-submits-p2/host/RESULT.json` (recorded 2026-11-19T03:25:20Z).
+- Retained purpose: The retained c10-q2-01 rehearsal checks this host receipt against its placement export.; until The c10-q2-01 rehearsal is released.
+
+### c10-q2-01-control-reminder-spent-unheld-p2
+
+Verified the original second-placement receipt for control-reminder-spent-unheld.
+
+- Evidence: `.scratch/c10-q2-01-control-reminder-spent-unheld-p2/host/RESULT.json` (recorded 2026-11-19T03:25:20Z).
+- Retained purpose: The retained c10-q2-01 rehearsal checks this host receipt against its placement export.; until The c10-q2-01 rehearsal is released.
+
+### c10-q2-01-control-reminder-unused-p2
+
+Verified the original second-placement receipt for control-reminder-unused.
+
+- Evidence: `.scratch/c10-q2-01-control-reminder-unused-p2/host/RESULT.json` (recorded 2026-11-19T03:25:20Z).
+- Retained purpose: The retained c10-q2-01 rehearsal checks this host receipt against its placement export.; until The c10-q2-01 rehearsal is released.
+
+### sanity-q2-01
+
+Seven offline question/2 scenarios passed. Four exports verified, two were withheld and one failed as their controls required.
+
+- Evidence: `.scratch/sanity-q2-01/.` (recorded 2026-11-19T03:25:20Z).
+- Retained purpose: Preserve the launcher comparison, the independent witness and private originals for the retained file-only commissioning rehearsal.; until A reviewed successor covers the launcher comparison and remaining private custody is resolved.

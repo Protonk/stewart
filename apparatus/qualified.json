@@ -420,6 +420,215 @@
       }
     },
     {
+      "id": "acceptance-question2-01",
+      "kind": "suite",
+      "suite": "acceptance",
+      "script": {
+        "path": "apparatus/acceptance.sh",
+        "sha256": "4088d3dab41a8b090348010c20c4b4f12282d08379c315bbdf102a6708f0774d"
+      },
+      "source_commit": "6edd9114c924f09d4f4f6e3149cc13c2f9e04da2",
+      "source_archive_sha256": "ca3eadbeb40486b2d410b232ee6475d2ac0e94090c817089149cb02caff2ab88",
+      "date": "2026-11-19T03:18:24Z",
+      "outcome": "qualified",
+      "failures": [],
+      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+      "platforms": {
+        "linux-aarch64": {
+          "execution": "native",
+          "outcome": "qualified",
+          "failures": [],
+          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "script_checks": {
+            "passed": 41,
+            "total": 41,
+            "controls_fired": 11,
+            "controls_total": 11
+          },
+          "self_test": {
+            "checks": 573,
+            "passed": 573,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cases": {
+            "selected": 152,
+            "ran": 152,
+            "passed": 152,
+            "failed": 0,
+            "skipped": 0
+          },
+          "variants": {
+            "ran": 289,
+            "passed": 192,
+            "failed": 97,
+            "skipped": 0
+          },
+          "checks": {
+            "passed": 251036,
+            "failed_outside_controls": 0,
+            "failed_inside_controls": 1396
+          },
+          "controls": {
+            "fired": 97,
+            "total": 97
+          },
+          "driver_controls": {
+            "fired": 21,
+            "total": 21
+          },
+          "timing_gate": {
+            "enabled": true,
+            "passed": true,
+            "threshold_ms": 100.0,
+            "worst_ms": 2.176,
+            "protocol_passed": true,
+            "protocol_worst_ms": 100.677,
+            "protocol_threshold_ms": 200.0
+          },
+          "e2e": {
+            "case": "e2e.reacting-audit",
+            "outcome": "pass",
+            "checks_passed": 872,
+            "checks_failed": 0
+          },
+          "release_sha256": "55cf407ea688671d975bc0067b81ba630716d6cba55602e87eb7a39ba9507700",
+          "test_sha256": "dcc034a2315133862ff75a89565337d2b72f426adcd3475b399e32b5e91acbec",
+          "result_sha256": "ce5d53d69bd8470ffe8a1f212537d59017fc206f16c230d308295f7aca3fd99b",
+          "runtime": {
+            "self_test": {
+              "passed": 500,
+              "failed": 0,
+              "skipped": 0
+            },
+            "counts": {
+              "cases": 48,
+              "passed": 48,
+              "failed": 0,
+              "skipped": 0,
+              "checks": 108575,
+              "checks_passed": 108575,
+              "checks_failed": 0,
+              "controls": 125,
+              "controls_fired": 125
+            },
+            "result_sha256": "57504c5b59f70b4e419d57988f454ae185fd0a7ad613c1c986df123851fdaa87",
+            "environment_sha256": "364a3bf3ce4dbbe880fa62ffd0c6ac82475b4ae765f3b6eae4eb8242fa69b5c4",
+            "work_sha256": "302f6c89d1d119dc581771d362d6272828e27b414625808a405abfae215e229c",
+            "evidence": {
+              "files": 6478,
+              "listing_sha256": "189f5ce74fdd042b80014102530a5f8a5b69c8c55efaca35c0c1d129fe71043e"
+            },
+            "development_sha256": "aef3698170b3a7b6ce010b9821d3e37e98dfff8f4d012391efaf8761fd0b07e6",
+            "release_sha256": "55cf407ea688671d975bc0067b81ba630716d6cba55602e87eb7a39ba9507700",
+            "variant_sha256": "071035dd9c4f7277e4dfaa6e9f0ed13618c72b60240b727d52d6dfb63a1aa997",
+            "driver_sha256": "e1dd5e68d794d0d2a0e1b77f70787db8c1577819c7cf9eaaf658293b9f44dedb"
+          }
+        },
+        "linux-x86_64": {
+          "execution": "emulated (Rosetta)",
+          "outcome": "qualified",
+          "failures": [],
+          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "script_checks": {
+            "passed": 41,
+            "total": 41,
+            "controls_fired": 11,
+            "controls_total": 11
+          },
+          "self_test": {
+            "checks": 573,
+            "passed": 573,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cases": {
+            "selected": 150,
+            "ran": 150,
+            "passed": 150,
+            "failed": 0,
+            "skipped": 0
+          },
+          "variants": {
+            "ran": 289,
+            "passed": 192,
+            "failed": 97,
+            "skipped": 0
+          },
+          "checks": {
+            "passed": 251036,
+            "failed_outside_controls": 0,
+            "failed_inside_controls": 1396
+          },
+          "controls": {
+            "fired": 97,
+            "total": 97
+          },
+          "driver_controls": {
+            "fired": 21,
+            "total": 21
+          },
+          "timing_gate": {
+            "enabled": false,
+            "passed": null,
+            "threshold_ms": 100.0,
+            "worst_ms": 45.681,
+            "protocol_passed": null,
+            "protocol_worst_ms": 151.083,
+            "protocol_threshold_ms": 200.0
+          },
+          "e2e": {
+            "case": "e2e.reacting-audit",
+            "outcome": "pass",
+            "checks_passed": 872,
+            "checks_failed": 0
+          },
+          "release_sha256": "63d8be7b73014df19b1e6bc1123af187f5b99d1b588fe552087b093305d4dfca",
+          "test_sha256": "1208ffbeb593c61a41074d492907770f1e20098f145d5305ba274d50c0bc061e",
+          "result_sha256": "1eae57a6a72e655cd76ca3d548e02707b267ba1e9b49b4186bec04e36aeb1aeb",
+          "runtime": {
+            "self_test": {
+              "passed": 500,
+              "failed": 0,
+              "skipped": 0
+            },
+            "counts": {
+              "cases": 48,
+              "passed": 48,
+              "failed": 0,
+              "skipped": 0,
+              "checks": 108575,
+              "checks_passed": 108575,
+              "checks_failed": 0,
+              "controls": 125,
+              "controls_fired": 125
+            },
+            "result_sha256": "a4ac554144d47ce412afa90ad48ec7f1e7cff612573e4acc682a908c54e265e1",
+            "environment_sha256": "f87a9ddefdde60777e2a17a99dc2d785a1b774c8c37310d7fdc2348159d9b87d",
+            "work_sha256": "df641fc90d84050c10f555ed67953c7bfcf4ed4906da328f74db2aac8753044c",
+            "evidence": {
+              "files": 6478,
+              "listing_sha256": "f74c9140924a3990a0d589669bbb806b94f56ae2593eb9cba3282d30aa950ca5"
+            },
+            "development_sha256": "9fdd6c80497fd5904ae2be0bcc9e35d951f84fa9f5ee9ca5b7c3444df07a3ed9",
+            "release_sha256": "63d8be7b73014df19b1e6bc1123af187f5b99d1b588fe552087b093305d4dfca",
+            "variant_sha256": "87cbe1909dc579777419e6d2c465e84c2432dd60e7cfb8ccc4a5ebec6e0a0deb",
+            "driver_sha256": "e1dd5e68d794d0d2a0e1b77f70787db8c1577819c7cf9eaaf658293b9f44dedb"
+          }
+        }
+      },
+      "evidence": {
+        "path": ".scratch/acceptance-question2-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Preserve the exact aarch64 writer for the retained question/2 C10 and sanity audits.",
+        "until": "The retained audits are disposed of or their exact writer is preserved with them elsewhere."
+      }
+    },
+    {
       "id": "toolchain-runtime-01",
       "kind": "suite",
       "suite": "toolchain",
@@ -2576,6 +2785,160 @@
       "pin": {
         "reason": "The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.",
         "until": "The c10-readiness-04 rehearsal is released."
+      }
+    },
+    {
+      "id": "c10-q2-01",
+      "kind": "experiment",
+      "date": "2026-11-19T03:25:20Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Offline question/2 rehearsal passed for 22 first placements and six continuations. Review verified 28 exported snapshots and the three deliberate export controls.",
+      "result": {
+        "path": ".",
+        "files": 826,
+        "sha256": "f02c2cdfb873c9d71a7798db0fb3647027db51ea27aec3be3e2584f6f188af37"
+      },
+      "evidence": {
+        "path": ".scratch/c10-q2-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the file-only commissioning comparison and private evidence for the current manager interface work.",
+        "until": "A reviewed successor covers the comparison and remaining private custody is resolved."
+      }
+    },
+    {
+      "id": "c10-q2-01-control-continue-cap-p2",
+      "kind": "experiment",
+      "date": "2026-11-19T03:25:20Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Verified the original second-placement receipt for control-continue-cap.",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "226138c6aeae104d41c292e174ea6fdb9c6bbe259d743059fc38e12c89a1c433"
+      },
+      "evidence": {
+        "path": ".scratch/c10-q2-01-control-continue-cap-p2",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The retained c10-q2-01 rehearsal checks this host receipt against its placement export.",
+        "until": "The c10-q2-01 rehearsal is released."
+      }
+    },
+    {
+      "id": "c10-q2-01-control-continue-entries-p2",
+      "kind": "experiment",
+      "date": "2026-11-19T03:25:20Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Verified the original second-placement receipt for control-continue-entries.",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "661884b20ecf2c798ffbaf65195b1959eb2201bd1242154c09b2b401a61b9179"
+      },
+      "evidence": {
+        "path": ".scratch/c10-q2-01-control-continue-entries-p2",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The retained c10-q2-01 rehearsal checks this host receipt against its placement export.",
+        "until": "The c10-q2-01 rehearsal is released."
+      }
+    },
+    {
+      "id": "c10-q2-01-control-reminder-spent-p2",
+      "kind": "experiment",
+      "date": "2026-11-19T03:25:20Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Verified the original second-placement receipt for control-reminder-spent.",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "fa59d4ab0b6370647713dc32f4979952452453c5db71068800097bf2e3a2156b"
+      },
+      "evidence": {
+        "path": ".scratch/c10-q2-01-control-reminder-spent-p2",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The retained c10-q2-01 rehearsal checks this host receipt against its placement export.",
+        "until": "The c10-q2-01 rehearsal is released."
+      }
+    },
+    {
+      "id": "c10-q2-01-control-reminder-spent-submits-p2",
+      "kind": "experiment",
+      "date": "2026-11-19T03:25:20Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Verified the original second-placement receipt for control-reminder-spent-submits.",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "5623283715c8f755f80b31811bae6e8c20f862dd6c043ea6e783fc596de070fc"
+      },
+      "evidence": {
+        "path": ".scratch/c10-q2-01-control-reminder-spent-submits-p2",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The retained c10-q2-01 rehearsal checks this host receipt against its placement export.",
+        "until": "The c10-q2-01 rehearsal is released."
+      }
+    },
+    {
+      "id": "c10-q2-01-control-reminder-spent-unheld-p2",
+      "kind": "experiment",
+      "date": "2026-11-19T03:25:20Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Verified the original second-placement receipt for control-reminder-spent-unheld.",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "94fe78d3408eaf09dbbd7e8ea91148e035bbfd198bec3d79fa477cc5c9191af4"
+      },
+      "evidence": {
+        "path": ".scratch/c10-q2-01-control-reminder-spent-unheld-p2",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The retained c10-q2-01 rehearsal checks this host receipt against its placement export.",
+        "until": "The c10-q2-01 rehearsal is released."
+      }
+    },
+    {
+      "id": "c10-q2-01-control-reminder-unused-p2",
+      "kind": "experiment",
+      "date": "2026-11-19T03:25:20Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Verified the original second-placement receipt for control-reminder-unused.",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "0af037fb447a8e0ec2dea9150671c0a349648544178ce81ef5185311ff6f6d81"
+      },
+      "evidence": {
+        "path": ".scratch/c10-q2-01-control-reminder-unused-p2",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The retained c10-q2-01 rehearsal checks this host receipt against its placement export.",
+        "until": "The c10-q2-01 rehearsal is released."
+      }
+    },
+    {
+      "id": "sanity-q2-01",
+      "kind": "experiment",
+      "date": "2026-11-19T03:25:20Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Seven offline question/2 scenarios passed. Four exports verified, two were withheld and one failed as their controls required.",
+      "result": {
+        "path": ".",
+        "files": 44,
+        "sha256": "9c7feacb9a3a851f40e9e9956c60cd73092bc3b48453e903a5e96b3a9eeebc52"
+      },
+      "evidence": {
+        "path": ".scratch/sanity-q2-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Preserve the launcher comparison, the independent witness and private originals for the retained file-only commissioning rehearsal.",
+        "until": "A reviewed successor covers the launcher comparison and remaining private custody is resolved."
       }
     }
   ]
