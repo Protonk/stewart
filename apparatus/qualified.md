@@ -20,8 +20,8 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [split-matrix-release-01](#split-matrix-release-01) | 2026-11-19T20:52:57Z | `9b0afe6` | qualified | latest |
-| acceptance | linux-x86_64 | [split-matrix-release-01](#split-matrix-release-01) | 2026-11-19T20:52:57Z | `9b0afe6` | qualified | latest |
+| acceptance | linux-aarch64 | [release-plan-cut-02](#release-plan-cut-02) | 2026-11-19T23:35:51Z | `4e7ff17` | qualified | latest |
+| acceptance | linux-x86_64 | [release-plan-cut-02](#release-plan-cut-02) | 2026-11-19T23:35:51Z | `4e7ff17` | qualified | latest |
 | runtime | linux-aarch64 | [split-matrix-runtime-01](#split-matrix-runtime-01) | 2026-11-19T22:53:54Z | `9b0afe6` | qualified | latest |
 | runtime | linux-x86_64 | [split-matrix-runtime-01](#split-matrix-runtime-01) | 2026-11-19T22:53:54Z | `9b0afe6` | qualified | latest |
 | toolchain | linux-aarch64 | [toolchain-runtime-01](#toolchain-runtime-01) | 2026-11-12T03:48:38Z | `31bced7` | qualified | latest |
@@ -152,15 +152,15 @@ not carry them.
 | Synthetic runtime evidence listing SHA-256 | `189f5ce74fdd042b80014102530a5f8a5b69c8c55efaca35c0c1d129fe71043e` | `f74c9140924a3990a0d589669bbb806b94f56ae2593eb9cba3282d30aa950ca5` |
 | Synthetic runtime work archive SHA-256 | `302f6c89d1d119dc581771d362d6272828e27b414625808a405abfae215e229c` | `df641fc90d84050c10f555ed67953c7bfcf4ed4906da328f74db2aac8753044c` |
 
-### split-matrix-release-01
+### release-plan-cut-02
 
 - Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `61174be8079e66672a3a10adcb7d0b2a16797e5dc552d2aeb49a2d2ecfcb2c8f` at the source commit)
-- Source commit: `9b0afe68ced217bb9d23a273a815c501269faf52`; archive SHA-256 `ed9babe4a183cd69374af2e0cc53a7642ca78fc0fcf76a35c2b16e436e6609ff`
-- Finished: 2026-11-19T20:52:57Z
+- Source commit: `4e7ff175f2c6f5e321ef2533c7c4b4b9a5eeee5b`; archive SHA-256 `423caf2dc7fc0682fa8037ae47774c2ced40a57c2cb48df2c3f6f93bf019d718`
+- Finished: 2026-11-19T23:35:51Z
 - Outcome: **qualified**
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/split-matrix-release-01` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/release-plan-cut-02` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -174,15 +174,15 @@ not carry them.
 | Driver self-test | 571/571 | 571/571 |
 | Cases passed | 158/158 | 158/158 |
 | Cases | selected 158, ran 158, passed 158, failed 0, skipped 0 | selected 158, ran 158, passed 158, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 291, passed 196, failed 95, skipped 0 | ran 291, passed 196, failed 95, skipped 0 |
-| Checks | passed 211684, failed outside controls 0, failed inside controls 1068 | passed 211684, failed outside controls 0, failed inside controls 1068 |
-| Sabotage control variants fired (INTERFACE C.2) | 95/95 | 95/95 |
+| Variants (a fired control's variant fails) | ran 286, passed 195, failed 91, skipped 0 | ran 286, passed 195, failed 91, skipped 0 |
+| Checks | passed 202057, failed outside controls 0, failed inside controls 969 | passed 202057, failed outside controls 0, failed inside controls 969 |
+| Sabotage control variants fired (INTERFACE C.2) | 91/91 | 91/91 |
 | Driver controls fired | 29/29 | 29/29 |
-| Timing samples | 4090 command, 2480 protocol | 4090 command, 2480 protocol |
+| Timing samples | 4066 command, 2399 protocol | 4066 command, 2399 protocol |
 | End to end (`e2e.reacting-audit`) | pass, 874/874 checks | pass, 874/874 checks |
 | Release binary SHA-256 | `259c5d7056348e84e5ea2954de8dfb09b64af69d10a37d00b29d1a064bcd3122` | `b72e8a393536005d3b8c785598de80eb49010034f9f1ff76d1ea14705aa70b93` |
 | Test binary SHA-256 | `7f0427b83c613c710e9fd30c1dd1ab6066dad4ceab6ee5db1e9404ce7eb98aa0` | `aa52fa525ebdd59a47fce937ce5e13fd00c94084752aae530b710a53586198ff` |
-| RESULT.json SHA-256 | `ad690596b08515185449b347d9c413c19e1d8b779d807c4b6bc09ade216ac4e0` | `223a53a1609029411d6e196790b69ee1a644fd6c9862d8553bc12ddf61d3775b` |
+| RESULT.json SHA-256 | `a11ff0b96b0f568021954c863703b18ab577ad729f17a83f34ae5370d15e8d6a` | `54d076e47b348ff9ebe113d16758daa8d0134baeb6812bdf880f90ca55f6e1fe` |
 
 ### split-matrix-runtime-01
 
