@@ -111,6 +111,14 @@ pub enum RuntimeSettings {
 }
 
 impl RuntimeSettings {
+    pub(crate) fn requires_profile(&self) -> bool {
+        match self {
+            Self::Messages(_) => false,
+            #[cfg(feature = "claude-code")]
+            Self::Agent(_) => true,
+        }
+    }
+
     /// The audit's cumulative limits as accounting reads them.
     pub fn limits(&self) -> Limits {
         match self {
@@ -202,6 +210,19 @@ pub struct Question {
     /// Byte offset of the body within the file.
     pub body_offset: usize,
     pub line_ending: &'static str,
+}
+
+impl Question {
+    /// Resolve declared sources and produce family advice against a complete
+    /// literal inventory, whether acquired by prepare or supplied for assessment.
+    pub(crate) fn assess_roles<'a>(
+        &self,
+        names: impl Iterator<Item = &'a str>,
+        errors: Vec<Defect>,
+    ) -> Result<Vec<Defect>, Vec<Defect>> {
+        self.material_roles
+            .assess(crate::forms::family(&self.settings.family), names, errors)
+    }
 }
 
 /// One thing wrong with the question file, naming what to edit.

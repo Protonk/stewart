@@ -1,53 +1,12 @@
 //! Only fields that affect execution are interpreted. Unknown JSON metadata
 //! retains its raw representation, including signed and fractional numbers.
 use crate::json::J;
-use crate::provider::tolerant::{self as scan, Kind, Member, Span};
+use crate::json::tolerant::{self as scan, Kind};
+use crate::rpc::{Value, error, initialize_result, result};
 use std::collections::HashSet;
 
 pub const FRAME_LIMIT: usize = 8 * 1024 * 1024;
-pub const PROTOCOL: &str = "2025-11-25";
-#[derive(Clone, Copy)]
-pub struct Value<'a> {
-    pub raw: &'a [u8],
-    pub span: Span,
-}
 impl<'a> Value<'a> {
-    pub fn parse(raw: &'a [u8]) -> Result<Self, String> {
-        Ok(Self {
-            raw,
-            span: scan::validate(raw)?,
-        })
-    }
-    pub fn bytes(self) -> &'a [u8] {
-        self.span.of(self.raw)
-    }
-    pub fn field(self, key: &str) -> Result<Option<Self>, String> {
-        if scan::kind(self.raw, self.span) != Kind::Object {
-            return Err("expected object".into());
-        }
-        match scan::once(&scan::members(self.raw, self.span)?, key) {
-            Member::Present(span) => Ok(Some(Self {
-                raw: self.raw,
-                span,
-            })),
-            Member::Missing => Ok(None),
-            _ => Err(format!("repeated interpreted member {key}")),
-        }
-    }
-    pub fn req(self, key: &str) -> Result<Self, String> {
-        self.field(key)?.ok_or_else(|| format!("missing {key}"))
-    }
-    pub fn string(self) -> Result<String, String> {
-        if scan::kind(self.raw, self.span) != Kind::String {
-            return Err("expected string".into());
-        }
-        scan::decode_string(self.bytes())
-            .filter(|s| !s.contains('\0'))
-            .ok_or_else(|| "interpreted strings require Unicode without NUL".into())
-    }
-    pub fn text(self, key: &str) -> Result<String, String> {
-        self.req(key)?.string()
-    }
     pub fn number(self) -> Result<u64, String> {
         let s = std::str::from_utf8(self.bytes()).map_err(|e| e.to_string())?;
         let n = s
@@ -89,51 +48,6 @@ impl<'a> Value<'a> {
             _ => Err("expected boolean".into()),
         }
     }
-    pub fn id(self) -> Result<String, String> {
-        if scan::kind(self.raw, self.span) == Kind::String {
-            return Ok(format!("s:{}", self.string()?));
-        }
-        let raw = self.bytes();
-        let digits = raw.strip_prefix(b"-").unwrap_or(raw);
-        if digits.is_empty() || !digits.iter().all(u8::is_ascii_digit) {
-            return Err("request ID must be a string or integer".into());
-        }
-        Ok(format!(
-            "n:{}",
-            if raw == b"-0" {
-                "0"
-            } else {
-                std::str::from_utf8(raw).unwrap()
-            }
-        ))
-    }
-}
-pub fn result(id: &[u8], value: J) -> J {
-    J::obj()
-        .with("jsonrpc", "2.0")
-        .with("id", J::Raw(id.to_vec()))
-        .with("result", value)
-}
-pub fn error(id: &[u8], code: i32, message: &str) -> J {
-    J::obj()
-        .with("jsonrpc", "2.0")
-        .with("id", J::Raw(id.to_vec()))
-        .with(
-            "error",
-            J::obj()
-                .with("code", J::Raw(code.to_string().into_bytes()))
-                .with("message", message),
-        )
-}
-/// What the server presents at initialization. The launch surface pins it.
-pub fn initialize_result() -> J {
-    J::obj()
-        .with("protocolVersion", PROTOCOL)
-        .with("capabilities", J::obj().with("tools", J::obj()))
-        .with(
-            "serverInfo",
-            J::obj().with("name", "stewart").with("version", "1"),
-        )
 }
 pub enum Action {
     Silent,
@@ -204,7 +118,7 @@ impl Mcp {
                     info.text("name")?;
                     info.text("version")?;
                     self.initialized = true;
-                    Action::Reply(result(id.bytes(), initialize_result()))
+                    Action::Reply(result(id.bytes(), initialize_result("stewart")))
                 }
                 "tools/list" | "tools/call" if !self.ready => {
                     return Err("initialize and notify initialized first".into());

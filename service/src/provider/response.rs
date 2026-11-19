@@ -31,10 +31,10 @@
 //! the bound every recorded usage figure has; a sign, fraction, exponent or
 //! larger value makes a usage count another type.
 
+use crate::json::tolerant::{self, Kind, Member, Span};
 use crate::provider::Outcome;
 use crate::provider::StopCause;
 use crate::provider::http::BodyEnd;
-use crate::provider::tolerant::{self, Kind, Member, Span};
 use crate::provider::transport::{Attempt, Failure, Written};
 use crate::runs::{self, ErrorFacts, ReportedUsage};
 

@@ -1,9 +1,14 @@
 # Manager preparation protocol
 
-This is the specified preparation server for the [manager interface](INTERFACE.md#511-manager-preparation-mcp).
-It awaits implementation. Its product is an ordinary submission directory.
-The CLI's `prepare` scans that directory and `commission` accepts an exact
-prepared selection, regardless of how the directory was made.
+Run `stewart manager-mcp` as an MCP stdio server to discover question
+families, explain their roles, and assess a prospective submission. These
+three tools take all their inputs in the call. An assessment can be repeated
+after any edit. CLI `prepare` checks the actual submission directory, and
+`commission` accepts an exact prepared selection.
+
+The fourth tool, `assemble`, and its `--workspace DIR` launcher option are
+specified below for a later implementation. The current server advertises
+`discover`, `explain` and `assess` in that order.
 
 ## Transport
 
@@ -57,7 +62,9 @@ the following required keys:
 in [registry order](QUESTION-FORMS.md#manager-family-registry). Each family ID
 here and in `explain` is versioned. Only the three available families appear.
 
-**Explain** requires `family`. Return `{descriptor,example}`. The descriptor
+**Explain** requires the versioned `family` ID from discovery, for example
+`comparison/1`. In `question.md` write `family: comparison`.
+Return `{descriptor,example}`. The descriptor
 is the registry object. The example is a `material-roles` array using the
 corresponding worked packet. Full detail explains the inadequate-evidence
 variant. An unknown or unavailable ID refuses `family_unknown`, naming the

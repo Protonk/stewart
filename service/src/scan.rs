@@ -112,15 +112,8 @@ pub fn check_root(folder: &Dir, allow_guidance: bool) -> Result<(), Refusal> {
         .map(|n| String::from_utf8_lossy(n).into_owned())
         .collect();
     extra.sort();
-    if let Some(first) = extra.first() {
-        let more_note = if more { " (and possibly more)" } else { "" };
-        return Err(refusal(
-            "unexpected_root_entry",
-            format!(
-                "{first:?} is at the root of the folder{more_note}. The root holds question.md, materials/, and guidance.md only when explicitly selected: move it under materials/ if the auditor should read it as evidence, or out of the folder."
-            ),
-            J::obj().with("entries", crate::json::strs(&extra)),
-        ));
+    if !extra.is_empty() {
+        return Err(crate::intake::unexpected_root(&extra, more));
     }
     for (name, want) in [("question.md", Kind::File), ("materials", Kind::Dir)] {
         let st = folder
@@ -152,14 +145,7 @@ pub fn read_question(folder: &Dir) -> Result<QuestionFile, Refusal> {
     let (f, st) = folder
         .open_regular_bytes(b"question.md", nofollow())
         .map_err(|e| source_error("question.md", e))?;
-    if st.size > QUESTION_BYTES {
-        return Err(bound(
-            "question_bytes",
-            QUESTION_BYTES,
-            "question.md",
-            st.size,
-        ));
-    }
+    crate::intake::check_size("question_bytes", QUESTION_BYTES, "question.md", st.size)?;
     let bytes = fsx::read_bounded(f, &st, QUESTION_BYTES).map_err(|e| match e {
         ReadError::TooLarge { size, .. } => {
             bound("question_bytes", QUESTION_BYTES, "question.md", size)
@@ -172,19 +158,16 @@ pub fn read_question(folder: &Dir) -> Result<QuestionFile, Refusal> {
 
 /// Read the explicitly selected root guidance without transforming its bytes.
 pub fn read_guidance(folder: &Dir) -> Result<QuestionFile, Refusal> {
-    let (f, st) = folder.open_regular_bytes(b"guidance.md", nofollow()).map_err(|e| {
-        if matches!(e, ReadError::Missing) {
-            refusal("folder_incomplete", "guidance.md was selected but is missing; supply it or remove the guidance setting.", J::obj().with("missing", crate::json::strs(&["guidance.md"])))
-        } else { source_error("guidance.md", e) }
-    })?;
-    if st.size > GUIDANCE_BYTES {
-        return Err(bound(
-            "guidance_bytes",
-            GUIDANCE_BYTES,
-            "guidance.md",
-            st.size,
-        ));
-    }
+    let (f, st) = folder
+        .open_regular_bytes(b"guidance.md", nofollow())
+        .map_err(|e| {
+            if matches!(e, ReadError::Missing) {
+                crate::intake::missing_guidance()
+            } else {
+                source_error("guidance.md", e)
+            }
+        })?;
+    crate::intake::check_size("guidance_bytes", GUIDANCE_BYTES, "guidance.md", st.size)?;
     let bytes = fsx::read_bounded(f, &st, GUIDANCE_BYTES).map_err(|e| match e {
         ReadError::TooLarge { size, .. } => {
             bound("guidance_bytes", GUIDANCE_BYTES, "guidance.md", size)

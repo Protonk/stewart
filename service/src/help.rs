@@ -52,13 +52,17 @@ The manager's path:
   5. stewart close REF
        Ends the reference from any state. Before launch it creates no answer.
 
+Optional preparation before commissioning:
+  stewart manager-mcp                stdio tools to discover, explain and assess
+                                     a supplied candidate without reading files
+
 Read-only at any time:
   stewart receipt REF [--verify]     the fixed commission and its readback items
   stewart receipt REF --read ITEM    the exact captured bytes of one item
   stewart status REF                 where the audit stands, with evidence
   stewart status --archive ROOT      every reference in an archive
 
-Commands take --json for one machine-readable reply on stdout, except help and
+Audit commands take --json for one machine-readable reply on stdout, except
 receipt --read, which writes the exact item bytes and accepts no --json option.
 Status, run and close give a brief account by default; --details adds the full
 observations. --details and --json cannot be combined. A completed command does
@@ -126,6 +130,10 @@ The submission folder
   a selection that changed meanwhile. Prepare again after any change.
 
 Commands
+  stewart manager-mcp
+      Serve discover, explain and assess over MCP stdio. Supply the question
+      text and inventory to assess. You can edit and assess again, or prepare
+      ordinary files with the CLI. Only commission accepts a prepared selection.
   stewart new FOLDER [--archive ROOT] [--json]
       Create a reference. ROOT may also come from STEWART_ARCHIVE (for new only).
       An absent ROOT is created with a store marker; an existing empty directory

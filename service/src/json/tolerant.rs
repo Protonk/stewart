@@ -1,4 +1,4 @@
-//! Tolerant JSON scanning for provider bodies (INTERFACE 1.2, 6.2).
+//! Tolerant JSON scanning for provider bodies and protocol envelopes (INTERFACE 1.2, 5.11, 6.2).
 //!
 //! Provider bodies are captured raw and decoded tolerantly: the body must be
 //! one JSON text (RFC 8259: UTF-8, no byte-order mark, one value and only

@@ -22,7 +22,6 @@
 //! - `http`: request head, response framing and the recorded header subset.
 //! - `transport`: connections, the CONNECT tunnel, timeouts and abort.
 //! - `request`: the pinned arrangement and the messages of a placement (4.5, 6.2).
-//! - `tolerant`: the tolerant JSON scanner for provider bodies.
 //! - `response`: message and error body decoding, attempt classification (6.2, 6.6).
 //! - `policy`: charges, retry decisions and the step after a response (6.3–6.6).
 //! - `placement`: the loop of one placement (6.3), driving the above.
@@ -35,11 +34,10 @@ pub mod request;
 pub mod response;
 pub mod stop;
 pub mod tls;
-pub(crate) mod tolerant;
 pub mod transport;
 pub mod url;
 
-pub use tolerant::{Member, Span};
+pub use crate::json::tolerant::{Member, Span};
 
 /// An attempt outcome (INTERFACE 6.6, `provider_attempt.outcome`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

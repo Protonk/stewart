@@ -1,7 +1,7 @@
 //! Evidence about echoed tool replies, separate from usage and lifecycle.
 //! Originals remain in the ordinary captures; this observer never opens a
 //! harness-reported path or treats the auxiliary result copy as conversation.
-use super::wire::Value;
+use crate::rpc::Value;
 use crate::{
     archive::Audit,
     json::{self, J, V},

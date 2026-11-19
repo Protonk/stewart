@@ -4,7 +4,7 @@ use super::{
     accounting::{self, Summary},
     events::{Event, Observed},
     fidelity, process, profile, surface,
-    wire::{self, Action, Value},
+    wire::{self, Action},
 };
 use crate::archive::{Audit, Fail};
 use crate::gate::Gate;
@@ -15,6 +15,7 @@ use crate::provider::{
     transport::AbortHandle,
 };
 use crate::reply::Reply;
+use crate::rpc::Value;
 use crate::usage::Usage;
 use crate::{
     answer, bodies, delivery,
@@ -1254,7 +1255,7 @@ fn place(
                                             cap.send(
                                                 "mcp-out",
                                                 connection.as_mut().unwrap(),
-                                                &wire::line(wire::error(
+                                                &wire::line(crate::rpc::error(
                                                     &id,
                                                     -32000,
                                                     "startup is unvalidated or placement stopped",
@@ -1263,7 +1264,7 @@ fn place(
                                             continue;
                                         }
                                         if pending.is_some() && !waiting.can_admit(raw.len()) {
-                                            cap.send("mcp-out", connection.as_mut().unwrap(), &wire::line(wire::error(&id, -32000, "tool queue limit: at most 32 waiting calls and 16 MiB of request frames; this call was not admitted")))?;
+                                            cap.send("mcp-out", connection.as_mut().unwrap(), &wire::line(crate::rpc::error(&id, -32000, "tool queue limit: at most 32 waiting calls and 16 MiB of request frames; this call was not admitted")))?;
                                             continue;
                                         }
                                         calls += 1;
@@ -1296,7 +1297,7 @@ fn place(
                     Input::Tool(result) => {
                         let p = pending.take().ok_or("tool result without a pending call")?;
                         let (record, result_bytes) = retain_tool(live, &p, &result)?;
-                        let reply_bytes = wire::line(wire::result(
+                        let reply_bytes = wire::line(crate::rpc::result(
                             &p.id,
                             J::obj()
                                 .with("content", J::Raw(record.content.clone()))

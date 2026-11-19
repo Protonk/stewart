@@ -1,6 +1,7 @@
 //! Validate the observed runtime boundary without parsing opaque provider cost
 //! metadata as Stewart control JSON.
-use super::{accounting::Summary, arrangement::Harness, wire::Value};
+use super::{accounting::Summary, arrangement::Harness};
+use crate::rpc::Value;
 use std::collections::BTreeSet;
 
 pub enum Event {

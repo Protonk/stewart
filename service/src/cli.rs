@@ -20,6 +20,7 @@ usage: stewart new FOLDER [--archive ROOT] [--json]
        stewart status --archive ROOT [--details | --json]
        stewart run REF [--key-fd FD] [--details | --json]
        stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--details | --json]
+       stewart manager-mcp
        stewart help [commands | forms | limits | reader | close]";
 
 struct Usage(String);
@@ -111,6 +112,7 @@ fn absolute(what: &str, p: &str) -> Result<(), Usage> {
 }
 
 enum Plan {
+    ManagerMcp,
     Reply {
         reply: Reply,
         json: bool,
@@ -132,6 +134,11 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
     };
     let rest = &argv[1..];
     match cmd.as_str() {
+        "manager-mcp" => {
+            let a = parse(rest, &[], &[], &[])?;
+            a.exactly(0, "no arguments for the read-only manager MCP server")?;
+            Ok(Plan::ManagerMcp)
+        }
         "help" => {
             let a = parse(rest, &[], &[], &[])?;
             match a.positionals.as_slice() {
@@ -332,6 +339,18 @@ pub fn main() -> i32 {
                 "stewart: {msg}\n{USAGE}\nRun `stewart help` for the manager's path and topics."
             );
             2
+        }
+        Ok(Plan::ManagerMcp) => {
+            match crate::manager_mcp::serve(std::io::stdin().lock(), std::io::stdout().lock()) {
+                Ok(()) => 0,
+                Err(e) => {
+                    eprintln!(
+                        "stewart manager-mcp: stdio failed ({})",
+                        crate::util::errno_name(&e)
+                    );
+                    4
+                }
+            }
         }
         Ok(Plan::Text(t)) => {
             let mut out = std::io::stdout().lock();

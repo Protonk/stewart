@@ -1828,10 +1828,10 @@ presentation can share a variant. No example needs a real credential value.
 
 ### 5.11 Manager preparation MCP
 
-Specified for the manager interface, pending implementation. The entry point
-is `stewart manager-mcp [--workspace DIR]`. Its four MCP tool names, in
-listing order, are `discover`, `explain`, `assess`, `assemble`. They apply
-before the CLI acceptance boundary. The [manager preparation protocol](MANAGER-PREPARATION.md)
+The read-only entry point is `stewart manager-mcp`. In listing order its
+tools are `discover`, `explain` and `assess`. The specified extension adds
+`assemble` and the launcher option `--workspace DIR` for candidate files.
+All tools apply before CLI acceptance. The [manager preparation protocol](MANAGER-PREPARATION.md)
 defines transport, inputs, results, bounds, refusals and filesystem effects.
 
 ## 6. The run adapter

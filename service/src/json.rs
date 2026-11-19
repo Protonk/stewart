@@ -19,6 +19,8 @@
 //! including U+007F and non-ASCII, is written as raw UTF-8. This is the
 //! escaping that QUESTION-FORMS pins for the structured answer.
 
+pub(crate) mod tolerant;
+
 use std::fmt;
 
 /// Maximum nesting depth of arrays and objects.

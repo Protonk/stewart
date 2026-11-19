@@ -711,7 +711,7 @@ pub(crate) mod tests {
         );
         assert_eq!(String::from_utf8(got.clone()).unwrap(), want);
         // The assembled body is one JSON text.
-        crate::provider::tolerant::validate(&got).unwrap();
+        crate::json::tolerant::validate(&got).unwrap();
         // A capture of it rebuilds to exactly the body sent.
         let c1 = runs::request_capture(
             1,

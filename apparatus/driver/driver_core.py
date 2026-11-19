@@ -381,6 +381,12 @@ def check_commissioning(t, name, arrangement, family, declarations):
         t.eq(name + ".mapping-%d-keys" % i, list(row) if isinstance(row, dict) else None, keys)
 
     descriptor = captured.get("descriptor")
+    check_family_descriptor(t, name, descriptor, family)
+    return descriptor
+
+
+def check_family_descriptor(t, name, descriptor, family):
+    """QUESTION-FORMS gives the same descriptor in explain and the pinned arrangement."""
     t.require(name + ".descriptor-object", isinstance(descriptor, dict), descriptor)
     t.eq(name + ".descriptor-keys", list(descriptor), ["family", "available", "purpose", "roles"])
     t.eq(name + ".family-id", descriptor.get("family"), family + "/1")
@@ -403,7 +409,6 @@ def check_commissioning(t, name, arrangement, family, declarations):
             t.check(prefix + ".remedy", isinstance(item.get("remedy"), str) and item["remedy"].strip(), item)
         else:
             t.eq(prefix + ".remedy", item.get("remedy"), None)
-    return descriptor
 
 
 def check_defects(t, name, data, expected):

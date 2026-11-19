@@ -31,6 +31,9 @@ each tool call, then `delivery/` and `ops/close.rs`.
 
 - `main.rs`: the binary's entry point; it calls `cli::main`.
 - `cli.rs`: exact argument parsing and presentation (5.1).
+- `manager_mcp/`: the read-only preparation server on stdio (5.11). It
+  applies commissioning rules to caller-supplied question text and inventory.
+  `rpc.rs` decodes the protocol envelope and leaves metadata opaque.
 - `help.rs`: `stewart help` and its topics, printed exactly (5.9). The
   development build adds one topic, `runtime`, whose text is in
   `claude_code.rs`.
@@ -77,7 +80,7 @@ each tool call, then `delivery/` and `ops/close.rs`.
 - `provider/request.rs`: the pinned arrangement, decoded once with its exact
   bytes kept, and the active messages each request appends or replaces after
   successful compaction (4.5, 6.2).
-- `provider/response.rs`, `provider/tolerant.rs`: tolerant decoding and
+- `provider/response.rs`, `json/tolerant.rs`: tolerant decoding and
   classification of responses, signed summaries and iteration usage (6.2, 6.6).
 - `provider/policy.rs`: pure retry and next-step decisions.
 - `provider/transport.rs`, `provider/http.rs`, `provider/tls.rs`,

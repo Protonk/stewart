@@ -7,7 +7,7 @@ use crate::json::{self, J, Json, JsonError, Obj};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write;
 
-const REGISTRY: &str = "stewart.family-registry/1";
+pub(crate) const REGISTRY: &str = "stewart.family-registry/1";
 const FIELD: &str = "material-roles";
 const MAX_DECLARATIONS: usize = 512;
 

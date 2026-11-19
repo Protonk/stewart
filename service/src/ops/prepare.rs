@@ -42,26 +42,7 @@ pub fn run(reference: &str) -> Reply {
 }
 
 fn scan_fail(mut f: intake::Refusal) -> Fail {
-    let remedy = match f.reason {
-        "bound_exceeded" => Some("Reduce the named entry or selection to the reported bound."),
-        "material_not_text" => Some("Supply UTF-8 text without NUL."),
-        "guidance_empty" => {
-            Some("Supply nonblank guidance text or remove the guidance selection and file.")
-        }
-        "name_invalid" => Some("Rename the entry to a permitted literal UTF-8 name."),
-        "folder_incomplete" => Some("Supply the required entry in the submission folder."),
-        "unexpected_root_entry" => {
-            Some("Move the entry under materials/ to include it, or outside the submission.")
-        }
-        "unsupported_entry" => Some("Supply regular files and directories in the submission."),
-        _ => None,
-    };
-    if let Some(remedy) = remedy {
-        let mut d = frontmatter::Defect::new(f.reason, None, None, f.message.clone());
-        if let Some(J::Str(name)) = f.data.get("entry") {
-            d.source = Some(name.clone());
-        }
-        d.remedy = remedy.into();
+    if let Some(d) = f.defect() {
         f.data.push("defects", J::Arr(vec![d.to_j()]));
     }
     Fail::refused(f.reason, f.message).data(f.data)
@@ -231,12 +212,7 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
         )));
     }
     let advice = q
-        .material_roles
-        .assess(
-            forms::family(&settings.family),
-            s.files.iter().map(|file| file.name.as_str()),
-            errors,
-        )
+        .assess_roles(s.files.iter().map(|file| file.name.as_str()), errors)
         .map_err(rule_failure)?;
     #[cfg(feature = "claude-code")]
     crate::claude_code::profile::prepare(&mut settings)?;

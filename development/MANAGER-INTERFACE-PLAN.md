@@ -3,8 +3,9 @@
 **Current status:** The file-only commissioning and custody path exists. The
 manager contracts are specified. Both runtimes bind the manager's `question/2` role declarations
 and family descriptor in the arrangement. CLI preparation reports reference
-errors and family-specific advice. The preparation MCP, command descriptions
-and returned-question member remain open.
+errors and family-specific advice. The read-only preparation MCP supports
+discovery, explanation and prospective assessment. CLI command descriptions,
+the returned-question member and MCP candidate assembly remain open.
 Live trials require a separate bounded commission.
 
 This plan owns the manager CLI, optional preparation MCP server, question-type
@@ -23,8 +24,8 @@ This inventory distinguishes existing behavior from work still owed.
 | Area | Existing commitment or evidence | Selected work |
 | --- | --- | --- |
 | Commission and authority | Ordinary submission files; CLI `prepare` binds a proposal, `commission` explicitly accepts it, and `run` launches only an accepted commission. | Keep these distinct operations. MCP supplies no required token, manifest, registration, certification or privileged handoff. |
-| MCP boundary | No manager preparation server is implemented. | Add pure prospective assessment and optional explicit candidate creation to discovery and explanation. |
-| Shared rules | CLI intake and three implemented question families already have specified rules. | Extract one production commissioning rule implementation for CLI and MCP; keep the acceptance oracle independently authored from specifications. |
+| MCP boundary | The stdio server discovers families, explains them and assesses a supplied question and inventory. | Add dry-run and explicit creation of candidate files. |
+| Shared rules | The CLI and MCP use the same parser, material bounds, role assessment and family descriptors. | Use these rules for candidate assembly and retain independent acceptance checks. |
 | Material roles | Families have different purposes, instructions and recording tools. Empty materials and intellectual insufficiency remain admissible. | Validate declared role structure and references; give type-specific warnings for missing evidence roles and suggestions for improvements. Do not introduce an evidence-completeness gate. |
 | Documentary output | CLI has structured replies, observed effects and specified help. | Add versioned MCP schemas, per-call detail, and prospective CLI effect descriptions available without executing or inspecting an audit. |
 | Return context | Returning the exact accepted question body with the answer is decided but unimplemented. | Implement the [returned-question contract](../CONTRACTS.md#returned-question-and-answer), with separate manager/auditor attribution and independent package checks. |
@@ -96,17 +97,11 @@ digests for all three families and supplied open-inquiry guidance. The worked
 packets exercise complete and limited evidence. Captured runtime originals keep
 their historical bytes.
 
-- [ ] Make MCP assessment call the same question parser, material checks and
-  role assessment as CLI preparation. Supply a complete prospective inventory.
-  Keep candidate filesystem access and durable lifecycle operations outside
-  those rules. Commissioning continues to verify its own source selection.
-- [ ] Project the family descriptors and shared diagnostics into MCP discovery
-  and explanations. Test the same candidate through both callers. Terse and
-  detailed responses must agree on facts and effects.
-
-**Complete when:** equivalent candidate snapshots get the same mechanical result
-from both production callers, and specification-derived controls detect rule or
-documentary drift without importing that validator as the acceptance oracle.
+The MCP uses the same parser, material checks and role assessment as CLI
+preparation. It takes a prospective inventory directly. Discovery and
+explanation expose the family descriptors. The independent driver compares
+the two callers on a one-sided comparison, a misspelled source and its
+correction, including the facts and effects at both detail levels.
 
 ### 3. Complete the independent CLI path
 
@@ -159,9 +154,8 @@ approval choreography or prediction is part of the interface or test claim.
 | Assess | Apply the shared rules to an explicitly supplied prospective question and material inventory. | Bounded reads within the declared candidate workspace; report errors/warnings/suggestions and unestablished CLI conditions. |
 | Assemble | Propose a candidate layout and question, or explicitly create them. | Ordinary files only; explicit destination, default dry-run and no overwrite. No acceptance or privileged CLI handoff. |
 
-- [ ] Implement the separate dispatcher using shared pure rules and build-owned
-  text, without lifecycle or provider dependencies. Calls have no implicit
-  conversation memory; `detail` is not a session or launch setting.
+- [ ] Extend the read-only dispatcher with assembly using the same prospective
+  rules. Keep each call independent of earlier proposals.
 - [ ] Define and enforce candidate access before opening content. Reject audit
   references, archive/delivery paths and path escapes; cover symlinks, hard-link
   aliases and case aliases as applicable to the declared workspace policy. Do not

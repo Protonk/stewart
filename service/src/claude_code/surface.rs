@@ -250,7 +250,7 @@ pub fn document() -> J {
             system_prompt(ORIENTATION_SLOT, GUIDANCE_SLOT),
         )
         .with("input", wire::user_message(TEXT_SLOT))
-        .with("mcp_initialize", wire::initialize_result())
+        .with("mcp_initialize", crate::rpc::initialize_result("stewart"))
         .with(
             "hook_replies",
             J::obj()

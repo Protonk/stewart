@@ -36,6 +36,31 @@ pub struct Refusal {
     pub data: J,
 }
 
+impl Refusal {
+    pub(crate) fn defect(&self) -> Option<crate::frontmatter::Defect> {
+        let remedy = match self.reason {
+            "bound_exceeded" => "Reduce the named entry or selection to the reported bound.",
+            "material_not_text" => "Supply UTF-8 text without NUL.",
+            "guidance_empty" => {
+                "Supply nonblank guidance text or remove the guidance selection and file."
+            }
+            "name_invalid" => "Rename the entry to a permitted literal UTF-8 name.",
+            "folder_incomplete" => "Supply the required entry in the submission folder.",
+            "unexpected_root_entry" => {
+                "Move the entry under materials/ to include it, or outside the submission."
+            }
+            "unsupported_entry" => "Supply regular files and directories in the submission.",
+            _ => return None,
+        };
+        let mut d = crate::frontmatter::Defect::new(self.reason, None, None, self.message.clone());
+        if let Some(J::Str(name)) = self.data.get("entry") {
+            d.source = Some(name.clone());
+        }
+        d.remedy = remedy.into();
+        Some(d)
+    }
+}
+
 pub(crate) fn refusal(reason: &'static str, message: impl Into<String>, data: J) -> Refusal {
     Refusal {
         reason,
@@ -55,6 +80,38 @@ pub(crate) fn bound(name: &'static str, limit: u64, entry: &str, observed: u64) 
             .with("limit", limit)
             .with("entry", entry)
             .with("observed", observed),
+    )
+}
+
+pub(crate) fn check_size(
+    name: &'static str,
+    limit: u64,
+    entry: &str,
+    size: u64,
+) -> Result<(), Refusal> {
+    if size > limit {
+        return Err(bound(name, limit, entry, size));
+    }
+    Ok(())
+}
+
+pub(crate) fn missing_guidance() -> Refusal {
+    refusal(
+        "folder_incomplete",
+        "guidance.md was selected but is missing; supply it or remove the guidance setting.",
+        J::obj().with("missing", crate::json::strs(&["guidance.md"])),
+    )
+}
+
+pub(crate) fn unexpected_root(extra: &[String], more: bool) -> Refusal {
+    let first = &extra[0];
+    let more_note = if more { " (and possibly more)" } else { "" };
+    refusal(
+        "unexpected_root_entry",
+        format!(
+            "{first:?} is at the root of the folder{more_note}. The root holds question.md, materials/, and guidance.md only when explicitly selected: move it under materials/ if the auditor should read it as evidence, or out of the folder."
+        ),
+        J::obj().with("entries", crate::json::strs(extra)),
     )
 }
 

@@ -62,6 +62,12 @@ cumulative limits intact. `stewart receipt REF` recovers the accepted commission
 `stewart help` explains the commands. The [CLI interface](docs/INTERFACE.md)
 also defines structured JSON replies for scripts and agent managers.
 
+Before preparing files, a manager can use the optional `stewart manager-mcp`
+stdio server to discover question families, explain their material roles, or
+assess a proposed question and file inventory. An assessment reports errors
+and advice. You may edit and assess again, or use the CLI to prepare the
+actual files. See the [preparation protocol](docs/MANAGER-PREPARATION.md).
+
 ## Before running
 
 - **Platform:** Linux x86_64 or aarch64, including WSL2. The archive must be on

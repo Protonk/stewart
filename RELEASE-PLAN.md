@@ -2,9 +2,11 @@
 
 The file-only commissioning path uses the shared `question/2` rules. Linux
 acceptance passed on native aarch64 and emulated x86_64 at `6edd911`, and the
-offline C10 and sanity rehearsals passed with that aarch64 writer. The next
-manager task is to use the same rules for prospective assessment through the
-preparation MCP. Endpoint alignment and release qualification remain open.
+offline C10 and sanity rehearsals passed with that aarch64 writer. The
+read-only preparation MCP now uses those rules for prospective assessment.
+The next manager task is the independent CLI path, including command-effect
+inspection and returning the accepted question. Endpoint alignment and
+release qualification remain open.
 No live packet is active.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
@@ -17,7 +19,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Use the shared commissioning rules in the optional preparation MCP, complete the independent CLI additions, and demonstrate their integration with the fake provider. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
+| Current | Complete the independent CLI additions, implement candidate assembly in the preparation MCP, and demonstrate integration with the fake provider. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separate release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |
