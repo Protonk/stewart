@@ -117,7 +117,7 @@ def emulator_artifact(rel):
         if rel == a or a.startswith(rel + "/") or rel.startswith(a + "/"):
             return True
     return False
-REPLY_SCHEMA = "stewart.reply/2"
+REPLY_SCHEMA = "stewart.reply/3"
 RECORD_SCHEMA = "stewart.record/1"
 
 # ---------------------------------------------------------------------------
@@ -265,7 +265,7 @@ HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
 MP_RE = re.compile(r"^mp([1-9][0-9]*)\.([a-z2-7]{6})$")
 REASON_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 
-SCAFFOLD_FIELDS = [b"stewart: question/1", b"family: open-inquiry",
+SCAFFOLD_FIELDS = [b"stewart: question/2", b"family: open-inquiry",
                    b"model: REPLACE-WITH-MODEL",
                    b"destination: REPLACE-WITH-ABSOLUTE-DIRECTORY",
                    b"limit-turns: 200", b"limit-input-tokens: 20000000",
@@ -355,7 +355,79 @@ ANTHROPIC_BETA = "compact-2026-09-04"
 COMPACTION = {"trigger_tokens": 150000, "request": {"type": "summarize"}}
 ARRANGEMENT_MEMBERS = ("model", "anthropic_version", "anthropic_beta", "compaction", "max_tokens_per_request", "system", "tools",
                        "request_extra", "texts", "limits", "near_limit_percent", "retry",
-                       "request_timeout_seconds", "reader", "renderer", "family", "guidance", "bindings")
+                       "request_timeout_seconds", "reader", "renderer", "family", "guidance", "bindings", "commissioning")
+
+
+# QUESTION-FORMS, Manager family registry; INTERFACE 3.2 and 5.3.
+FAMILY_ROLES = {
+    "open-inquiry": (("subject", 1), ("context", 0), ("report", 0)),
+    "inquiry-framing": (("context", 1), ("subject", 0), ("report", 0)),
+    "comparison": (("alternative", 2), ("criterion", 1), ("context", 0), ("report", 0)),
+}
+
+DEFECT_KEYS = ["reason", "line", "key", "message", "severity", "pointer", "source", "role", "remedy"]
+
+
+def check_commissioning(t, name, arrangement, family, declarations):
+    """The selected descriptor and ordered input declarations, independent of service text."""
+    t.eq(name + ".last-member", list(arrangement)[-1:], ["commissioning"])
+    captured = arrangement.get("commissioning")
+    t.require(name + ".commissioning-object", isinstance(captured, dict), captured)
+    t.eq(name + ".commissioning-keys", list(captured), ["registry", "descriptor", "material_roles"])
+    t.eq(name + ".registry", captured.get("registry"), "stewart.family-registry/1")
+    t.eq(name + ".material-roles", captured.get("material_roles"), declarations)
+    for i, row in enumerate(captured.get("material_roles") or []):
+        keys = ["role", "source", "label"] if isinstance(row, dict) and row.get("role") == "alternative" else ["role", "source"]
+        t.eq(name + ".mapping-%d-keys" % i, list(row) if isinstance(row, dict) else None, keys)
+
+    descriptor = captured.get("descriptor")
+    t.require(name + ".descriptor-object", isinstance(descriptor, dict), descriptor)
+    t.eq(name + ".descriptor-keys", list(descriptor), ["family", "available", "purpose", "roles"])
+    t.eq(name + ".family-id", descriptor.get("family"), family + "/1")
+    t.check(name + ".available", descriptor.get("available") is True, descriptor)
+    t.check(name + ".purpose", isinstance(descriptor.get("purpose"), str) and descriptor["purpose"].strip(), descriptor)
+    roles = descriptor.get("roles")
+    expected = FAMILY_ROLES[family]
+    t.require(name + ".roles-array", isinstance(roles, list) and all(isinstance(r, dict) for r in roles), roles)
+    t.eq(name + ".role-order", [r.get("id") for r in roles], [role for role, _ in expected])
+    for item, (role, minimum) in zip(roles, expected):
+        prefix = name + "." + role
+        t.eq(prefix + ".keys", list(item), ["id", "meaning", "label", "minimum_recommended", "severity", "remedy"])
+        t.check(prefix + ".meaning", isinstance(item.get("meaning"), str) and item["meaning"].strip(), item)
+        t.eq(prefix + ".label", item.get("label"), "required" if role == "alternative" else "absent")
+        t.check(prefix + ".minimum", type(item.get("minimum_recommended")) is int
+                and item["minimum_recommended"] == minimum, item)
+        severity = ("warning" if role == "alternative" else "suggestion") if minimum else None
+        t.eq(prefix + ".severity", item.get("severity"), severity)
+        if minimum:
+            t.check(prefix + ".remedy", isinstance(item.get("remedy"), str) and item["remedy"].strip(), item)
+        else:
+            t.eq(prefix + ".remedy", item.get("remedy"), None)
+    return descriptor
+
+
+def check_defects(t, name, data, expected):
+    """Each expected row supplies the observations relevant to its rule."""
+    actual = data.get("defects")
+    t.require(name + ".defects-array", isinstance(actual, list) and all(isinstance(row, dict) for row in actual), actual)
+    t.eq(name + ".defect-count", len(actual), len(expected))
+    for i, (row, want) in enumerate(zip(actual, expected)):
+        prefix = name + ".defect-%d" % i
+        t.eq(prefix + ".keys", list(row), DEFECT_KEYS)
+        for key, value in want.items():
+            t.eq(prefix + "." + key, row.get(key), value)
+        for key in ("message", "remedy"):
+            t.check(prefix + "." + key + "-text", isinstance(row.get(key), str) and row[key].strip(), row)
+
+
+def check_advice(t, name, data, descriptor, expected):
+    by_role = {row["id"]: row for row in descriptor["roles"]}
+    check_defects(t, name, data, [
+        {"reason": "role_unmapped", "severity": severity, "key": "material-roles",
+         "line": None, "pointer": None, "role": role, "source": None, "remedy": by_role[role]["remedy"]}
+        for role, severity in expected
+    ])
+
 
 
 def expected_tools(family):
@@ -1108,7 +1180,7 @@ def question_md(body=b"Audit our app to make sure there are no bugs.\n", *, fami
     def enc(v):
         return v if isinstance(v, bytes) else str(v).encode("utf-8")
 
-    fields = [("stewart", b"question/1"), ("family", enc(family))]
+    fields = [("stewart", b"question/2"), ("family", enc(family))]
     if guidance is not None:
         fields.append(("guidance", enc(guidance)))
     fields.append(("model", enc(model)))
@@ -1137,7 +1209,7 @@ def question_md(body=b"Audit our app to make sure there are no bugs.\n", *, fami
 
 
 def split_question(data):
-    """The body per question/1 (3.2) for a well-formed file; None otherwise."""
+    """The body per question/2 (3.2) for a well-formed file; None otherwise."""
     rest = data[3:] if data.startswith(b"\xef\xbb\xbf") else data
     if rest.startswith(b"---\r\n"):
         nl = b"\r\n"
@@ -3096,7 +3168,7 @@ def _interface_copies(text):
     out.append(("docs.interface.sabotage-names", tuple(names) == SABOTAGES,
                 {"missing_here": [n for n in names if n not in SABOTAGES],
                  "not_in_docs": [n for n in SABOTAGES if n not in names]}))
-    s32 = _section(text, "### 3.2 Front matter (`question/1`)")
+    s32 = _section(text, "### 3.2 Front matter (`question/2`)")
     row = next((l for l in s32 if l.startswith("| `effort` |")), "")
     levels = re.findall(r"`([a-z]+)`", row.split("|")[3]) if row.count("|") >= 4 else []
     out.append(("docs.interface.effort-levels", tuple(levels) == EFFORT_LEVELS, levels))

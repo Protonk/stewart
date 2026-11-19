@@ -101,7 +101,7 @@ The submission folder
   unread; nothing is silently skipped or renamed.
 
   question.md begins with front matter between --- lines:
-    stewart: question/1
+    stewart: question/2
     family: open-inquiry | inquiry-framing | comparison
     guidance: optional guidance.md, only with open-inquiry; replaces its whole
       family-guidance block with this root file (at most 256 KiB of nonblank
@@ -198,6 +198,12 @@ premise is wrong or that nothing supported was found; none requires a defect, a
 winner or a repair. Missing sections and an empty answer can be submitted.
 The material suggestions below are optional. A folder with no material files
 can still be commissioned.
+
+The optional material-roles field maps roles to exact names under materials/.
+For open-inquiry, a single-line field can read
+material-roles: [{\"role\":\"subject\",\"source\":\"materials/app.py\"}]
+Give each comparison alternative a label. Missing recommended mappings yield
+advice. An invalid declaration refuses preparation.
 
 Orientation (stewart.orientation/1), given in every family:
 
@@ -420,10 +426,10 @@ mod tests {
     #[test]
     fn help_forms_has_its_published_text() {
         let text = super::topic("forms").unwrap();
-        assert_eq!(text.len(), 8451);
+        assert_eq!(text.len(), 8771);
         assert_eq!(
             crate::util::sha256_hex(text.as_bytes()),
-            "1cb2e7c33b26baeae27280a9be8965c4473e9b6992bbd33c8afabb596a98e26e"
+            "1d7f0b94ec5918a8f37f0e260f324613d88c2b606b4e7a623d394014eeed2f58"
         );
     }
 
@@ -467,7 +473,7 @@ mod tests {
         assert_eq!(super::TOPICS.last(), Some(&"runtime"));
         let topic = super::topic("runtime").expect("runtime topic");
         for fact in [
-            "stewart: question/1",
+            "stewart: question/2",
             "limit-turns",
             "limit-input-tokens",
             "limit-output-tokens",

@@ -1375,7 +1375,7 @@ mod tests {
         // The second (failed) publication's stage file is an interrupted publication.
         assert_eq!(unlinked_stage(&dir).len(), 1);
 
-        let content = br#"[{"type":"text","text":"{\"schema\":\"stewart.reply/2\"}"}]"#.to_vec();
+        let content = br#"[{"type":"text","text":"{\"schema\":\"stewart.reply/3\"}"}]"#.to_vec();
         let t = ToolResult {
             call: 1,
             request: 1,

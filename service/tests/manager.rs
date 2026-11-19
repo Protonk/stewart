@@ -38,12 +38,28 @@ fn worked_question_packets_prepare_with_full_or_limited_evidence() {
             for name in omitted {
                 std::fs::remove_file(folder.join("materials").join(name)).unwrap();
             }
-            // Only the example's host-specific return destination is replaced.
+            // The variant keeps the original body and only maps supplied files.
             let original_question = std::fs::read_to_string(original.join("question.md")).unwrap();
             let setting = "\ndestination: /var/tmp\n";
             assert!(original_question.contains(setting), "{packet}");
-            let question =
+            let mut question =
                 original_question.replacen(setting, &format!("\ndestination: {}\n", e.dest), 1);
+            let roles_line = original_question
+                .lines()
+                .find_map(|l| l.strip_prefix("material-roles: "))
+                .unwrap();
+            let mappings = stewart::json::parse(roles_line.as_bytes()).unwrap();
+            let kept = mappings
+                .as_arr()
+                .unwrap()
+                .iter()
+                .filter(|m| {
+                    let source = s(m, &["source"]).strip_prefix("materials/").unwrap();
+                    !omitted.contains(&source)
+                })
+                .map(|m| m.to_j())
+                .collect();
+            question = question.replacen(roles_line, &stewart::json::J::Arr(kept).string(), 1);
             std::fs::write(folder.join("question.md"), &question).unwrap();
             let reference = e.new_ref();
             let result = e.run(&["prepare", &reference, "--json"]);
@@ -55,6 +71,19 @@ fn worked_question_packets_prepare_with_full_or_limited_evidence() {
             );
             let reply = result.json();
             assert_eq!(s(&reply, &["data", "settings", "family"]), family);
+            let defects = at(&reply, &["data", "defects"]).as_arr().unwrap();
+            let expected_advice = match (packet, omitted.is_empty()) {
+                ("open", false) => Some(("suggestion", "subject")),
+                ("comparison", false) => Some(("warning", "alternative")),
+                _ => None,
+            };
+            assert_eq!(
+                defects
+                    .iter()
+                    .map(|d| (s(d, &["severity"]), s(d, &["role"])))
+                    .collect::<Vec<_>>(),
+                expected_advice.into_iter().collect::<Vec<_>>()
+            );
             let files = at(&reply, &["data", "materials", "files"])
                 .as_arr()
                 .unwrap();
@@ -998,4 +1027,26 @@ fn a_placements_world_is_the_verified_captures_and_pinned_arrangement() {
         problems.iter().map(|p| p.item.as_str()).collect::<Vec<_>>(),
         ["materials/a.py"]
     );
+}
+
+#[test]
+fn preparation_reports_a_missing_role_source_alongside_a_bad_destination_setting() {
+    let e = Env::new();
+    let reference = e.new_ref();
+    let question = e.question("open-inquiry", "What does the report show?").replace(
+        &format!("destination: {}", e.dest),
+        "material-roles: [{\"role\":\"report\",\"source\":\"materials/missing\"}]\ndestination: relative",
+    );
+    std::fs::write(format!("{}/question.md", e.folder), question).unwrap();
+    let reply = e.run(&["prepare", &reference, "--json"]).json();
+    let defects = at(&reply, &["data", "defects"]).as_arr().unwrap();
+    assert_eq!(
+        defects
+            .iter()
+            .map(|d| s(d, &["reason"]))
+            .collect::<Vec<_>>(),
+        ["role_source_unknown", "setting_invalid"]
+    );
+    assert_eq!(s(&reply, &["reason"]), "role_source_unknown");
+    assert_eq!(s(&reply, &["effects", "preparation"]), "none");
 }

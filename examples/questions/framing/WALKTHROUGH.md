@@ -31,7 +31,7 @@ in QUESTION-FORMS, and the question body as its first user message. It never
 sees the front matter. Re-entry and prepare replies identify the captured family.
 
 Each call is shown as the tool name and its `input`. A line starting `=>` shows
-the `data` of the completed `stewart.reply/2` envelope, whose `next` is empty
+the `data` of the completed `stewart.reply/3` envelope, whose `next` is empty
 unless stated. `[…]` stands for the citations as sent, each with Stewart's
 additions under `stewart`; elsewhere `…` marks something left out: further
 citations, a digest or a time. Handles carry a check bound to their audit, so
@@ -183,8 +183,10 @@ Citations: materials/requirements.txt lines 1–10 [0, 662).
 Give a fresh auditor only requirements.txt, with the original concern unchanged.
 No implementation or observed delivery behavior is supplied.
 
-This is a separate audit whose folder has the same question.md and only that
+This is a separate audit whose folder has the same question body and only that
 file under materials/. Its one source is `materials/requirements.txt`.
+
+Keep only the context declaration for the supplied requirements.
 
 One admissible sequence of entries is:
 

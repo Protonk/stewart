@@ -29,7 +29,7 @@ how a run is bounded.
 
 Turning the scaffold into a runtime question
   stewart new writes the ordinary scaffold. In question.md keep
-    stewart: question/1
+    stewart: question/2
   and replace the three limit lines (limit-turns, limit-input-tokens and
   limit-output-tokens) with these three:
     runtime-profile: the absolute path of the profile described below

@@ -1,4 +1,4 @@
-//! The `question/1` front matter grammar of `question.md` (INTERFACE 3.2).
+//! The `question/2` front matter grammar of `question.md` (INTERFACE 3.2).
 
 use crate::ids;
 use crate::json::{J, JsonError, Obj};
@@ -12,10 +12,11 @@ pub fn family_ids() -> Vec<&'static str> {
     crate::forms::FAMILIES.iter().map(|f| f.id).collect()
 }
 
-pub const KEYS: [&str; 11] = [
+pub const KEYS: [&str; 12] = [
     "stewart",
     "family",
     "guidance",
+    "material-roles",
     "model",
     "effort",
     "destination",
@@ -48,7 +49,7 @@ pub const MAX_OUTPUT_TOKENS: u64 = 200_000_000;
 pub fn scaffold() -> String {
     [
         "---",
-        "stewart: question/1",
+        "stewart: question/2",
         "# Question family: open-inquiry, inquiry-framing or comparison.",
         "# Run `stewart help forms` to read each family's instructions.",
         "family: open-inquiry",
@@ -197,6 +198,7 @@ impl Settings {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Question {
     pub settings: Settings,
+    pub material_roles: crate::roles::Declarations,
     /// Byte offset of the body within the file.
     pub body_offset: usize,
     pub line_ending: &'static str,
@@ -209,6 +211,11 @@ pub struct Defect {
     pub line: Option<usize>,
     pub key: Option<String>,
     pub message: String,
+    pub severity: &'static str,
+    pub pointer: Option<String>,
+    pub source: Option<String>,
+    pub role: Option<String>,
+    pub remedy: String,
 }
 
 impl Defect {
@@ -218,7 +225,22 @@ impl Defect {
         key: Option<&str>,
         message: impl Into<String>,
     ) -> Defect {
+        let remedy = match reason {
+            "question_empty" => "Write your question below the closing --- line.".to_owned(),
+            "setting_missing" => format!("Add the required {} field.", key.unwrap_or("setting")),
+            "setting_invalid" => format!(
+                "Correct the {} value as described.",
+                key.unwrap_or("setting")
+            ),
+            "material_not_text" => "Supply UTF-8 text without NUL.".to_owned(),
+            _ => "Correct the indicated front matter in question.md and prepare again.".to_owned(),
+        };
         Defect {
+            severity: "error",
+            pointer: None,
+            source: None,
+            role: None,
+            remedy,
             reason,
             line,
             key: key.map(|k| k.to_string()),
@@ -231,6 +253,11 @@ impl Defect {
             .with("line", self.line.map(|l| l as u64))
             .with("key", self.key.clone())
             .with("message", self.message.as_str())
+            .with("severity", self.severity)
+            .with("pointer", self.pointer.as_deref())
+            .with("source", self.source.as_deref())
+            .with("role", self.role.as_deref())
+            .with("remedy", self.remedy.as_str())
     }
 }
 
@@ -260,6 +287,17 @@ fn is_control(c: char) -> bool {
 /// Grammar defects stop parsing; setting defects and an empty body are all
 /// collected, so one refusal can name every edit the scaffold needs.
 pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
+    let (question, defects) = candidate(bytes)?;
+    if defects.is_empty() {
+        Ok(question)
+    } else {
+        Err(defects)
+    }
+}
+
+/// A decodable question and independent field errors. A caller with a complete
+/// inventory can also diagnose references in well-formed declarations.
+pub(crate) fn candidate(bytes: &[u8]) -> Result<(Question, Vec<Defect>), Vec<Defect>> {
     let text = std::str::from_utf8(bytes).map_err(|_| {
         vec![Defect::new(
             "material_not_text",
@@ -429,11 +467,11 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
     let mut inquiry = None;
     let mut varies = None;
     if let Some((v, l)) = get("stewart") {
-        if v != "question/1" {
+        if v != "question/2" {
             invalid(
                 "stewart",
                 l,
-                format!("line {l}: stewart must be exactly question/1, not {v:?}."),
+                format!("line {l}: stewart must be exactly question/2, not {v:?}."),
             );
         }
     }
@@ -615,8 +653,15 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
             "the question body (after the closing --- line) has no non-whitespace character. Write your question there; the provider cannot carry an empty or blank text block, so this refusal is mechanical.",
         ));
     }
-    if defects.is_empty() {
-        Ok(Question {
+    let material_roles = crate::roles::Declarations::parse(
+        get("material-roles"),
+        crate::forms::family(&family),
+        &mut defects,
+    );
+    sort_defects(&mut defects);
+    Ok((
+        Question {
+            material_roles,
             settings: Settings {
                 family,
                 model,
@@ -629,10 +674,36 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
             },
             body_offset,
             line_ending: if ending == "\n" { "LF" } else { "CRLF" },
-        })
-    } else {
-        Err(defects)
-    }
+        },
+        defects,
+    ))
+}
+
+pub(crate) fn sort_defects(defects: &mut [Defect]) {
+    let index = |d: &Defect| {
+        d.pointer
+            .as_deref()?
+            .split('/')
+            .nth(1)?
+            .parse::<usize>()
+            .ok()
+    };
+    defects.sort_by(|a, b| {
+        (
+            a.line.unwrap_or(usize::MAX),
+            index(a),
+            &a.key,
+            &a.pointer,
+            a.reason,
+        )
+            .cmp(&(
+                b.line.unwrap_or(usize::MAX),
+                index(b),
+                &b.key,
+                &b.pointer,
+                b.reason,
+            ))
+    });
 }
 
 fn parse_bounded(v: &str, max: u64) -> Option<u64> {
@@ -651,7 +722,7 @@ fn parse_bounded(v: &str, max: u64) -> Option<u64> {
 mod tests {
     use super::*;
 
-    const GOOD: &str = "---\nstewart: question/1\n# comment\nfamily: open-inquiry\nmodel: claude-opus-5-5\ndestination: /home/ana/returns\n\nlimit-turns: 200\nlimit-input-tokens: 20000000\nlimit-output-tokens: 400000\n---\nAudit our app to make sure there are no bugs.\n";
+    const GOOD: &str = "---\nstewart: question/2\n# comment\nfamily: open-inquiry\nmodel: claude-opus-5-5\ndestination: /home/ana/returns\n\nlimit-turns: 200\nlimit-input-tokens: 20000000\nlimit-output-tokens: 400000\n---\nAudit our app to make sure there are no bugs.\n";
 
     /// The limits `GOOD` sets.
     const EXAMPLE_LIMITS: MessagesLimits = MessagesLimits {
@@ -685,7 +756,7 @@ mod tests {
 
     /// The development runtime's three fields. The release build knows none
     /// of them; the development build reads them on the one question version.
-    const RUNTIME: &str = "---\nstewart: question/1\nfamily: open-inquiry\nmodel: claude-opus-5-5\ndestination: /home/ana/returns\nruntime-profile: /home/ana/profile.json\nmax-placements: 3\nplacement-timeout-seconds: 600\n---\nAudit our app to make sure there are no bugs.\n";
+    const RUNTIME: &str = "---\nstewart: question/2\nfamily: open-inquiry\nmodel: claude-opus-5-5\ndestination: /home/ana/returns\nruntime-profile: /home/ana/profile.json\nmax-placements: 3\nplacement-timeout-seconds: 600\n---\nAudit our app to make sure there are no bugs.\n";
 
     #[cfg(not(feature = "claude-code"))]
     #[test]
@@ -711,7 +782,7 @@ mod tests {
             assert_eq!(defects[0].key.as_deref(), Some(key));
             assert!(defects[0].message.contains("unknown key"), "{key}");
         }
-        let version = GOOD.replace("stewart: question/1", "stewart: question/claude-code/1");
+        let version = GOOD.replace("stewart: question/2", "stewart: question/claude-code/1");
         let defects = parse(version.as_bytes()).unwrap_err();
         assert_eq!(defects.len(), 1);
         assert_eq!(defects[0].reason, "setting_invalid");
@@ -748,13 +819,13 @@ mod tests {
         // The removed version refuses by name, with or without runtime fields.
         for text in [RUNTIME, GOOD] {
             let found =
-                defects(&text.replace("stewart: question/1", "stewart: question/claude-code/1"));
+                defects(&text.replace("stewart: question/2", "stewart: question/claude-code/1"));
             assert_eq!(found.len(), 1, "{found:?}");
             assert_eq!(found[0].0, "setting_invalid");
             assert_eq!(found[0].1.as_deref(), Some("stewart"));
             assert!(
                 found[0].2.contains("question/claude-code/1")
-                    && found[0].2.contains("exactly question/1"),
+                    && found[0].2.contains("exactly question/2"),
                 "{found:?}"
             );
         }
@@ -798,7 +869,7 @@ mod tests {
     }
 
     /// The selector's presence, not its validity, decides which limits a
-    /// question takes, and the common checks come before the runtime's. Each
+    /// question takes, and diagnostics follow source line order. Each
     /// list is every defect in its reported order.
     #[cfg(feature = "claude-code")]
     #[test]
@@ -827,13 +898,13 @@ mod tests {
         assert_eq!(
             all(&with_limit("200").replace(": /home/ana/profile.json", ": profile.json")),
             [
-                d("setting_invalid", Some(8), "limit-turns", api),
                 d(
                     "setting_invalid",
                     Some(6),
                     "runtime-profile",
                     "a runtime profile must be an absolute file path"
                 ),
+                d("setting_invalid", Some(8), "limit-turns", api),
             ]
         );
         // An API limit with a bad value beside a profile: its own check, then the runtime's.
@@ -844,20 +915,20 @@ mod tests {
                 d("setting_invalid", Some(8), "limit-turns", api),
             ]
         );
-        // A missing common key comes first; a missing placement field last.
+        // Missing fields follow the error with a source line.
         let text = RUNTIME
             .replace("family: open-inquiry\n", "")
             .replace("max-placements: 3\n", "limit-turns: 200\n");
         assert_eq!(
             all(&text),
             [
+                d("setting_invalid", Some(6), "limit-turns", api),
                 (
                     "setting_missing",
                     None,
                     Some("family".to_string()),
                     "the required key family is missing from the front matter.".to_string()
                 ),
-                d("setting_invalid", Some(6), "limit-turns", api),
                 (
                     "setting_missing",
                     None,
@@ -878,13 +949,13 @@ mod tests {
         assert_eq!(
             all(&GOOD.replace("limit-turns: 200\n", "max-placements: 3\n")),
             [
+                d("setting_invalid", Some(8), "max-placements", placement),
                 (
                     "setting_missing",
                     None,
                     Some("limit-turns".to_string()),
                     "the required key limit-turns is missing from the front matter.".to_string()
                 ),
-                d("setting_invalid", Some(8), "max-placements", placement),
             ]
         );
     }
@@ -913,7 +984,7 @@ mod tests {
 
     #[test]
     fn delimiters_fields_and_keys() {
-        assert_eq!(reasons("stewart: question/1\n"), ["front_matter_invalid"]);
+        assert_eq!(reasons("stewart: question/2\n"), ["front_matter_invalid"]);
         assert_eq!(
             reasons(&GOOD.replace("\n---\nAudit", "\nAudit")),
             ["front_matter_invalid"]
@@ -974,7 +1045,7 @@ mod tests {
             .is_ok()
         );
         assert_eq!(
-            reasons(&GOOD.replace("question/1", "question/2")),
+            reasons(&GOOD.replace("question/2", "question/1")),
             ["setting_invalid"]
         );
         assert_eq!(

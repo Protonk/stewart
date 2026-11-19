@@ -3,7 +3,7 @@
 One example for each of the three implemented question forms. The invented reminder
 service supplies a small common world. Each example has:
 
-- `submission/`: a submission folder containing `question.md` with `question/1`
+- `submission/`: a submission folder containing `question.md` with `question/2`
   front matter and `materials/`;
 - `WALKTHROUGH.md`: an auditor's calls written by hand, with Stewart's replies
   and the rendered answer, then a variant with inadequate evidence.
@@ -42,7 +42,7 @@ stewart prepare REF
 reference (`stw1:…`) to give `prepare` as REF. `prepare` checks the folder and
 pins the arrangement; it accepts nothing. The archive root must be on local
 ext4, xfs or btrfs. A variant is another audit: a new folder with the same
-`question.md` and only the materials its walkthrough names.
+question body. Keep only the files and role declarations its walkthrough names.
 
 Two front matter settings depend on where the example is used:
 

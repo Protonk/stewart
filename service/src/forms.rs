@@ -10,7 +10,7 @@ use crate::json::{J, quote};
 pub const ORIENTATION_ID: &str = "stewart.orientation/1";
 pub const RENDERER_ID: &str = "stewart.render/1";
 pub const READER_ID: &str = "utf8-text/1";
-pub const ARRANGEMENT_SCHEMA: &str = "stewart.arrangement/2";
+pub const ARRANGEMENT_SCHEMA: &str = "stewart.arrangement/3";
 /// The Messages API version this release pins (INTERFACE 6.1): the
 /// `anthropic-version` header of every request and the arrangement's
 /// `anthropic_version` member.
@@ -669,6 +669,7 @@ pub struct Arrangement {
 }
 
 pub struct ArrangementInput<'a> {
+    pub material_roles: &'a crate::roles::Declarations,
     pub guidance: Option<&'a str>,
     pub settings: &'a crate::frontmatter::Settings,
     pub question_body_sha256: &'a str,
@@ -689,6 +690,18 @@ pub fn request_extra(effort: Option<&str>) -> Vec<u8> {
 pub fn arrangement(input: &ArrangementInput) -> Arrangement {
     let s = input.settings;
     let f = family(&s.family).expect("family validated by the front matter parser");
+    let mut arrangement = runtime_arrangement(input, f);
+    arrangement
+        .body
+        .push("commissioning", input.material_roles.commissioning(f));
+    input
+        .material_roles
+        .append_readable(f, &mut arrangement.readable);
+    arrangement
+}
+
+fn runtime_arrangement(input: &ArrangementInput, f: &Family) -> Arrangement {
+    let s = input.settings;
     let guidance = input.guidance.unwrap_or_else(|| instructions(f));
     let system = system_with_guidance(guidance);
     let tools = tools(f).bytes();
@@ -762,6 +775,19 @@ pub fn arrangement(input: &ArrangementInput) -> Arrangement {
         );
     let readable = readable(f, input, &tools, limits);
     Arrangement { body, readable }
+}
+
+/// Test projection onto revision 2. Check the two intentional differences
+/// before comparing all other bytes against the pre-cutover digests.
+#[cfg(test)]
+pub(crate) fn previous_arrangement(mut body: J, current: &str, previous: &str) -> J {
+    let J::Obj(fields) = &mut body else {
+        panic!("arrangement body")
+    };
+    assert_eq!(fields.pop().unwrap().0, "commissioning");
+    assert_eq!(fields[0], ("schema".into(), J::from(current)));
+    fields[0].1 = previous.into();
+    body
 }
 
 fn quoted_block(text: &str) -> String {
@@ -952,6 +978,7 @@ mod tests {
             varies: None,
         };
         let a = arrangement(&ArrangementInput {
+            material_roles: &Default::default(),
             guidance: None,
             settings: &settings,
             question_body_sha256: &"1".repeat(64),
@@ -1025,14 +1052,15 @@ mod tests {
                 varies: None,
             };
             let body = arrangement(&ArrangementInput {
+                material_roles: &Default::default(),
                 guidance,
                 settings: &settings,
                 question_body_sha256: &"1".repeat(64),
                 material_index_sha256: &"2".repeat(64),
             })
-            .body
-            .bytes();
-            observed.push(crate::util::sha256_hex(&body));
+            .body;
+            let old = previous_arrangement(body, ARRANGEMENT_SCHEMA, "stewart.arrangement/2");
+            observed.push(crate::util::sha256_hex(&old.bytes()));
         }
         assert_eq!(observed, cases.map(|(_, _, digest)| digest));
     }
@@ -1041,16 +1069,19 @@ mod tests {
     /// Messages limit is stated under its own name, and the view is frozen.
     #[test]
     fn a_messages_readable_view_states_each_limit_and_is_frozen() {
-        let question = "---\nstewart: question/1\nfamily: comparison\nmodel: claude-opus-5-5\ndestination: /d\nlimit-turns: 200\nlimit-input-tokens: 20000000\nlimit-output-tokens: 400000\n---\nQ\n";
+        let question = "---\nstewart: question/2\nfamily: comparison\nmodel: claude-opus-5-5\ndestination: /d\nlimit-turns: 200\nlimit-input-tokens: 20000000\nlimit-output-tokens: 400000\n---\nQ\n";
         let q = crate::frontmatter::parse(question.as_bytes()).unwrap();
         let a = arrangement(&ArrangementInput {
+            material_roles: &Default::default(),
             guidance: None,
             settings: &q.settings,
             question_body_sha256: &"1".repeat(64),
             material_index_sha256: &"2".repeat(64),
         });
         assert_eq!(
-            crate::util::sha256_hex(&a.body.bytes()),
+            crate::util::sha256_hex(
+                &previous_arrangement(a.body, ARRANGEMENT_SCHEMA, "stewart.arrangement/2").bytes()
+            ),
             "49c1db2b0d586bbf869be5593d24bb3b6c8bee568ff65779aedb9fb27759b065"
         );
         assert!(
@@ -1060,9 +1091,15 @@ mod tests {
             "{}",
             a.readable
         );
-        assert_eq!(a.readable.len(), 19072);
+        let (previous, roles) = a
+            .readable
+            .split_once("\n## Manager's declared material roles")
+            .unwrap();
+        assert!(roles.contains("criterion") && roles.contains("warning"));
+        let previous = previous.replacen(ARRANGEMENT_SCHEMA, "stewart.arrangement/2", 1);
+        assert_eq!(previous.len(), 19072);
         assert_eq!(
-            crate::util::sha256_hex(a.readable.as_bytes()),
+            crate::util::sha256_hex(previous.as_bytes()),
             "9b486084fa272a9d5c2ff6db643189da511a2eefba474cdbfaf88a518a88b648"
         );
     }

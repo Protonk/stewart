@@ -154,6 +154,7 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
             "renderer",
             "reading",
             "bindings",
+            "commissioning",
         ])?;
         if b.str("schema")? != ARRANGEMENT_SCHEMA {
             return Err(b.invalid("schema", format!("expected {ARRANGEMENT_SCHEMA}")));
@@ -259,6 +260,7 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
         if timeout == 0 {
             return Err(b.invalid("request_timeout_seconds", "expected at least 1"));
         }
+        crate::roles::check_capture(&b)?;
         let bind = b.obj("bindings")?;
         bind.exactly(&["question_body_sha256", "material_index_sha256"])?;
         Ok::<_, JsonError>(Pinned {
@@ -480,6 +482,7 @@ pub(crate) mod tests {
 
     pub fn arrangement_record(s: &Settings) -> Vec<u8> {
         let a = arrangement(&ArrangementInput {
+            material_roles: &Default::default(),
             guidance: None,
             settings: s,
             question_body_sha256: &"a".repeat(64),
@@ -676,7 +679,7 @@ pub(crate) mod tests {
         let question =
             "Is the restart safe?\n\tLine two with \"quotes\" and a \\ and \u{1}\u{7f} é.";
         let mut conv = Conversation::new(first_user_message(question, Some(&p.continuation)));
-        let result_content = br#"[{"type":"text","text":"{\"schema\":\"stewart.reply/2\"}"}]"#;
+        let result_content = br#"[{"type":"text","text":"{\"schema\":\"stewart.reply/3\"}"}]"#;
         let results = vec![runs::tool_result_block("toolu_1", result_content, false)];
         let notice =
             "Allowance notice: 1 turns, 2 input tokens and 3 output tokens remain for this audit.";
@@ -764,6 +767,7 @@ pub(crate) mod tests {
         let supplied = "Use plain words.\n";
         let record = |family: &str| {
             let a = arrangement(&ArrangementInput {
+                material_roles: &Default::default(),
                 guidance: Some(supplied),
                 settings: &settings(family, "claude-test-1"),
                 question_body_sha256: &"a".repeat(64),

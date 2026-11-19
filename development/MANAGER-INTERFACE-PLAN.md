@@ -1,11 +1,10 @@
 # Manager interface implementation and testing
 
 **Current status:** The file-only commissioning and custody path exists. The
-manager contracts are specified. The CLI scanner uses shared mechanical
-intake rules for text, path components, counts and sizes. The family definitions
-supply the purposes, role vocabulary and material advice in `help forms`. Next
-come role declarations, descriptor capture and diagnostics. The new CLI forms,
-returned-question member and preparation MCP are pending.
+manager contracts are specified. Both runtimes bind the manager's `question/2` role declarations
+and family descriptor in the arrangement. CLI preparation reports reference
+errors and family-specific advice. The preparation MCP, command descriptions
+and returned-question member remain open.
 Live trials require a separate bounded commission.
 
 This plan owns the manager CLI, optional preparation MCP server, question-type
@@ -91,32 +90,19 @@ introduces none of those changes to the auditor's interface.
 
 ### 2. Implement one set of production rules
 
-- [ ] Finish shared validation over explicit question bytes and inventory data:
-  parse the new role field, bind names and produce the descriptor's advice.
-  Use the existing front-matter parser and the extracted intake rules.
-  Both runtime arrangement tests pin pre-extraction bytes for all three
-  families and the supplied open-inquiry guidance case. Keep those comparisons
-  when introducing the new versions. The rule layer cannot open an archive,
-  spawn a process, read a credential, query a provider or accept a commission.
-  Filesystem acquisition and durable lifecycle operations stay outside it.
-- [ ] Make CLI intake and MCP assessment call this implementation. CLI
-  preparation and commissioning still perform their own scans, binding,
-  source-change checks and acceptance; a previous assessment is not reused as
-  authority or proof of an unchanged directory.
-- [ ] Switch the scaffold, worked submissions, both runtime arrangements and
-  the current packet producers in `apparatus/c10/` and `apparatus/sanity/`
-  together when enabling `question/2`. Coordinate the independent driver's
-  input builders and expected replies with its specification-only author.
-  Its [captured runtime originals](../apparatus/driver/testdata/README.md)
-  keep the envelope bytes received by their historical writers.
-- [ ] Project the same family definitions that supply `help forms` into the
-  machine descriptor, MCP explanations and diagnostics. Test examples and
-  requirements against the rules and retain exact pinned text comparisons
-  where the form contract requires them. Terse and detailed output use the
-  same facts. The source at the build commit supplies the text.
-- [ ] Add family-specific fixtures with declared roles, missing mappings,
-  invalid references, unsupported role declarations, empty materials and unequal
-  evidence. Preserve generic intake refusals and custom-guidance boundaries.
+The file-only path, packet producers and independent drivers use `question/2`.
+Both runtime arrangement tests compare the previous fields against their original
+digests for all three families and supplied open-inquiry guidance. The worked
+packets exercise complete and limited evidence. Captured runtime originals keep
+their historical bytes.
+
+- [ ] Make MCP assessment call the same question parser, material checks and
+  role assessment as CLI preparation. Supply a complete prospective inventory.
+  Keep candidate filesystem access and durable lifecycle operations outside
+  those rules. Commissioning continues to verify its own source selection.
+- [ ] Project the family descriptors and shared diagnostics into MCP discovery
+  and explanations. Test the same candidate through both callers. Terse and
+  detailed responses must agree on facts and effects.
 
 **Complete when:** equivalent candidate snapshots get the same mechanical result
 from both production callers, and specification-derived controls detect rule or

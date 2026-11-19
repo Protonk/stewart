@@ -1,8 +1,9 @@
 ---
-stewart: question/1
+stewart: question/2
 # Question family: open-inquiry, inquiry-framing or comparison.
 # Run `stewart help forms` to read each family's instructions.
 family: open-inquiry
+material-roles: [{"role":"subject","source":"materials/a.py"},{"role":"context","source":"materials/requirements.txt"},{"role":"report","source":"materials/supplied-report.txt"}]
 # Provider model used for every run of this audit.
 model: claude-opus-5-5
 # Existing directory in which Stewart creates the return package.

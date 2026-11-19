@@ -202,7 +202,7 @@ impl Prepared {
         std::fs::write(
             format!("{}/question.md", env.folder),
             format!(
-                "---\nstewart: question/1\nfamily: open-inquiry\nmodel: fixture-model\ndestination: {}\n{}---\nIs the note consistent?\n",
+                "---\nstewart: question/2\nfamily: open-inquiry\nmodel: fixture-model\ndestination: {}\n{}---\nIs the note consistent?\n",
                 env.dest,
                 fields(&env)
             ),
@@ -292,7 +292,7 @@ fn prepare_accepts_a_check_of_this_surface_and_pins_the_document() {
     let body = common::at(&record, &["body"]);
     assert_eq!(
         common::s(body, &["schema"]),
-        "stewart.claude-code.arrangement/2"
+        "stewart.claude-code.arrangement/3"
     );
     let pinned = common::at(body, &["surface"]);
     assert_eq!(&raw[pinned.start..pinned.end], SURFACE.as_bytes());
@@ -477,14 +477,14 @@ fn the_removed_question_version_refuses_by_name() {
         "surface_sha256",
         SURFACE_SHA256,
     );
-    let out = prepare_with(&p, "stewart: question/1", "stewart: question/claude-code/1");
+    let out = prepare_with(&p, "stewart: question/2", "stewart: question/claude-code/1");
     let message = one_defect(&out, "setting_invalid", "stewart");
     assert!(
-        message.contains("question/claude-code/1") && message.contains("exactly question/1"),
+        message.contains("question/claude-code/1") && message.contains("exactly question/2"),
         "{message}"
     );
     // Invariance: the same folder on the one version prepares.
-    let out = prepare_with(&p, "stewart: question/claude-code/1", "stewart: question/1");
+    let out = prepare_with(&p, "stewart: question/claude-code/1", "stewart: question/2");
     assert_eq!(out.code, Some(0), "{}{}", out.text(), out.stderr);
 }
 
@@ -538,7 +538,7 @@ fn a_question_without_a_profile_is_a_messages_question() {
     let record = stewart::json::parse(&raw).unwrap();
     assert_eq!(
         common::s(&record, &["body", "schema"]),
-        "stewart.arrangement/2"
+        "stewart.arrangement/3"
     );
     assert_eq!(
         common::s(&record, &["body", "orientation"]),
@@ -570,7 +570,7 @@ fn help_leads_to_the_runtime_topic_and_the_scaffold_is_the_common_one() {
     assert_eq!(out.code, Some(0));
     let topic = out.text();
     for fact in [
-        "stewart: question/1",
+        "stewart: question/2",
         "limit-turns",
         "runtime-profile",
         "max-placements",
@@ -606,7 +606,7 @@ fn help_leads_to_the_runtime_topic_and_the_scaffold_is_the_common_one() {
         control_lines,
         [
             "---",
-            "stewart: question/1",
+            "stewart: question/2",
             "family: open-inquiry",
             "model: REPLACE-WITH-MODEL",
             "destination: REPLACE-WITH-ABSOLUTE-DIRECTORY",
@@ -616,7 +616,7 @@ fn help_leads_to_the_runtime_topic_and_the_scaffold_is_the_common_one() {
             "---"
         ]
     );
-    assert!(scaffold.contains("stewart: question/1\n") && scaffold.contains("limit-turns: "));
+    assert!(scaffold.contains("stewart: question/2\n") && scaffold.contains("limit-turns: "));
     assert!(!scaffold.contains("runtime") && !scaffold.contains("placement"));
 }
 
@@ -1420,16 +1420,16 @@ fn harness_tool_calls_keep_their_result_records_and_replies() {
 }
 
 /// The result records of `harness_tool_calls_keep_their_result_records_and_replies`.
-const RESULT_1: &str = r#"{"call":1,"request":1,"attempt":1,"block":1,"call_file":"call-1.json","call_bytes":87,"call_sha256":"fcd3575cdfbfe38151c1a3674efbd21aa79c6242cc919394a4ceca05e9319597","tool_use_id":"mcp-1","tool":"list","input_sha256":"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","replay_of":null,"outcome":"completed","reason":null,"revision":0,"log_record":null,"is_error":false,"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/2\",\"operation\":\"list\",\"outcome\":\"completed\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"materials\":[{\"source\":\"materials/note.txt\",\"size\":8,\"lines\":1}],\"directories\":[\"materials\"],\"returned\":1,\"total\":1,\"complete\":true}}"}]}"#;
-const RESULT_2: &str = r#"{"call":2,"request":1,"attempt":1,"block":2,"call_file":"call-2.json","call_bytes":87,"call_sha256":"c0c0c0affcabc6a834cf5eb553c28925318a69a0d5ec6e2a09accf1e75272af3","tool_use_id":"mcp-2","tool":"nope","input_sha256":"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","replay_of":null,"outcome":"refused","reason":"tool_unknown","revision":0,"log_record":null,"is_error":true,"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/2\",\"operation\":\"nope\",\"outcome\":\"refused\",\"reason\":\"tool_unknown\",\"message\":\"No tool is named \\\"nope\\\". The tools are: list, read, search, record_account, record_observation, record_limit, record_artifact, replace, delete, what_am_i_working_with, prepare, submit.\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"tool\":\"nope\",\"tools\":[\"list\",\"read\",\"search\",\"record_account\",\"record_observation\",\"record_limit\",\"record_artifact\",\"replace\",\"delete\",\"what_am_i_working_with\",\"prepare\",\"submit\"]}}"}]}"#;
+const RESULT_1: &str = r#"{"call":1,"request":1,"attempt":1,"block":1,"call_file":"call-1.json","call_bytes":87,"call_sha256":"fcd3575cdfbfe38151c1a3674efbd21aa79c6242cc919394a4ceca05e9319597","tool_use_id":"mcp-1","tool":"list","input_sha256":"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","replay_of":null,"outcome":"completed","reason":null,"revision":0,"log_record":null,"is_error":false,"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/3\",\"operation\":\"list\",\"outcome\":\"completed\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"materials\":[{\"source\":\"materials/note.txt\",\"size\":8,\"lines\":1}],\"directories\":[\"materials\"],\"returned\":1,\"total\":1,\"complete\":true}}"}]}"#;
+const RESULT_2: &str = r#"{"call":2,"request":1,"attempt":1,"block":2,"call_file":"call-2.json","call_bytes":87,"call_sha256":"c0c0c0affcabc6a834cf5eb553c28925318a69a0d5ec6e2a09accf1e75272af3","tool_use_id":"mcp-2","tool":"nope","input_sha256":"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","replay_of":null,"outcome":"refused","reason":"tool_unknown","revision":0,"log_record":null,"is_error":true,"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/3\",\"operation\":\"nope\",\"outcome\":\"refused\",\"reason\":\"tool_unknown\",\"message\":\"No tool is named \\\"nope\\\". The tools are: list, read, search, record_account, record_observation, record_limit, record_artifact, replace, delete, what_am_i_working_with, prepare, submit.\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"tool\":\"nope\",\"tools\":[\"list\",\"read\",\"search\",\"record_account\",\"record_observation\",\"record_limit\",\"record_artifact\",\"replace\",\"delete\",\"what_am_i_working_with\",\"prepare\",\"submit\"]}}"}]}"#;
 /// What the harness placement sent on its MCP connection: the
 /// initialization result and the two tool replies.
 const MCP_OUT: &str = concat!(
     r#"{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-11-25","capabilities":{"tools":{}},"serverInfo":{"name":"stewart","version":"1"}}}"#,
     "\n",
-    r#"{"jsonrpc":"2.0","id":2,"result":{"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/2\",\"operation\":\"list\",\"outcome\":\"completed\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"materials\":[{\"source\":\"materials/note.txt\",\"size\":8,\"lines\":1}],\"directories\":[\"materials\"],\"returned\":1,\"total\":1,\"complete\":true}}"}],"isError":false}}"#,
+    r#"{"jsonrpc":"2.0","id":2,"result":{"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/3\",\"operation\":\"list\",\"outcome\":\"completed\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"materials\":[{\"source\":\"materials/note.txt\",\"size\":8,\"lines\":1}],\"directories\":[\"materials\"],\"returned\":1,\"total\":1,\"complete\":true}}"}],"isError":false}}"#,
     "\n",
-    r#"{"jsonrpc":"2.0","id":3,"result":{"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/2\",\"operation\":\"nope\",\"outcome\":\"refused\",\"reason\":\"tool_unknown\",\"message\":\"No tool is named \\\"nope\\\". The tools are: list, read, search, record_account, record_observation, record_limit, record_artifact, replace, delete, what_am_i_working_with, prepare, submit.\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"tool\":\"nope\",\"tools\":[\"list\",\"read\",\"search\",\"record_account\",\"record_observation\",\"record_limit\",\"record_artifact\",\"replace\",\"delete\",\"what_am_i_working_with\",\"prepare\",\"submit\"]}}"}],"isError":true}}"#,
+    r#"{"jsonrpc":"2.0","id":3,"result":{"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/3\",\"operation\":\"nope\",\"outcome\":\"refused\",\"reason\":\"tool_unknown\",\"message\":\"No tool is named \\\"nope\\\". The tools are: list, read, search, record_account, record_observation, record_limit, record_artifact, replace, delete, what_am_i_working_with, prepare, submit.\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"tool\":\"nope\",\"tools\":[\"list\",\"read\",\"search\",\"record_account\",\"record_observation\",\"record_limit\",\"record_artifact\",\"replace\",\"delete\",\"what_am_i_working_with\",\"prepare\",\"submit\"]}}"}],"isError":true}}"#,
     "\n",
 );
 
@@ -1593,7 +1593,7 @@ fn normalized_reply(p: &Prepared, stdout: &[u8]) -> String {
 fn limit_refusal(record: usize, diagnostic: usize) -> String {
     format!(
         concat!(
-            r#"{{"schema":"stewart.reply/2","operation":"run","outcome":"refused","reason":"authoring_ended","#,
+            r#"{{"schema":"stewart.reply/3","operation":"run","outcome":"refused","reason":"authoring_ended","#,
             r#""message":"Authoring has ended (limit log/{record}.json), so no run can start; close returns or seals the recorded selection.","#,
             r#""effects":{{"run":"ended","answer":"unchanged","seal":"none","delivery":"none","diagnostic":"durable"}},"#,
             r#""retained":["<audit>/diag/{diagnostic}.json"],"#,

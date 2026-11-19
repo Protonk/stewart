@@ -261,11 +261,13 @@ The table's origin prefixes are:
 The script reuses each call's `arguments`, changing only a replacement's exact
 entry handle. Fresh assistant, hook and MCP identifiers correlate the new calls;
 original RPC envelopes are retained fixtures, not replayed request identities.
-The C5 refusal is compared byte for byte with the captured 344-byte complete
-text (SHA-256 `4d287a2987efce5a306249415d9028f3ab98aa21f9dbac7900dfc91d8af4af09`).
-Its conversation frame changes only session ID and the two tool-use identity
-fields. The auxiliary `Error: ` string remains unchanged and is not used as
-the conversation result.
+The C5 capture contains the complete 344-byte refusal
+(SHA-256 `4d287a2987efce5a306249415d9028f3ab98aa21f9dbac7900dfc91d8af4af09`).
+The synthetic comparison updates its `stewart.reply/2` identifier to
+`stewart.reply/3` and checks every byte of that expected refusal. Its
+conversation frame supplies a fresh session ID and tool-use identities, and
+carries the revised identifier in both the conversation text and the auxiliary
+`Error: ` string. The fidelity check reads the conversation block.
 
 The synthetic sequence records one C4 account, refuses its replacement without
 `citations`, reads the old version, then applies the captured correction with

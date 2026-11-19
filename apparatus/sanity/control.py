@@ -89,7 +89,7 @@ def main():
             user=1000, group=1000, extra_groups=[], umask=0o077)
     write_json(stem.with_suffix('.json'), {'argv': argv, 'exit': result.returncode, 'at': time.time()})
     reply = json.loads(stem.with_suffix('.stdout').read_bytes())
-    if reply.get('schema') != 'stewart.reply/2':
+    if reply.get('schema') != 'stewart.reply/3':
         raise ValueError('unsupported Stewart reply schema')
     summary = {'operation': args.operation, 'exit': result.returncode,
         'reply_retained': str(stem.with_suffix('.stdout')),

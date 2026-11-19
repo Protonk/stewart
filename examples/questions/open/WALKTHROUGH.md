@@ -30,7 +30,7 @@ QUESTION-FORMS, and the question body as its first user message. It never sees
 the front matter. Re-entry and prepare replies identify the captured family.
 
 Each call is shown as the tool name and its `input`. A line starting `=>` shows
-the `data` of the completed `stewart.reply/2` envelope, whose `next` is empty
+the `data` of the completed `stewart.reply/3` envelope, whose `next` is empty
 unless stated. `[…]` stands for the citations as sent, each with Stewart's
 additions under `stewart`; elsewhere `…` marks something left out: further
 citations, a digest or a time. Handles carry a check bound to their audit, so
@@ -151,8 +151,10 @@ Give a fresh auditor only supplied-report.txt, with the original question
 unchanged. The source and stated requirements are absent. The report remains
 explicitly fictional and attributed.
 
-This is a separate audit whose folder has the same question.md and only that
+This is a separate audit whose folder has the same question body and only that
 file under materials/. Its one source is `materials/supplied-report.txt`.
+
+Keep only the report declaration in `material-roles`.
 
 One admissible sequence of entries is:
 

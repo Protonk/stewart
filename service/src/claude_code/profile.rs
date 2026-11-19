@@ -10,7 +10,7 @@ use sha2::{Digest, Sha256};
 use std::io::Read;
 
 pub const PROFILE_SCHEMA: &str = "stewart.claude-code.profile/2";
-pub const ARRANGEMENT_SCHEMA: &str = "stewart.claude-code.arrangement/2";
+pub const ARRANGEMENT_SCHEMA: &str = "stewart.claude-code.arrangement/3";
 pub const SIGNER: &str = "31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE";
 pub const MAX_PROFILE_BYTES: u64 = 64 * 1024;
 pub const MAX_PLACEMENTS: u64 = 10_000;

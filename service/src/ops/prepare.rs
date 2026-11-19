@@ -41,7 +41,29 @@ pub fn run(reference: &str) -> Reply {
     reply
 }
 
-fn scan_fail(f: intake::Refusal) -> Fail {
+fn scan_fail(mut f: intake::Refusal) -> Fail {
+    let remedy = match f.reason {
+        "bound_exceeded" => Some("Reduce the named entry or selection to the reported bound."),
+        "material_not_text" => Some("Supply UTF-8 text without NUL."),
+        "guidance_empty" => {
+            Some("Supply nonblank guidance text or remove the guidance selection and file.")
+        }
+        "name_invalid" => Some("Rename the entry to a permitted literal UTF-8 name."),
+        "folder_incomplete" => Some("Supply the required entry in the submission folder."),
+        "unexpected_root_entry" => {
+            Some("Move the entry under materials/ to include it, or outside the submission.")
+        }
+        "unsupported_entry" => Some("Supply regular files and directories in the submission."),
+        _ => None,
+    };
+    if let Some(remedy) = remedy {
+        let mut d = frontmatter::Defect::new(f.reason, None, None, f.message.clone());
+        if let Some(J::Str(name)) = f.data.get("entry") {
+            d.source = Some(name.clone());
+        }
+        d.remedy = remedy.into();
+        f.data.push("defects", J::Arr(vec![d.to_j()]));
+    }
     Fail::refused(f.reason, f.message).data(f.data)
 }
 
@@ -118,75 +140,81 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
     let qf = scan::read_question(&folder)
         .map_err(scan_fail)
         .map_err(with_next)?;
-    let q = frontmatter::parse(&qf.bytes).map_err(|defects| {
-        let first = defects[0].reason;
-        let msg = if defects.len() == 1 {
-            format!("question.md: {}", defects[0].message)
-        } else {
-            let items: Vec<String> = defects.iter().map(|d| d.message.clone()).collect();
-            format!(
-                "question.md needs {} edits: {}",
-                defects.len(),
-                items.join(" ")
-            )
-        };
-        with_next(Fail::refused(first, msg).data(J::obj().with(
-            "defects",
-            J::Arr(defects.iter().map(|d| d.to_j()).collect()),
-        )))
-    })?;
+    let rule_failure = |defects: Vec<frontmatter::Defect>| {
+        let message = defects
+            .iter()
+            .map(|d| d.message.as_str())
+            .collect::<Vec<_>>()
+            .join(" ");
+        with_next(
+            Fail::refused(defects[0].reason, format!("question.md: {message}")).data(
+                J::obj().with(
+                    "defects",
+                    J::Arr(defects.iter().map(|d| d.to_j()).collect()),
+                ),
+            ),
+        )
+    };
+    let (q, errors) = frontmatter::candidate(&qf.bytes).map_err(&rule_failure)?;
+    if !errors.is_empty() && !q.material_roles.has_mappings() {
+        return Err(rule_failure(errors));
+    }
     #[allow(unused_mut)]
     let mut settings = q.settings.clone();
-    #[cfg(feature = "claude-code")]
-    crate::claude_code::profile::prepare(&mut settings)?;
 
-    // The destination must exist, be a directory and overlap neither location.
-    let dest = Dir::open_follow(&settings.destination).map_err(|e| {
-        let why = match e.raw_os_error() {
-            Some(libc::ENOENT) => "does not exist".to_string(),
-            Some(libc::ENOTDIR) => "is not a directory".to_string(),
-            _ => format!("cannot be opened ({})", util::describe(&e)),
-        };
-        with_next(
-            Fail::refused("destination_invalid", format!("The destination {} {why}; it must be an existing directory in which Stewart creates the return package.", settings.destination))
-                .data(J::obj().with("destination", settings.destination.as_str())),
-        )
-    })?;
-    check_overlap(&[
-        Place {
-            what: "archive",
-            path: &audit.archive.path,
-            dir: &audit.archive.root,
-        },
-        Place {
-            what: "folder",
-            path: &folder_path,
-            dir: &folder,
-        },
-        Place {
-            what: "destination",
-            path: &settings.destination,
-            dir: &dest,
-        },
-    ])
-    .map_err(with_next)?;
+    let excluded = |dir: &Dir, what: &str| {
+        dir.stat()
+            .map(|stat| (stat.id(), what.to_owned()))
+            .map_err(|e| {
+                with_next(
+                    Fail::failed(
+                        "location_overlap",
+                        format!("The {what} could not be identified before scanning."),
+                    )
+                    .cause(Cause::io("identify excluded directory", &e).at(dir.path.as_str())),
+                )
+            })
+    };
+    let mut exclude = Exclude {
+        ids: vec![excluded(&audit.archive.root, "archive root")?],
+    };
+    // An invalid or absent destination is already a setting error. The material
+    // inventory can still identify broken references before refusing the question.
+    let _destination_guard = if !settings.destination.is_empty() {
+        let dest = Dir::open_follow(&settings.destination).map_err(|e| {
+            let why = match e.raw_os_error() {
+                Some(libc::ENOENT) => "does not exist".to_string(),
+                Some(libc::ENOTDIR) => "is not a directory".to_string(),
+                _ => format!("cannot be opened ({})", util::describe(&e)),
+            };
+            with_next(
+                Fail::refused("destination_invalid", format!("The destination {} {why}; it must be an existing directory in which Stewart creates the return package.", settings.destination))
+                    .data(J::obj().with("destination", settings.destination.as_str())),
+            )
+        })?;
+        check_overlap(&[
+            Place {
+                what: "archive",
+                path: &audit.archive.path,
+                dir: &audit.archive.root,
+            },
+            Place {
+                what: "folder",
+                path: &folder_path,
+                dir: &folder,
+            },
+            Place {
+                what: "destination",
+                path: &settings.destination,
+                dir: &dest,
+            },
+        ])
+        .map_err(with_next)?;
 
-    let exclude = Exclude {
-        ids: vec![
-            (
-                audit
-                    .archive
-                    .root
-                    .stat()
-                    .map(|s| s.id())
-                    .unwrap_or((u64::MAX, u64::MAX)),
-                "archive root".to_string(),
-            ),
-            (
-                dest.stat().map(|s| s.id()).unwrap_or((u64::MAX, u64::MAX)),
-                "destination".to_string(),
-            ),
-        ],
+        exclude.ids.push(excluded(&dest, "destination")?);
+        Some(dest) // Keep the excluded directory identity held during the scan.
+    } else {
+        None
     };
     eprintln!(
         "stewart prepare: scanning {folder_path}/materials (bounds: {} files, {} bytes in total)",
@@ -202,6 +230,16 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
             "question.md changed while the folder was being prepared; finish editing, then prepare again.",
         )));
     }
+    let advice = q
+        .material_roles
+        .assess(
+            forms::family(&settings.family),
+            s.files.iter().map(|file| file.name.as_str()),
+            errors,
+        )
+        .map_err(rule_failure)?;
+    #[cfg(feature = "claude-code")]
+    crate::claude_code::profile::prepare(&mut settings)?;
     eprintln!(
         "stewart prepare: {} files, {} bytes; pinning the arrangement",
         s.files.len(),
@@ -242,6 +280,7 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
         mtime: g.stat.mtime(),
     });
     let arr = forms::arrangement(&ArrangementInput {
+        material_roles: &q.material_roles,
         guidance: s
             .guidance
             .as_ref()
@@ -384,6 +423,7 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
                 .with("readable", audit.abs(&format!("prep/{n}/arrangement.md")))
                 .with("machine", audit.abs(&format!("prep/{n}/arrangement.json"))),
         );
+    let data = data.with("defects", J::Arr(advice.iter().map(|d| d.to_j()).collect()));
     let mut reply = Reply::completed(OP, eff("recorded"), data);
     reply.next.push(Next::new(
         audit.argv(&["commission", &audit.reference, &handle, "--i-am-finished"]),

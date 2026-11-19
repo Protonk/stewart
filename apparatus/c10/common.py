@@ -365,11 +365,11 @@ def rehearsal_packet():
 
 
 def question_file(case, packet, destination):
-    rows = ['---', 'stewart: question/1', 'family: ' + case['family'],
+    rows = ['---', 'stewart: question/2', 'family: ' + case['family'],
             'model: ' + packet['model'], 'destination: ' + str(destination)]
     if packet['effort'] is not None:
         rows.append('effort: ' + packet['effort'])
-    for key in ['guidance', 'inquiry', 'varies']:
+    for key in ['guidance', 'inquiry', 'varies', 'material-roles']:
         if case.get(key) is not None:
             rows.append(key + ': ' + case[key])
     rows += ['limit-' + name.replace('_', '-') + ': ' + str(packet['limits'][name]) for name in LIMITS]

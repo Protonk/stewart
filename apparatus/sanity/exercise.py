@@ -231,7 +231,7 @@ class Procedure:
         if raw:
             return data
         reply = json.loads(data)
-        if reply.get("schema") != "stewart.reply/2":
+        if reply.get("schema") != "stewart.reply/3":
             raise ValueError("unsupported Stewart reply schema")
         if reply['outcome'] != 'completed':
             raise ValueError(f'{label}: {reply}')

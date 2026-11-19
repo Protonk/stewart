@@ -529,7 +529,7 @@ class FakeAuditorTests(unittest.TestCase):
                 'read': {'range': [0, 6], 'complete': True, 'text': 'alpha\n', 'cite': None},
                 'record_account': {'entry': 'e1.v1.aaaaaa'}, 'record_artifact': {'entry': 'e2.v1.bbbbbb'},
                 'prepare': {'prepared': 'pp1.cccccc', 'rendering': {'source': 'rendering'}}}.get(call['name'], {})
-        text = json.dumps({'schema': 'stewart.reply/2', 'operation': call['name'], 'outcome': 'completed', 'data': data, 'next': []})
+        text = json.dumps({'schema': 'stewart.reply/3', 'operation': call['name'], 'outcome': 'completed', 'data': data, 'next': []})
         return {'type': 'tool_result', 'tool_use_id': call['id'], 'content': [{'type': 'text', 'text': text}], 'is_error': False}
 
     def drive(self, auditor, steps, reentry=None, extra=()):
@@ -681,7 +681,7 @@ class ContinuationTests(unittest.TestCase):
         run = next(item for item in commission['runs'] if item['id'] == AUDIT)
         evidence = self.root / 'evidence'
         (evidence / 'input-witness/materials').mkdir(parents=True)
-        (evidence / 'input-witness/question.md').write_text('---\nstewart: question/1\n---\nWhat happens?\n')
+        (evidence / 'input-witness/question.md').write_text('---\nstewart: question/2\n---\nWhat happens?\n')
         (evidence / 'input-witness/materials/a.txt').write_text('alpha\n')
         (self.root / 'home').mkdir()
         log = self.root / 'archive/audits/a1/log'
@@ -701,7 +701,7 @@ class ContinuationTests(unittest.TestCase):
         (self.work / 'credential-check').mkdir()
         credential_marker(self.work / 'credential-check' / (AUDIT + '.json'), KEY)
         self.out.mkdir()
-        self.status = {'schema': 'stewart.reply/2', 'operation': 'status', 'outcome': 'completed', 'data': {
+        self.status = {'schema': 'stewart.reply/3', 'operation': 'status', 'outcome': 'completed', 'data': {
             'headline': {'accepted': 'yes', 'launched': 'yes', 'authoring': {'state': 'open', 'ended_by': None},
                          'seal': {'state': 'absent', 'actor': None}, 'delivered': {'verified': False, 'confirmed': False}, 'closed': 'no'},
             'condition': 'interrupted',

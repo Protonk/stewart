@@ -101,7 +101,7 @@ sys.exit(value['exit'])
 
 def read_reply(call_id, source, start, end, size, text, next_start=None):
     """A captured tool_result for one material read page, shaped as INTERFACE 7.1 and 7.2 describe."""
-    envelope = {'schema': 'stewart.reply/2', 'operation': 'read', 'outcome': 'completed',
+    envelope = {'schema': 'stewart.reply/3', 'operation': 'read', 'outcome': 'completed',
                 'data': {'source': source, 'kind': 'material', 'size': size, 'range': [start, end],
                          'complete': next_start is None, 'cite': {'source': source, 'start': start, 'end': end}},
                 'next': [] if next_start is None else [{'tool': 'read', 'input': {'source': source, 'start': next_start}, 'why': 'rest'}]}
@@ -561,11 +561,16 @@ class StudyTests(unittest.TestCase):
             self.assertFalse((self.root/'never.json').exists())
 
     def test_exact_body_and_attributed_inquiry_survive_rendering(self):
+        role_line = 'material-roles: [{"role": "report", "source": "materials/a\u2028b.txt"}]\n'.encode()
+        (self.folder/'materials/a\u2028b.txt').write_bytes(b'A report.\n')
+        question = self.folder/'question.md'
+        question.write_bytes(question.read_bytes().replace(b'family: ', role_line+b'family: ', 1))
         parsed=inspect_submission(self.folder,'problem-a')
         self.assertEqual(parsed['question'],self.body)
         packet=proposal('changed-model');packet['effort']='high'
         rendered=question_file(parsed,packet,'/actual/returns')
         self.assertEqual(rendered.split(b'---\n',2)[2],self.body.encode())
+        self.assertIn(role_line, rendered)
         for line in [b'model: changed-model\n',b'inquiry: study example\n',b'varies: stw1:example\n',b'effort: high\n']:
             self.assertIn(line,rendered)
 

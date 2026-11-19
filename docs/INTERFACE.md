@@ -30,19 +30,19 @@ another.
 
 | Identifier | Names |
 | --- | --- |
-| `stewart.reply/2` | Reply envelope and public data for manager JSON and auditor tool results |
-| `question/1` | Front matter grammar of `question.md` |
+| `stewart.reply/3` | Reply envelope and public data for manager JSON and auditor tool results |
+| `question/2` | Front matter grammar of `question.md` |
 | `stewart.record/1` | Archive record header (4.3) |
-| `stewart.preparation/2`, `stewart.arrangement/2`, `stewart.receipt/2` | Manager preparation, pinned arrangement, acceptance receipt |
+| `stewart.preparation/2`, `stewart.arrangement/3`, `stewart.receipt/2` | Manager preparation, pinned arrangement, acceptance receipt |
 | `stewart.answer/1`, `stewart.return/1` | Structured answer, return manifest |
 | `open-inquiry/1`, `inquiry-framing/1`, `comparison/1` | Families: instructions, recording tools, coverage sections |
 | `stewart.orientation/1`, `stewart.render/1` | Auditor orientation text; Markdown renderer |
 | `utf8-text/1` | The material reader: exact UTF-8 bytes, no transformation |
 
 The writer is identified separately, by the SHA-256 of the executable (4.7).
-Reply revision 2 changes public observations and views: control inputs, archive records,
-prepared answer bytes and return formats retain their versions. There are no
-dual-name aliases, and historical receipts and replies are not rewritten.
+Reply revision 3 includes ordered commissioning defects and advice. The
+question version and the pinned runtime arrangements identify the selection
+rules independently. Historical receipts and replies retain their original bytes.
 
 ### 1.2 Strict control JSON
 
@@ -80,7 +80,7 @@ printed for people. Raw readback (`receipt --read`) is the one exception: stdout
 carries only the bytes (5.5).
 
 ```json
-{"schema": "stewart.reply/2", "operation": "prepare", "outcome": "completed",
+{"schema": "stewart.reply/3", "operation": "prepare", "outcome": "completed",
  "effects": {"preparation": "recorded"}, "next": [], "data": {}}
 ```
 
@@ -89,7 +89,7 @@ only, never an audit or an answer. The envelope's keys, in this order:
 
 | Field | Present | Meaning |
 | --- | --- | --- |
-| `schema` | always | `stewart.reply/2` |
+| `schema` | always | `stewart.reply/3` |
 | `operation` | always | The command or tool name |
 | `outcome` | always | `completed`, `refused` or `failed` |
 | `reason` | refused, failed | Stable identifier (Appendix A). Tests assert on it. |
@@ -311,13 +311,13 @@ the question explicitly selects it (3.2). A missing required entry refuses
 `folder_incomplete`, naming it. An unselected `guidance.md` or any other root
 entry refuses `unexpected_root_entry`. Links and special files refuse unread.
 
-### 3.2 Front matter (`question/1`)
+### 3.2 Front matter (`question/2`)
 
 `question.md` starts with front matter, followed by the question body.
 
 ```
 ---
-stewart: question/1
+stewart: question/2
 # Question family: open-inquiry, inquiry-framing or comparison.
 # Run `stewart help forms` to read each family's instructions.
 family: open-inquiry
@@ -357,8 +357,9 @@ Fields:
 
 | Key | Required | Value |
 | --- | --- | --- |
-| `stewart` | yes | Exactly `question/1` |
+| `stewart` | yes | Exactly `question/2` |
 | `family` | yes | `open-inquiry`, `inquiry-framing` or `comparison` |
+| `material-roles` | no | Single-line JSON array of [declared material roles](#declared-material-roles) |
 | `guidance` | no | Exactly `guidance.md`, and only with `family: open-inquiry` |
 | `model` | yes | 1–128 characters from `A–Z a–z 0–9 . _ : -` |
 | `effort` | no | `low`, `medium`, `high`, `xhigh` or `max` |
@@ -423,7 +424,7 @@ that same guidance summary after `question`; `intake_planned.captures` adds item
 `guidance-file` with file `g.bin` after question and material captures.
 Historical receipts are not rewritten or upgraded.
 
-The arrangement schema is version 2. Immediately after `family`, its `guidance`
+The arrangement schema is version 3. Immediately after `family`, its `guidance`
 object is `{"source":S,"size":N,"sha256":H}`. S is `builtin` or `guidance.md`;
 N and H identify the exact effective second-block text, including for built-in
 guidance. The readable arrangement identifies that source, size and digest and
@@ -446,11 +447,9 @@ placeholders as invalid values and the empty body as `question_empty`, naming wh
 
 #### Declared material roles
 
-The following revision is specified, pending implementation. In both builds
-`stewart: question/2` replaces `question/1`. It adds one optional front matter
-key, `material-roles`. All other grammar, runtime selection, guidance and body
-rules are as above. A release implementing revision 2 refuses revision 1,
-including when the optional key is absent. The original writer owns an
+Both builds read `stewart: question/2`. The optional front matter key
+`material-roles` declares roles for selected files. Revision 1 is refused
+even when the optional key is absent. The original writer owns an
 earlier audit.
 
 The value is a strict JSON array on a single field line (1.2). Each entry is
@@ -482,9 +481,8 @@ A renamed file with its declaration updated keeps its role. Every unmentioned
 file remains part of the literal selection.
 
 The exact question file binds the manager's declarations. The Messages
-arrangement becomes `stewart.arrangement/3`, the development arrangement
-`stewart.claude-code.arrangement/3`. Append one `commissioning` member to
-each arrangement body, with keys `registry` (`stewart.family-registry/1`),
+arrangement uses `stewart.arrangement/3` and the development arrangement uses
+`stewart.claude-code.arrangement/3`. Each body ends with `commissioning`, with keys `registry` (`stewart.family-registry/1`),
 `descriptor` (the selected descriptor) and `material_roles` (decoded
 declarations in input order, keys `role`, `source`, then `label` if present).
 This is the authoritative interpretation retained at preparation and bound
@@ -957,7 +955,7 @@ its `{` to its `}`.
 {"call": 14, "request": 6, "attempt": 2, "block": 3, "call_file": "call-14.json", "call_bytes": 412,
  "call_sha256": "…", "tool_use_id": "toolu_01A…", "tool": "replace", "input_sha256": "…",
  "replay_of": null, "outcome": "completed", "reason": null, "revision": 8, "log_record": "log/31.json",
- "is_error": false, "content": [{"type": "text", "text": "{\"schema\":\"stewart.reply/2\",…}"}]}
+ "is_error": false, "content": [{"type": "text", "text": "{\"schema\":\"stewart.reply/3\",…}"}]}
 ```
 
 - `request`, `attempt` and `block` locate the block: element `block`, counted
@@ -1104,7 +1102,7 @@ Creates a reference, and the archive or the scaffold when absent.
   created; another commission always needs its own reference.
 
 ```json
-{"schema": "stewart.reply/2", "operation": "new", "outcome": "completed",
+{"schema": "stewart.reply/3", "operation": "new", "outcome": "completed",
  "effects": {"reference": "created"},
  "next": [{"argv": ["/usr/local/bin/stewart", "prepare", "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/home/ana/stewart-archive"],
            "why": "Edit question.md and materials/, finish, then prepare."}],
@@ -1126,7 +1124,7 @@ Precondition: no `accepted`, no `close_requested`. Records: `prep/<n>/manifest.j
 log record binding their digests.
 
 ```json
-{"schema": "stewart.reply/2", "operation": "prepare", "outcome": "completed",
+{"schema": "stewart.reply/3", "operation": "prepare", "outcome": "completed",
  "effects": {"preparation": "recorded"},
  "next": [{"argv": ["/usr/local/bin/stewart", "commission", "stw1:…", "mp1.k4q7xa", "--i-am-finished"],
            "why": "Accept exactly this selection. Leave the folder unchanged until commission returns."}],
@@ -1144,7 +1142,11 @@ log record binding their digests.
           "bounds": {"question_bytes": 262144, "guidance_bytes": 262144, "files": 128, "file_bytes": 16777216, "total_bytes": 134217728,
                      "directories": 256, "path_bytes": 1024, "path_components": 32, "component_bytes": 255},
           "arrangement": {"sha256": "…", "readable": "/home/ana/stewart-archive/audits/aqm3…/prep/1/arrangement.md",
-                          "machine": "/home/ana/stewart-archive/audits/aqm3…/prep/1/arrangement.json"}}}
+                          "machine": "/home/ana/stewart-archive/audits/aqm3…/prep/1/arrangement.json"},
+          "defects": [{"reason": "role_unmapped", "line": null, "key": "material-roles",
+                       "message": "No source is mapped to the subject role.", "severity": "suggestion",
+                       "pointer": null, "source": null, "role": "subject",
+                       "remedy": "Identify what you want examined if it is available. A broad question is welcome."}]}}
 ```
 
 `settings` is the `prepared` record's (4.3): `guidance`, `effort`, `inquiry` and `varies`
@@ -1152,6 +1154,7 @@ appear only when the front matter gives them.
 
 Refusals: `folder_incomplete`, `front_matter_invalid`, `setting_missing`,
 `setting_invalid`, `destination_invalid`, `question_empty`, `guidance_empty`,
+`role_declaration_invalid`, `role_unsupported`, `role_source_unknown`, `role_duplicate`,
 `unexpected_root_entry`, `unsupported_entry`, `location_overlap`,
 `material_not_text`, `name_invalid`, `source_unreadable`, `bound_exceeded`
 (naming the bound, the limit and the entry where it was exceeded),
@@ -1160,15 +1163,9 @@ Refusals: `folder_incomplete`, `front_matter_invalid`, `setting_missing`,
 
 #### Commissioning diagnostics
 
-Today a question parser refusal carries `data.defects`. Each element has
-`reason`, `line` (1-based or null), `key` (front matter key or null), and
-`message`. A grammar error that prevents interpretation stops parsing.
-Otherwise prepare reports the independent setting and body errors together.
-The first defect supplies the reply reason.
-
-The specified manager revision extends that same list. The public envelope
-becomes `stewart.reply/3` for both audiences. Its other envelope fields and
-their effect meanings stay as in 1.3–1.4. On successful manager preparation,
+A grammar error that prevents interpretation stops parsing. Otherwise prepare
+reports independent setting, body and declaration errors together. On successful
+manager preparation,
 and on a refusal from the shared question/inventory rules, `data.defects` is
 an array (possibly empty). Each item has the following keys in order:
 
@@ -1264,7 +1261,7 @@ outcomes are `selection_changed`, `source_unreadable`, `capture_failed`,
 `capture_unverified`, `receipt_record_failed`, `closed` and `process_gone`.
 
 ```json
-{"schema": "stewart.reply/2", "operation": "commission", "outcome": "completed",
+{"schema": "stewart.reply/3", "operation": "commission", "outcome": "completed",
  "effects": {"acceptance": "accepted", "attempt": "recorded"},
  "next": [{"argv": ["/usr/local/bin/stewart", "run", "stw1:…"], "why": "Start the audit; it needs what run_needs lists."},
           {"argv": ["/usr/local/bin/stewart", "close", "stw1:…"], "why": "End the commission without running it."}],
@@ -1281,7 +1278,7 @@ outcomes are `selection_changed`, `source_unreadable`, `capture_failed`,
 ```
 
 ```json
-{"schema": "stewart.reply/2", "operation": "commission", "outcome": "refused",
+{"schema": "stewart.reply/3", "operation": "commission", "outcome": "refused",
  "reason": "selection_changed",
  "message": "materials/a.py changed after preparation, so this selection was not accepted.",
  "effects": {"acceptance": "absent", "attempt": "partial"},
@@ -1301,7 +1298,7 @@ be established, the reply is `acceptance_record_uncertain`, with acceptance
 unknown and the completed capture attempt recorded:
 
 ```json
-{"schema": "stewart.reply/2", "operation": "commission", "outcome": "failed",
+{"schema": "stewart.reply/3", "operation": "commission", "outcome": "failed",
  "reason": "acceptance_record_uncertain",
  "message": "Stewart could not confirm that the acceptance record was published.",
  "effects": {"acceptance": "unknown", "attempt": "recorded", "diagnostic": "durable"},
@@ -1348,7 +1345,7 @@ closes anything. Here it reports an audit whose auditor sealed in its second run
 and whose run delivered the return:
 
 ```json
-{"schema": "stewart.reply/2", "operation": "status", "outcome": "completed",
+{"schema": "stewart.reply/3", "operation": "status", "outcome": "completed",
  "effects": {},
  "next": [{"argv": ["/usr/local/bin/stewart", "close", "stw1:…"],
            "why": "Close the audit. An ordinary close confirms where the delivered copy is."}],
@@ -1555,7 +1552,7 @@ it found the log damaged (6.5), with `effects.run` `started`. Exit status is 5
 for an `interrupted` ending and 0 for any other recorded ending (1.7).
 
 ```json
-{"schema": "stewart.reply/2", "operation": "run", "outcome": "completed",
+{"schema": "stewart.reply/3", "operation": "run", "outcome": "completed",
  "effects": {"run": "ended", "answer": "changed", "seal": "recorded", "delivery": "verified"},
  "next": [{"argv": ["/usr/local/bin/stewart", "close", "stw1:…"],
            "why": "Close the audit. An ordinary close confirms where the delivered copy is."}],
@@ -1759,7 +1756,7 @@ A closed reply has no next calls; the receipt stays readable through status's
 `surrender_required` also offers the confirmation with every loss named.
 
 ```json
-{"schema": "stewart.reply/2", "operation": "close", "outcome": "completed",
+{"schema": "stewart.reply/3", "operation": "close", "outcome": "completed",
  "effects": {"run": "ended", "seal": "recorded", "delivery": "verified", "closure": "unfinished"},
  "next": [{"argv": ["/usr/local/bin/stewart", "close", "stw1:…", "--confirm", "cf1.h3d7ws"],
            "why": "Confirm that this delivered copy is where you want the return."},
@@ -1977,6 +1974,7 @@ The arrangement's `reading` object pins these exact fields and bounds, in order:
 | `retry`, `request_timeout_seconds` | 6.6 policy; 600 |
 | `reader`, `renderer`, `family` | `utf8-text/1`, `stewart.render/1`, family ID and version |
 | `bindings` | SHA-256 of the question body and of the material index |
+| `commissioning` | Captured family descriptor and the manager’s material declarations (3.2) |
 
 The material-index digest hashes the exact UTF-8 JSON `index` value retained
 in the prepared manifest, from its opening `{` through its closing `}`, with
@@ -2306,7 +2304,7 @@ retains its own exact request, accounting and continuation rules.
 
 - Every `tool_result` block is
   `{"type":"tool_result","tool_use_id":<ID>,"content":[…],"is_error":<bool>}`
-  (4.5). Its content begins with a text block holding the `stewart.reply/2`
+  (4.5). Its content begins with a text block holding the `stewart.reply/3`
   envelope, whose `operation` is the tool name. Text reads add a second text
   block holding the exact text read. Like every text block, it is a JSON string
   on the wire, as CONTRACTS requires. When the page has no non-whitespace
@@ -2917,6 +2915,7 @@ Manager:
 | `source_unreadable` | A source file could not be opened or read during prepare or commission |
 | `front_matter_invalid` | Missing or malformed `---` delimiters, mixed line endings, or a duplicate or unknown key (3.2) |
 | `setting_missing`, `setting_invalid`, `question_empty` | Front matter and body (3.2) |
+| `role_declaration_invalid`, `role_unsupported`, `role_source_unknown`, `role_duplicate` | Invalid declared material role (3.2, 5.3). The advisory `role_unmapped` can accompany a successful preparation. |
 | `destination_invalid` | The front matter's destination (3.2), or `close --destination DIR` (5.8), is not an existing absolute directory |
 | `affirmation_missing` | `commission` without `--i-am-finished` |
 | `handle_invalid` | Handle of wrong kind, store, audit or check, including a loss ID that is not one of the confirmed attempt's |

@@ -103,7 +103,7 @@ A question family, also called a form, identifies the inquiry's purpose and
 selects family instructions, ordered recording tools and expected answer
 sections. [QUESTION-FORMS](docs/QUESTION-FORMS.md) defines the implemented
 components and the shared answer/renderer versions. The family contract below
-also defines the intended manager guidance and material roles.
+also defines the manager guidance and material roles.
 
 ## Platform and auditor access
 
@@ -637,10 +637,9 @@ revives a closed reference or grants another investigation.
 expected material roles, auditor instructions and answer expectations. These are
 where Stewart expresses opinions about asking and answering that kind of question.
 The [manager role registry](docs/QUESTION-FORMS.md#manager-family-registry)
-supplies material guidance in CLI help. The
-[question-file declaration](docs/INTERFACE.md#declared-material-roles) and its
-validation are specified, pending implementation. Each declaration maps a
-role to a selected file. A broken declaration refuses preparation. Absent
+supplies material guidance in CLI help. Preparation binds each
+[question-file declaration](docs/INTERFACE.md#declared-material-roles) to its
+selected file and pins the descriptor and mappings in the arrangement. A broken declaration refuses preparation. Absent
 mappings, empty materials and unequal evidence remain admissible.
 The manager chooses the family; a suggestion does not silently change the choice
 or rewrite the question. Its versioned instructions and means of answering belong

@@ -150,6 +150,7 @@ pub fn decode(b: &Obj, raw: &[u8]) -> Result<Pinned, String> {
             "renderer",
             "reading",
             "bindings",
+            "commissioning",
         ])?;
         let bytes = |key: &str| -> Result<Vec<u8>, json::JsonError> {
             let v = b.req(key)?;
@@ -243,6 +244,7 @@ pub fn decode(b: &Obj, raw: &[u8]) -> Result<Pinned, String> {
         {
             return Err(b.invalid("effort", "unsupported effort"));
         }
+        crate::roles::check_capture(b)?;
         let bindings = b.obj("bindings")?;
         bindings.exactly(&["question_body_sha256", "material_index_sha256"])?;
         if b.u64("harness_max_turns", u64::MAX)? != profile::MAX_TURNS
@@ -331,6 +333,7 @@ mod tests {
             varies: None,
         };
         forms::arrangement(&ArrangementInput {
+            material_roles: &Default::default(),
             guidance,
             settings: &settings,
             question_body_sha256: &"1".repeat(64),
@@ -351,7 +354,12 @@ mod tests {
     /// The body with the platform-dependent profile text and its digest
     /// replaced, so the pinned bytes hold on every platform.
     fn normalized(body: &J) -> String {
-        let text = String::from_utf8(body.bytes()).unwrap();
+        let old = forms::previous_arrangement(
+            body.clone(),
+            profile::ARRANGEMENT_SCHEMA,
+            "stewart.claude-code.arrangement/2",
+        );
+        let text = String::from_utf8(old.bytes()).unwrap();
         let pinned = decode_arrangement(&record(body.clone())).unwrap();
         let profile = pinned.harness.unwrap().selection.profile.unwrap();
         let normal = text

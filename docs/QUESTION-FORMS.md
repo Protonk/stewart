@@ -18,8 +18,8 @@ and preparation replies, alongside the orientation, its family's instructions an
 ## Manager family registry
 
 The CLI's `help forms` explains the purpose and material roles of each
-available family. The machine descriptor, role declarations and assessment
-rules below are specified for manager preparation and await implementation. The versioned family
+available family. Preparation binds the declared material roles to the selected file names and
+pins the machine descriptor in the arrangement. The versioned family
 IDs above identify auditor instructions, tools and expected sections.
 `stewart.family-registry/1` identifies the manager's role vocabulary and
 advisory rules. The declaration grammar and capture are in
@@ -54,12 +54,11 @@ wording may improve between builds. Preparation pins the selected descriptor
 including its wording. Changing mechanical meaning or an advisory rule
 requires a new registry version.
 
-For the [worked packets](../examples/questions/README.md), the manager could
-declare `a.py` the subject of the open inquiry and `supplied-report.txt` a
-report. The report-only variant still commissions. For framing,
-`requirements.txt` can supply context in both the full and requirements-only
+In the [worked packets](../examples/questions/README.md), the open-inquiry
+manager maps `a.py` as the subject and `supplied-report.txt` as a report. The report-only variant still commissions. For framing,
+`requirements.txt` supplies context in both the full and requirements-only
 packets. Neither needs a formulated working question in the inputs. For
-comparison, `a.py` and `b.py` can identify A and B, and `requirements.txt`
+comparison, `a.py` and `b.py` identify A and B, and `requirements.txt`
 the criterion. In the absent-B packet remove B's declaration as well as its
 file. Keeping that declaration instead gives a reference error.
 
@@ -351,7 +350,7 @@ never invented.
 
 The [worked examples](../examples/questions/README.md) give one submission
 folder per family over a small invented reminder service, each a valid
-`question/1` question with its materials. Their walkthroughs show an auditor's
+`question/2` question with its materials. Their walkthroughs show an auditor's
 calls, written by hand, with the replies and the rendering this specification
 and INTERFACE section 7 give for them, and a variant with inadequate evidence.
 They illustrate expression; they are not wire fixtures, and no conclusion in

@@ -1,7 +1,7 @@
 # Release and work plan
 
-The current task is to implement the specified manager interface, beginning
-with its shared commissioning rules. Linux acceptance qualified
+The current task is to implement the specified manager interface, with the shared
+`question/2` rules now in use by the file-only path. Linux acceptance qualified
 the readiness fixtures on both architectures at `ba551c6`. The offline C10
 rehearsal passed with that aarch64 writer. Endpoint alignment and release
 qualification remain open. No live packet is active.

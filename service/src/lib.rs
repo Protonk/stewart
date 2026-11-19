@@ -22,7 +22,7 @@
 //! - `answer`, `delivery`: the auditor's tools, preparation and seal; delivery.
 //! - `provider`: the provider transport and the placement loop.
 //! - `frontmatter`, `intake`, `scan`, `forms`: the submission rules, folder and arrangement.
-//! - `reply`: the `stewart.reply/2` envelope and its human presentation.
+//! - `reply`: the `stewart.reply/3` envelope and its human presentation.
 //! - `ops`, `help`, `cli`: manager operations and their presentation.
 //! - `fault`: test-build failure points and sabotage controls.
 //!
@@ -73,6 +73,7 @@ pub mod provider;
 pub mod records;
 pub mod reply;
 pub mod returns;
+pub mod roles;
 pub mod runs;
 pub mod scan;
 pub mod usage;

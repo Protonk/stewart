@@ -165,7 +165,7 @@ impl Env {
 
     pub fn question(&self, family: &str, body: &str) -> String {
         format!(
-            "---\nstewart: question/1\nfamily: {family}\nmodel: claude-opus-5-5\ndestination: {}\nlimit-turns: 200\nlimit-input-tokens: 20000000\nlimit-output-tokens: 400000\n---\n{body}",
+            "---\nstewart: question/2\nfamily: {family}\nmodel: claude-opus-5-5\ndestination: {}\nlimit-turns: 200\nlimit-input-tokens: 20000000\nlimit-output-tokens: 400000\n---\n{body}",
             self.dest
         )
     }

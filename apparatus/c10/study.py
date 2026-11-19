@@ -1,6 +1,6 @@
 """Explicit study submissions, kept separate from the six conformance specimens.
 
-The supplied folder is a template with ordinary question/1 front matter.
+The supplied folder is a template with ordinary question/2 front matter.
 The packet owns model, effort and allowances; the launcher owns destination.
 Family, inquiry, varies, exact body bytes and material bytes come from the
 hashed template. Both that template and the rendered intake are witnessed.
@@ -13,8 +13,11 @@ from common import (FAMILIES, inventory, read_file, require, tree_hash,
 
 def case_from_question(raw, name):
     text = raw.decode('utf-8-sig')
-    lines = text.splitlines(keepends=True)
-    require(lines and lines[0] in ['---\n', '---\r\n'], 'study question needs question/1 front matter')
+    # Front matter uses LF or CRLF. Other Unicode separators may occur inside
+    # a JSON string or in the exact manager-authored body.
+    pieces = text.split('\n')
+    lines = [piece + '\n' for piece in pieces[:-1]] + [pieces[-1]]
+    require(lines and lines[0] in ['---\n', '---\r\n'], 'study question needs question/2 front matter')
     ending = lines[0][3:]
     settings = {}
     for n, line in enumerate(lines[1:], 1):
@@ -34,9 +37,9 @@ def case_from_question(raw, name):
         raise ValueError('study front matter has no closing delimiter')
     required = {'stewart', 'family', 'model', 'destination', 'limit-turns',
                 'limit-input-tokens', 'limit-output-tokens'}
-    require(required <= settings.keys() <= required | {'guidance', 'effort', 'inquiry', 'varies'},
-            'study front-matter fields differ from question/1')
-    require(settings['stewart'] == 'question/1' and settings['family'] in FAMILIES,
+    require(required <= settings.keys() <= required | {'guidance', 'effort', 'inquiry', 'varies', 'material-roles'},
+            'study front-matter fields differ from question/2')
+    require(settings['stewart'] == 'question/2' and settings['family'] in FAMILIES,
             'unknown study form')
     require(body.strip() and '\0' not in text, 'study question needs a nonblank UTF-8 body without NUL')
     inquiry = settings.get('inquiry')
@@ -50,6 +53,8 @@ def case_from_question(raw, name):
             'guidance must be guidance.md for open-inquiry')
     result = {'id': name, 'family': settings['family'], 'variant': 'study',
               'question': body, 'inquiry': inquiry, 'varies': varies}
+    if 'material-roles' in settings:
+        result['material-roles'] = settings['material-roles']
     if guidance is not None:
         result['guidance'] = guidance
     return result

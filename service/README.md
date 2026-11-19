@@ -34,7 +34,7 @@ each tool call, then `delivery/` and `ops/close.rs`.
 - `help.rs`: `stewart help` and its topics, printed exactly (5.9). The
   development build adds one topic, `runtime`, whose text is in
   `claude_code.rs`.
-- `reply.rs`: the `stewart.reply/2` envelope and its human presentation
+- `reply.rs`: the `stewart.reply/3` envelope and its human presentation
   (1.3–1.7).
 
 **Manager operations**
@@ -42,7 +42,7 @@ each tool call, then `delivery/` and `ops/close.rs`.
 - `ops/presentation.rs`: shared read-only resource and lifecycle accounts.
 - `ops/`: one file per command, `new`, `prepare`, `commission`, `receipt`,
   `run`, `status` and `close` (5.2–5.8); `ops/mod.rs` holds what they share.
-- `frontmatter.rs`, `intake.rs`, `scan.rs`: the `question/1` front matter,
+- `frontmatter.rs`, `roles.rs`, `intake.rs`, `scan.rs`: the `question/2` front matter, declared material roles and family descriptors,
   mechanical rules over supplied bytes and names, and descriptor-based
   acquisition of the submission folder (3). In the development build the same version
   takes the three
@@ -169,7 +169,7 @@ against an audit the real binary commissioned.
 | `delivery.rs` | Delivery, close and status after launch | any |
 | `manager_seal.rs` | Close's manager seal through the answer module | any |
 | `close_faults.rs` | Delivery and close failure traces | `fault-injection` |
-| `claude_code.rs` | The development runtime through the real binary: the runtime fields on `question/1`, the profile and launch-surface binding, help, what people are shown, and one placement of a synthetic executable that fails its status check; and the publication gate in process | `claude-code` |
+| `claude_code.rs` | The development runtime through the real binary: the runtime fields on `question/2`, the profile and launch-surface binding, help, what people are shown, and one placement of a synthetic executable that fails its status check; and the publication gate in process | `claude-code` |
 | `close_sabotage.rs` | Delivery, close and status sabotage controls, and the run-handoff controls `relative_run_line` and `commission_over_network` (ACCEPTANCE C12) | `sabotage` |
 
 Shared support is in `tests/common/` (the harness), `tests/fixture/` (states

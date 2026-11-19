@@ -2560,7 +2560,7 @@ def vocabulary_observation_selftests():
 def _status_specimen(a, *, condition, sealed, delivered, closed, last, seal=None, deliveries=(), closure=None,
                      nxt=()):
     at = "2026-11-02T15:20:04.118Z"
-    return {"schema": "stewart.reply/2", "operation": "status", "outcome": "completed", "effects": {},
+    return {"schema": "stewart.reply/3", "operation": "status", "outcome": "completed", "effects": {},
             "next": [{"argv": list(x), "why": "Next."} for x in nxt],
             "data": {"headline": {"accepted": "yes", "launched": "yes",
                                   "authoring": authoring_observation(last, closing=closed != "no", actor=sealed),
@@ -2677,7 +2677,7 @@ def _selftest_views():
         out.append(("after-launch.human.json-is-not-human", "h.human.text" in st.failed(), st.failed()))
         # Close replies (5.8): the T8 example passes; skip_confirmation (closed right after a copy
         # close made) fails; a closed reply has no next calls.
-        cobj = {"schema": "stewart.reply/2", "operation": "close", "outcome": "completed",
+        cobj = {"schema": "stewart.reply/3", "operation": "close", "outcome": "completed",
                 "effects": {"run": "ended", "seal": "recorded", "delivery": "verified", "closure": "unfinished"},
                 "next": [{"argv": [w, "close", ref, "--confirm", tok], "why": "Confirm."},
                          {"argv": [w, "status", ref], "why": "Status."}],

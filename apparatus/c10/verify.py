@@ -382,12 +382,16 @@ def _verify(e, report, check):
           and arr['limits'] == packet['limits'], 'arrangement_settings')
     check(arrnode.get('system').raw == system_bytes(packet, family, guidance)
           and arrnode.get('tools').raw == compact(spec.expected_tools(family)), 'specified_system_and_tools')
-    if guidance is not None or arr.get('schema') == 'stewart.arrangement/2':
-        effective = strict_json(system_bytes(packet, family, guidance))[1]['text'].encode()
-        identity = {'source': 'guidance.md' if guidance is not None else 'builtin',
-                    'size': len(effective), 'sha256': digest(effective)}
-        check(arr['schema'] == 'stewart.arrangement/2' and arr['guidance'] == identity, 'guidance_identity')
-        report['guidance'] = identity
+    effective = strict_json(system_bytes(packet, family, guidance))[1]['text'].encode()
+    identity = {'source': 'guidance.md' if guidance is not None else 'builtin',
+                'size': len(effective), 'sha256': digest(effective)}
+    check(arr['schema'] == 'stewart.arrangement/3' and arr['guidance'] == identity, 'guidance_identity')
+    report['guidance'] = identity
+    declared = strict_json(specimen['case'].get('material-roles', '[]').encode())
+    commissioning = arr['commissioning']
+    check(commissioning['registry'] == 'stewart.family-registry/1'
+          and commissioning['descriptor']['family'] == versioned_family
+          and commissioning['material_roles'] == declared, 'material_role_binding')
     expected_extra = {} if packet['effort'] is None else {'output_config': {'effort': packet['effort']}}
     check(arr['request_extra'] == expected_extra, 'effort_parameter')
     check(arr['max_tokens_per_request'] == 16000 and arr['request_timeout_seconds'] == 600,

@@ -1,4 +1,4 @@
-//! The `stewart.reply/2` envelope (INTERFACE 1.3–1.6) and its human presentation.
+//! The `stewart.reply/3` envelope (INTERFACE 1.3–1.6) and its human presentation.
 //!
 //! All views come from the same `Reply`. The ordinary human view omits routine
 //! detail while preserving qualifications, failures and actionable references.
@@ -289,7 +289,7 @@ impl Reply {
             check_effects(self.operation, &self.effects, auditor).unwrap_err()
         );
         let mut o = J::obj()
-            .with("schema", "stewart.reply/2")
+            .with("schema", "stewart.reply/3")
             .with("operation", self.operation)
             .with("outcome", self.outcome.name());
         let failing = self.outcome != Outcome::Completed;
@@ -685,7 +685,7 @@ mod tests {
         ));
         assert_eq!(
             r.to_j().string(),
-            r#"{"schema":"stewart.reply/2","operation":"prepare","outcome":"completed","effects":{"preparation":"recorded"},"next":[{"argv":["/x/stewart","commission"],"why":"why"}],"data":{"prepared":"mp1.aaaaaa"}}"#
+            r#"{"schema":"stewart.reply/3","operation":"prepare","outcome":"completed","effects":{"preparation":"recorded"},"next":[{"argv":["/x/stewart","commission"],"why":"why"}],"data":{"prepared":"mp1.aaaaaa"}}"#
         );
         let f = Reply {
             operation: "commission",
@@ -705,7 +705,7 @@ mod tests {
         };
         assert_eq!(
             f.to_j().string(),
-            r#"{"schema":"stewart.reply/2","operation":"commission","outcome":"failed","reason":"acceptance_record_uncertain","message":"m","effects":{"acceptance":"unknown","attempt":"recorded","diagnostic":"durable"},"retained":["/a/intake/1"],"causes":[{"operation":"fsync log directory","error":"EIO"}],"next":[]}"#
+            r#"{"schema":"stewart.reply/3","operation":"commission","outcome":"failed","reason":"acceptance_record_uncertain","message":"m","effects":{"acceptance":"unknown","attempt":"recorded","diagnostic":"durable"},"retained":["/a/intake/1"],"causes":[{"operation":"fsync log directory","error":"EIO"}],"next":[]}"#
         );
         assert_eq!(f.exit_code(), 4);
         assert!(f.human().contains("acceptance unknown"));
@@ -727,7 +727,7 @@ mod tests {
         ));
         assert_eq!(
             r.auditor_j().string(),
-            r#"{"schema":"stewart.reply/2","operation":"read","outcome":"completed","effects":{"raw_capture":"recorded"},"next":[{"tool":"read","input":{"source":"question","start":65536},"why":"Read the rest."}],"data":{"complete":false}}"#
+            r#"{"schema":"stewart.reply/3","operation":"read","outcome":"completed","effects":{"raw_capture":"recorded"},"next":[{"tool":"read","input":{"source":"question","start":65536},"why":"Read the rest."}],"data":{"complete":false}}"#
         );
         r.outcome = Outcome::Refused;
         r.reason = Some("range_invalid".into());

@@ -461,6 +461,7 @@ fn sabotage_regenerate(audit: &Audit, machine: bool) -> Option<Vec<u8>> {
     }
     let body = &q[parsed.body_offset..];
     let a = crate::forms::arrangement(&crate::forms::ArrangementInput {
+        material_roles: &parsed.material_roles,
         guidance: None,
         settings: &parsed.settings,
         question_body_sha256: &util::sha256_hex(body),

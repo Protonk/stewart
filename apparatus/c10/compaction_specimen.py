@@ -71,7 +71,7 @@ def generate(folder):
     for number in range(1, 9):
         (materials/f'trace-{number:02d}.txt').write_bytes(trace(number))
     (folder/'question.md').write_text('''---
-stewart: question/1
+stewart: question/2
 family: open-inquiry
 model: claude-opus-5-5
 destination: /placeholder/return

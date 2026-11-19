@@ -41,8 +41,9 @@ import traceback
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from driver_core import (CONTINUATION, FAMILY_TEXT, FAMILY_TOOLS, ORIENTATION, REMINDER,
-                         expected_tools, iter_values, parse_reference, reading_problem, strict_loads)
+from driver_core import (CONTINUATION, FAMILY_TEXT, FAMILY_TOOLS, ORIENTATION, REMINDER, REPLY_SCHEMA,
+                         check_advice, check_commissioning, expected_tools, iter_values,
+                         parse_reference, reading_problem, strict_loads)
 from rawjson import compact, parse
 
 
@@ -83,14 +84,14 @@ CHECKPOINTS = (
                                "cache_read_input_tokens": 950, "output_tokens": 65}},
 )
 PROFILE_SCHEMA = "stewart.claude-code.profile/2"
-ARRANGEMENT_SCHEMA = "stewart.claude-code.arrangement/2"
+ARRANGEMENT_SCHEMA = "stewart.claude-code.arrangement/3"
 SURFACE_SCHEMA = "stewart.claude-code.surface/1"
 ARRANGEMENT_KEYS = {
     "schema", "family", "model", "guidance", "orientation", "system",
     "system_prompt", "tools", "mcp_tools", "runtime", "profile_sha256",
     "surface", "surface_sha256",
     "effort", "limits", "harness_max_turns", "harness_max_output_tokens",
-    "texts", "reader", "renderer", "reading", "bindings",
+    "texts", "reader", "renderer", "reading", "bindings", "commissioning",
 }
 # Shell/platform additions allowed only within the pre-Python observer's scope.
 # Interpreter changes are retained separately and never exempt LC_CTYPE.
@@ -503,11 +504,19 @@ def authoring_materials():
             for p in sorted(root.rglob("*")) if p.is_file()}
 
 
+def current_quote_refusal():
+    """C5's recorded error with exactly its inner reply schema updated for this writer."""
+    original = authoring_capture("c5-quote-result")["message"]["content"][0]["content"]
+    return original.replace('"schema":"stewart.reply/2"', '"schema":"' + REPLY_SCHEMA + '"', 1)
+
+
 def authoring_echo(session, identity, variant):
     value = authoring_capture("c5-quote-result")
     value["session_id"] = session
     block = value["message"]["content"][0]
     block["tool_use_id"] = identity
+    block["content"] = current_quote_refusal()
+    value["tool_use_result"] = "Error: " + block["content"]
     value["tool_result_meta"][0]["id"] = identity
     if variant == "array":
         block["content"] = [{"type": "text", "text": block["content"]}]
@@ -1565,7 +1574,7 @@ class Driver:
         except ValueError as exc:
             self.require(label + ".reply", False, str(exc))
         self.require(label + ".object", isinstance(reply, dict), reply)
-        self.eq(label + ".schema", reply.get("schema"), "stewart.reply/2")
+        self.eq(label + ".schema", reply.get("schema"), REPLY_SCHEMA)
         self.eq(label + ".operation", reply.get("operation"), args[0])
         if outcome is not None:
             self.eq(label + ".outcome", reply.get("outcome"), outcome)
@@ -1597,7 +1606,7 @@ class Driver:
             self.check(label + ".states." + word.replace(" ", "-")[:32], word.lower() in lowered, text[:600])
 
     def fixture(self, label, family="open-inquiry", binary=None, scenario=None, timeout=600, placements=3,
-                effort=None, *, python=None, temporary=None):
+                effort=None, *, python=None, temporary=None, declarations=None):
         """A prepared submission, archive and profile. temporary, when given, names the
         profile's temporary_directory from (root, folder, archive) in place of the default
         empty directory beside the synthetic executable."""
@@ -1652,15 +1661,17 @@ class Driver:
         profile_path.write_bytes(profile)
         body = b"Inspect only the selected report. It is a supplied claim.\r\nKeep uncertainty explicit.\n"
         material = "Supplied report: café passed.\r\nThis is not an observed execution.\n".encode()
-        fields = {"stewart": "question/1", "family": family, "model": MODEL,
+        fields = {"stewart": "question/2", "family": family, "model": MODEL,
                   "destination": str(destination), "runtime-profile": str(profile_path),
                   "max-placements": str(placements), "placement-timeout-seconds": str(timeout)}
         if effort is not None:
             fields["effort"] = effort
+        if declarations is not None:
+            fields["material-roles"] = compact(declarations).decode()
         (folder / "materials" / "report.txt").write_bytes(material)
         fixture = {"label": label, "root": root, "folder": folder, "archive": archive,
                    "reference": reference, "profile_path": profile_path, "profile": profile,
-                   "family": family, "tools": tools, "fields": fields, "body": body,
+                   "family": family, "tools": tools, "fields": fields, "body": body, "declarations": declarations or [],
                    "launch": launch, "effort": effort,
                    "materials": {"materials/report.txt": material}, "witness": witness, "executable": executable,
                    "limits": {"max_placements": placements, "placement_timeout_seconds": timeout},
@@ -1697,6 +1708,7 @@ class Driver:
             node = node.get("body")
         obj = strict_loads(node.raw)
         self.eq(label + ".keys", sorted(obj), sorted(ARRANGEMENT_KEYS))
+        descriptor = check_commissioning(self, label, obj, f["family"], f["declarations"])
         expected = {"schema": ARRANGEMENT_SCHEMA, "model": MODEL,
                     "orientation": ORIENTATION_ID,
                     "system_prompt": RUNTIME_ORIENTATION + "\n\n" + FAMILY_TEXT[f["family"]],
@@ -1729,8 +1741,9 @@ class Driver:
         self.eq(label + ".reply-digest", data["arrangement"]["sha256"], sha(raw))
         self.eq(label + ".settings-runtime", data["settings"].get("runtime"), expected["runtime"])
         self.eq(label + ".settings-limits", data["settings"].get("limits"), f["limits"])
+        return descriptor
 
-    def accept(self, f):
+    def accept(self, f, *, advice=None):
         prepared = self.prepare(f)
         question = (f["witness"] / "question-file").read_bytes()
         body = (f["witness"] / "question-body").read_bytes()
@@ -1742,7 +1755,9 @@ class Driver:
                 {"count": len(index["files"]), "bytes": sum(row["size"] for row in index["files"]),
                  "directories": index["directories"], "files": index["files"]})
         raw = Path(prepared["data"]["arrangement"]["machine"]).read_bytes()
-        self.arrangement(f, prepared["data"], raw)
+        descriptor = self.arrangement(f, prepared["data"], raw)
+        if advice is not None:
+            check_advice(self, f["label"], prepared["data"], descriptor, advice)
         reply = self.cmd(f["label"] + ".commission",
                          ["commission", f["reference"], prepared["data"]["prepared"], "--i-am-finished"])
         self.require(f["label"] + ".accepted", reply.get("outcome") == "completed", reply)
@@ -1804,8 +1819,14 @@ class Driver:
             self.check(label + ".plural", re.search(r"\b%d placements\b" % used, summary) is not None, summary)
 
     def families(self):
-        for family in FAMILY_TEXT:
-            self.accept(self.fixture(family, family))
+        source = "materials/report.txt"
+        for family, declarations, advice in (
+                ("open-inquiry", [{"role": "subject", "source": source}], []),
+                ("inquiry-framing", [], [("context", "suggestion")]),
+                ("comparison", [{"role": "criterion", "source": source},
+                                {"role": "alternative", "source": source, "label": "A"}],
+                 [("alternative", "warning")])):
+            self.accept(self.fixture(family, family, declarations=declarations), advice=advice)
 
     def profile_refusal(self, label, reply, named=()):
         """A profile prepare cannot accept: the stated reason and the exact surface."""
@@ -2045,18 +2066,18 @@ class Driver:
             self.control(key, reply.get("outcome") == "refused")
             self.defect("limit-fields." + key, reply, "setting_invalid", key)
         # The removed version is refused by name; restoring only that line prepares.
-        removed = "question/claude-code/1"
-        self.question(f, dict(f["fields"], stewart=removed))
-        reply = self.prepare(f, "removed-version", "refused")
-        self.control("removed-question-version", reply.get("outcome") == "refused")
-        for value in (removed, "question/1"):
-            self.check("limit-fields.removed-version.names." + value, value in (reply.get("message") or ""),
-                       reply.get("message"))
+        for suffix, removed in (("runtime", "question/claude-code/1"), ("common", "question/1")):
+            self.question(f, dict(f["fields"], stewart=removed))
+            reply = self.prepare(f, "removed-version-" + suffix, "refused")
+            self.control("removed-question-version-" + suffix, reply.get("outcome") == "refused")
+            for value in (removed, "question/2"):
+                self.check("limit-fields.removed-" + suffix + ".names." + value, value in (reply.get("message") or ""),
+                           reply.get("message"))
         self.question(f)
         self.prepare(f, "version-restored")
         fields = {key: value for key, value in f["fields"].items()
                   if key not in ("runtime-profile", "max-placements", "placement-timeout-seconds")}
-        fields.update({"stewart": "question/1", "limit-turns": "200",
+        fields.update({"stewart": "question/2", "limit-turns": "200",
                        "limit-input-tokens": "20000000", "limit-output-tokens": "400000"})
         self.question(f, fields)
         self.prepare(f, "api-positive")
@@ -2091,7 +2112,7 @@ class Driver:
         status, topic, _ = self.plain("help.runtime", ["help", "runtime"])
         self.eq("help.runtime-exit", status, 0)
         self.facts("help.runtime", topic, (
-            "question/1", "limit-", "runtime-profile", "max-placements", "placement-timeout-seconds",
+            "question/2", "limit-", "runtime-profile", "max-placements", "placement-timeout-seconds",
             PROFILE_SCHEMA, "executable", "check", "surface", "prepare",
             "login", "extra usage", "--key-fd", "Messages API", "foreground", "deadline", "unknown"))
         for name, bound in (("max-placements", "10,?000"), ("placement-timeout-seconds", "86,?400")):
@@ -2157,7 +2178,7 @@ class Driver:
         self.eq("release-gate.runtime-question.reason", reply.get("reason"), "front_matter_invalid")
         fields = {key: value for key, value in f["fields"].items()
                   if key not in ("runtime-profile", "max-placements", "placement-timeout-seconds")}
-        fields.update({"stewart": "question/1", "limit-turns": "200",
+        fields.update({"stewart": "question/2", "limit-turns": "200",
                        "limit-input-tokens": "20000000", "limit-output-tokens": "400000"})
         self.question(f, fields)
         self.cmd("release-gate.api-positive", ["prepare", f["reference"]], binary=self.release)
@@ -2479,7 +2500,7 @@ class Driver:
                 self.eq(label + "." + name + ".effects", core.get("effects"),
                         {"answer": "unchanged", "raw_capture": "recorded"})
             error = steps["missing-quote"]["response"]["result"]
-            observed_text = authoring_capture("c5-quote-result")["message"]["content"][0]["content"]
+            observed_text = current_quote_refusal()
             self.eq(label + ".full-refusal", error, {"content": [{"type": "text", "text": observed_text}], "isError": True})
             for number, args in ((1, initial), (2, corrected), (3, replacement)):
                 if number == 3 and mismatch:
@@ -3874,7 +3895,7 @@ class Driver:
         records = [strict_loads(path.read_bytes()) for path in sorted((self.audit_path(f) / "log").glob("*.json"))]
         self.eq(f["label"] + ".no-entry-record", [r for r in records if r.get("kind") == "entry"], [])
         reply = strict_loads(stdout_path.read_bytes())
-        self.eq(f["label"] + ".final-reply-schema", reply.get("schema"), "stewart.reply/2")
+        self.eq(f["label"] + ".final-reply-schema", reply.get("schema"), REPLY_SCHEMA)
         contexts = [reply.get("reason"), reply.get("message"), stderr_path.read_text(errors="replace")]
         contexts += [json.dumps(cause) for cause in reply.get("causes", [])]
         for record in records:
@@ -6133,7 +6154,7 @@ def synthetic_harness(scenario_path, environment_path, argv):
                 identity, rpc_id = fidelity_start("record_observation", arguments)
                 response = receive(rpc_id)
                 result = response["result"]
-                captured = authoring_capture("c5-quote-result")["message"]["content"][0]["content"]
+                captured = current_quote_refusal()
                 if result != {"content": [{"type": "text", "text": captured}], "isError": True}:
                     raise RuntimeError("captured full refusal differs from the core reply")
                 event("fidelity-result", id=rpc_id, tool_use_id=identity, name="record_observation",
@@ -6738,10 +6759,15 @@ def authoring_selftest(check):
     expected["session_id"] = "fresh-session"
     expected["message"]["content"][0]["tool_use_id"] = "toolu_fresh"
     expected["tool_result_meta"][0]["id"] = "toolu_fresh"
-    check("authoring.echo-only-session-and-identities", flat == expected)
+    original_text = original["message"]["content"][0]["content"]
+    expected_text = original_text.replace("stewart.reply/2", "stewart.reply/3", 1)
+    expected["message"]["content"][0]["content"] = expected_text
+    expected["tool_use_result"] = "Error: " + expected_text
+    check("authoring.echo-only-schema-session-and-identities", flat == expected)
     full_text = flat["message"]["content"][0]["content"]
-    check("authoring.full-refusal-digest", len(full_text.encode()) == 344 and sha(full_text.encode()) ==
+    check("authoring.original-full-refusal-digest", len(original_text.encode()) == 344 and sha(original_text.encode()) ==
           "4d287a2987efce5a306249415d9028f3ab98aa21f9dbac7900dfc91d8af4af09")
+    check("authoring.full-refusal-schema", strict_loads(full_text.encode())["schema"] == REPLY_SCHEMA)
     check("authoring.auxiliary-keeps-error-prefix", flat["tool_use_result"] == "Error: " + full_text)
     expected = copy.deepcopy(flat)
     expected["message"]["content"][0]["content"] = [{"type": "text", "text": full_text}]

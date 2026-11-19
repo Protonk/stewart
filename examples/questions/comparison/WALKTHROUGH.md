@@ -31,7 +31,7 @@ QUESTION-FORMS, and the question body as its first user message. It never sees
 the front matter. Re-entry and prepare replies identify the captured family.
 
 Each call is shown as the tool name and its `input`. A line starting `=>` shows
-the `data` of the completed `stewart.reply/2` envelope, whose `next` is empty
+the `data` of the completed `stewart.reply/3` envelope, whose `next` is empty
 unless stated. `[…]` stands for the citations as sent, each with Stewart's
 additions under `stewart`; elsewhere `…` marks something left out: further
 citations, a digest or a time. Handles carry a check bound to their audit, so
@@ -167,9 +167,11 @@ Give a fresh auditor requirements.txt and a.py only. B is absent; the manager
 question still asks for A versus B. Do not reveal B through another example, a
 worked answer or inherited context.
 
-This is a separate audit whose folder has the same question.md and only those
+This is a separate audit whose folder has the same question body and only those
 files under materials/. Its sources are `materials/a.py` and
 `materials/requirements.txt`.
+
+Remove the declaration for B. Preparation warns that only one alternative label remains.
 
 One admissible sequence of entries is:
 

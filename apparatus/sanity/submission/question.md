@@ -1,6 +1,7 @@
 ---
-stewart: question/1
+stewart: question/2
 family: open-inquiry
+material-roles: [{"role":"subject","source":"materials/latest_readings.py"},{"role":"context","source":"materials/input-notes.txt"}]
 model: REPLACE-WITH-MODEL
 destination: REPLACE-WITH-ABSOLUTE-DIRECTORY
 # These are rehearsal allowances, not authority for a paid run.

@@ -309,9 +309,10 @@ class Session:
         self.evidence.mkdir(mode=0o700)
         (root / 'home').mkdir(mode=0o700)
         text = (self.folder / 'question.md').read_text()
-        body = text.split('---\n', 2)[2]
-        settings = ['---', 'stewart: question/1', 'family: open-inquiry',
+        _, front, body = text.split('---\n', 2)
+        settings = ['---', 'stewart: question/2', 'family: open-inquiry',
                     'model: ' + commission['model'], 'destination: ' + str(self.destination)]
+        settings.extend(line for line in front.split('\n') if line.startswith('material-roles: '))
         if commission['effort'] is not None:
             settings.append('effort: ' + commission['effort'])
         for key in ['turns', 'input_tokens', 'output_tokens']:
@@ -428,7 +429,7 @@ class Session:
             return content
         try:
             reply = json.loads(content)
-            if reply.get("schema") != "stewart.reply/2":
+            if reply.get("schema") != "stewart.reply/3":
                 raise ValueError("unsupported Stewart reply schema")
         except (UnicodeError, json.JSONDecodeError):
             raise RuntimeError(label + ' did not return JSON; raw records retained privately') from None

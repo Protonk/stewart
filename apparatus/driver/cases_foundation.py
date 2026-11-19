@@ -221,13 +221,13 @@ def c_driver_controls(t):
     # Envelope: a refusal without effects, and one with unordered keys, must fail.
     saved = t.checks
     for label, raw in (("envelope_missing_effects",
-                        b'{"schema":"stewart.reply/2","operation":"status","outcome":"refused","reason":"x",'
+                        b'{"schema":"stewart.reply/3","operation":"status","outcome":"refused","reason":"x",'
                         b'"message":"m","retained":[],"next":[]}'),
                        ("envelope_duplicate_key",
-                        b'{"schema":"stewart.reply/2","schema":"stewart.reply/2","operation":"status",'
+                        b'{"schema":"stewart.reply/3","schema":"stewart.reply/3","operation":"status",'
                         b'"outcome":"completed","effects":{},"next":[],"data":{}}'),
                        ("envelope_escaped_duplicate_key",
-                        b'{"schema":"stewart.reply/2","operation":"status","outcome":"completed",'
+                        b'{"schema":"stewart.reply/3","operation":"status","outcome":"completed",'
                         b'"effects":{},"\\u006eext":[],"next":[],"data":{}}')):
         t.checks = []
         fake = Reply("status", {"rc": 3 if b"refused" in raw else 0, "stdout": raw, "stdout_len": len(raw),
@@ -2340,7 +2340,7 @@ def c_arrangement(t):
             t.check("arr.differing.instructions-differ", sys_f[1] != sys_o[1], "family block identical")
 
 
-def check_arrangement(t, sub, handle, family, p, limits):
+def check_arrangement(t, sub, handle, family, p, limits, declarations=()):
     out = {}
     arr = sub.arrangement.get(handle)
     if not t.check(p + ".records", arr is not None, "arrangement records unavailable"):
@@ -2357,6 +2357,8 @@ def check_arrangement(t, sub, handle, family, p, limits):
     t.check(p + ".members", not missing, {"missing": missing})
     if not isinstance(members, dict):
         return out
+    t.eq(p + ".schema", members.get("schema"), "stewart.arrangement/3")
+    out["descriptor"] = check_commissioning(t, p, members, family, list(declarations))
     t.eq(p + ".model", members.get("model"), sub.model)
     t.eq(p + ".anthropic-beta", members.get("anthropic_beta"), ANTHROPIC_BETA)
     t.eq(p + ".compaction", members.get("compaction"), COMPACTION)
@@ -2467,7 +2469,7 @@ def c_settings(t):
     for label, kw in bad:
         n = t.log_kinds(sub).count("prepared")
         if kw.pop("extra_version", False):
-            q = question_md(dest=sub.dest).replace(b"stewart: question/1", b"stewart: question/2")
+            q = question_md(dest=sub.dest).replace(b"stewart: question/2", b"stewart: question/1")
         else:
             kw.setdefault("dest", sub.dest)
             q = question_md(**kw)

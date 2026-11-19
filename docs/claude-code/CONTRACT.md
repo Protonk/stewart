@@ -391,11 +391,11 @@ observed behavior. Recheck them at every harness pin.
 
 ## Development input and preparation schema
 
-There is one question version, `stewart: question/1`, in the existing front
+There is one question version, `stewart: question/2`, in the existing front
 matter grammar. In the gated build a question selects this runtime by naming
 `runtime-profile`; a question without it is a Messages API question, read
 exactly as the common interface specifies. Common family, model, destination,
-guidance, effort, inquiry and varies fields retain their meanings. A runtime
+guidance, material roles, effort, inquiry and varies fields retain their meanings. A runtime
 question replaces all three `limit-*` fields with:
 
 | Field | Required value |
@@ -411,7 +411,7 @@ value outside the table is `setting_invalid`. Each `limit-*` field is then a
 `runtime-profile`, `max-placements` and `placement-timeout-seconds` are each a
 `setting_invalid` defect naming the key. Any other `stewart` value is refused
 as the common interface refuses it, with a diagnostic naming that value and
-`question/1`; no second version is read. The featureless build knows none of
+`question/2`; no second version is read. The featureless build knows none of
 the three fields and refuses each as an unknown key. Question body bytes and
 material selection do not change.
 
@@ -432,7 +432,7 @@ development build and points to `stewart help runtime`, not to a path in a
 source tree. The featureless build has neither the topic nor the notice, and
 `stewart help runtime` is an unknown topic there. The topic covers:
 
-- the scaffold change: keep `stewart: question/1` and replace the three
+- the scaffold change: keep `stewart: question/2` and replace the three
   `limit-*` lines with `runtime-profile`, `max-placements` and
   `placement-timeout-seconds`, with their meanings and bounds, and that the
   presence of `runtime-profile` selects the runtime;
@@ -523,12 +523,13 @@ surface is the one the running binary supplies; a difference refuses with
 `runtime_profile_invalid`, naming both digests. The runtime never opens the
 named credential directory.
 
-The arrangement schema is `stewart.claude-code.arrangement/2`. Its exact members
+The arrangement schema is `stewart.claude-code.arrangement/3`. Its exact members
 are `schema`, `family`, `model`, `guidance`, `orientation`, `system`,
 `system_prompt`, `tools`, `mcp_tools`, `runtime`, `profile_sha256`, `surface`,
 `surface_sha256`, `effort`, `limits`, `harness_max_turns`,
-`harness_max_output_tokens`, `texts`, `reader`, `renderer`, `reading` and
-`bindings`. Common members retain the interface's meaning. `profile_sha256`
+`harness_max_output_tokens`, `texts`, `reader`, `renderer`, `reading`,
+`bindings` and `commissioning`. The final member pins the selected descriptor
+and the manager’s role mappings (INTERFACE 3.2). Common members retain the interface's meaning. `profile_sha256`
 hashes the captured profile string's UTF-8 bytes. `reading` has the common
 arrangement's exact reading bounds (INTERFACE 6.2). `surface` is the launch
 surface document as a JSON value, written with exactly the document's bytes, and

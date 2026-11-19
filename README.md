@@ -22,6 +22,12 @@ and exact quotations; assessing their support for a conclusion remains your
 judgment. The linked walkthroughs are hand-written illustrations of inputs,
 auditor calls and rendered answers.
 
+You can use `material-roles` in `question.md` to identify what each file
+contributes. For example, a comparison can name the alternatives A and B and
+identify the file that supplies the criterion. `stewart prepare` flags a
+misspelled filename and gives advice when only one alternative is supplied.
+See the [declaration syntax](docs/INTERFACE.md#declared-material-roles).
+
 Open inquiry also accepts [your own guidance](docs/INTERFACE.md#selected-family-guidance).
 
 ## Run an inquiry

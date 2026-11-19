@@ -67,7 +67,7 @@ def provenance(t, sub, name, accepted=False):
              ["file", "size", "sha256", "mtime"])
     arr = sub.arrangement[sub.handles[-1]]["machine"]
     obj = strict_loads(arr)
-    t.check(name + ".arrangement-schema", contains_string(obj, "stewart.arrangement/2"), "arrangement schema")
+    t.check(name + ".arrangement-schema", contains_string(obj, "stewart.arrangement/3"), "arrangement schema")
     members = obj.get("body", obj)
     after(t, members, "guidance", "family", name + ".arrangement-order")
     check_arrangement(t, sub, sub.handles[-1], sub.family, name + ".arrangement", sub.limits)
