@@ -962,6 +962,8 @@ def c_package(t):
     a = audit(t, "c5.pass")
     with_auditor(t, a, goals(a.sub))
     out["pass"] = scenario(t, "pass", deliver_and_close, a, "c5.pass")
+    if t.sabotage:
+        return
     b = audit(t, "c5.differ")
     changed = ORDERING[:-1] + "!"
     with_auditor(t, b, goals(b.sub, ordering=changed))
@@ -1155,7 +1157,7 @@ def _partial(t, a):
 
 @case("c5.t9-destination", ["C5", "C8", "C16", "C18"],
       "T9: an unavailable destination; close retries it, then copies to a replacement under --destination",
-      mode="both", needs=("loopback",))
+      needs=("loopback",))
 def c_t9(t):
     """T9. The commissioned destination is removed after commission. The auditor seals; the
     run's delivery attempt 1 fails (no package, a cause) and the run ends sealed. Status:
@@ -1231,7 +1233,7 @@ def _t9(t, a):
 
 @case("c5.conflicting-package", ["C5", "C6", "C18"],
       "an existing path with the package's name is neither adopted, emptied nor overwritten",
-      mode="both", needs=("loopback",))
+      needs=("loopback",))
 def c_conflict(t):
     """A directory named stewart-return-<audit>-001 holding a file the driver planted already
     exists in the destination. The run's attempt 1 ends name_taken; attempt 2 (replaces 1)
@@ -1312,7 +1314,7 @@ def _lost_run_reply(t, a):
 
 @case("c5.t10-damaged-payload", ["C5", "C8", "C14", "C16"],
       "T10: a payload damaged after it was recorded is a named, surrendered loss, never delivered as good",
-      mode="both", needs=("loopback",))
+      needs=("loopback",))
 def c_t10(t):
     """T10. The auditor records five goals and ends ordinarily; the driver flips one bit of the
     observation's payload in the archive. close seals as manager: answer.json writes that entry
@@ -1706,13 +1708,17 @@ def c_close_every_state(t):
     (delivered_before_close). An interruption (retry-after 61) is sealed by the manager with the
     entry it recorded. An empty answer gives an honest empty return. A damaged log after launch:
     status log_damaged, close unfinished log_damaged publishing nothing, run refused."""
-    scenario(t, "before-launch", _before_launch)
-    scenario(t, "failed-intake", _failed_intake)
-    scenario(t, "t8", _t8, audit(t, "c8.t8"))
-    scenario(t, "delivered", _delivered_before_close, audit(t, "c8.delivered"))
-    scenario(t, "interrupted", _interrupted_close, audit(t, "c8.interrupted"))
-    scenario(t, "empty", _empty_answer, audit(t, "c8.empty"))
-    scenario(t, "damaged-log", _damaged_log, audit(t, "c8.damaged-log"))
+    if t.sabotage in (None, "empty_return_before_launch"):
+        scenario(t, "before-launch", _before_launch)
+    if not t.sabotage:
+        scenario(t, "failed-intake", _failed_intake)
+    if t.sabotage in (None, "skip_confirmation"):
+        scenario(t, "t8", _t8, audit(t, "c8.t8"))
+    if not t.sabotage:
+        scenario(t, "delivered", _delivered_before_close, audit(t, "c8.delivered"))
+        scenario(t, "interrupted", _interrupted_close, audit(t, "c8.interrupted"))
+        scenario(t, "empty", _empty_answer, audit(t, "c8.empty"))
+        scenario(t, "damaged-log", _damaged_log, audit(t, "c8.damaged-log"))
 
 
 def _before_launch(t):
@@ -2280,12 +2286,16 @@ def c_status_after_launch(t):
     refuses; close delivers without a provider request. Partial delivery: sealed_undelivered,
     not delivered. Close with a surrendered loss: closed, delivered.verified false with the loss
     IDs. Each status in JSON and for people, carrying the same facts."""
-    scenario(t, "interrupted", _st_interrupted, audit(t, "c16.interrupted"))
-    scenario(t, "ordinary", _st_ordinary, audit(t, "c16.ordinary"))
-    scenario(t, "limit", _st_limit, audit(t, "c16.limit", q={"turns": "6"}))
-    scenario(t, "sealed-undelivered", _st_sealed_undelivered, audit(t, "c16.sealed-undelivered"))
-    scenario(t, "partial", _st_partial, audit(t, "c16.partial"))
-    scenario(t, "surrendered", _st_surrendered, audit(t, "c16.surrendered"))
+    if not t.sabotage:
+        scenario(t, "interrupted", _st_interrupted, audit(t, "c16.interrupted"))
+    if t.sabotage in (None, "ended_as_submitted"):
+        scenario(t, "ordinary", _st_ordinary, audit(t, "c16.ordinary"))
+        scenario(t, "limit", _st_limit, audit(t, "c16.limit", q={"turns": "6"}))
+    if t.sabotage in (None, "seal_as_delivered"):
+        scenario(t, "sealed-undelivered", _st_sealed_undelivered, audit(t, "c16.sealed-undelivered"))
+        scenario(t, "partial", _st_partial, audit(t, "c16.partial"))
+    if not t.sabotage:
+        scenario(t, "surrendered", _st_surrendered, audit(t, "c16.surrendered"))
 
 
 def _st_interrupted(t, a):

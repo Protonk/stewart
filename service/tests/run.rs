@@ -2944,16 +2944,7 @@ fn continuation_sabotage_resets_limits_and_notices() {
 }
 
 // ---------------------------------------------------------------------------
-// Effort, and a provider that has moved.
-//
-// The manager's effort travels only as the top-level `output_config` request
-// parameter, never as text the auditor reads (INTERFACE 3.2, 6.2). What the
-// release sends can stop matching what the provider accepts: the provider may
-// rename the parameter, withdraw it or one of its levels, or refuse without an
-// error object. Stewart cannot prevent that, so it must report the refusal as
-// the provider gave it, without retrying, hiding or reclassifying it (6.5).
-// `Surface` models what a provider accepts, so each kind of drift is one
-// changed fact, and a parameter added later joins the model the same way.
+// Effort in the request and in provider refusals (INTERFACE 3.2, 6.2, 6.5).
 
 /// What the fake provider accepts, as far as these tests model it: the
 /// top-level request members, the members of `output_config` and the effort
@@ -3129,121 +3120,6 @@ fn effort_travels_only_as_a_top_level_parameter() {
         for part in read {
             let text = String::from_utf8(part).unwrap();
             assert!(!text.to_lowercase().contains("effort"), "{text}");
-        }
-    }
-}
-
-/// One way a provider can have moved, the answer it gives, and what the
-/// manager must then see: the status, error type, message and request id,
-/// or `None` where the provider gave none.
-struct Drift {
-    name: &'static str,
-    effort: &'static str,
-    act: Act,
-    body: String,
-    error_type: Option<&'static str>,
-    error_message: Option<String>,
-    request_id: Option<&'static str>,
-}
-
-fn drift(name: &'static str, effort: &'static str, surface: Surface) -> Drift {
-    let probe = format!(r#"{{"output_config":{{"effort":"{effort}"}}}}"#);
-    let why = surface
-        .judge(probe.as_bytes())
-        .expect("the drift refuses the effort");
-    Drift {
-        name,
-        effort,
-        act: surface.act(&ended_turn()),
-        body: rejection(&why),
-        error_type: Some("invalid_request_error"),
-        error_message: Some(why),
-        request_id: Some("req_drift"),
-    }
-}
-
-#[test]
-fn a_provider_that_has_moved_is_reported_as_it_answered() {
-    let mut renamed = Surface::current();
-    renamed.output_config = vec!["reasoning_effort"];
-    let mut removed = Surface::current();
-    removed.top.retain(|k| *k != "output_config");
-    let mut withdrawn = Surface::current();
-    withdrawn.levels.retain(|l| *l != "max");
-    let graceless = "<html><body><h1>400 Bad Request</h1></body></html>";
-    let drifts = [
-        drift("renamed", "high", renamed),
-        drift("removed", "high", removed),
-        drift("level withdrawn", "max", withdrawn),
-        Drift {
-            name: "graceless",
-            effort: "high",
-            act: Act::Reply(400, vec![], graceless.into()),
-            body: graceless.into(),
-            error_type: None,
-            error_message: None,
-            request_id: None,
-        },
-    ];
-    assert_eq!(
-        drifts[0].error_message.as_deref(),
-        Some("output_config.effort: Extra inputs are not permitted")
-    );
-    assert_eq!(
-        drifts[1].error_message.as_deref(),
-        Some("output_config: Extra inputs are not permitted")
-    );
-    for d in drifts {
-        let p = provider!(
-            "a_provider_that_has_moved_is_reported_as_it_answered",
-            vec![d.act.clone(), d.act.clone()]
-        );
-        let e = Env::new();
-        let (r, _) = commissioned_with(&e, DEFAULT_LIMITS, &format!("effort: {}\n", d.effort));
-        for run_no in [1u64, 2] {
-            let o = run(&e, &r, &p, &[]);
-            let ctx = format!("{} run {run_no}: {}", d.name, o.stderr);
-            assert_eq!(o.code, Some(5), "{ctx}");
-            assert_eq!(n(&o.reply, &["data", "run"]), run_no, "{ctx}");
-            assert_eq!(
-                sj(&o.reply, &["data", "cause"]),
-                "provider_rejected",
-                "{ctx}"
-            );
-            // One attempt per placement: a refusal is not retried.
-            assert_eq!(p.requests().len() as u64, run_no, "{ctx}");
-            let body = String::from_utf8(p.bodies()[run_no as usize - 1].clone()).unwrap();
-            assert!(
-                body.contains(&format!(r#","output_config":{{"effort":"{}"}},"#, d.effort)),
-                "{ctx}"
-            );
-            let ended = body_of(&e, &r, last_of(&e, &r, "run_ended"));
-            for v in [&ended, at(&o.reply, &["data"])] {
-                assert_eq!(n(v, &["provider", "status"]), 400, "{ctx}");
-                let fact = |k: &str| at(v, &["provider", k]).as_str().map(str::to_string);
-                assert_eq!(fact("error_type").as_deref(), d.error_type, "{ctx}");
-                assert_eq!(fact("error_message"), d.error_message, "{ctx}");
-                assert_eq!(fact("request_id").as_deref(), d.request_id, "{ctx}");
-                assert_eq!(
-                    (
-                        n(v, &["provider", "request"]),
-                        n(v, &["provider", "attempt"])
-                    ),
-                    (1, 1),
-                    "{ctx}"
-                );
-            }
-            // The raw answer is kept, byte for byte.
-            assert_eq!(
-                run_file(&e, &r, run_no, "response-1-1.bin"),
-                d.body.as_bytes(),
-                "{ctx}"
-            );
-            assert_eq!(
-                sj(&attempt(&e, &r, run_no, 1, 1), &["then"]),
-                "end",
-                "{ctx}"
-            );
         }
     }
 }

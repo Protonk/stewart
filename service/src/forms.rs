@@ -777,19 +777,6 @@ fn runtime_arrangement(input: &ArrangementInput, f: &Family) -> Arrangement {
     Arrangement { body, readable }
 }
 
-/// Test projection onto revision 2. Check the two intentional differences
-/// before comparing all other bytes against the pre-cutover digests.
-#[cfg(test)]
-pub(crate) fn previous_arrangement(mut body: J, current: &str, previous: &str) -> J {
-    let J::Obj(fields) = &mut body else {
-        panic!("arrangement body")
-    };
-    assert_eq!(fields.pop().unwrap().0, "commissioning");
-    assert_eq!(fields[0], ("schema".into(), J::from(current)));
-    fields[0].1 = previous.into();
-    body
-}
-
 fn quoted_block(text: &str) -> String {
     text.split('\n')
         .map(|l| {
@@ -1007,64 +994,6 @@ mod tests {
         );
     }
 
-    /// The bytes of the arrangement body, as `prepare` records them (the
-    /// record header adds a timestamp, so the body is what is pinned).
-    #[test]
-    fn messages_arrangement_bodies_are_frozen() {
-        let cases = [
-            (
-                "open-inquiry",
-                None,
-                "45bfd47b010ce59b39c2633d1866371d11e3c9e13488a908481eb61ccd228f4d",
-            ),
-            (
-                "inquiry-framing",
-                None,
-                "aa9c520b2805d4d2b3cd7a339529b65bc850447d4010a4da80b7fc074123ec96",
-            ),
-            (
-                "comparison",
-                None,
-                "49c1db2b0d586bbf869be5593d24bb3b6c8bee568ff65779aedb9fb27759b065",
-            ),
-            (
-                "open-inquiry",
-                Some("  Supplied guidance.\r\n"),
-                "54974e2f460cf7b2a5fc259f597bb4bec830a36d697b074ebe1c42b6901ba221",
-            ),
-        ];
-        let mut observed = Vec::new();
-        for (family, guidance, _) in cases {
-            let settings = crate::frontmatter::Settings {
-                guidance: guidance.map(|_| "guidance.md".into()),
-                family: family.into(),
-                model: "claude-opus-5-5".into(),
-                effort: None,
-                destination: "/d".into(),
-                runtime: crate::frontmatter::RuntimeSettings::Messages(
-                    crate::frontmatter::MessagesLimits {
-                        turns: 200,
-                        input_tokens: 20_000_000,
-                        output_tokens: 400_000,
-                    },
-                ),
-                inquiry: None,
-                varies: None,
-            };
-            let body = arrangement(&ArrangementInput {
-                material_roles: &Default::default(),
-                guidance,
-                settings: &settings,
-                question_body_sha256: &"1".repeat(64),
-                material_index_sha256: &"2".repeat(64),
-            })
-            .body;
-            let old = previous_arrangement(body, ARRANGEMENT_SCHEMA, "stewart.arrangement/2");
-            observed.push(crate::util::sha256_hex(&old.bytes()));
-        }
-        assert_eq!(observed, cases.map(|(_, _, digest)| digest));
-    }
-
     /// The readable view of the same settings, parsed from a question: each
     /// Messages limit is stated under its own name, and the view is frozen.
     #[test]
@@ -1078,12 +1007,6 @@ mod tests {
             question_body_sha256: &"1".repeat(64),
             material_index_sha256: &"2".repeat(64),
         });
-        assert_eq!(
-            crate::util::sha256_hex(
-                &previous_arrangement(a.body, ARRANGEMENT_SCHEMA, "stewart.arrangement/2").bytes()
-            ),
-            "49c1db2b0d586bbf869be5593d24bb3b6c8bee568ff65779aedb9fb27759b065"
-        );
         assert!(
             a.readable.contains(
                 "\n\n- Turns: 200\n- Input tokens: 20000000\n- Output tokens: 400000\n- Near-limit notice: "

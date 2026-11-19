@@ -92,21 +92,11 @@ pub fn question_with(e: &Env, family: &str, body: &str) {
 impl Live {
     /// A commissioned audit of `family` with these materials, launched.
     pub fn open(family: &str, body: &str, materials: &[(&str, &[u8])]) -> Live {
-        Live::open_env(family, body, materials, &[])
-    }
-
-    /// As `open`, with environment variables for the binary's prepare.
-    pub fn open_env(
-        family: &str,
-        body: &str,
-        materials: &[(&str, &[u8])],
-        env: &[(&str, &str)],
-    ) -> Live {
         let e = Env::new();
         let r = e.new_ref();
         e.fill(body, materials);
         question_with(&e, family, body);
-        let o = e.run_env(&["prepare", &r, "--json"], env);
+        let o = e.run(&["prepare", &r, "--json"]);
         assert_eq!(o.code, Some(0), "{}", o.text());
         let h = s(&o.json(), &["data", "prepared"]).to_string();
         let o = e.commission(&r, &h);

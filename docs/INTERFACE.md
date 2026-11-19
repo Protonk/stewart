@@ -3146,7 +3146,6 @@ the check for that property must fail. The claims are ACCEPTANCE's.
 | `skip_confirmation` | Close publishes `closed` right after a delivery it made (C8) |
 | `seal_as_stopped` | With a seal recorded, close does not wait for a held run and reports `run: "ended"` (C8) |
 | `empty_return_before_launch` | Close before launch seals an empty selection as manager and delivers it (C8) |
-| `slow_list` | `list` sleeps 500 ms before replying (C9) |
 | `hide_provider_message` | `run_ended.provider` and the run reply give `error_message` as null (C9) |
 | `rejection_as_unavailable` | An HTTP 400 is retried like a 529, and the run ends `provider_unavailable` (C9) |
 | `relative_run_line` | The commission reply and receipt give the run line with the writer path relative to the commissioning directory (C12) |

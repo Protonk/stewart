@@ -37,18 +37,15 @@ per-case durations, so the slowest cases are not yet known.
   measured property allows, shorten deadlines whose length is not the property
   under test, and consider running independent cases concurrently in separate
   work roots while timing-sensitive cases stay serial.
-- [ ] In the suite, consider running the two architectures concurrently if the
-  host has capacity and the arm64 timing gate is not disturbed, and whether a
-  native x86_64 host should replace emulation (this meets the acceptance-policy
-  question on Linux hosts and the native WSL2 timings).
+- [ ] Consider running the two architectures concurrently if the host has
+  capacity. Assess a native x86_64 host alongside the acceptance-policy
+  question on Linux hosts.
 - [ ] For Cargo, separate compile from run time across the four configurations,
   find the long test binaries (the fault/sabotage configuration's longest is
   about 95 seconds) and avoid redundant rebuilds.
 
-Every firing control, differing case and invariance case keeps running. Timing
-gates keep their meaning: concurrency must not inflate a gated measurement, or
-that measurement runs alone. Results stay comparable with earlier qualification
-records. Preserve the coverage required by ACCEPTANCE.
+Preserve the firing controls, differing and invariance cases required by
+ACCEPTANCE. Record concurrency when comparing measurements across runs.
 
 Complete this plan when before-and-after times are measured on the same host
 with unchanged outcomes and controls, and DEVELOPMENT describes the faster

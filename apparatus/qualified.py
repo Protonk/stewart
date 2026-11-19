@@ -32,8 +32,8 @@ on a record that is malformed or nested too deeply. A run's outcome is
 decided mechanically: "qualified" only when its completion record reports no
 failures, every expectation its script makes of the exit records holds, the
 driver exited 0 with no failed or skipped case, no broken check and every
-control fired, the timing gate passed where it was on, and the end-to-end
-case passed.
+control fired and the end-to-end case passed. Timing verdicts in historical
+results are evaluated under the rules of their recorded driver version.
 
 Run it from the repository root with an isolated interpreter:
 
@@ -78,7 +78,8 @@ import tempfile
 import unicodedata
 
 SCHEMA = "stewart.qualified/1"
-DRIVER_SCHEMA = "stewart.acceptance-driver/1"
+DRIVER_SCHEMA = "stewart.acceptance-driver/2"
+TIMED_DRIVER_SCHEMA = "stewart.acceptance-driver/1"
 E2E_CASE = "e2e.reacting-audit"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RECORD_REL = "apparatus/qualified.json"
@@ -92,6 +93,7 @@ DRIFT_SHOWN = 12  # files listed per drift category before summarizing
 PLATFORMS = (("arm64", "linux-aarch64", "aarch64"), ("amd64", "linux-x86_64", "x86_64"))
 SUITES = {
     "acceptance": {"script": "apparatus/acceptance.sh", "start": "acceptance suite start;"},
+    "runtime": {"script": "apparatus/runtime-acceptance.sh", "start": "runtime suite start;"},
     "toolchain": {"script": "apparatus/step2.sh", "start": "step2 apparatus check start;",
                   "inner": "apparatus/container/inner-build.sh"},
 }
@@ -827,43 +829,7 @@ def runtime_acceptance(ctx, ev, head, p, bins, fails):
             "variant_sha256": digests["variant_sha256"], "driver_sha256": environment.get("driver_sha256")}
 
 
-def acceptance_platform(ctx, ev, head, p, machine, native, expectations, bins):
-    fails = []
-    result_rel = "driver-%s/evidence/RESULT.json" % p
-    if not ev.exists(result_rel):
-        why = explain_not_run(ev, head, p, ("build-" + p, "driver-" + p))
-        if not why:
-            ev.problem("%s: missing, and the run's records give no reason" % result_rel)
-        return {"execution": None, "outcome": "failed", "failures": ["not run: " + "; ".join(why)]}
-    res = ev.json(result_rel)
-    if res is None:
-        return {}
-    if not isinstance(res, dict) or res.get("schema") != DRIVER_SCHEMA:
-        ev.problem("%s: schema is not %s" % (result_rel, DRIVER_SCHEMA))
-        return {}
-
-    def get(dotted, kind):
-        return ev.field(res, dotted, result_rel, kind)
-
-    emulation = ev.line("driver-%s/emulation.txt" % p)
-    got_machine = get("platform.machine", "str")
-    if got_machine is not None and got_machine != machine:
-        fails.append("%s: platform.machine is %s, not %s" % (result_rel, got_machine, machine))
-    if emulation is None:
-        execution = None
-    elif "rosetta" in emulation.lower():
-        execution = "emulated (Rosetta)"
-    elif emulation == "none" and native == p:
-        execution = "native"
-    else:
-        execution = "emulated"
-
-    for rel in ("host/build-%s.exit" % p, "host/driver-%s.exit" % p,
-                "driver-%s/driver.exit" % p, "driver-%s/driver-final.exit" % p):
-        rc = ev.exit(rel)
-        if rc not in (None, 0):
-            fails.append("%s is %d" % (rel, rc))
-
+def script_checks(ev, p, expectations, fails):
     checks = {"passed": 0, "total": 0, "controls_fired": 0, "controls_total": 0}
     for folder, name, want, label in expectations:
         rel = "%s-%s/%s.exit" % (folder, p, name)
@@ -876,6 +842,47 @@ def acceptance_platform(ctx, ev, head, p, machine, native, expectations, bins):
             checks["controls_fired"] += control
         elif got is not None:
             fails.append("%s is %d, expected %d (%s)" % (rel, got, want, label.replace("$p", p)))
+    return checks
+
+
+def execution_kind(ev, p, native):
+    emulation = ev.line("driver-%s/emulation.txt" % p)
+    if emulation is None:
+        return None
+    if "rosetta" in emulation.lower():
+        return "emulated (Rosetta)"
+    return "native" if emulation == "none" and native == p else "emulated"
+
+
+def acceptance_platform(ctx, ev, head, p, machine, native, expectations, bins):
+    fails = []
+    result_rel = "driver-%s/evidence/RESULT.json" % p
+    if not ev.exists(result_rel):
+        why = explain_not_run(ev, head, p, ("build-" + p, "driver-" + p))
+        if not why:
+            ev.problem("%s: missing, and the run's records give no reason" % result_rel)
+        return {"execution": None, "outcome": "failed", "failures": ["not run: " + "; ".join(why)]}
+    res = ev.json(result_rel)
+    if res is None:
+        return {}
+    if not isinstance(res, dict) or res.get("schema") not in (DRIVER_SCHEMA, TIMED_DRIVER_SCHEMA):
+        ev.problem("%s: unrecognized acceptance-driver schema" % result_rel)
+        return {}
+
+    def get(dotted, kind):
+        return ev.field(res, dotted, result_rel, kind)
+
+    execution = execution_kind(ev, p, native)
+    got_machine = get("platform.machine", "str")
+    if got_machine is not None and got_machine != machine:
+        fails.append("%s: platform.machine is %s, not %s" % (result_rel, got_machine, machine))
+    for rel in ("host/build-%s.exit" % p, "host/driver-%s.exit" % p,
+                "driver-%s/driver.exit" % p, "driver-%s/driver-final.exit" % p):
+        rc = ev.exit(rel)
+        if rc not in (None, 0):
+            fails.append("%s is %d" % (rel, rc))
+
+    checks = script_checks(ev, p, expectations, fails)
 
     selftest_text = ev.text("driver-%s/selftest.stdout" % p)
     self_test = None
@@ -919,20 +926,32 @@ def acceptance_platform(ctx, ev, head, p, machine, native, expectations, bins):
     if get("interrupted", "bool"):
         fails.append("%s: the driver was interrupted" % result_rel)
 
-    gate = {"enabled": get("timing_gate.enabled", "bool"), "passed": get("timing_gate.passed", "optbool"),
-            "threshold_ms": get("timing_gate.threshold_ms", "num"), "worst_ms": get("timing_gate.worst_ms", "num"),
-            "protocol_passed": get("timing_gate.protocol.passed", "optbool"),
-            "protocol_worst_ms": get("timing_gate.protocol.worst_ms", "num")}
-    recorded_gate = res.get("timing_gate") if isinstance(res, dict) else None
-    protocol = recorded_gate.get("protocol") if isinstance(recorded_gate, dict) else None
-    if isinstance(protocol, dict) and "threshold_ms" in protocol:
-        gate["protocol_threshold_ms"] = get("timing_gate.protocol.threshold_ms", "num")
-    if gate["enabled"]:
-        if gate["passed"] is not True or gate["protocol_passed"] is not True:
-            fails.append("timing gate on and not passed (commands %s, protocol %s)"
-                         % (gate["passed"], gate["protocol_passed"]))
-    elif execution == "native":
-        fails.append("timing gate off on a native run")
+    if res["schema"] == TIMED_DRIVER_SCHEMA:
+        gate = {"enabled": get("timing_gate.enabled", "bool"), "passed": get("timing_gate.passed", "optbool"),
+                "threshold_ms": get("timing_gate.threshold_ms", "num"), "worst_ms": get("timing_gate.worst_ms", "num"),
+                "protocol_passed": get("timing_gate.protocol.passed", "optbool"),
+                "protocol_worst_ms": get("timing_gate.protocol.worst_ms", "num")}
+        recorded_gate = res.get("timing_gate")
+        protocol = recorded_gate.get("protocol") if isinstance(recorded_gate, dict) else None
+        if isinstance(protocol, dict) and "threshold_ms" in protocol:
+            gate["protocol_threshold_ms"] = get("timing_gate.protocol.threshold_ms", "num")
+        if gate["enabled"]:
+            if gate["passed"] is not True or gate["protocol_passed"] is not True:
+                fails.append("timing gate on and not passed (commands %s, protocol %s)"
+                             % (gate["passed"], gate["protocol_passed"]))
+        elif execution == "native":
+            fails.append("timing gate off on a native run")
+        timing = {"timing_gate": gate}
+    else:
+        # Each operation/binary group contributes its sample count to the ledger.
+        # The timing distributions themselves stay in the digest-bound RESULT.json.
+        groups = get("timings", dict)
+        samples = {"commands": 0, "protocol": 0}
+        for key, stats in (groups or {}).items():
+            count = ev.field(stats, "n", "%s: timings[%r]" % (result_rel, key), "count")
+            if count is not None:
+                samples["protocol" if key.startswith("protocol:") else "commands"] += count
+        timing = {"timing_samples": samples}
 
     e2e = {"case": E2E_CASE, "outcome": "absent", "checks_passed": 0, "checks_failed": 0}
     for case in get("cases", list) or []:
@@ -977,7 +996,7 @@ def acceptance_platform(ctx, ev, head, p, machine, native, expectations, bins):
         "checks": check_counts,
         "controls": controls,
         "driver_controls": driver_controls,
-        "timing_gate": gate,
+        **timing,
         "e2e": e2e,
         "release_sha256": digests["release"],
         "test_sha256": digests["test"],
@@ -986,8 +1005,30 @@ def acceptance_platform(ctx, ev, head, p, machine, native, expectations, bins):
     }
 
 
-def extract_acceptance(ctx, ev):
-    head = read_header(ctx, ev, "acceptance")
+def runtime_platform(ctx, ev, head, p, machine, native, expectations, bins):
+    result = "driver-%s/runtime-evidence/RESULT.json" % p
+    if not ev.exists(result):
+        reasons = explain_not_run(ev, head, p, ("build-" + p, "driver-" + p))
+        if not reasons:
+            ev.problem("%s: missing with no recorded build or driver failure" % result)
+        return {"execution": None, "outcome": "failed", "failures": reasons}
+
+    fails = []
+    checks = script_checks(ev, p, expectations, fails)
+    for rel in ("host/build-%s.exit" % p, "host/driver-%s.exit" % p, "driver-%s/driver-final.exit" % p):
+        if ev.exit(rel) != 0:
+            fails.append("%s did not complete successfully" % rel)
+    if ev.line("driver-%s/env-machine.stdout" % p) != machine:
+        fails.append("driver ran on a different architecture from " + machine)
+    runtime = runtime_acceptance(ctx, ev, head, p, bins, fails)
+    rustc = ev.line("build-%s/toolchain.stdout" % p)
+    return {"execution": execution_kind(ev, p, native), "outcome": "failed" if fails else "qualified",
+            "failures": fails, "toolchain_image": ev.image("host/toolchain-inspect-%s.stdout" % p),
+            "rustc": rustc.splitlines()[0] if rustc else None, "script_checks": checks, "runtime": runtime}
+
+
+def extract_acceptance(ctx, ev, suite):
+    head = read_header(ctx, ev, suite)
     native = None
     if head["lines"]:
         m = re.search(r"native architecture (\S+)", head["lines"][0])
@@ -998,10 +1039,11 @@ def extract_acceptance(ctx, ev):
     expectations = acceptance_expectations(ev, head["script_text"]) if head["script_text"] else []
     bins = ev.binaries(need=head["finished"])
     platforms = {}
+    reader = runtime_platform if suite == "runtime" else acceptance_platform
     for p, key, machine in PLATFORMS:
-        platforms[key] = acceptance_platform(ctx, ev, head, p, machine, native, expectations, bins)
+        platforms[key] = reader(ctx, ev, head, p, machine, native, expectations, bins)
     extra = {"python_image": ev.image("host/python-inspect.stdout", need=head["finished"])}
-    return suite_entry(ev, head, "acceptance", platforms, extra)
+    return suite_entry(ev, head, suite, platforms, extra)
 
 
 def toolchain_platform(ctx, ev, head, p, steps, bins):
@@ -1122,7 +1164,7 @@ def suite_entry(ev, head, suite, platforms, extra):
 def extract_suite(ctx, run_id, suite):
     require_run_folder(ctx, run_id, "a run folder")
     ev = Evidence(ctx, run_id)
-    entry = (extract_acceptance if suite == "acceptance" else extract_toolchain)(ctx, ev)
+    entry = extract_toolchain(ctx, ev) if suite == "toolchain" else extract_acceptance(ctx, ev, suite)
     if ev.problems:
         raise ExtractError(run_id, ev.problems)
     return entry
@@ -1266,6 +1308,7 @@ _OPT_STR = _want(lambda v: v is None or isinstance(v, str), "a string or null")
 _OPT_SHA = _want(lambda v: v is None or _is_sha(v), "a SHA-256 in hex, or null")
 _SHA = _want(_is_sha, "a SHA-256 in hex")
 _INT = _want(is_int, "an integer")
+_COUNT = _want(lambda v: is_int(v) and v >= 0, "a nonnegative integer")
 _OPT_INT = _want(lambda v: v is None or is_int(v), "an integer or null")
 _NUM = _want(lambda v: is_int(v) or isinstance(v, float), "a number")
 _OPT_NUM = _want(lambda v: v is None or is_int(v) or isinstance(v, float), "a number or null")
@@ -1307,7 +1350,6 @@ ACCEPTANCE_PLATFORM = dict(ACCEPTANCE_NOT_RUN, **{
     "checks": _counts("passed", "failed_outside_controls", "failed_inside_controls"),
     "controls": _counts("fired", "total"),
     "driver_controls": _counts("fired", "total"),
-    "timing_gate": _timing_gate,
     "e2e": _object({"case": _STR, "outcome": _SCALAR, "checks_passed": _NUM, "checks_failed": _NUM}),
     "release_sha256": _OPT_STR, "test_sha256": _OPT_STR, "result_sha256": _OPT_SHA,
     "runtime": RUNTIME_PLATFORM,
@@ -1338,11 +1380,16 @@ def _platforms(suite):
                 spec = TOOLCHAIN_PLATFORM
             elif isinstance(pl, dict) and set(pl) <= set(ACCEPTANCE_NOT_RUN):
                 spec = ACCEPTANCE_NOT_RUN
+            elif suite == "runtime":
+                spec = {key: ACCEPTANCE_PLATFORM[key] for key in (
+                    "execution", "outcome", "failures", "toolchain_image", "rustc", "script_checks", "runtime")}
+            elif isinstance(pl, dict) and "timing_gate" in pl:
+                spec = dict(ACCEPTANCE_PLATFORM, timing_gate=_timing_gate)
             else:
-                spec = ACCEPTANCE_PLATFORM
+                spec = dict(ACCEPTANCE_PLATFORM, timing_samples=_object({"commands": _COUNT, "protocol": _COUNT}))
             # Runtime evidence is present precisely when the run's own source
             # script required it. Do not invent observations for earlier runs.
-            _fields(pl, spec, "%s.%s" % (where, key), probs, checked_elsewhere=("runtime",))
+            _fields(pl, spec, "%s.%s" % (where, key), probs, checked_elsewhere=() if suite == "runtime" else ("runtime",))
     return check
 
 
@@ -1356,7 +1403,7 @@ def suite_fields(suite):
                                    "a full commit hash"),
             "source_archive_sha256": _OPT_SHA, "outcome": _OUTCOME, "failures": _FAILURES,
             "platforms": _platforms(suite)}
-    if suite == "acceptance":
+    if suite in ("acceptance", "runtime"):
         spec["python_image"] = _OPT_STR
     else:
         spec["vendor"] = _object({"files": _want(lambda v: is_int(v) and v >= 0, "a count"), "listing_sha256": _SHA},
@@ -1695,8 +1742,18 @@ def render_platform_rows(e):
             ("Failures", ["; ".join(cell(f) for f in pl.get("failures") or []) or "none" for pl in pls]),
             ("Toolchain image", [code(pl.get("toolchain_image")) for pl in pls]),
             ("rustc", [cell(pl.get("rustc")) for pl in pls])]
+    def counts(pl, key, order):
+        d = pl.get(key) or {}
+        return ", ".join("%s %s" % (k.replace("_", " "), cell(d.get(k))) for k in order) if d else "not recorded"
+
     if e["suite"] == "acceptance":
-        def gate(pl):
+        has_samples = any("timing_samples" in pl for pl in pls)
+        def timings(pl):
+            if "timing_samples" in pl:
+                samples = pl["timing_samples"]
+                return "%s command, %s protocol" % (samples["commands"], samples["protocol"])
+            if has_samples and "timing_gate" not in pl:
+                return "not recorded"
             g = pl.get("timing_gate") or {}
             if g.get("enabled"):
                 head = "on, %s" % ("passed" if g.get("passed") and g.get("protocol_passed") else "not passed")
@@ -1708,10 +1765,6 @@ def render_platform_rows(e):
                     cell(g.get("protocol_worst_ms")), cell(g["protocol_threshold_ms"]))
             return "%s: worst %s ms; protocol worst %s ms; threshold %s ms" % (
                 head, cell(g.get("worst_ms")), cell(g.get("protocol_worst_ms")), cell(g.get("threshold_ms")))
-
-        def counts(pl, key, order):
-            d = pl.get(key) or {}
-            return ", ".join("%s %s" % (k.replace("_", " "), cell(d.get(k))) for k in order) if d else "not recorded"
 
         def e2e(pl):
             x = pl.get("e2e")
@@ -1732,31 +1785,13 @@ def render_platform_rows(e):
                         for pl in pls]),
             ("Sabotage control variants fired (INTERFACE C.2)", [ratio(pl.get("controls"), "fired", "total") for pl in pls]),
             ("Driver controls fired", [ratio(pl.get("driver_controls"), "fired", "total") for pl in pls]),
-            ("Timing gate", [gate(pl) for pl in pls]),
+            ("Timing samples" if has_samples else "Timing gate", [timings(pl) for pl in pls]),
             ("End to end (`%s`)" % E2E_CASE, [e2e(pl) for pl in pls]),
             ("Release binary SHA-256", [code(pl.get("release_sha256")) for pl in pls]),
             ("Test binary SHA-256", [code(pl.get("test_sha256")) for pl in pls]),
             ("RESULT.json SHA-256", [code(pl.get("result_sha256")) for pl in pls]),
         ]
-        if any("runtime" in pl for pl in pls):
-            runtimes = [pl.get("runtime") or {} for pl in pls]
-            rows += [
-                ("Synthetic runtime cases", [counts(runtime, "counts", ("cases", "passed", "failed", "skipped"))
-                                             for runtime in runtimes]),
-                ("Synthetic runtime checks", [counts(runtime, "counts", ("checks", "checks_passed", "checks_failed"))
-                                              for runtime in runtimes]),
-                ("Synthetic runtime controls", [ratio(runtime.get("counts"), "controls_fired", "controls")
-                                                for runtime in runtimes]),
-                ("Synthetic runtime self-test", [counts(runtime, "self_test", ("passed", "failed", "skipped"))
-                                                 for runtime in runtimes]),
-                ("Development binary SHA-256", [code(runtime.get("development_sha256")) for runtime in runtimes]),
-                ("Second development binary SHA-256", [code(runtime.get("variant_sha256")) for runtime in runtimes]),
-                ("Synthetic runtime RESULT.json SHA-256", [code(runtime.get("result_sha256")) for runtime in runtimes]),
-                ("Synthetic runtime evidence listing SHA-256", [code((runtime.get("evidence") or {}).get("listing_sha256"))
-                                                                for runtime in runtimes]),
-                ("Synthetic runtime work archive SHA-256", [code(runtime.get("work_sha256")) for runtime in runtimes]),
-            ]
-    else:
+    elif e["suite"] == "toolchain":
         def build(pl, i):
             bs = pl.get("builds") or []
             if i >= len(bs):
@@ -1772,6 +1807,24 @@ def render_platform_rows(e):
             ("Reproducible", ["yes" if pl.get("reproducible") else "no" for pl in pls]),
             ("Binary SHA-256 (both builds)", [code(pl.get("release_sha256")) for pl in pls]),
             ("Alpine run exit", [cell(pl.get("alpine_run_exit")) for pl in pls]),
+        ]
+    if any("runtime" in pl for pl in pls):
+        runtimes = [pl.get("runtime") or {} for pl in pls]
+        rows += [
+            ("Synthetic runtime cases", [counts(runtime, "counts", ("cases", "passed", "failed", "skipped"))
+                                         for runtime in runtimes]),
+            ("Synthetic runtime checks", [counts(runtime, "counts", ("checks", "checks_passed", "checks_failed"))
+                                          for runtime in runtimes]),
+            ("Synthetic runtime controls", [ratio(runtime.get("counts"), "controls_fired", "controls")
+                                            for runtime in runtimes]),
+            ("Synthetic runtime self-test", [counts(runtime, "self_test", ("passed", "failed", "skipped"))
+                                             for runtime in runtimes]),
+            ("Development binary SHA-256", [code(runtime.get("development_sha256")) for runtime in runtimes]),
+            ("Second development binary SHA-256", [code(runtime.get("variant_sha256")) for runtime in runtimes]),
+            ("Synthetic runtime RESULT.json SHA-256", [code(runtime.get("result_sha256")) for runtime in runtimes]),
+            ("Synthetic runtime evidence listing SHA-256", [code((runtime.get("evidence") or {}).get("listing_sha256"))
+                                                            for runtime in runtimes]),
+            ("Synthetic runtime work archive SHA-256", [code(runtime.get("work_sha256")) for runtime in runtimes]),
         ]
     lines = ["| | %s |" % " | ".join(keys), "| --- |%s" % (" --- |" * len(keys))]
     lines += ["| %s | %s |" % (label, " | ".join(vals)) for label, vals in rows]
@@ -1831,7 +1884,7 @@ def render(record):
                   "- Finished: %s" % e["date"],
                   "- Outcome: **%s**" % e["outcome"],
                   "- Run-level failures: %s" % ("; ".join(cell(f) for f in e["failures"]) or "none")]
-            if e["suite"] == "acceptance":
+            if e["suite"] in ("acceptance", "runtime"):
                 L.append("- Python image: %s" % code(e.get("python_image")))
             if e["suite"] == "toolchain":
                 v = e.get("vendor")
@@ -2136,13 +2189,16 @@ def folder_matches(ctx, name, entry):
         return []
     ev = Evidence(ctx, name)
     digest = lambda rel, token=False: ev.first_token(rel, need=False) if token else ev.digest(rel, need=False)
-    if entry["kind"] == "suite" and entry["suite"] == "acceptance":
-        wanted = {pl.get("result_sha256") for pl in entry["platforms"].values()} - {None}
+    if entry["kind"] == "suite" and entry["suite"] in ("acceptance", "runtime"):
+        runtime = entry["suite"] == "runtime"
+        wanted = {(pl.get("runtime", {}) if runtime else pl).get("result_sha256")
+                  for pl in entry["platforms"].values()} - {None}
         try:
             subs = sorted(n for n in os.listdir(ev.dir) if n.startswith("driver-"))
         except OSError:
             return []
-        rels = ["%s/evidence/RESULT.json" % sub for sub in subs]
+        folder = "runtime-evidence" if runtime else "evidence"
+        rels = ["%s/%s/RESULT.json" % (sub, folder) for sub in subs]
         return [rel for rel in rels if wanted and digest(rel) in wanted]
     if entry["kind"] == "suite":
         wants = []
@@ -2310,15 +2366,24 @@ def cmd_extract(ctx, run_arg, suite, out=print):
 
 
 def summarize_platform(suite, pl):
+    if suite == "runtime" and "runtime" in pl:
+        counts = pl["runtime"]["counts"]
+        return "%s, synthetic cases %s, controls %s" % (
+            pl["outcome"], ratio(counts, "passed", "cases"), ratio(counts, "controls_fired", "controls"))
     if "cases" not in pl and "builds" not in pl:
         return pl.get("outcome", "?")
     if suite == "acceptance":
-        g = pl["timing_gate"]
-        return ("%s, %s; cases %s; sabotage controls %s; driver controls %s; timing gate %s (worst %s ms); "
+        if "timing_gate" in pl:
+            g = pl["timing_gate"]
+            timing = "timing gate %s (worst %s ms)" % ("on" if g["enabled"] else "off", g["worst_ms"])
+        else:
+            timing = "timing samples: %s command, %s protocol" % (pl["timing_samples"]["commands"],
+                                                                 pl["timing_samples"]["protocol"])
+        return ("%s, %s; cases %s; sabotage controls %s; driver controls %s; %s; "
                 "%s %s %s checks; release %s" % (
                     pl["outcome"], pl["execution"], ratio(pl["cases"], "passed", "selected"),
                     ratio(pl["controls"], "fired", "total"), ratio(pl["driver_controls"], "fired", "total"),
-                    "on" if g["enabled"] else "off", g["worst_ms"], E2E_CASE, pl["e2e"]["outcome"],
+                    timing, E2E_CASE, pl["e2e"]["outcome"],
                     pl["e2e"]["checks_passed"], (pl["release_sha256"] or "?")[:16]))
     return "%s; image %s; builds %s; reproducible %s; release %s" % (
         pl["outcome"], (pl["toolchain_image"] or "?")[:19],
@@ -2439,7 +2504,6 @@ def _fixture_run(ctx, run_id, commit, date, failing):
         for rel, value in (("selftest", 0), ("driver", broken), ("driver-final", broken)):
             w("driver-%s/%s.exit" % (p, rel), "%d\n" % value)
         w("driver-%s/selftest.stdout" % p, "ok   x\nself-test: 3 checks, 3 passed, 0 failed, 0 skipped\n")
-        gated = p == "arm64"
         result = {
             "schema": DRIVER_SCHEMA, "interrupted": False, "platform": {"machine": machine},
             "binaries": {"release": {"sha256": release, "source_sha256": release},
@@ -2451,8 +2515,8 @@ def _fixture_run(ctx, run_id, commit, date, failing):
                        "driver_controls": {"total": 1, "fired": 1}},
             "failed_cases": ["c1.fixture"] if broken else [], "broken_checks": [],
             "controls_unassigned": [], "controls_never_fired": [],
-            "timing_gate": {"enabled": gated, "threshold_ms": 100.0, "worst_ms": 1.5, "passed": True if gated else None,
-                            "protocol": {"worst_ms": 3.0, "passed": True if gated else None}},
+            "timings": {"status/release": {"n": 1, "min_ms": 240, "median_ms": 240, "p95_ms": 240, "max_ms": 240},
+                        "protocol:list/release": {"n": 1, "min_ms": 350, "median_ms": 350, "p95_ms": 350, "max_ms": 350}},
             "cases": [{"id": E2E_CASE, "outcome": "pass",
                        "variants": [{"binary": "release", "checks_passed": 10, "checks_failed": 0}]}],
             "exit": int(broken),
@@ -2474,6 +2538,7 @@ def _runtime_self_test(base, isolated, record_control):
         for name in ("runtime-driver", "runtime-selftest", "runtime-complete",
                      "runtime-evidence-copy", "runtime-retention"))
     _write(root, "apparatus/acceptance.sh", script)
+    _write(root, "apparatus/runtime-acceptance.sh", script[script.index('    expect "$OUT/$d/runtime-driver'):])
     sources = {"claude_code.py": 'CASES = (("runtime-one", "fixture"),)\n',
                "driver_core.py": "# specification fixture\n", "rawjson.py": "# decoder fixture\n"}
     for name, contents in sources.items():
@@ -2486,6 +2551,7 @@ def _runtime_self_test(base, isolated, record_control):
     folder = os.path.join(ctx.scratch, "runtime")
     binaries = _read(os.path.join(folder, "host/binaries.sha256")).decode()
     for p, _key, _machine in PLATFORMS:
+        _write(folder, "driver-%s/env-machine.stdout" % p, _machine + "\n")
         prefix = "driver-%s/runtime-evidence/" % p
         release = sha256(("runtime-%s-r" % p).encode())
         local, variant = sha256((p + "-local").encode()), sha256((p + "-variant").encode())
@@ -2522,6 +2588,25 @@ def _runtime_self_test(base, isolated, record_control):
     record = {"schema": SCHEMA, "entries": [baseline]}
     control("runtime: extracted fields validate and render separately",
             not record_problems(record) and "Synthetic runtime cases" in render(record))
+
+    # A runtime-only job can qualify with no release-driver case results.
+    standalone = os.path.join(ctx.scratch, "runtime-only")
+    shutil.copytree(folder, standalone)
+    for arch, _, _ in PLATFORMS:
+        os.unlink(os.path.join(standalone, "driver-" + arch, "evidence", "RESULT.json"))
+    _write(standalone, "host/driver.log", _read(os.path.join(folder, "host/driver.log")).decode().replace(
+        "acceptance suite start;", "runtime suite start;"))
+    separate = extract_suite(ctx, "runtime-only", "runtime")
+    separate_record = {"schema": SCHEMA, "entries": [separate]}
+    control("runtime: standalone suite validates the same evidence independently",
+            separate["outcome"] == "qualified" and not record_problems(separate_record)
+            and "Synthetic runtime cases" in render(separate_record)
+            and all(v["runtime"] == baseline["platforms"][k]["runtime"] for k, v in separate["platforms"].items()))
+    _write(standalone, "driver-arm64/runtime-driver.exit", "1\n")
+    rejected = extract_suite(ctx, "runtime-only", "runtime")
+    control("runtime: standalone failing process changes only its platform verdict",
+            rejected["outcome"] == "failed" and rejected["platforms"]["linux-aarch64"]["outcome"] == "failed"
+            and rejected["platforms"]["linux-x86_64"]["outcome"] == "qualified")
 
     def mutate(name, rel, transform, expected, unreadable=False):
         path = os.path.join(folder, rel)
@@ -2939,8 +3024,16 @@ def _self_test_controls(base, isolated, control):
     # Separate budgets survive extraction without changing historical records.
     timing_path = os.path.join(ctx.scratch, "run-0", "driver-arm64/evidence/RESULT.json")
     timing_original = _read(timing_path)
-    historical = extract_suite(ctx, "run-0", "acceptance")
+    current = extract_suite(ctx, "run-0", "acceptance")["platforms"]["linux-aarch64"]
+    control("timing: native observations above historical thresholds qualify",
+            current["outcome"] == "qualified" and current["timing_samples"] == {"commands": 1, "protocol": 1}, current)
     updated_result = json.loads(timing_original)
+    updated_result["schema"] = TIMED_DRIVER_SCHEMA
+    updated_result["timing_gate"] = {"enabled": True, "threshold_ms": 100.0, "worst_ms": 1.5, "passed": True,
+                                    "protocol": {"worst_ms": 3.0, "passed": True}}
+    historical_bytes = dump_json(updated_result)
+    _write(os.path.dirname(timing_path), "RESULT.json", historical_bytes)
+    historical = extract_suite(ctx, "run-0", "acceptance")
     updated_result["timing_gate"]["protocol"].update(threshold_ms=120.0, worst_ms=110.0)
     _write(os.path.dirname(timing_path), "RESULT.json", dump_json(updated_result))
     distinct = extract_suite(ctx, "run-0", "acceptance")
@@ -2955,7 +3048,7 @@ def _self_test_controls(base, isolated, control):
     control("timing: a malformed separate protocol budget is refused",
             any("protocol_threshold_ms" in p for p in record_problems(distinct_record)),
             "problems %s" % record_problems(distinct_record))
-    _write(os.path.dirname(timing_path), "RESULT.json", timing_original.decode("utf-8"))
+    _write(os.path.dirname(timing_path), "RESULT.json", historical_bytes)
     restored = extract_suite(ctx, "run-0", "acceptance")
     control("timing: old evidence retains its original fields and rendering (invariance)",
             restored == historical
@@ -2963,6 +3056,7 @@ def _self_test_controls(base, isolated, control):
             and render({"schema": SCHEMA, "entries": [restored]})
                 == render({"schema": SCHEMA, "entries": [historical]}),
             "historical extraction changed")
+    _write(os.path.dirname(timing_path), "RESULT.json", timing_original.decode("utf-8"))
     ids = lambda: [e["id"] for e in load_record(ctx)["entries"]]
 
     # Front rule.

@@ -11,8 +11,7 @@ Every case below is read under the accepted machine interface:
 [docs/INTERFACE.md](docs/INTERFACE.md) and
 [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) give the exact schemas and
 fixtures, the deterministic failure-injection points and the supported
-filesystem and writer populations. The numerical response budgets are the
-apparatus's timing gates ([apparatus/README.md](apparatus/README.md)). Do not
+filesystem and writer populations. Do not
 turn an illustrative command spelling, old form or arbitrary test quantity into
 a new product obligation. No model-consuming run is commissioned here.
 
@@ -32,7 +31,7 @@ failing.
 | C6 | The record is honest: write-once, nothing deleted, the access log matches what happened. |
 | C7 | Question families preserve the request, express their evidence expectations and leave open inquiry usable. |
 | C8 | Close works from every state. |
-| C9 | Stewart answers quickly and every reply says what it did. |
+| C9 | The suite reports response times, and every reply says what Stewart did. |
 | C10 | Through the real endpoint, each named model can use the arrangement and finish, and the endpoint behaves as the adapter and its test stand-ins assume. |
 | C11 | Help, the scaffold, preparation and the receipt explain the submission boundary and identify the selected material. |
 | C12 | The run is a handoff: a receipt's run line works for whoever holds it, from anywhere. |
@@ -368,17 +367,15 @@ process after a lost reply. Sabotage controls skip post-copy confirmation,
 report sealed authoring as terminated execution or invent an empty return before
 launch; each must fail.
 
-### C9 — Quick, and sure of what it says
+### C9 — Response times and certainty
 
-- **Response budgets**, measured natively in the test image on material at the
-  size limits and reported as actual timings. Timings under emulation are
-  reported but do not gate:
-  - startup, `status` and `help` answer within tens of milliseconds;
-  - every protocol call except a full-material search meets the apparatus's
-    protocol response budget;
-  - manager preparation and source scanning report scope and progress; intake,
-    commission readback, full search and delivery state their known size and
-    report progress; raw readback has no progress text in its byte stream.
+- **Response times.** Report observed command and protocol timings on each
+  platform, including observations on material at the size limits. These
+  measurements describe the run and carry no pass/fail threshold.
+- **Progress.** Manager preparation and source scanning report scope and
+  progress. Intake, commission readback, full search and delivery state their
+  known size and report progress. Raw readback keeps its byte stream free of
+  progress text.
 - **Certainty:** every protocol reply uses the specified structured envelope. Every refusal
   carries a reason, its effect and the next call. Every manager command's JSON
   output carries what changed and what was verified. A schema check runs over
@@ -394,10 +391,9 @@ launch; each must fail.
   the run reply and `run_ended`; the raw
   response is captured, and `run` again reports the same refusal. Against a
   provider that accepts the request, the same commission runs normally.
-- **Sabotage:** a build with an injected delay in one protocol call, one that
-  omits the established/uncertain effect on one refusal, one that hides the
-  provider's error message, and one that retries a rejection and reports the
-  provider as unavailable.
+- **Sabotage.** The controls omit the established/uncertain effect on a
+  refusal, hide the provider's error message, or retry a rejection and report
+  the provider as unavailable.
 
 ### C11 — The app teaches
 
@@ -690,19 +686,12 @@ runtime adapter that the distributed binary excludes owes the evidence its own
 leaf contract states, from cases an independent author derives from that
 contract. Results under one runtime or credential route qualify no other.
 
-The scripted tier runs, unchanged, on:
-
-- Linux aarch64 and x86_64 in the test image. On the development Mac that means
-  a native aarch64 container and an emulated x86_64 one.
-- WSL2 natively, through the handoff package: the same binary, driver and fake
-  provider, with the home on the WSL filesystem and a destination under `/mnt/`.
-  Archive placement is qualified on its actual filesystem semantics:
-  [docs/INTERFACE.md](docs/INTERFACE.md) 4.1 names the supported filesystems
-  and refuses others by the type `statfs` observes, not by a path prefix.
-
-Each run records the binary's digest, the image digests or WSL environment
-(Windows and WSL versions, distribution, kernel, architecture, filesystem types),
-the case counts, the timings and every control that fired.
+Run the scripted tier on Linux aarch64 and x86_64 in the test image. On the
+development Mac these are native aarch64 and emulated x86_64 Linux containers.
+Record the source commit, binary and image digests, architecture, filesystem
+types, case counts, timings and firing controls. Archive placement follows
+the filesystem type observed under INTERFACE 4.1. Apple-silicon macOS is a
+native build and development-test target.
 
 ### Credential handling
 

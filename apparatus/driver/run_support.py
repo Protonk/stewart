@@ -777,9 +777,8 @@ def check_first_message(t, ex, question_body, continuing, name, notice=None):
 
 
 def collect_protocol_timings(t, fx, label):
-    """C9: for a response with exactly one tool_use and stop_reason tool_use, the time from its
-    last byte to the next request's connection. A search without explicit sources (the whole
-    default scope) is reported but not gated."""
+    """C9: for a response with exactly one tool_use and stop_reason tool_use, the time from
+    its last byte to the next request's connection, including capture and connection overhead."""
     exs = fx.exchanges_of(label)
     for a, b in zip(exs, exs[1:]):
         if not isinstance(a.step, fp.Message) or a.step.stop_reason != "tool_use" or b.n != a.n + 1:
@@ -791,15 +790,7 @@ def collect_protocol_timings(t, fx, label):
         if len(bm) != len(am) + 2:
             continue
         tool = uses[0].meta.get("name")
-        inp = uses[0].meta.get("input") or {}
-        if not inp and uses[0].meta.get("raw_input"):
-            try:
-                inp = json.loads(uses[0].meta["raw_input"].decode("utf-8"))
-            except ValueError:
-                inp = {}
-        gated = not (tool == "search" and "sources" not in inp)
-        t.protocol_timings.append({"tool": tool, "ms": round((b.t_accept - a.t_response_end) * 1000.0, 3),
-                                   "gated": gated, "run": label, "request": a.n})
+        t.protocol_timings.append({"tool": tool, "ms": round((b.t_accept - a.t_response_end) * 1000.0, 3)})
 
 
 def check_access_log(t, sub, aud, name):

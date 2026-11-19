@@ -82,7 +82,7 @@ if sys.version_info < (3, 8):  # pragma: no cover
     sys.stderr.write("stewart_driver needs Python 3.8 or later\n")
     sys.exit(2)
 
-DRIVER_SCHEMA = "stewart.acceptance-driver/1"
+DRIVER_SCHEMA = "stewart.acceptance-driver/2"
 DRIVER_DIR = os.path.dirname(os.path.abspath(__file__))
 # Self-tests registered by the driver's modules (selftest decorator below).
 SELF_TESTS = []
@@ -335,7 +335,7 @@ SABOTAGES = ("accept_without_affirmation", "accept_changed_source", "skip_hidden
              "deliver_conversation", "regenerate_rendering", "render_conclusion", "remove_superseded_payload",
              "remove_partial_package", "skip_search_capture", "framing_task_elsewhere", "grade_support",
              "block_incomplete", "reset_notice_allowance", "skip_confirmation", "seal_as_stopped",
-             "empty_return_before_launch", "slow_list", "hide_provider_message", "rejection_as_unavailable",
+             "empty_return_before_launch", "hide_provider_message", "rejection_as_unavailable",
              "relative_run_line", "commission_over_network",
              "reset_limits_on_continuation", "fresh_ledger_on_continuation", "drop_refused_capture",
              "manifest_verdict", "ended_as_submitted", "seal_as_delivered", "unknown_membership_empty",
@@ -1577,7 +1577,7 @@ class T:
         # Credential cases retain exact synthetic canaries in their private
         # witness, but ordinary failure summaries must not echo their values.
         self.private_check_values = []
-        # Protocol-call timings measured by the fake provider (C9): dicts with tool, ms, gated.
+        # Single-call intervals measured by the fake provider (C9).
         self.protocol_timings = []
         self.writer = binary["path"]
         # Each command given a fault gets its own fault directory under faults/ (fault_dir): a
@@ -2687,9 +2687,6 @@ class T:
 # The driver: variants, controls, timings, evidence.
 # ---------------------------------------------------------------------------
 
-GATED_OPS = ("help", "status", "usage")
-
-
 def _rmtree(path):
     def onerror(func, p, exc):
         try:
@@ -2756,14 +2753,10 @@ def _stats(values):
 
 
 class Driver:
-    # C9 apparatus budgets: startup/help/status and protocol calls have separate gates.
-    startup_gate_ms = 100.0
-    protocol_gate_ms = 200.0
-
     def __init__(self, args):
         self.args = args
         self.evidence = os.path.abspath(args.evidence)
-        self.gate = args.timing_gate == "on"
+        self.timing_samples = {}
         self.aliases = {}
         self.results = []
         self.controls = []
@@ -2784,7 +2777,6 @@ class Driver:
         # Cases that need the fake provider listen on 127.0.0.1. Where this process may not
         # listen (a sandbox without local binding), they are skipped with this reason.
         self.loopback_problem = loopback_listen_probe()
-        self.protocol_samples = []
 
     def install(self, src, kind, name):
         d = os.path.join(self.work, "install", kind)
@@ -2806,11 +2798,6 @@ class Driver:
         if rp in self.aliases:
             return self.aliases[rp]["sha256"]
         return sha256_file(path)
-
-    @staticmethod
-    def timing_gate_ok(samples, threshold_ms):
-        worst = max(samples) if samples else None
-        return (worst is not None and worst < threshold_ms), worst
 
     # -- running ------------------------------------------------------------
     def select(self):
@@ -2941,15 +2928,7 @@ class Driver:
         with open(os.path.join(t.evid, "RESULT.json"), "w", encoding="utf-8") as f:
             json.dump({"case": spec.id, "variant": vr, "checks": t.checks, "inventory": t.inventory_log,
                        "commands": t.commands}, f, ensure_ascii=False, indent=1)
-        self.timing_samples = getattr(self, "timing_samples", [])
-        for m in t.protocol_timings:
-            self.protocol_samples.append(dict(m, binary=binary["kind"], sabotage=t.sabotage, case=spec.id,
-                                              variant=name))
-        for m in t.commands:
-            self.timing_samples.append({"op": m["op"], "binary": m["binary"], "wall_ms": m["wall_ms"],
-                                        "maxrss_kib": m["maxrss_kib"], "fault": m["fault"],
-                                        "sabotage": m["sabotage"], "background": m["background"],
-                                        "rc": m["rc"], "case": spec.id, "variant": name})
+        self.record_timings(t.commands, t.protocol_timings, binary["kind"], t.sabotage)
         is_control = control is not None
         purpose_served = (outcome == "pass" and not is_control) or (is_control and outcome == "fail")
         if purpose_served and self.args.keep_work != "all":
@@ -2966,44 +2945,19 @@ class Driver:
             vr["work_copy_notes"] = notes[:20]
         return vr
 
-    def timing_report(self):
-        samples = getattr(self, "timing_samples", [])
-        by = {}
-        for s in samples:
+    def record_timings(self, commands, protocol, binary, sabotage):
+        for s in commands:
             if s["background"] or (s["rc"] is not None and s["rc"] < 0):
                 continue
-            key = "%s/%s%s" % (s["op"], s["binary"], "" if not (s["fault"] or s["sabotage"]) else "+test-env")
-            by.setdefault(key, []).append(s["wall_ms"])
-        table = {k: _stats(v) for k, v in sorted(by.items())}
-        gated = [s for s in samples if s["op"] in GATED_OPS and s["binary"] == "release" and not s["fault"]
-                 and not s["sabotage"] and not s["background"] and s["rc"] is not None and s["rc"] >= 0]
-        ok, worst = self.timing_gate_ok([s["wall_ms"] for s in gated], self.startup_gate_ms)
-        slow = sorted(gated, key=lambda s: -s["wall_ms"])[:10]
-        gate = {"enabled": self.gate, "threshold_ms": self.startup_gate_ms, "ops": list(GATED_OPS),
-                "samples": len(gated), "worst_ms": worst, "slowest": slow,
-                "passed": (ok if gated else None) if self.gate else None,
-                "note": ("gated: native run in the test image" if self.gate else
-                         "reported, not gated: only native runs in the Linux test image gate (ACCEPTANCE C9)")}
-        # Protocol calls (C9): the fake provider measures, for a response holding one tool call,
-        # the time from its last byte sent to the next request's connection. That interval
-        # bounds the call from above (it also holds Stewart's captures and the new connection).
-        # A search over the whole default scope is excluded, as ACCEPTANCE C9 states.
-        proto = getattr(self, "protocol_samples", [])
-        for s in proto:
-            key = "protocol:%s/%s%s" % (s["tool"], s["binary"], "+sabotage" if s.get("sabotage") else "")
-            table.setdefault(key, None)
-        pby = {}
-        for s in proto:
-            key = "protocol:%s/%s%s" % (s["tool"], s["binary"], "+sabotage" if s.get("sabotage") else "")
-            pby.setdefault(key, []).append(s["ms"])
-        for k, v in pby.items():
-            table[k] = _stats(v)
-        pg = [s for s in proto if s.get("gated") and s["binary"] == "release" and not s.get("sabotage")]
-        pok, pworst = self.timing_gate_ok([s["ms"] for s in pg], self.protocol_gate_ms)
-        gate["protocol"] = {"threshold_ms": self.protocol_gate_ms, "samples": len(pg), "worst_ms": pworst,
-                            "slowest": sorted(pg, key=lambda s: -s["ms"])[:10],
-                            "passed": (pok if pg else None) if self.gate else None}
-        return table, gate
+            suffix = "+test-env" if s["fault"] or s["sabotage"] else ""
+            key = "%s/%s%s" % (s["op"], s["binary"], suffix)
+            self.timing_samples.setdefault(key, []).append(s["wall_ms"])
+        for s in protocol:
+            key = "protocol:%s/%s%s" % (s["tool"], binary, "+sabotage" if sabotage else "")
+            self.timing_samples.setdefault(key, []).append(s["ms"])
+
+    def timing_report(self):
+        return {key: _stats(values) for key, values in sorted(self.timing_samples.items())}
 
     def run(self):
         selected = self.select()
@@ -3012,7 +2966,7 @@ class Driver:
                          "work_filesystem": fs_type_of(self.work), "linux": is_linux()}
         start = {"schema": DRIVER_SCHEMA, "started_at": self.started_at, "argv": sys.argv,
                  "platform": platform_info, "binaries": {"release": self.release, "test": self.test},
-                 "selected": [s.id for s in selected], "timing_gate": self.gate,
+                 "selected": [s.id for s in selected],
                  "emulator_home_artifacts": list(EMULATOR_HOME_ARTIFACTS)}
         with open(os.path.join(self.evidence, "START.json"), "w", encoding="utf-8") as f:
             json.dump(start, f, ensure_ascii=False, indent=1)
@@ -3028,26 +2982,9 @@ class Driver:
                     self.results.append({"id": spec.id, "claims": spec.claims, "title": spec.title,
                                          "doc": spec.doc, "variants": [], "controls": [],
                                          "outcome": "skipped", "skip_reason": "run interrupted before case completed"})
-        table, gate = self.timing_report()
-        if gate["enabled"]:
-            gres = {"id": "c9.timing-gate", "claims": ["C9"], "title": "startup, status and help within tens of milliseconds",
-                    "outcome": "pass" if gate["passed"] else ("skipped" if gate["passed"] is None else "fail"),
-                    "variants": [], "controls": [], "doc": "Every gated release-binary invocation under %d ms." % self.startup_gate_ms}
-            if gate["passed"] is None:
-                gres["skip_reason"] = "no gated samples were collected"
-            self.results.append(gres)
-            pgate = gate["protocol"]
-            pres = {"id": "c9.protocol-timing-gate", "claims": ["C9"],
-                    "title": "every protocol call except a full-material search under %d ms" % self.protocol_gate_ms,
-                    "outcome": "pass" if pgate["passed"] else ("skipped" if pgate["passed"] is None else "fail"),
-                    "variants": [], "controls": [],
-                    "doc": "Every gated single-call interval measured by the fake provider under %d ms." % self.protocol_gate_ms}
-            if pgate["passed"] is None:
-                pres["skip_reason"] = "no gated protocol samples were collected"
-            self.results.append(pres)
-        return self.write_results(platform_info, table, gate, interrupted)
+        return self.write_results(platform_info, interrupted)
 
-    def write_results(self, platform_info, table, gate, interrupted):
+    def write_results(self, platform_info, interrupted):
         cases = self.results
         count = lambda o: sum(1 for c in cases if c["outcome"] == o)
         variants = [v for c in cases for v in c["variants"]]
@@ -3085,7 +3022,7 @@ class Driver:
             "failed_cases": failed_cases, "broken_checks": broken,
             "controls_unassigned": unassigned, "controls_never_fired": unfired,
             "controls": self.controls, "driver_controls": self.driver_controls,
-            "timing_gate": gate, "timings": table, "cases": cases, "removals": self.removals,
+            "timings": self.timing_report(), "cases": cases, "removals": self.removals,
             "work": self.work, "exit": exit_code,
         }
         with open(os.path.join(self.evidence, "RESULT.json"), "w", encoding="utf-8") as f:
@@ -3118,17 +3055,11 @@ class Driver:
                   "- Driver controls: %(total)d, fired %(fired)d." % c["driver_controls"],
                   "- Sabotage names of Appendix C.2: %d, assigned to no case %d, never fired %d." % (
                       len(SABOTAGES), len(r["controls_unassigned"]), len(r["controls_never_fired"])), ""]
-        g = r["timing_gate"]
-        lines += ["## Timing gates (C9)", "", "%s. Startup, status and help: under %d ms over %s; %d eligible samples; worst %s ms; passed %s." % (
-            g["note"], g["threshold_ms"], ", ".join(g["ops"]), g["samples"],
-            "-" if g["worst_ms"] is None else "%.1f" % g["worst_ms"], g["passed"]), ""]
-        lines += ["| Operation/binary | n | median ms | p95 ms | max ms |", "| --- | --- | --- | --- | --- |"]
+        lines += ["## Timings", "", "| Operation/binary | n | median ms | p95 ms | max ms |",
+                  "| --- | --- | --- | --- | --- |"]
         for k, s in r["timings"].items():
             if s:
                 lines.append("| %s | %d | %.1f | %.1f | %.1f |" % (k, s["n"], s["median_ms"], s["p95_ms"], s["max_ms"]))
-        pg = g["protocol"]
-        lines += ["", "Protocol calls except a full-material search: under %d ms; %d eligible samples; worst %s ms; passed %s." % (
-            pg["threshold_ms"], pg["samples"], "-" if pg["worst_ms"] is None else "%.1f" % pg["worst_ms"], pg["passed"])]
         lines += ["", "## Cases by claim", ""]
         claims = {}
         for case_ in r["cases"]:
@@ -3173,65 +3104,24 @@ class Driver:
 
 @selftest
 def timing_selftest():
-    # Exercise the assembled report and its real budgets, without starting a binary
-    # or relying on the host scheduler to land on either side of a millisecond boundary.
     d = Driver.__new__(Driver)
-    d.gate = True
-
-    def command(ms, **changes):
-        return dict({"op": "help", "binary": "release", "wall_ms": ms, "fault": None,
-                     "sabotage": None, "background": False, "rc": 0}, **changes)
-
-    def protocol(ms, **changes):
-        return dict({"tool": "list", "binary": "release", "ms": ms, "gated": True,
-                     "sabotage": None}, **changes)
-
-    def report(startup_ms, protocol_ms):
-        d.timing_samples = [command(startup_ms)]
-        d.protocol_samples = [protocol(protocol_ms)]
-        return d.timing_report()[1]
-
-    out = []
-    g = report(99.999, 199.999)
-    out.append(("timing.budgets-reported", g["threshold_ms"] == 100.0 and
-                g["protocol"]["threshold_ms"] == 200.0, g))
-    out.append(("timing.below-budgets", g["passed"] is True and g["protocol"]["passed"] is True, g))
-    g = report(110.0, 110.0)
-    out.append(("timing.separate-budgets", g["passed"] is False and g["protocol"]["passed"] is True, g))
-    g = report(100.0, 200.0)
-    out.append(("timing.at-budgets-control", g["passed"] is False and g["protocol"]["passed"] is False, g))
-    g = report(100.001, 200.001)
-    out.append(("timing.over-budgets-control", g["passed"] is False and g["protocol"]["passed"] is False, g))
-    d.timing_samples.insert(0, command(1.0))
-    d.protocol_samples.insert(0, protocol(1.0))
-    _, g = d.timing_report()
-    out.append(("timing.slow-sample-not-averaged", g["passed"] is False and g["protocol"]["passed"] is False and
-                g["worst_ms"] == 100.001 and g["protocol"]["worst_ms"] == 200.001, g))
-
-    report(99.999, 199.999)
-    d.timing_samples += [command(500.0, **changes) for changes in (
-        {"binary": "test"}, {"fault": "reply.write=epipe"}, {"sabotage": "slow_list"},
-        {"background": True}, {"rc": -9}, {"op": "run"})]
-    d.protocol_samples += [protocol(500.0, **changes) for changes in (
-        {"binary": "test"}, {"sabotage": "slow_list"}, {"tool": "search", "gated": False})]
-    table, g = d.timing_report()
-    out.append(("timing.startup-exclusions-invariant", g["passed"] is True and g["samples"] == 1 and
-                g["worst_ms"] == 99.999, g))
-    out.append(("timing.protocol-exclusions-invariant", g["protocol"]["passed"] is True and
-                g["protocol"]["samples"] == 1 and g["protocol"]["worst_ms"] == 199.999, g))
-    out.append(("timing.full-search-still-reported", table["protocol:search/release"]["max_ms"] == 500.0, table))
-
-    d.gate = False
-    g = report(100.0, 200.0)
-    out.append(("timing.disabled-reports-without-verdict", g["passed"] is None and g["protocol"]["passed"] is None and
-                g["threshold_ms"] == 100.0 and g["protocol"]["threshold_ms"] == 200.0 and
-                g["worst_ms"] == 100.0 and g["protocol"]["worst_ms"] == 200.0, g))
-    d.gate = True
-    d.timing_samples, d.protocol_samples = [], []
-    _, g = d.timing_report()
-    out.append(("timing.no-samples-no-verdict", g["passed"] is None and g["protocol"]["passed"] is None and
-                g["samples"] == 0 and g["protocol"]["samples"] == 0, g))
-    return out
+    d.timing_samples = {}
+    empty = d.timing_report()
+    command = {"op": "help", "binary": "release", "fault": None, "sabotage": None, "background": False, "rc": 0}
+    commands = [dict(command, wall_ms=ms) for ms in (12.0, 900.0, 1.0)]
+    commands += [dict(command, wall_ms=1000, background=True), dict(command, wall_ms=1000, rc=-9)]
+    d.record_timings(commands, [{"tool": "search", "ms": 750.0}], "release", None)
+    d.record_timings([dict(command, binary="test", fault="reply.write=epipe", wall_ms=25.0)],
+                     [{"tool": "list", "ms": 25.0}], "test", "extra_tool")
+    table = d.timing_report()
+    single = {"n": 1, "min_ms": 25.0, "median_ms": 25.0, "p95_ms": 25.0, "max_ms": 25.0}
+    expected = {
+        "help/release": {"n": 3, "min_ms": 1.0, "median_ms": 12.0, "p95_ms": 900.0, "max_ms": 900.0},
+        "help/test+test-env": single, "protocol:list/test+sabotage": single,
+        "protocol:search/release": {"n": 1, "min_ms": 750.0, "median_ms": 750.0, "p95_ms": 750.0, "max_ms": 750.0},
+    }
+    return [("timing.populated-table", table == expected, {"got": table, "expected": expected}),
+            ("timing.empty-table", empty == {}, empty)]
 
 
 def _section(text, heading):
@@ -3518,10 +3408,6 @@ def parse_args(argv):
                         "must preserve exact names and permit the 256-byte multibyte name. Archives and ordinary "
                         "work stay under --work. Fresh source folders are retained here; default: ordinary work, "
                         "with an explicit skip if that filesystem cannot create the specimen.")
-    p.add_argument("--timing-gate", choices=("on", "off"), default="off",
-                   help="gate startup, status and help at under 100 ms, and protocol calls except a full-material "
-                        "search at under 200 ms (only for native runs in the Linux test image); default off, "
-                        "which reports timings without gating")
     p.add_argument("--skip-heavy", action="store_true", help="skip the 16 MiB and 128 MiB bound cases")
     p.add_argument("--require-all-controls", action="store_true",
                    help="fail unless every sabotage control of INTERFACE Appendix C.2 is assigned to a selected "

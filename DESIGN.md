@@ -125,8 +125,7 @@ runtimes sit behind the same operation core: adapters that only a source build
 includes, and possible human or other-provider adapters. Each runtime needs its
 own contract and its own enforcement of the commission's access and stopping
 rules. Ship one static Linux binary for x86_64 and aarch64.
-Linux containers hold the build and test apparatus; WSL2 is to be qualified with
-the same shipped binary.
+Linux containers exercise each shipped binary. Apple-silicon macOS is a native build and test target.
 
 ## Specifications and evidence
 

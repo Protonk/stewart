@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Run cases: the run adapter and the answer protocol after launch (ACCEPTANCE C1-C4,
-C6, C7, C9 protocol timing, C12-C14, C20 tool replies, traces T5-T8, T12, T13, T15, T16).
+C6, C7, C9, C12-C14, C20 tool replies, traces T5-T8, T12, T13, T15, T16).
 
 Each case drives `stewart run` against the fake Messages API on loopback
 (run_support.provider) and judges it against the driver's witnesses: what the
@@ -1302,42 +1302,6 @@ def c_prompts(t):
     t.eq("c7.limits.no-seal", t.log_bodies(sub2, "seal"), [])
     r3 = rs.run(t, sub2, fx2, name="c7.limits.again", expect="refused", reason="authoring_ended")
     t.eq("c7.limits.ended_by", r3.data.get("ended_by"), "limit")
-
-
-# ---------------------------------------------------------------------------
-# C9: protocol calls answer quickly, and every reply says what it did.
-# ---------------------------------------------------------------------------
-
-@case("c9.protocol-timing", ["C9", "C20"],
-      "protocol calls meet the response budget; every reply carries its envelope",
-      needs=("loopback",),
-      controls=[Control("slow_list", [r"^c9\.list-relative$"]),
-                Control("omit_effects_on_refusal", [r"^c9\.reply\.envelope\."])])
-def c_protocol_timing(t):
-    """One call per response: list, read, search of one material, what_am_i_working_with, a
-    record, prepare, a refused read and list again. The fake measures each call's interval
-    (C9's gate applies on the native architecture); list may not stand out from the median of
-    the others by 250 ms (a relative check that also holds under emulation). Every reply, the
-    refusal included, passes the envelope rules."""
-    sub = run_submission(t, body=b"Is deliver called before mark_sent?\n")
-
-    def body(p):
-        for spec in (("list", {}), ("read", {"source": "question"}), ("read", {"source": "materials/a.py"}),
-                     ("search", {"text": "deliver", "sources": ["materials/a.py"]}), ("what_am_i_working_with", {}),
-                     ("record_observation", {"text": "deliver precedes mark_sent."}), ("prepare", {}),
-                     ("read", {"source": "materials/nope.txt"}), ("list", {}), ("list", {})):
-            yield p.calls_step(spec)
-        yield from finish_ordinary(p)
-    p = proc(sub, body)
-    fx = rs.provider(t, p)
-    rs.run(t, sub, fx, name="c9.run")
-    rs.check_procedure(t, p, "c9", fx)
-    samples = [x for x in t.protocol_timings if x["run"] == "c9.run"]
-    lists = [x["ms"] for x in samples if x["tool"] == "list"]
-    others = sorted(x["ms"] for x in samples if x["tool"] != "list")
-    if t.check("c9.samples", len(lists) >= 2 and len(others) >= 5, samples):
-        med = others[len(others) // 2]
-        t.check("c9.list-relative", max(lists) - med < 250.0, {"list_ms": lists, "median_other_ms": med})
 
 
 # ---------------------------------------------------------------------------

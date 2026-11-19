@@ -216,8 +216,7 @@ witness, failed export or incomplete inspection cannot count as a pass.
 **Complete when:** native checks pass and the Linux container
 suites qualify the exact release binary on both architectures for the manager
 boundary and lifecycle claims. Test the gated runtime separately with its
-synthetic harness. Native WSL2 and real-model release obligations retain their
-own acceptance scope; this fake-provider result does not claim them.
+synthetic harness. Real-model release obligations retain their own acceptance scope.
 
 ## Additional Claude Code subscription testing
 

@@ -60,6 +60,8 @@ def c_captured_authentication_error(t):
         ("different-header", "req_synthetic_header_only", "req_synthetic_header_only"),
         ("absent-header", None, AUTH_BODY_ID),
     ):
+        if t.sabotage and variant != "original":
+            continue
         name = "captured.401." + variant
         sub = t.submission([])
         t.accept(sub, prefix=name + ".")
@@ -149,7 +151,8 @@ def check_placement(t, sub, fx, name, number, reply, ending, cause):
           Control("omit_effects_on_refusal", [r"^captured\.cap\.original\.refusal\.effects$"])])
 def c_captured_cap(t):
     totals = {}
-    for variant in ("original", "ordinary", "thinking-count"):
+    variants = ("original",) if t.sabotage else ("original", "ordinary", "thinking-count")
+    for variant in variants:
         pre = "captured.cap." + variant
         sub = run_submission(t, entries=[], body=b"Explain the supplied report's limits.\n",
                              model="claude-haiku-5-5",
@@ -233,7 +236,8 @@ def c_captured_cap(t):
                     "output_tokens": {"reported": 40170, "estimated": 0}}
         t.eq(pre + ".literal-total", fx.totals(), expected)
         t.eq(pre + ".cumulative-allowances", totals[variant], fp.allowances(expected, rs.limits_of(sub)))
-    t.eq("captured.cap.usage-invariance", list(totals.values()), [totals["original"]] * 3)
+    if not t.sabotage:
+        t.eq("captured.cap.usage-invariance", list(totals.values()), [totals["original"]] * 3)
 
 
 class CapturedOrdinary(fp.Message):
@@ -287,7 +291,8 @@ def c_captured_reminder(t):
         aw.Entry("e2", 1, "record_observation", "", observation),
         aw.Entry("e3", 1, "record_limit", "", limit)])
     selections, totals = {}, {}
-    for variant in ("spent", "unused", "diagnostic"):
+    variants = ("spent",) if t.sabotage else ("spent", "unused", "diagnostic")
+    for variant in variants:
         pre = "captured.reminder." + variant
         spent = variant != "unused"
         sub = run_submission(t, entries=[F("context/supplied-report.txt", material)],
@@ -387,8 +392,9 @@ def c_captured_reminder(t):
             "turns": {"reported": 11 if spent else 12, "estimated": 0},
             "input_tokens": {"reported": 16660 if spent else 17660, "estimated": 0},
             "output_tokens": {"reported": 748 if spent else 798, "estimated": 0}})
-    t.eq("captured.reminder.selection-invariance", list(selections.values()), [expected_selection] * 3)
-    t.eq("captured.reminder.diagnostic-invariance", totals["diagnostic"], totals["spent"])
+    if not t.sabotage:
+        t.eq("captured.reminder.selection-invariance", list(selections.values()), [expected_selection] * 3)
+        t.eq("captured.reminder.diagnostic-invariance", totals["diagnostic"], totals["spent"])
 
 
 @selftest

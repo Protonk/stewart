@@ -98,7 +98,6 @@ Family-descriptor candidates belong to the manager interface's registry stage.
 | Requirement | Remaining work |
 | --- | --- |
 | Linux container qualification | Run the scripted acceptance suite on the release source and binaries, on both architectures with the required controls. |
-| Native WSL2 qualification | Package the same binary, driver and fake provider and review the results of the native WSL2 run. |
 | Endpoint alignment | A current [alignment record](ENDPOINT-ALIGNMENT-PLAN.md) for each model the release names, each run under an authorized budget. |
 | Release documentation and source package | Define and build the source archive and finish the outside-reader documentation pass ([below](#release-documentation-and-source-package)). |
 | Public release gate | The maintainer decides when to publish the qualified binaries. |
@@ -138,14 +137,7 @@ Any change to the evidence owed belongs in ACCEPTANCE.
 - Decide toolchain-digest enforcement and native/emulated execution recording.
   Built image digests are the actual toolchain pins; acceptance records image
   inspections by tag but does not enforce equality with the toolchain record.
-- Review qualification rules for skips, timing gates and failures across
-  platforms. The native protocol tripwire is 200 ms; emulated x86_64 has no
-  enforced timing gate. Run conditions move the measurement: with the binary
-  and release driver unchanged, the slowest protocol call, `record_observation`
-  in `c3.limits`, took 111 then 122 ms natively and 176 then 316 ms emulated
-  in `acceptance-readiness-03` and `acceptance-readiness-04`. Retiring the
-  absolute tripwire or moving performance trends into Linux CI remains a later
-  policy option, not implementation scheduled now.
+- Review qualification rules for skips and failures across platforms.
 - Carry the readiness reassessment's accepted limitations. Its surviving
   mutants were equivalent mutants in the gate and settings slices, and three
   agent races reachable only at the exact deadline instant or a failed final
@@ -160,16 +152,6 @@ Any change to the evidence owed belongs in ACCEPTANCE.
   host; the documented host route uses macOS and Apple `container`, and native
   Linux runs are documented as development iteration only.
 
-### WSL2 package
-
-The package must carry the same qualified release/test binaries, driver and fake
-provider. Run with the home on the WSL filesystem and a destination under `/mnt/`;
-record Windows/WSL versions, distribution, kernel, architecture and filesystems.
-The native timing gate applies. Native x86_64 is unexercised, so its timings must
-be measured rather than inferred from Rosetta.
-
-Build the package and include commands an operator can run on a native WSL2 host.
-
 ### Release documentation and source package
 
 The source archive is the release commit's tracked tree plus `service/vendor`,
@@ -177,8 +159,7 @@ with the vendored files' digests from the `step2.sh` run that produced them, and
 the qualification record of the shipped binaries. Plans are complete and deleted,
 and local working material stays out, before it is cut.
 
-The README covers getting and verifying the binary, the archive filesystem rule
-(the archive on the WSL filesystem, never under `/mnt/`) and a first run that
+The README covers getting and verifying the binary, the supported archive filesystems and a first run that
 needs no provider key. AGENTS, DEVELOPMENT and the crate guide let an outside
 agent find the code, build it from the archive without network access and run
 the checks natively on Linux, knowing which checks qualify nothing.

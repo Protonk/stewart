@@ -4,6 +4,10 @@ The [local wire captures](wire/README.md) preserve independent HTTP framing,
 CONNECT acceptance and an authentication challenge, with observations from
 both ends of the successful tunnel.
 
+For the `messages/` and `citations/` cases documented here, the release binary
+and the clean test binary each exercise every fixture variant and cross-fixture
+comparison. Each sabotage run exercises the fixture named by its target checks.
+
 ## `messages/`: captured provider responses
 
 ### Sanity authentication rejection
@@ -65,9 +69,10 @@ The original has zero top-level usage and one compaction iteration reporting
 Another changes only the iteration's `output_tokens` from 1212 to 1213: the
 output charge must increase by one, with input, turns and answer unchanged.
 Mutations replace the selected numeric span; every other byte stays unchanged.
-Existing sabotage controls must detect omitted compaction, changed signed bytes,
-retained old context and ignored iteration usage. The fake provider retains its
-own transmitted response and received request bytes outside Stewart's archive.
+On the original M4 response, sabotage controls must detect omitted compaction,
+changed signed bytes, retained old context and ignored iteration usage. The fake
+provider retains its own transmitted response and received request bytes outside
+Stewart's archive.
 Fixture self-tests pin the original bytes, exact changed fields and literal
 expected charges. No test reads the retained study directory or invokes a model.
 
@@ -109,8 +114,9 @@ when no output remains; advice then offers only close. A differing control
 changes only that stop reason to `end_turn`, which ends with `limit_reached`.
 An invariance control changes only the uninterpreted `thinking_tokens`
 diagnostic to 1; usage and ending stay unchanged. Neither capped response spends
-the ordinary reminder. Sabotage controls reset cumulative limits, hide the old
-ledger or omit refusal effects; each must fail its named check.
+the ordinary reminder. On the original final cap, sabotage controls reset
+cumulative limits, hide the old ledger or omit refusal effects. Each must fail
+its named check.
 
 The original thinking and proposed replacement text are opaque fixture content,
 not expected answers to the synthetic question. Expected account bytes, counts
@@ -158,9 +164,10 @@ reminder. In the differing variant, only the first response's stop reason is
 changed to `max_tokens`; the reminder remains available until the continuation
 ends. Changing only its uninterpreted thinking-count diagnostic leaves the
 original path invariant. Every variant uses the reminder once and produces the
-same prepared selection. Sabotage controls reset the reminder allowance, hide a
-re-entry item or remove the superseded payload. The original live continuation
-submitted; it supplies no evidence for the synthetic prose-ending branch.
+same prepared selection. On the spent-reminder fixture, sabotage controls reset
+the reminder allowance, hide a re-entry item or remove the superseded payload.
+The original live continuation submitted. It supplies no evidence for the
+synthetic prose-ending branch.
 These comparisons do not exercise live interruption, delivery or close.
 
 ## `runtime/`: C1 surface-observer captures
@@ -345,8 +352,9 @@ bytes of its unchanged range. That call must now add an observation, so this
 variant deliberately has one more entry and revision. The invariance variant
 changes only top-level input-member order: it must preserve the refusal and
 produce the same final answer as the original. Each origin has all three
-variants. Controls omit refused capture, omit refusal effects or add a support
-grade to the recorded citation; each must fail its named check.
+variants. On the original M1 fixture, controls omit refused capture, omit
+refusal effects or add a support grade to the recorded citation. Each must fail
+its named check.
 
 ### C4 partial account in the timing comparison
 

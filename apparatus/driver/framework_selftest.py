@@ -58,9 +58,9 @@ def runner_selftest():
                  specimen("exception", exception)]
         core.CASES[:] = specs
         try:
-            def driver(label, patterns, exclude=(), timing="off", require=False):
+            def driver(label, patterns, exclude=(), require=False):
                 args = SimpleNamespace(evidence=os.path.join(root, label), work=root,
-                                       binary=fake, test_binary=fake, timing_gate=timing,
+                                       binary=fake, test_binary=fake,
                                        case=list(patterns), exclude=list(exclude), skip_heavy=False,
                                        network_isolated=True, require_all_controls=require, keep_work="all")
                 return core.Driver(args)
@@ -79,11 +79,10 @@ def runner_selftest():
                   ["driver.exception"])
             check("control-fired", result["controls"][0]["status"], "fired")
             check("failure-exit", code, 1)
-            for label, patterns, timing, expected in (
-                    ("positive", ["pass", "control"], "off", 0),
-                    ("empty", ["absent-case"], "off", 1),
-                    ("empty-with-timing", ["absent-case"], "on", 1)):
-                drv = driver(label, patterns, timing=timing)
+            for label, patterns, expected in (
+                    ("positive", ["pass", "control"], 0),
+                    ("empty", ["absent-case"], 1)):
+                drv = driver(label, patterns)
                 with contextlib.redirect_stderr(io.StringIO()):
                     check(label + ".exit", drv.run(), expected)
             drv = driver("unfired", ["pass"], require=True)

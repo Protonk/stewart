@@ -22,7 +22,7 @@ reports cover small-commission procedure and do not declare a model qualified.
 The [standalone runtime driver](driver/CLAUDE-CODE.md) checks the gated Claude
 Code adapter against a synthetic executable. It has its own self-test, case
 list and native runtime command, and invokes no real harness or provider.
-`acceptance.sh` builds two gated binaries, checks their markers and runs these
+`runtime-acceptance.sh` builds two gated binaries, checks their markers and runs these
 runtime cases on both Linux architectures. The separate [profile apparatus](claude-code/README.md)
 prepares installation evidence and runtime profiles.
 
@@ -68,8 +68,7 @@ script:
 code under `host/` or the build folder. The toolchain image digests are the
 pins for later builds and are recorded in `host/toolchain-inspect-*.stdout`.
 
-The x86_64 builds run under Rosetta emulation. Builds there are slower, and
-timings measured there are reported but do not gate (ACCEPTANCE C9).
+The x86_64 builds run under Rosetta emulation on the development Mac.
 
 Vendored crates come from crates.io at the versions and checksums in
 `Cargo.lock`. To produce `service/vendor` in another checkout, run `step2.sh`
@@ -109,10 +108,11 @@ SHA-256) before and after every command: an earlier entry may never change or
 disappear (C6), except that a file first seen while a Stewart process was
 still running may grow, keeping its earlier bytes as a prefix. Folders, homes
 and working directories may not change at all, and a destination may only gain
-entries once a run can deliver. A case with sabotage controls runs on the
-release binary, on the test binary without sabotage, and once per control; a
-control fires when one of its target checks fails, and one that does not fire
-is reported as a broken check. Fault cases run on the test binary.
+entries once a run can deliver. A release case with sabotage controls also runs
+on the test binary. The clean runs exercise the full case. Each control then
+runs on the test binary and can use just the fixtures that exercise its target
+checks. A control fires when one of those checks fails. The driver reports an
+unfired control as a broken check. Fault cases run on the test binary.
 
 Natively, for example on the development Mac against a development build
 (not qualification evidence):
@@ -128,9 +128,7 @@ python3 -I -B apparatus/driver/stewart_driver.py \
 Build the test binary into its own target folder, for example with
 `CARGO_TARGET_DIR`, so the two builds never share artifacts. Linux-only
 expectations (the ext4/xfs/btrfs allowlist, OFD lock behavior, byte-string
-file names) are skipped with their reason elsewhere. The C9 timing gate (under
-100 ms for startup, `status` and `help`) applies only with `--timing-gate on`,
-which the container suites set for the native architecture. The evidence
+file names) are skipped with their reason elsewhere. The evidence
 folder holds `START.json`, `RESULT.json`, `RESULTS.md`, each command's argv,
 streams, exit status and timing, the inventories, and the witnesses. The exit
 status is 0 only when no case failed and every control fired.
@@ -165,15 +163,10 @@ status is 0 only when no case failed and every control fired.
   are compared with those sums. A case that kills a run before an attempt
   record exists overrides that attempt's charge to the estimate 6.4 states.
 - Protocol timing (C9): for a response holding one tool call, the time from
-  its last byte to the next request's connection. Gated under 200 ms on the
-  native architecture (`c9.protocol-timing-gate`), except a search over the
-  whole default scope; the `slow_list` control is judged relatively (list's
-  interval against the median of the others), so it fires under emulation too.
-  The slowest gated call records a 4 MiB input at the size bound, and its
-  interval also covers Stewart's captures and the start of the next request,
-  which resends that input. It has measured 96 to 132 ms across builds, so the
-  budget is a tripwire for gross regressions, set clear of that call and well
-  under the control's 500 ms delay, rather than a fine performance measure.
+  its last byte to the next request's connection. This interval includes writing
+  captures and starting the next request. On every architecture the timing
+  table reports the sample count, median, 95th percentile and maximum per
+  operation and binary. These observations carry no qualification threshold.
 
 ### The reacting auditor
 
@@ -248,7 +241,6 @@ name may serve a manager and an auditor case.
 | C7, C6, C13, C17 | `c7.notice-durability` | The reminder's notice record is linked but its directory sync fails: the archive write failure ends the placement `interrupted` (`archive_write_failed`, exit 5) with no request carrying it. The run reply and `run_ended` (whole body checked) list the linked notice `not_sent`, and status is `interrupted`. The continuation's re-entry shows the reminder used, and its first ordinary stop ends authoring without a reminder. Differing: the notice is never linked, so no notice is listed, status names the interrupted stage publication, and the continuation receives the reminder once. Invariance: the same fault run from another directory and HOME gives the same `run_ended` body and run reply. | `reset_notice_allowance` | `log.dirsync:notice=eio`, `log.publish:notice=eio` |
 | C7, C6, C13 | `c7.notice-transmission` | Unfaulted, the reminder rides on request 3 and is `sent`. Killed after linking the notice and before capturing request 3, it is `not_sent` with no estimate. Killed after writing request 3, it is `unknown` and one estimate is charged. Both kills are reconciled by the next `run` (`process_gone`). Re-entry shows the reminder used, and the continuation ends without re-sending it. | `reset_notice_allowance` | `log.dirsync:notice=kill`, `provider.sent:3=kill` |
 | C7, C13 | `c7.near-limit-continuation` | With a 10,000-token output limit and 1,200 per response, the near-limit notice rides on request 8 with the exact remaining amounts. Four 529s on it interrupt the placement with the notice `sent`. The continuation still requests (cap 1,600), its re-entry shows the notice used, and no placement-2 request carries another although its allowance stays below 20 %. The log holds one near-limit notice (run 1) and one reminder (run 2). | `reset_notice_allowance` | none |
-| C9 | `c9.protocol-timing` | One call per response (`list` three times, `read` twice, `search`, `what_am_i_working_with`, a record, `prepare` and a refused read): each interval is measured (above), and `list` may not exceed the median of the others by 250 ms; every reply, the refusal included, passes the envelope rules. | `slow_list`, `omit_effects_on_refusal` (auditor refusal) | none |
 | C9, C6 | `c9.provider-rejections` | One commission with `effort: xhigh` per drift of the fake's declarative provider model (`fake_provider.Accepts`, judged by `Gate` in front of the auditor): the effort renamed, `output_config` removed, the level withdrawn, `output_config` removed with an HTML 400 page instead of an error object (no request ID), and with a message over 1,024 bytes whose cut falls inside a character. Runs 1 and 2 each make one attempt, end `interrupted` `provider_rejected` with exit 5, and give status, error type, error message (cut as the attempt record cuts it) and request ID in the run reply and `run_ended` exactly as the fake sent them, or null; the attempt record is `http_error`, `then` `end`, charged none; the raw response capture holds the body sent; run 2 reports the same refusal; status says `interrupted`. Every request carries the effort. Invariance: with the model moved back to the pinned API version's, run 3 of the same commission is accepted and ends ordinarily. | `hide_provider_message`, `rejection_as_unavailable` | none |
 | C9, C6 | `c9.captured-authentication-error` | Replays the captured 401 with its projected request ID. Changing or removing the header ID exercises the reported ID precedence and fallback. The private body and zero charge stay the same. | `hide_provider_message` | none |
 | C12 | `c12.run-environment` | Before acceptance `run` refuses `not_accepted`. After it, a missing or empty key, a key with bytes outside 0x21–0x7E, a provider URL with another scheme, user information, a query, a fragment or a trailing slash (a non-loopback `http://` URL only with `--network-isolated`) and an invalid proxy are each refused before any request, publishing nothing and offering the same run line; status stays `not_started`. | none | none |
@@ -285,8 +277,7 @@ name may serve a manager and an auditor case.
 Linux-only parts (skipped with their reason elsewhere): everything observed
 through the OFD lock (`run_held`, `run_active`, interruption with a free lock,
 close waiting on a run, T13), `/proc` observations (`start_ticks`, `boot_id`),
-the archive filesystem allowlist and byte-string names. The timing gates apply
-to the native architecture only.
+the archive filesystem allowlist and byte-string names.
 
 ### Pre-launch expectations of the full interface
 
@@ -320,33 +311,17 @@ python image (its only network use). It archives `service`, `apparatus` and
 `docs` from `HEAD` (the driver's self-test compares its pinned texts and
 examples with `docs/`), and for each architecture, offline:
 
-1. builds the release binary, the test binary, `stewart-local` with the
-   default-off `claude-code` feature, a debug-profile `stewart-local-variant`
-   with the same feature, and the glibc control, each in its own target folder;
-2. checks that all four musl binaries are static and the glibc build is not, that
-   `cmp` tells the release and test binaries apart, and that only the test
-   binary contains the six test-only variable names of INTERFACE Appendix C.
-   [`check-build-markers.sh`](check-build-markers.sh) checks every literal line
-   of [`claude-code-markers.txt`](claude-code-markers.txt): release/test must lack
-   all markers and both development binaries must contain them as firing controls.
-   The development writers must have different bytes;
-3. in the pinned python image with `--network none` (loopback only), as an
-   unprivileged user, with the binaries mounted read-only and archives and
-   homes on the container's own disk, runs the driver's `--self-test`, then
-   every case with `--network-isolated --require-all-controls --keep-work failed`: every Appendix
-   C.2 sabotage control must be assigned to a case and fire, and every driver
-   control must fire. The timing gates (startup, `status` and `help`; protocol
-   calls) are on only for the native architecture; Rosetta's home cache is
-   recorded as an emulator artifact;
-4. runs the standalone synthetic runtime self-test and every runtime case,
-   using the two development writers and the featureless release binary.
-   Every case must pass and every control must fire, with no skipped or
-   unselected cases. No real harness or provider is invoked;
-5. copies the independent driver evidence. A failed run, or an explicit `all`
-   retention argument, also exports remaining working copies to
-   `driver-<arch>/work.tar`, with a listing, SHA-256 and export start/end times.
-   Export failure fails the suite. Named driver containers remain until review,
-   even on export failure; `host/driver-<arch>.container` identifies them.
+1. builds the release and fault/sabotage binaries and runs the same static
+   linkage check on both and on a tiny dynamically linked C executable, which
+   must be rejected;
+2. checks that the two writers differ, the release lacks the test-only
+   environment names, the test build contains them, and both lack the
+   development-adapter markers;
+3. runs the independent release driver's self-test and every case, unprivileged,
+   with loopback only. Each assigned sabotage and driver control must fire;
+4. exports the evidence. On failure, or when requested with `all`, it retains
+   working copies in `driver-<arch>/work.tar`. The named container remains
+   available through review.
 
 `host/DONE` reports `failures=N`; `host/SUMMARY` gives the self-test line and
 the driver's counts per architecture; `driver-<arch>/evidence/` holds the
@@ -360,28 +335,18 @@ containers and generated payloads under the retention rules below. Use
 witnesses and working copies as well as failures.
 Build containers are removed on exit.
 
-The development binaries stay in `build-<arch>/`, with their digests in
-`host/binaries.sha256`; the standalone runtime driver receives them separately
-from the release acceptance driver. `driver-<arch>/runtime-evidence/` holds the
-runtime result, environment, command outputs, independent witnesses and driver
-snapshot. Every run exports the complete runtime work tree as `runtime-work.tar`,
-with listing, digest and export times, preserving launch markers that live
-beside fixture executables outside `witness/`. Its original
-container remains available through review even if export fails.
-The marker list is copied into each build folder, and `markers-release`,
-`markers-test`, `markers-local` and `markers-local-variant` keep stdout, stderr
-and exit status there.
-The qualification extractor includes these literal host expectations in its
-script-check counts. It records runtime cases, checks and controls separately,
-checks them against the full source inventory and binary identities, and hashes
-the exported evidence listing and complete work archive. Runtime requirements apply to runs whose own
-source script selects them; earlier records gain no invented observations.
-Synthetic Linux results establish only the exercised adapter behavior and
-process controls, with no real-harness or model qualification.
+### Development runtime acceptance
 
-ACCEPTANCE also requires the scripted tier natively on WSL2, from a handoff
-package of the same binary, driver and fake provider; no script here builds or
-runs that package.
+Run `sh apparatus/runtime-acceptance.sh "$PWD/.scratch/runtime-NN"` to exercise
+the source-only adapter on Linux ARM64 and x86_64. This independent job builds a
+featureless release for comparison, a development writer and a distinct
+fault-enabled development writer. It checks the adapter markers and runs the
+standalone driver's self-test and full synthetic case inventory on each platform.
+Each run retains its own `host/DONE`, per-platform results under
+`driver-<arch>/runtime-evidence/` and the complete `runtime-work.tar`,
+including launch witnesses outside the evidence directory. See the
+[runtime driver guide](driver/CLAUDE-CODE.md). Record this suite with
+`qualified.py extract .scratch/runtime-NN --suite runtime`.
 
 ## Evidence retention
 

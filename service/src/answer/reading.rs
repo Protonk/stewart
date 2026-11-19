@@ -51,10 +51,6 @@ fn list_inner(ctx: &Ctx, v: &Json) -> Result<Out, crate::archive::Fail> {
         },
     };
     let end = (start + LIST_PAGE_MATERIALS as usize).min(total);
-    if crate::sabotage!("slow_list") {
-        // Sabotage control: the reply is delayed.
-        std::thread::sleep(std::time::Duration::from_millis(500));
-    }
     let complete = end == total;
     let data = J::obj()
         .with(

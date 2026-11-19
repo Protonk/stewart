@@ -165,16 +165,14 @@ against an audit the real binary commissioned.
 | --- | --- | --- |
 | `manager.rs` | The manager commands end to end | any |
 | `faults.rs` | Manager-foundation failure traces at fault points | `fault-injection` |
-| `sabotage.rs` | Manager-foundation sabotage controls, each breaking its property | `sabotage` |
 | `answer.rs` | The auditor's tools against a live placement | any |
 | `answer_faults.rs` | The answer protocol at its fault points | `fault-injection` |
-| `answer_sabotage.rs` | Answer-protocol controls, each checked with and without | `sabotage` |
 | `run.rs` | `stewart run` against a scripted fake provider on loopback | any; some cases need a feature |
 | `delivery.rs` | Delivery, close and status after launch | any |
 | `manager_seal.rs` | Close's manager seal through the answer module | any |
 | `close_faults.rs` | Delivery and close failure traces | `fault-injection` |
 | `claude_code.rs` | The development runtime through the real binary: the runtime fields on `question/2`, the profile and launch-surface binding, help, what people are shown, and one placement of a synthetic executable that fails its status check; and the publication gate in process | `claude-code` |
-| `close_sabotage.rs` | Delivery, close and status sabotage controls, and the run-handoff controls `relative_run_line` and `commission_over_network` (ACCEPTANCE C12) | `sabotage` |
+| `close_sabotage.rs` | A loopback listener witnesses the `commission_over_network` control reaching the provider (ACCEPTANCE C12) | `sabotage` |
 
 Shared support is in `tests/common/` (the harness), `tests/fixture/` (states
 after launch built with the crate's own writers), `tests/answer_support/` (a
@@ -237,7 +235,7 @@ continuation. It invokes no Claude process. Real setup or runtime checks need
 their own bounded commission; the earlier two-tool probe is not a service
 qualification or a check of this build's launch surface.
 
-The container suite builds `stewart-local` as the firing control for
+The runtime container suite builds `stewart-local` as the firing control for
 [`claude-code-markers.txt`](../apparatus/claude-code-markers.txt). Every listed
 string must be reachable in that build and absent from release/test binaries.
 When adapter code gains an essential identifying string, add it to the list;
@@ -247,8 +245,7 @@ the adapter has fault points of its own.
 
 [DEVELOPMENT.md](../development/DEVELOPMENT.md) covers the rest: producing `vendor/`, the
 release and test builds, the independent driver, and the Linux container
-suites. Qualification also requires the native WSL2 run under ACCEPTANCE;
-development-machine checks establish neither platform's qualification.
+suites. The release and development runtime have separate Linux qualification records.
 
 ## Platform
 

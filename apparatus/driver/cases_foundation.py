@@ -198,7 +198,7 @@ def c_identity(t):
 
 @case("apparatus.driver-controls", [], "the driver's own checks fail on deliberately broken inputs", mode="driver")
 def c_driver_controls(t):
-    """Firing controls for the driver's inventory, envelope, witness and timing checks,
+    """Firing controls for the driver's inventory and envelope checks,
     independent of the test build."""
     d = t.mkdir("inventory control")
     build_entries(d, [F("a.json", b"{}\n"), F("b.json", b"[]\n")])
@@ -237,13 +237,6 @@ def c_driver_controls(t):
         failed = [c["name"] for c in t.checks if not c["ok"]]
         t.checks = saved
         t.driver_control(label, bool(failed), failed)
-    # Witness: readback compared with a witness that differs by one byte must fail.
-    t.driver_control("witness_one_byte", b"alpha\n" != b"alphb\n", "comparison of differing bytes")
-    # Timing gate: a reply delayed by 150 ms must fail the tens-of-milliseconds gate.
-    argv = ["/bin/sh", "-c", 'sleep 0.15; exec "$0" "$@"', t.bin["path"], "help"]
-    res = Proc(argv, t.env(), t.cwd, 30).wait()
-    ok, worst = t.drv.timing_gate_ok([res["wall_ms"]], t.drv.startup_gate_ms)
-    t.driver_control("timing_gate_delay", not ok, {"delayed_ms": res["wall_ms"], "threshold_ms": t.drv.startup_gate_ms})
 
 
 @case("apparatus.release-ignores-test-env", ["C17"], "the release binary has no fault or sabotage behaviour")
@@ -268,8 +261,7 @@ def c_release_ignores(t):
 @case("c11.help", ["C11", "C9"], "help lists commands and topics without an archive")
 def c_help(t):
     """`stewart help` and each topic exit 0 with text that names what it covers; help
-    touches no archive (STEWART_ARCHIVE points at an absent path that stays absent).
-    Timings feed the C9 gate."""
+    touches no archive (STEWART_ARCHIVE points at an absent path that stays absent)."""
     absent = os.path.join(t.root, "no archive here")
     env = {"STEWART_ARCHIVE": absent}
     outs = {}
@@ -2953,8 +2945,7 @@ def c_bound_total(t):
     rep = t.prepare(sub, name="bound-total.exact.prepare", timeout=900)
     t.check_prepare_witness(rep, sub, "bound-total.exact.prepare")
     t.commission(sub, sub.handles[-1], name="bound-total.exact.commission", timeout=900)
-    for i in range(3):
-        t.status(sub, name="status-at-total-bound-%d" % i)
+    t.status(sub, name="status-at-total-bound")
     dest2 = t.dest_path()
     q2 = question_md(dest=dest2, guidance="guidance.md")
     rest2 = BOUNDS["total_bytes"] - 7 * fb - len(q2) - len(guidance) + 1

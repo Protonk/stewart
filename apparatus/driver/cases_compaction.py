@@ -131,6 +131,8 @@ def check_common(t, sub, fx, pre, rep, ending, cause=None, run_number=1):
 def c_provider_compaction(t):
     answers = {}
     for label, below in (("repeat", False), ("below", True)):
+        if t.sabotage and below:
+            continue
         pre = "compact." + label
         sub = run_submission(t, body=b"Audit the captured source.\n", effort="high")
         # Trigger uses top-level totals; charges use iterations. The below-trigger fixture
@@ -164,8 +166,9 @@ def c_provider_compaction(t):
         captured = [c[2] for c in rs.calls_and_results(sub)]
         t.eq(pre + ".calls-retained", captured, [c["raw_block"] for c in p.calls.values()])
         answers[label] = answer_of(t, rep, pre)
-    t.check("compact.same-answer", answers.get("repeat") is not None and answers.get("repeat") == answers.get("below"),
-            "compaction changed the sealed structured answer")
+    if not t.sabotage:
+        t.check("compact.same-answer", answers.get("repeat") is not None and answers.get("repeat") == answers.get("below"),
+                "compaction changed the sealed structured answer")
 
 
 @case("c4.captured-compaction", ["C4", "C6", "C18"],
@@ -180,7 +183,8 @@ def c_captured_compaction(t):
     usages, answers = {}, {}
     before = b"The supplied source permits duplicate delivery."
     after = b"Delivery precedes marking; the supplied source does not establish recovery."
-    for variant in ("original", "top-level", "iteration"):
+    variants = ("original",) if t.sabotage else ("original", "top-level", "iteration")
+    for variant in variants:
         pre = "captured.compaction." + variant
         sub = run_submission(t, body=b"Audit the captured source.\n")
 
@@ -227,12 +231,13 @@ def c_captured_compaction(t):
         answers[variant] = answer_of(t, rep, pre)
         t.eq(pre + ".expected-answer", answers[variant],
              aw.answer_json(2, [aw.Entry("e1", 2, "record_account", "account", after)]))
-    t.eq("captured.compaction.top-level-invariance", usages["top-level"], usages["original"])
-    for key in ("turns", "input_tokens"):
-        t.eq("captured.compaction.iteration-invariance." + key, usages["iteration"].get(key), usages["original"].get(key))
-    t.eq("captured.compaction.iteration-difference", usages["iteration"].get("output_tokens"),
-         {"reported": usages["original"].get("output_tokens", {}).get("reported", -1) + 1, "estimated": 0})
-    t.eq("captured.compaction.answer-invariance", list(answers.values()), [answers["original"]] * 3)
+    if not t.sabotage:
+        t.eq("captured.compaction.top-level-invariance", usages["top-level"], usages["original"])
+        for key in ("turns", "input_tokens"):
+            t.eq("captured.compaction.iteration-invariance." + key, usages["iteration"].get(key), usages["original"].get(key))
+        t.eq("captured.compaction.iteration-difference", usages["iteration"].get("output_tokens"),
+             {"reported": usages["original"].get("output_tokens", {}).get("reported", -1) + 1, "estimated": 0})
+        t.eq("captured.compaction.answer-invariance", list(answers.values()), [answers["original"]] * 3)
 
 
 def trigger_step():

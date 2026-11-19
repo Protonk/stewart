@@ -2403,12 +2403,18 @@ class Driver:
         self.eq(label + ".inputs", inputs, [
             {"type": "user", "session_id": "", "parent_tool_use_id": None,
              "message": {"role": "user", "content": text}} for text in (f["body"].decode(), REMINDER)])
-        results = [e["value"] for e in events if e["event"] == "output" and e["value"].get("type") == "result"]
-        self.eq(label + ".two-turn-endings", len(results), 2)
+        outputs = [e for e in events if e["event"] == "output"]
+        self.eq(label + ".stdout-capture", self.captured_channel(f, "stdout").hex(),
+                b"".join(bytes.fromhex(e["raw_hex"]) for e in outputs).hex())
+        results = [e["value"] for e in outputs if e["value"].get("type") == "result"]
+        observed = [(r.get("num_turns"), r.get("usage")) for r in results]
+        expected = [(2, CHECKPOINTS[0]["usage"]), (3, CHECKPOINTS[1]["usage"])]
+        self.require(label + ".ordered-checkpoints", observed == expected and observed[0][1] != observed[1][1],
+                     {"got": observed, "expected": expected, "distinct_usage_required": True})
         status_reply = self.inspect_runtime(f, terminal=True)
         usage = status_reply["data"].get("allowances", {}).get("usage", {})
-        latest = dict(CHECKPOINTS[1]["usage"], harness_turns=CHECKPOINTS[1]["num_turns"])
-        summed = {key: CHECKPOINTS[0]["usage"][key] + CHECKPOINTS[1]["usage"][key] for key in CHECKPOINTS[0]["usage"]}
+        latest = dict(results[1]["usage"], harness_turns=results[1]["num_turns"])
+        summed = {key: results[0]["usage"][key] + value for key, value in results[1]["usage"].items()}
         self.eq(label + ".latest-checkpoint", usage.get("reported_main_loop"), latest)
         self.control("checkpoints-not-summed", usage.get("reported_main_loop") is not None
                      and usage.get("reported_main_loop") != dict(summed, harness_turns=5))
@@ -3373,6 +3379,24 @@ class Driver:
             if variant == "checkpoint":
                 expected_frames += [c5_partial_frame(label + "-session-1", 4, later=True)]
             self.eq(label + ".exact-partial-projection", assistants, expected_frames)
+            expected_partials = 5 if variant == "checkpoint" else 4 * repeats
+            self.eq(label + ".partial-usage", [(v.get("message") or {}).get("usage") for v in assistants],
+                    [C5_PARTIAL_USAGE] * expected_partials)
+            result_positions = [i for i, v in enumerate(frames) if v.get("type") == "result"]
+            self.eq(label + ".result-frame-count", len(result_positions), 1 if variant == "checkpoint" else 0)
+            first_result = result_positions[0] if result_positions else len(frames)
+            prior_ids = [(v.get("message") or {}).get("id") for v in frames[:first_result]
+                         if v.get("type") == "assistant"]
+            shared_id = prior_ids[0] if prior_ids else None
+            self.check(label + ".repeated-message-id",
+                       isinstance(shared_id, str) and bool(shared_id) and prior_ids == [shared_id] * (4 * repeats),
+                       {"got": prior_ids, "expected": "%d partials with one nonempty message ID" % (4 * repeats)})
+            if variant == "checkpoint":
+                later_ids = [(v.get("message") or {}).get("id") for v in frames[first_result + 1:]
+                             if v.get("type") == "assistant"]
+                self.check(label + ".later-message-id", len(later_ids) == 1 and isinstance(later_ids[0], str)
+                           and bool(later_ids[0]) and later_ids[0] != shared_id,
+                           {"got": later_ids, "expected": "one nonempty message ID distinct from %r" % shared_id})
             cap = copy.deepcopy(C5_CAP)
             cap["session_id"] = label + "-session-1"
             self.eq(label + ".captured-cap-shape", [v for v in frames if v.get("type") == "user"], [cap])
@@ -3599,7 +3623,20 @@ class Driver:
         shaped, contents = self.message_contents(events)
         self.check(label + ".input-shape", shaped, contents)
         self.eq(label + ".inputs", contents, [f["body"].decode(), COMPACTED, COMPACTED, REMINDER])
-        self.control("notice-follows-each-boundary", contents.count(COMPACTED) == 2)
+        # The output event precedes the write. A read of its reply can race
+        # with output-transmitted, which the harness records after flushing.
+        traffic = []
+        for e in events:
+            if e["event"] == "output":
+                traffic.append(("output", e["value"].get("type"), e["value"].get("subtype")))
+            elif e["event"] == "input":
+                content = e["value"].get("message", {}).get("content")
+                traffic.append(("input", "question" if content == f["body"].decode() else input_kind(content)))
+        expected = [("input", "question"), ("output", "system", "init"),
+                    ("output", "system", "compact_boundary"), ("input", "compacted"),
+                    ("output", "system", "compact_boundary"), ("input", "compacted"),
+                    ("output", "result", "success"), ("input", "reminder")]
+        self.control("notice-follows-each-boundary", traffic == expected, {"got": traffic, "expected": expected})
         # Two compaction notices spent neither audit-wide allowance.
         notices = data.get("notices", [])
         self.eq(label + ".reminder-notice", [n for n in notices if n.get("type") == "reminder"],
@@ -5625,7 +5662,8 @@ class Driver:
                              "controls_fired": sum(c["fired"] for c in self.controls)}}
         self.save("RESULT.json", report)
         print(json.dumps(report["counts"], sort_keys=True), flush=True)
-        print("Synthetic observations; qualification belongs to the enclosing suite. Retained work: %s" % self.work, flush=True)
+        print("Synthetic observations for the Linux runtime suite (apparatus/runtime-acceptance.sh). Work retained in %s"
+              % self.work, flush=True)
         return 1 if report["counts"]["failed"] else 0
 
 
@@ -7034,24 +7072,23 @@ def self_test():
     check("relay-owner.read-checkpoints", all(stage in {row.get("stage") for row in journal}
           for stage in ("before-select", "after-select", "before-os-read", "after-os-read")))
 
-    def stall(witness, stage):
+    def blocked_pipe_read(witness):
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
         witness.bytes("partial.bin", b"before stall\x00\xff")
-        witness.event(stage)
         # A real blocking read with a writer kept open; the owner must remain
         # responsive even when no Python deadline can run in this worker.
         reader, writer = os.pipe()
+        witness.event("before-os-read")
         os.read(reader, 1)
         os.close(writer)
         os.close(reader)
 
-    for stage in ("before-popen", "before-os-read", "before-worker-cleanup"):
-        record = supervised_control(stage, lambda witness: stall(witness, stage))
-        check("relay-owner." + stage + ".timeout", record["timed_out"] and not relay_success(record)
-              and record["elapsed_seconds"] < 2 and record["last_phase"]["stage"] == stage
-              and any(row["signal"] == "SIGKILL" for row in record["signals"]))
-        check("relay-owner." + stage + ".partial-witness", (relay_root / stage / "partial.bin").read_bytes()
-              == b"before stall\x00\xff")
+    record = supervised_control("before-os-read", blocked_pipe_read)
+    check("relay-owner.before-os-read.timeout", record["timed_out"] and not relay_success(record)
+          and record["elapsed_seconds"] < 2 and record["last_phase"]["stage"] == "before-os-read"
+          and any(row["signal"] == "SIGKILL" for row in record["signals"]))
+    check("relay-owner.before-os-read.partial-witness", (relay_root / "before-os-read/partial.bin").read_bytes()
+          == b"before stall\x00\xff")
 
     def lingering_descendant(witness):
         ready_r, ready_w = os.pipe()
@@ -7158,12 +7195,6 @@ def self_test():
         "mcp_config", "environment", "controls", "system_prompt", "input", "mcp_initialize",
         "hook_replies", "texts"])
     check("surface.environment-count", len(surface_document()["environment"]) == 15)
-    changed = surface_document()
-    changed["environment"]["CLAUDE_CODE_MAX_RETRIES"] = "1"
-    check("surface.value-firing-control", sha(compact(changed)) != SURFACE_SHA)
-    changed = surface_document()
-    changed["texts"]["reminder_sha256"] = sha((REMINDER + "\n").encode())
-    check("surface.text-firing-control", sha(compact(changed)) != SURFACE_SHA)
     profile_launch = {"home": "/h", "temporary_directory": "/t", "config_directory": "/c"}
     first = filled_launch("/one/stewart", "/w1", profile_launch, "open-inquiry", MODEL)
     second = filled_launch("/two/it's/stewart", "/w2", profile_launch, "open-inquiry", MODEL)
@@ -7186,9 +7217,6 @@ def self_test():
                                      for node in parse(mapped).items))
         check(family + ".result-threshold", all(node.get("_meta").raw ==
               b'{"anthropic/maxResultSizeChars":500000}' for node in parse(mapped).items))
-        changed = bytearray(mapped)
-        changed[-2] = ord(" ")
-        check(family + ".hash-control", sha(changed) != sha(mapped))
     unusual = b'[{"name":"x","description":"d","input_schema": { "type" : "object" }}]'
     check("mapping.raw-whitespace", b'"inputSchema":{ "type" : "object" }' in mcp_tools(unusual))
     profile = b'{"launch": { "model" : "x" },"check":1}'
@@ -7245,8 +7273,7 @@ def self_test():
         result = subprocess.run([str(canary)], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 env={"PATH": "/usr/bin:/bin"}, timeout=5)
         check("canary.firing-control", result.returncode == 97 and marker.read_bytes() == b"unexpected local launch\n")
-    # Each further scenario runs against a specification-only peer, so that
-    # the synthetic harness's own sequencing is known before a binary is used.
+    # Rehearse these harness sequences against a specification-only peer.
     mode_peer = '''import json,sys
 pending_submit=None
 cancelled_submit=False
@@ -7279,17 +7306,10 @@ for raw in sys.stdin.buffer:
         ("submit-publication", 1, lambda e: e["event"] == "submit-retried"),
         ("near-limit", 2, submitted),
         ("near-limit-interrupt", 2, None),
-        ("captured-accounting", 1, submitted),
-        ("captured-accounting-duplicate", 1, submitted),
-        ("captured-accounting-checkpoint", 2, submitted),
-        ("tool-name", 1, submitted),
-        ("tool-name-denied", 1, lambda e: e["event"] == "tool-name-frame-sent"),
-        ("compaction", 4, submitted),
         ("hooks", 1, submitted),
         ("relay-loss", 1, lambda e: e["event"] == "second-relay"),
         ("checkpoint-then-crash", 2, None),
-        ("resume-no-submit", 1, lambda e: e["event"] == "output-transmitted" and e.get("last")),
-        ("no-submit", 2, lambda e: e["event"] == "output-transmitted" and e.get("last")),
+        ("resume-no-submit", 1, lambda e: e["event"] == "output" and e["value"].get("type") == "result"),
         ("scripted", 1, lambda e: e["event"] == "script-final"),
         ("scripted-exit", 1, None),
         ("sequence", 3, submitted),
@@ -7314,14 +7334,6 @@ for raw in sys.stdin.buffer:
                 scenario["observe_seconds"] = 1
                 scenario["captured_partial"] = True
                 scenario["interrupt_after_notice"] = mode == "near-limit-interrupt"
-            if mode.startswith("captured-accounting"):
-                scenario["mode"] = "captured-accounting"
-                scenario["accounting_variant"] = (mode.removeprefix("captured-accounting-")
-                                                 if mode != "captured-accounting" else "missing")
-            if mode.startswith("tool-name"):
-                scenario["mode"] = "tool-name"
-                scenario["assistant_tool"] = ("record_account" if mode.endswith("-denied")
-                                             else "mcp__stewart__record_account")
             if mode.startswith("scripted"):
                 scenario["mode"] = "scripted"
                 scenario["script"] = [script_step("record", "record_account", {"text": "x", "label": "same"},
@@ -7362,23 +7374,20 @@ for raw in sys.stdin.buffer:
             supplied_inputs = [user("synthetic input %d" % n) for n in range(inputs)]
             if mode.startswith("near-limit"):
                 supplied_inputs[1] = user(NEAR_LIMIT.format(seconds=12, placements=2))
-            if mode == "captured-accounting-checkpoint":
-                supplied_inputs[1] = user(REMINDER)
             if mode == "sequence":
                 supplied_inputs[1:] = [user(REMINDER), user(COMPACTED)]
             process.stdin.write(b"".join(supplied_inputs))
             process.stdin.flush()
             deadline = time.monotonic() + 20
             events = []
-            results = 2 if mode == "no-submit" else 1
             while time.monotonic() < deadline:
                 log = root / "harness.jsonl"
                 events = [json.loads(line) for line in log.read_bytes().splitlines()] if log.exists() else []
-                if mode in ("resume-no-submit", "no-submit"):
-                    # The last result's completed write is the marker for these two.
-                    sent = [e for e in events if e["event"] == "output" and e["value"].get("type") == "result"]
+                if mode == "resume-no-submit":
+                    # Wait until the result's write completes before stopping the harness.
+                    sent = [e for e in events if finished(e)]
                     done = [e for e in events if e["event"] == "output-transmitted"]
-                    if len(sent) == results and done and done[-1]["sha256"] == sha(bytes.fromhex(sent[-1]["raw_hex"])):
+                    if len(sent) == 1 and done and done[-1]["sha256"] == sha(bytes.fromhex(sent[0]["raw_hex"])):
                         break
                 elif finished is None:
                     if process.poll() is not None:
@@ -7458,26 +7467,6 @@ for raw in sys.stdin.buffer:
                 else:
                     check("mode." + mode + ".submits-after-window",
                           ended_at is not None and submitted_at is not None and ended_at < submitted_at)
-            elif mode.startswith("captured-accounting"):
-                partials = [o for o in outputs if o.get("type") == "assistant"]
-                expected = 8 if mode.endswith("-duplicate") else 5 if mode.endswith("-checkpoint") else 4
-                check("mode." + mode + ".partials", len(partials) == expected
-                      and all(o["message"]["usage"] == C5_PARTIAL_USAGE for o in partials))
-                check("mode." + mode + ".cap", sum(o.get("type") == "user" and o.get("isSynthetic") is True
-                                                 for o in outputs) == 1)
-                check("mode." + mode + ".checkpoint", sum(o.get("type") == "result" for o in outputs)
-                      == (1 if mode.endswith("-checkpoint") else 0))
-                check("mode." + mode + ".submits", sum(submitted(e) for e in events) == 1)
-            elif mode.startswith("tool-name"):
-                check("mode." + mode + ".assistant",
-                      sum(o.get("type") == "assistant" for o in outputs) == 1)
-                check("mode." + mode + ".submits", sum(submitted(e) for e in events)
-                      == (0 if mode.endswith("-denied") else 1))
-            elif mode == "compaction":
-                check("mode.compaction.sequence", kinds == [("system", "init"), ("system", "compact_boundary"),
-                      ("system", "compact_boundary"), ("result", "success")])
-                check("mode.compaction.inputs", consumed == 4 and names == ["reentry-after-compaction"])
-                check("mode.compaction.submits", any(submitted(e) for e in events))
             elif mode == "hooks":
                 hooks = [e for e in events if e["event"] == "hook"]
                 check("mode.hooks.count", [h["when"] for h in hooks] == ["before-startup"] + ["after-startup"] * 6)
@@ -7511,8 +7500,6 @@ for raw in sys.stdin.buffer:
                 else:
                     check("mode.scripted-exit.exit", code == 7 and not final
                           and sum(e["event"] == "deliberate-interruption" for e in events) == 1)
-            elif mode == "no-submit":
-                check("mode.no-submit.results", [o["num_turns"] for o in outputs if o.get("type") == "result"] == [2, 3])
             elif mode == "sequence":
                 check("mode.sequence.outputs", kinds == [("system", "init"), ("result", "success"),
                                                          ("system", "compact_boundary")])

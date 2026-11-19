@@ -121,7 +121,6 @@ pub const SABOTAGE: &[&str] = &[
     "skip_confirmation",
     "seal_as_stopped",
     "empty_return_before_launch",
-    "slow_list",
     "hide_provider_message",
     "rejection_as_unavailable",
     "relative_run_line",

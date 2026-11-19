@@ -155,8 +155,8 @@ one changes specification and implementation, the other changes the driver from
 the specification alone.
 
 Development-machine runs help iteration but are not qualification evidence.
-Evidence comes from a Linux container suite and, under ACCEPTANCE, the native
-WSL2 run. Call nothing qualified without such a run. Retained `.scratch` runs
+Evidence comes from the Linux container suite for the corresponding release or
+development runtime. Each suite qualifies the behavior it exercises. Retained `.scratch` runs
 follow [Evidence and retention](development/DEVELOPMENT.md#evidence-and-retention).
 
 A clean result needs a firing control, a case differing in the measured property

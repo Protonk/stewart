@@ -37,8 +37,8 @@ records, including historical skips, remain unchanged.
 Keep the variant in a reachable branch commit. Change its specification and
 service together, run both native Cargo configurations, and use the independent
 driver from the committed apparatus checkout unchanged on the study branch.
-Ordinary driver maintenance, including an authorized timing-budget change,
-lands in that checkout first; a study build using a different driver is refused.
+Ordinary driver maintenance lands in that checkout first. A study build using
+a different driver is refused.
 Identify the expected text/version differences in the
 experiment proposal. Run `acceptance.sh` on the
 variant commit and retain its failed result as an experiment; **do not extract

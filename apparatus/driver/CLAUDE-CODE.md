@@ -4,8 +4,10 @@
 [Claude Code development runtime contract](../../docs/claude-code/CONTRACT.md).
 Its author works from that contract, the common specifications and this driver's
 specification-owned forms, without reading the service implementation or tests.
-It is a standalone driver, run separately from the release driver both natively
-and by the Linux container acceptance suite.
+The offline Linux suite for this development adapter is
+`sh apparatus/runtime-acceptance.sh EVIDENCE_DIR`. The release driver has its
+own suite, `sh apparatus/acceptance.sh EVIDENCE_DIR`. Give each run a fresh
+evidence directory.
 
 Run from the repository root with an explicit Python 3.9 or later interpreter.
 The driver supports macOS arm64 and Linux aarch64/x86_64. Runtime checks need a
@@ -192,11 +194,13 @@ conversation records, not hidden provider traffic or real-harness prevention.
 
 Runtime controls include successful auditor submission and verified delivery,
 followed by an ordinary close that leaves the delivered package unchanged and
-admits no further launch. An ordinary-ending case ends two turns without
-submitting: it witnesses the single reminder as the second input, reports only
-the later of two cumulative usage checkpoints, refuses another run, and closes
-through a manager seal and a confirmed placement. Further controls cover
-attempted authoring before startup followed by delayed valid and mismatched-model
+admits no further launch. An ordinary-ending case witnesses the single reminder
+as the second input and the two successive cumulative results, with turn counts
+2 and 3 and the distinct usage object expected for each. It compares the stdout
+capture with the harness's bytes before checking that Stewart reports only the
+later checkpoint. Stewart then refuses another run and closes through a manager
+seal and a confirmed placement. Further controls cover attempted authoring
+before startup followed by delayed valid and mismatched-model
 startup controls, interrupted work followed by a fresh session, placement exhaustion,
 deadline and owner-death stopping with a resistant descendant, and API credential
 option rejection. A controlled missing-stop case retains the original process
@@ -274,19 +278,27 @@ Five further runtime cases use the same synthetic executable:
   reminder turn; a second session reports a lower one and ends unsubmitted.
   The report is the sum of each session's latest checkpoint, one interval stays
   unknown, and the reminder is sent once for the audit.
-- **Compaction.** Each of two compaction boundaries is followed by the pinned
-  notice, re-entry still works, and the reminder remains available afterwards.
-  The retained `stdout` and `input` streams equal what the harness wrote and read.
+- **Compaction.** The harness journal must show the question and startup, a
+  boundary and the exact compaction notice, then a second boundary and notice.
+  A successful result must precede the ordinary reminder. Re-entry after the
+  first notice still works. The retained `stdout` and `input` streams equal
+  what the harness wrote and read.
 
-The self-test runs every synthetic scenario against a small specification-only
-peer first, so a sequencing fault in the harness shows before a binary is used.
-It also exercises the direct relay observer with a raw pipe, actual blocked-read
-workers at setup/read/cleanup checkpoints, a resistant descendant after its
-worker exits, subsequent normal operation, and the refusal to launch further
-selected cases after unresolved stopping. The self-test prints the retained
-directory containing these partial witnesses and watchdog results. It checks the
-pipe packing rule for both platforms with controls (merging, page-sized and large
-writes, packet mode, other geometries), then compares it with fresh unread pipes
+The self-test uses a small specification-only peer to rehearse selected harness
+sequences, including cancellation, publication, relay loss and a fresh session
+ending after interruption. The runtime cases check tool names, captured
+accounting, the two-result ordinary ending and repeated compaction against the
+gated binary using the harness journal.
+
+Relay supervision checks begin with a normal raw-pipe exchange, then stall a
+worker on a blocking pipe read and check its timeout, group stop and partial
+byte witness. A separate worker leaves a signal-resistant descendant. After
+checking that the descendant has stopped, the self-test repeats the normal pipe
+exchange. It also checks that unresolved stopping prevents further selected
+cases from launching. The self-test prints the directory containing the partial
+witnesses and watchdog results. It checks the pipe packing rule for both
+platforms with controls (merging, page-sized and large writes, packet mode,
+other geometries), then compares it with fresh unread pipes
 on the host and prints the host's packing facts. On Linux that comparison is the
 direct kernel witness for the notice cases' page packing.
 Environment controls exercise the actual wrapper and inspection path with the
@@ -374,15 +386,15 @@ synthetic schedule changes; the original multi-entry audit is not replayed.
 
 The `runtime-captured-accounting` case projects the repeated usage fields from
 four C5 assistant frames and replays C5's complete synthetic cap-message shape.
-The usage projection preserves every usage member and the repeated message-ID
-and null-stop semantics. Content, model and envelope identities are synthetic;
-the cap frame changes only its session ID. Missing final results must leave
-totals unknown, and repeating the four-frame projection twice must change no
-reported consumption. A separate control supplies one known cumulative result,
-receives the still-unused ordinary reminder, then supplies another partial
-assistant frame: the checkpoint counts survive while the later interval remains
-unknown. Retained usage records must not promote partial fields to reported
-totals, and the last record must agree with the final usage object. Their file
+The case checks that four partial frames share one nonempty message ID, or
+eight in the duplicate variant, and carry the captured usage with a null stop.
+Content, model and envelope identities are synthetic. The cap frame changes
+only its session ID. Both variants must emit zero result frames and leave
+reported totals unknown. A separate control supplies one cumulative result,
+receives the still-unused ordinary reminder, then supplies one partial frame
+with a different message ID. The checkpoint counts survive while the later
+interval remains unknown. Retained usage records must not promote partial fields
+to reported totals, and the last record must agree with the final usage object. Their file
 count is not a model-report count: records also preserve stopping observations.
 All variants author and submit the same supplied account after the cap,
 then close without changing its package. The cap text is harness output, never
@@ -605,15 +617,19 @@ the archive. `driver-snapshot/` preserves the executable synthetic harness and
 its specification-derived helpers used by that run. Keep the work directory
 through review, then apply the repository's
 [evidence retention rules](../../development/DEVELOPMENT.md#evidence-and-retention).
-Native results are development evidence only. The container suite runs this
-driver on both supported Linux architectures, with distinct release-profile
+Native results are development evidence only. The runtime acceptance suite runs
+this driver on both supported Linux architectures with distinct release-profile
 and debug-profile development writers and a featureless release binary. It
-requires every case and control, exports `RESULT.json`, `environment.json`,
-`commands/`, `witness/` and `driver-snapshot/` to `runtime-evidence/`, and retains
-the original container through review. It also exports the whole work tree to
-`runtime-work.tar` on every run: launch markers beside fixture executables are
-independent witnesses outside `witness/`. The qualification extractor
-checks actual counts, full source case inventory, source/binary identities,
-the exported evidence listing and the complete work archive's digest. The standalone report makes no qualification
-claim itself; the enclosing Linux suite qualifies only the adapter and process
-controls it exercises, never real-harness behavior or provider consumption.
+requires every case and control and records the failure count in `host/DONE`.
+Each architecture's `runtime-evidence/` contains `RESULT.json`,
+`environment.json`, `commands/`, `witness/` and `driver-snapshot/`. The suite
+retains the original container through review and exports its complete runtime
+work tree as `runtime-work.tar` on every run. Launch markers beside fixture
+executables are independent witnesses outside `witness/`. The qualification
+recorder's `--suite runtime` selection checks case counts against the source
+inventory, source and binary identities, the evidence listing and the digest
+of the complete work archive.
+
+A passing Linux runtime suite qualifies the adapter and process controls
+exercised with the synthetic harness. Real-harness behavior and provider
+consumption require their own evidence.

@@ -72,10 +72,8 @@ actual files. See the [preparation protocol](docs/MANAGER-PREPARATION.md).
 
 ## Before running
 
-- **Platform:** Linux x86_64 or aarch64, including WSL2. The archive must be on
-  local ext4, xfs or btrfs; on WSL2 keep it on the Linux filesystem, since
-  Windows drives under `/mnt/` are refused for it. The answer destination may
-  be under `/mnt/`.
+- **Platform:** Linux x86_64 or aarch64. The archive must be on local ext4,
+  xfs or btrfs. Source builds also run on Apple-silicon macOS for development.
 - **Access:** the auditor works on accepted text through Stewart's tools. It
   cannot execute supplied code, use a shell or retrieve additional material.
 - **Credentials:** only `run` needs the provider key and network. Supply the key

@@ -160,10 +160,13 @@ def c_guidance(t):
     base family remain fixed. materials/guidance.md is ordinary readable material; the root
     guidance is not listed or accepted as a read/search source. Each audit observes the
     ordinary reminder, prepares an account with two missing sections, deletes the account,
-    then prepares and submits an empty answer without acknowledgment."""
+    then prepares and submits an empty answer without acknowledgment. Each sabotage
+    control runs with both supplied guidance files, A and B."""
     pinned = {}
     for label, guidance, other in (("stock", None, False), ("a", GUIDANCE_A, False),
                                     ("b", GUIDANCE_B, False), ("other-material", GUIDANCE_A, True)):
+        if t.sabotage and label not in ("a", "b"):
+            continue
         pre = "guidance." + label
         sub = t.submission(entries(other), body=BODY, guidance=guidance, dest_watch="additions")
         t.accept(sub, prefix=pre + ".", check_witness=True)
@@ -186,7 +189,7 @@ def c_guidance(t):
              aw.EMPTY_RENDERING)
         t.eq(pre + ".empty-answer", rs.read_package_member(package, "answer.json") if package else None,
              aw.answer_json(2, []))
-    if len(pinned) == 4:
+    if not t.sabotage:
         for key in ARRANGEMENT_MEMBERS:
             if key in ("system", "guidance", "bindings"):
                 continue

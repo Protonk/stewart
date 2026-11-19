@@ -118,7 +118,8 @@ def system_bytes(packet, family, guidance=None):
 def check_result(result, baseline, expected, arch):
     """Refuse missing cases, new failure names, skipped checks or credential failures."""
     expectations(expected)
-    require(result['schema'] == 'stewart.acceptance-driver/1'
+    require(result['schema'] == baseline['schema']
+            and result['schema'] in ('stewart.acceptance-driver/1', spec.DRIVER_SCHEMA)
             and result['interrupted'] is False and result['exit'] == 1,
             'study acceptance did not finish with its declared differences')
     require(result['platform']['system'] == 'Linux'
@@ -213,8 +214,7 @@ def select(repo, qualification, value):
                                        cwd=repo,env=env)
     require(digest(archived) == value['source_archive_sha256'], 'study archive is not the named commit')
     require(read_file(root/'host/DONE').startswith(b'done '), 'study acceptance stopped early')
-    require(read_file(root/'host/DONE').rstrip().endswith(b' failures=4'),
-            'study acceptance has unexpected host failures')
+    expected_host_failures = 0
     require(not read_file(root/'host/worktree.stdout').strip(), 'study acceptance used a dirty source checkout')
     for arch in ARCHES:
         result_path = root/f'driver-{arch}/evidence/RESULT.json'
@@ -227,9 +227,17 @@ def select(repo, qualification, value):
                 == result['binaries']['release']['sha256'], 'study binary digest differs')
         require(file_hash(root/f'bin-{arch}/stewart-test') == result['binaries']['test']['sha256'],
                 'study test binary digest differs')
+        if result['schema'] == 'stewart.acceptance-driver/1':
+            dynamic_checks = [('build-glibc', 0), ('static-stewart-glibc', 1)]
+            expected_host_failures += 2  # Driver container and expected self-test failure.
+        else:
+            dynamic_checks = [('build-dynamic-control', 0), ('static-dynamic-control', 1)]
+            require(read_file(root/f'driver-{arch}/driver-complete.exit') == b'1\n',
+                    'study acceptance did not record its declared case failure')
+            expected_host_failures += 3  # Also records the failed complete-case check.
         for name, code in [('build-release', 0), ('build-test', 0), ('static-stewart', 0),
-                           ('static-stewart-test', 0), ('build-glibc', 0),
-                           ('static-stewart-glibc', 1), ('cmp-release-test', 1), ('run-release', 0)]:
+                           ('static-stewart-test', 0), ('cmp-release-test', 1), ('run-release', 0),
+                           *dynamic_checks]:
             require(read_file(root/f'build-{arch}/{name}.exit') == (str(code)+'\n').encode(),
                     'study binary build/static controls differ')
         for name in ['evidence-copy', 'retention-archive', 'retention-list', 'retention-sha256']:
@@ -240,4 +248,6 @@ def select(repo, qualification, value):
         require(failed == value['expected']['selftest_failures']
                 and not any(line.startswith('skip ') for line in lines)
                 and lines[-1].endswith('0 skipped'), 'study self-test differs from declared failures')
+    require(read_file(root/'host/DONE').rstrip().endswith(f' failures={expected_host_failures}'.encode()),
+            'study acceptance has unexpected host failures')
     return root/'bin-arm64'

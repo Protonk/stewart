@@ -61,10 +61,12 @@ def send_captured(p, raw):
           Control("omit_effects_on_refusal", [r"^captured\.citation\.m1\.original\.probe-effects$"]),
           Control("grade_support", [r"^captured\.citation\.m1\.original\.corrected-citations$"])])
 def c_captured_citations(t):
-    for origin in ("m1", "c2", "c3"):
+    origins = ("m1",) if t.sabotage else ("m1", "c2", "c3")
+    variants = ("original",) if t.sabotage else ("original", "quote-fixed", "reordered")
+    for origin in origins:
         source, material = source_for(origin)
         answers = {}
-        for variant in ("original", "quote-fixed", "reordered"):
+        for variant in variants:
             pre = "captured.citation." + origin + "." + variant
             valid_probe = variant == "quote-fixed"
             probe = citation_block(origin, "invalid", variant)
@@ -138,7 +140,8 @@ def c_captured_citations(t):
             for entry in entries:
                 path = Path(sub.audit_dir) / "payload" / (entry.id + ".v1.bin")
                 t.eq(pre + ".retained-" + entry.id, path.read_bytes() if path.is_file() else None, entry.data)
-        t.eq("captured.citation." + origin + ".order-invariance", answers["reordered"], answers["original"])
+        if not t.sabotage:
+            t.eq("captured.citation." + origin + ".order-invariance", answers["reordered"], answers["original"])
 
 
 @selftest

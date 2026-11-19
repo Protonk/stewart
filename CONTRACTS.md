@@ -108,7 +108,7 @@ also defines the manager guidance and material roles.
 ## Platform and auditor access
 
 Ship one statically linked Rust binary for Linux x86_64 and aarch64, without
-runtime language dependencies. WSL2 runs that binary. Build, test and experiment
+runtime language dependencies. Build, test and experiment
 in Linux containers; the development apparatus does not ship. Linux is the
 supported platform. Native `aarch64-apple-darwin` is a build target: the source
 builds and runs there and nothing restricts its use, but it is not shipped,
