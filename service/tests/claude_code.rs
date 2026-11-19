@@ -1463,7 +1463,8 @@ fn one_recording_call(writer: &str) -> String {
 
 /// A stop signal closes the gate of the harness call that is executing
 /// (runtime contract). A `record_account` paused just before its entry's
-/// link, and released after the signal was observed, is refused
+/// link, and released after the harness group is gone and the transport
+/// drain interval has elapsed, is refused
 /// `placement_stopped`, links nothing and keeps its result record; the
 /// placement ends `interrupted` with cause `signal`. The control releases
 /// the call before the signal: its entry links and stands, and the same
@@ -1492,7 +1493,15 @@ fn a_signal_stops_a_harness_mutation_paused_before_its_link() {
         let term = || unsafe { libc::kill(child.id() as i32, libc::SIGTERM) };
         if signal_first {
             assert_eq!(term(), 0);
-            std::thread::sleep(Duration::from_millis(300));
+            let process = format!(
+                "{}/runs/1/process-model.json",
+                p.env.audit_dir(&p.reference)
+            );
+            let record = json::parse(&std::fs::read(process).unwrap()).unwrap();
+            let group = common::at(&record, &["group"]).as_u64().unwrap() as i32;
+            // SAFETY: signal zero observes the fixture's process group.
+            assert!(until(|| unsafe { libc::kill(-group, 0) } != 0));
+            std::thread::sleep(Duration::from_secs(4));
         }
         std::fs::write(format!("{faults}/log.publish:entry.go"), b"").unwrap();
         if !signal_first {

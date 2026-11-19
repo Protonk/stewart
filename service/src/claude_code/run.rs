@@ -772,7 +772,7 @@ enum Input {
     Error(String),
     Mcp(UnixStream),
     Hook(UnixStream, Vec<u8>),
-    Tool(answer::Executed),
+    ToolFinished,
 }
 fn accepted_stream(stream: UnixStream) -> std::io::Result<UnixStream> {
     // BSD sockets inherit the listener's nonblocking flag. Only accept is
@@ -1009,9 +1009,9 @@ fn place(
         let mut mcp = wire::Mcp::default();
         let mut output = Vec::new();
         let mut incoming = Vec::new();
-        let mut pending: Option<Pending> = None;
+        let mut pending: Option<RunningCall<'_>> = None;
         let mut waiting = Waiting::default();
-        let start_tool = |task: &Pending, usage: Summary| {
+        let start_tool = |task: Pending, usage: Summary| {
             let mut used = live.used_before;
             used.add(&Usage {
                 harness: Some(usage),
@@ -1030,12 +1030,14 @@ fn place(
             };
             let worker = task.clone();
             let tx = tx.clone();
-            scope.spawn(move || {
+            let handle = scope.spawn(move || {
                 let call_id = format!("mcp-{}", worker.call);
                 let call = worker.as_call(&call_id);
                 let result = dispatch(live.audit, live.world, &placement, &call, &worker.gate);
-                let _ = tx.send(Input::Tool(result));
+                let _ = tx.send(Input::ToolFinished);
+                result
             });
+            RunningCall { task, handle }
         };
         let mut calls = 0u64;
         let mut readers = 2usize;
@@ -1234,8 +1236,8 @@ fn place(
                                     Action::Silent => (),
                                     Action::Cancel(key) => {
                                         if let Some(p) = &pending {
-                                            if p.key == key {
-                                                p.gate.cancel();
+                                            if p.task.key == key {
+                                                p.task.gate.cancel();
                                             }
                                         }
                                         waiting.cancel(&key);
@@ -1283,8 +1285,7 @@ fn place(
                                         if pending.is_some() {
                                             waiting.push(task);
                                         } else {
-                                            start_tool(&task, observed.usage);
-                                            pending = Some(task);
+                                            pending = Some(start_tool(task, observed.usage));
                                         }
                                     }
                                 }
@@ -1294,8 +1295,11 @@ fn place(
                             return Err("unterminated runtime frame exceeds 8 MiB".into());
                         }
                     }
-                    Input::Tool(result) => {
-                        let p = pending.take().ok_or("tool result without a pending call")?;
+                    Input::ToolFinished => {
+                        let (p, result) = pending
+                            .take()
+                            .ok_or("tool result without a pending call")?
+                            .finish()?;
                         let (record, result_bytes) = retain_tool(live, &p, &result)?;
                         let reply_bytes = wire::line(crate::rpc::result(
                             &p.id,
@@ -1338,8 +1342,7 @@ fn place(
                             });
                         }
                         if let Some(task) = waiting.pop() {
-                            start_tool(&task, observed.usage);
-                            pending = Some(task);
+                            pending = Some(start_tool(task, observed.usage));
                         }
                     }
                 }
@@ -1355,7 +1358,7 @@ fn place(
         };
         gate.stop();
         if let Some(p) = &pending {
-            p.gate.cancel();
+            p.task.gate.cancel();
         }
         quitting.store(true, Ordering::SeqCst);
         if let Some(c) = &connection {
@@ -1376,7 +1379,8 @@ fn place(
             &mut drain_mismatch,
             &mut drain_error,
         );
-        while eof.len() < readers || pending.is_some() {
+        let mut tool_finished = pending.is_none();
+        while eof.len() < readers || !tool_finished {
             if Instant::now() >= drain_deadline {
                 drain_error = Some(
                     "shutdown observer drain did not finish; capture interval is incomplete"
@@ -1406,20 +1410,7 @@ fn place(
                 Ok(Input::Eof(channel)) => {
                     eof.insert(channel);
                 }
-                Ok(Input::Tool(result)) => {
-                    // A damaged log is reported apart from the ending. Any
-                    // other end the call required comes after the decision
-                    // and leaves the ending as decided; its result record
-                    // states it.
-                    if result.end == Some(answer::End::LogDamaged) {
-                        ended.log_damaged = true;
-                    }
-                    if let Some(p) = pending.take() {
-                        if let Err(e) = retain_tool(live, &p, &result) {
-                            drain_error = Some(e.message);
-                        }
-                    }
-                }
+                Ok(Input::ToolFinished) => tool_finished = true,
                 Ok(Input::Hook(_, bytes)) => {
                     if let Err(e) = cap.raw("hook-in", &bytes) {
                         drain_error = Some(e.message);
@@ -1436,6 +1427,21 @@ fn place(
                 }
                 Err(mpsc::RecvTimeoutError::Timeout) => (),
                 Err(_) => break,
+            }
+        }
+        // Disconnect the bounded observer queue before joining: the worker
+        // may still be sending its completion notification. Its actual result
+        // belongs to the placement, even after the transport drain expires.
+        drop(rx);
+        if let Some(running) = pending {
+            let retained = running.finish().and_then(|(task, result)| {
+                if result.end == Some(answer::End::LogDamaged) {
+                    ended.log_damaged = true;
+                }
+                retain_tool(live, &task, &result)
+            });
+            if let Err(e) = retained {
+                drain_error = Some(e.message);
             }
         }
         // These requests were admitted and captured, but never dispatched.
@@ -1472,9 +1478,6 @@ fn place(
         }
         observed.usage.stopped = u64::from(matches!(stopped, Ok(true)));
         ended.usage.harness = Some(observed.usage);
-        // Disconnect first, so bounded reader queues cannot block scoped joins.
-        drop(rx);
-        drop(tx);
         let message = match (failure, drain_error) {
             (None, None) if drain_mismatch => Some("runtime_reply_mismatch: captured conversation differs from a supplied reply; see the retained diagnostic".into()),
             (None, drained) => drained,
@@ -1508,6 +1511,21 @@ struct Pending {
     raw: Vec<u8>,
     call: u64,
     gate: Gate,
+}
+
+struct RunningCall<'scope> {
+    task: Pending,
+    handle: std::thread::ScopedJoinHandle<'scope, answer::Executed>,
+}
+
+impl RunningCall<'_> {
+    fn finish(self) -> Result<(Pending, answer::Executed), Stopped> {
+        let result = self
+            .handle
+            .join()
+            .map_err(|_| "tool worker panicked before returning a result")?;
+        Ok((self.task, result))
+    }
 }
 
 impl Pending {
