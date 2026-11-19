@@ -1,10 +1,10 @@
 # Release and work plan
 
 The standalone CLI describes command effects, reports recorded stop reasons
-and returns the accepted question body alongside the answer. Qualification is
-paused. The corrected source at `5b33d59` passed its development checks.
-Resume with a fresh two-architecture Linux acceptance run, then rehearse C10
-with its qualified writer. Candidate assembly in the preparation MCP follows.
+and returns the accepted question body alongside the answer. The release
+driver passed on both Linux architectures at `9b0afe6`. Work pauses before
+the offline C10 rehearsal with that writer. Candidate assembly in the
+preparation MCP follows.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
@@ -16,7 +16,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Qualify the standalone CLI additions, implement candidate assembly in the preparation MCP, and demonstrate integration with the fake provider. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
+| Current | Rehearse the standalone CLI with its qualified writer, implement candidate assembly in the preparation MCP, and demonstrate integration with the fake provider. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separate release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |
