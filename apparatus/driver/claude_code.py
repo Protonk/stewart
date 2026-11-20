@@ -100,6 +100,8 @@ KEPT = "A pipelined note whose call was not cancelled.\n"
 QUEUED = "The second pipelined note must follow the first.\n"
 CANCELLED = "A pipelined note whose call was cancelled before it could be published.\n"
 SECOND_RELAY = "A note attempted through a second relay after the first was lost.\n"
+CONCURRENT_RELAY = "A note attempted through a second relay while the first still served the placement.\n"
+LATE_CALL = "A note attempted after the placement stopped admitting calls.\n"
 # A fresh session's series; lower than the first session's on purpose.
 SECOND_SESSION = {"num_turns": 1, "usage": {"input_tokens": 5, "cache_creation_input_tokens": 0,
                                             "cache_read_input_tokens": 210, "output_tokens": 9}}
@@ -151,6 +153,8 @@ CASES = (
     ("surface-binding", "A check naming another surface, or an earlier profile form, refuses with the exact surface"),
     ("surface-two-builds", "Optional second build: same profile accepted by both writers; audits stay with their writer"),
     ("profile-input", "Strict profile JSON, bounds, regular-file and no-follow controls"),
+    ("profile-check-date", "A check date that is not a timestamp is an attributed label: the profile prepares "
+                           "and its captured bytes are unchanged; a non-string date refuses"),
     ("limit-fields", "One question version: placement bounds, mixed limit fields and the removed version refuse"),
     ("help-and-presentation", "Runtime help topic and notice; human output shows the profile by path and digest"),
     ("source-invariance", "Receipt stays captured after source/profile edits and CWD/HOME changes"),
@@ -163,9 +167,15 @@ CASES = (
     ("runtime-fidelity-publication", "Reply mismatch closes a paused seal gate; late drain preserves a winning seal"),
     ("runtime-ordinary-ending", "Unsubmitted turns, one reminder, a valid usage checkpoint, manager seal and confirmed close"),
     ("runtime-hooks-and-effort", "The hook helper admits only pinned tools after startup; a selected effort reaches the launch"),
+    ("runtime-hook-after-admission", "Once an ordinary ending stops admission, the hook blocks the pinned tool it "
+                                     "admitted before with exit 2, and a late call adds nothing"),
     ("runtime-cancellation", "Ordered pipelined calls, cancellation behind a large call, late/unknown cancellations and reused IDs"),
+    ("runtime-null-error-id", "Frames whose request ID cannot be determined get an error with a null id and the "
+                              "placement goes on serving; a well-formed notification gets no reply"),
     ("runtime-submit-publication", "Seal-publication order: close owns the seal; cancellation preserves placement; signal and deadline stop"),
     ("runtime-relay-loss", "The relay dies while the model lives: the placement stops, nothing else writes, a fresh session continues"),
+    ("runtime-second-relay", "A second relay connection while the first serves the placement executes nothing "
+                             "and stops it as a protocol anomaly; the first entry stands"),
     ("runtime-usage-series", "Two placements: each session's latest checkpoint is summed and a lost interval stays unknown"),
     ("runtime-captured-accounting", "C5 cap and overlapping partial reports: unknown totals, duplicate invariance and checkpoint control"),
     ("runtime-tool-names", "Prefixed assistant tools and bare MCP calls work; unprefixed and unlisted assistant tools stop"),
@@ -200,6 +210,8 @@ CASES = (
                                     "restores run and close"),
     ("runtime-launch-directory", "Instruction entries above the launch directory, or one within custody, refuse "
                                  "before reservation; clean directories start"),
+    ("runtime-run-reverification", "run rechecks the pinned executable digest before reserving a start: a changed "
+                                   "executable refuses without a start; the restored one starts and seals"),
     ("runtime-notice-transmission", "Notices are sent when claimed and numbered by position; unknown after recovery "
                                     "or a blocked write; never due by placements"),
     ("runtime-notice-not-sent", "A claim whose directory sync fails stops the placement before capture and "
@@ -1310,7 +1322,8 @@ HOOK_REQUEST = b"\x00\xffhook input the helper must not interpret\nsecond line\r
 HOOK_REPLY = b"\xfe\x00hook reply copied unchanged\r\nsecond line\x7ftail"
 HOOK_REPLY_LIMIT = 64 * 1024
 HOOK_REPLIES = {"hook-exact": HOOK_REPLY, "hook-limit": bytes(range(256)) * (HOOK_REPLY_LIMIT // 256),
-                "hook-empty": b"", "hook-oversized": bytes(range(256)) * (HOOK_REPLY_LIMIT // 256) + b"\n"}
+                "hook-empty": b"", "hook-oversized": bytes(range(256)) * (HOOK_REPLY_LIMIT // 256) + b"\n",
+                "hook-unserved": None}
 
 
 def relay_pipe_control(witness):
@@ -1414,16 +1427,17 @@ def hook_traffic(binary, variant, env, workspace, witness):
     listener = connection = process = None
     stopping_uncertain = False
     reply = HOOK_REPLIES[variant]
-    refused = variant in ("hook-empty", "hook-oversized")
+    refused = variant in ("hook-empty", "hook-oversized", "hook-unserved")
     try:
         witness.event("before-workspace")
         workspace.mkdir(mode=0o700)
         os.chdir(workspace)
-        listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        listener.settimeout(2)
-        witness.event("before-listener-bind")
-        listener.bind("h")
-        listener.listen(1)
+        if variant != "hook-unserved":
+            listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            listener.settimeout(2)
+            witness.event("before-listener-bind")
+            listener.bind("h")
+            listener.listen(1)
         witness.event("before-popen", argv=[str(binary), "__stewart-cc-hook", "h"])
         process = subprocess.Popen([str(binary), "__stewart-cc-hook", "h"], env=env,
                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -1440,6 +1454,18 @@ def hook_traffic(binary, variant, env, workspace, witness):
         observer.send(process.stdin.fileno(), "stdin", HOOK_REQUEST)
         witness.event("before-stdin-close")
         process.stdin.close()
+        if variant == "hook-unserved":
+            # No owner serves `h`: nothing on stdout, a reason on stderr, exit 2.
+            stdout, stdout_eof = observer.read(out, "stdout", seconds=6)
+            checks["stdout-eof"] = stdout_eof
+            checks["exact-stdout"] = stdout == b""
+            end = time.monotonic() + 1
+            while process.poll() is None and time.monotonic() < end:
+                time.sleep(0.01)
+            checks["helper-exit"] = process.poll() == 2
+            stderr, _ = observer.read(process.stderr.fileno(), "stderr", seconds=0.3)
+            checks["diagnostic"] = bool(stderr.strip())
+            return {"checks": checks, "error": None}
         witness.event("before-accept")
         connection, _ = listener.accept()
         connection.setblocking(False)
@@ -1612,7 +1638,8 @@ class Driver:
                 self.binary, variant, self.env, workspaces / variant, witness))
             inspect(variant, record)
             self.control("relay-" + variant, relay_success(record), "relay forwarding comparison did not pass")
-        # Exact and 64 KiB replies are copied; an empty or one-byte-larger reply exits 2 with no stdout.
+        # Exact and 64 KiB replies are copied; an empty or one-byte-larger reply, or no owner, exits 2
+        # with no stdout.
         for variant in HOOK_REPLIES:
             record = observe(variant, lambda witness: hook_traffic(
                 self.binary, variant, self.env, workspaces / variant, witness))
@@ -1620,6 +1647,9 @@ class Driver:
             if variant in ("hook-empty", "hook-oversized"):
                 self.control(variant + "-reply-refused", relay_success(record),
                              "the hook helper did not refuse the reply with exit 2 and no stdout")
+            elif variant == "hook-unserved":
+                self.control("hook-unserved-blocks", relay_success(record),
+                             "an unserved hook socket did not give exit 2, no stdout and a reason")
         self.note("relay-observer-scope", "Each direct helper worker owns an 8-second deadline plus "
                   "1.5 seconds for observed group stopping. Pipe readiness and nonblocking mode alone "
                   "do not bound a stalled read; the owner never reads helper stdout. Byte and progress "
@@ -2134,6 +2164,29 @@ class Driver:
         self.profile_refusal("profile-input.directory-link", reply)
         self.question(f)
         self.prepare(f, "restored")
+
+    def profile_check_date(self):
+        """CONTRACT, profile schema: `check.checked_at` is a UTF-8 string identifying the check's
+        date, an attributed label, not a parsed timestamp or an expiry check."""
+        for name, text in (("date-only", "2026-11-12"),
+                           ("free-text", "reviewed the morning after the check — café, Ω")):
+            f = self.fixture("checked-at-" + name)
+            node = parse(f["profile"]).get("check").get("checked_at")
+            mutated = f["profile"][:node.start] + compact(text) + f["profile"][node.end:]
+            self.replace_profile(f, "checked-at-" + name, mutated)
+            f["profile"] = mutated
+            # accept() compares the captured profile text and its digest with these bytes.
+            receipt, _, _ = self.accept(f)
+            self.eq(f["label"] + ".captured-label",
+                    strict_loads(((receipt["data"].get("settings") or {}).get("runtime") or {}).get("profile", "null")
+                                 .encode()).get("check", {}).get("checked_at"), text)
+        f = self.fixture("checked-at-number")
+        node = parse(f["profile"]).get("check").get("checked_at")
+        mutated = f["profile"][:node.start] + b"20261112" + f["profile"][node.end:]
+        self.replace_profile(f, "checked-at-number", mutated)
+        reply = self.prepare(f, "checked-at-number", "refused")
+        self.control("checked-at-must-be-a-string", reply.get("outcome") == "refused")
+        self.profile_refusal("checked-at-number", reply)
 
     def limit_fields(self):
         f = self.fixture("limit-fields")
@@ -3022,6 +3075,128 @@ class Driver:
                            {"channel": channel, "bytes": len(captured), "sought": piece})
                 position = found + len(piece) if found >= 0 else position
 
+    def runtime_hook_after_admission(self):
+        """CONTRACT: the hook admits a pinned tool only while startup has passed and the
+        placement still admits calls. Once the owner no longer serves `h`, as after the
+        placement's ending, the helper prints nothing, gives its reason on stderr and exits 2,
+        which blocks the call. An ordinary ending decides the placement; the harness resists
+        the shutdown TERM long enough to ask again for the same tool, then makes a late call."""
+        steps = [{"op": "record"}, {"op": "hook", "tool": "mcp__stewart__record_account", "when": "admitting"},
+                 {"op": "resist_term"}, {"op": "result", "is_error": False, "checkpoint": 0},
+                 {"op": "await_input", "expect": "reminder"}, {"op": "result", "is_error": False, "checkpoint": 1},
+                 {"op": "await_term"}, {"op": "hook", "tool": "mcp__stewart__record_account", "when": "after-ending"},
+                 {"op": "call_begin", "label": "late", "tool": "record_account", "arguments": {"text": LATE_CALL},
+                  "unsendable_ok": True},
+                 {"op": "hang"}]
+        f = self.sequence_fixture("hook-after-admission", steps)
+        label = f["label"]
+        self.accept(f)
+        reply = self.cmd(label + ".run", ["run", f["reference"]])
+        data = reply.get("data") or {}
+        self.eq(label + ".ending", (data.get("ending"), data.get("cause")), ("ended_unsubmitted", None))
+        self.groups_absent(f)
+        events = self.harness_clean(f)
+        self.require(label + ".shutdown-witnessed", any(e["event"] == "seq-term-observed" for e in events),
+                     str(f["witness"]))
+        started = [e["when"] for e in events if e["event"] == "seq-hook-started"]
+        hooks = {e["when"]: e for e in events if e["event"] == "hook"}
+        self.require(label + ".harness-hook-attempts", started == ["admitting", "after-ending"], started)
+        self.require(label + ".after-ending-hook-returned", "after-ending" in hooks,
+                     "the hook helper did not return before the group was stopped")
+        verdicts = {}
+        for when in ("admitting", "after-ending"):
+            call = hooks[when]
+            verdicts[when] = (bytes.fromhex(call.get("output_hex", "")), call.get("exit"), call.get("timed_out", False))
+        self.eq(label + ".admitted-while-admitting", verdicts["admitting"], (b"{}\n", 0, False))
+        reason = bytes.fromhex(hooks["after-ending"].get("stderr_hex", ""))
+        self.eq(label + ".blocked-after-ending", verdicts["after-ending"], (b"", 2, False))
+        self.check(label + ".blocking-reason", bool(reason.strip()), reason.hex())
+        self.control("hook-blocks-after-admission-stops", verdicts["admitting"][0] == b"{}\n"
+                     and verdicts["after-ending"] == (b"", 2, False) and bool(reason.strip()))
+        status = self.inspect_runtime(f, terminal=True)
+        self.eq(label + ".late-call-added-nothing", (status["data"].get("answer") or {}).get("entries"), 1)
+        run = self.audit_path(f) / "runs" / "1"
+        late = [path for path in sorted(run.glob("call-*.json")) if LATE_CALL.encode() in path.read_bytes()]
+        late_outcomes = []
+        for path in late:
+            result = run / path.name.replace("call-", "result-")
+            body = strict_loads(result.read_bytes()).get("body", {}) if result.exists() else {}
+            text = ((body.get("content") or [{}])[0]).get("text", "")
+            late_outcomes.append(strict_loads(text.encode()).get("outcome") if text else None)
+        self.check(label + ".late-call-not-executed", all(o != "completed" for o in late_outcomes), late_outcomes)
+
+    def runtime_null_error_id(self):
+        """CONTRACT, wire and process: an error whose request ID cannot be determined uses JSON
+        null for `id`; a well-formed notification still receives no reply. Raw capture precedes
+        decoding. Codes follow JSON-RPC 2.0: -32700 for a parse error, -32600 for an invalid
+        request. A frame answered with a JSON-RPC error does not by itself stop the placement."""
+        def frame_hex(raw):
+            return {"op": "raw", "label": "malformed", "hex": raw.hex()}
+        def ping(identity):
+            return {"op": "raw", "label": "ping-" + identity,
+                    "hex": compact({"jsonrpc": "2.0", "id": identity, "method": "ping"}).hex() + "0a"}
+        arms = (("parse", b'{"jsonrpc":"2.0","id":7,"method":\n', -32700),
+                ("scalar", b"42\n", -32600),
+                ("id-type", b'{"jsonrpc":"2.0","id":true,"method":"ping"}\n', -32600),
+                ("repeated-id", b'{"jsonrpc":"2.0","id":5,"id":6,"method":"ping"}\n', -32600))
+        nulls = []
+        for name, raw, code in arms:
+            steps = []
+            if name == "parse":
+                # Differing: a well-formed notification is followed directly by the next reply.
+                steps += [{"op": "raw", "label": "notification", "reply": False,
+                           "hex": compact({"jsonrpc": "2.0", "method": "notifications/synthetic"}).hex() + "0a"},
+                          ping("after-notification")]
+            steps += [frame_hex(raw), ping("after-error"), {"op": "exit", "code": 7}]
+            f = self.sequence_fixture("null-id-" + name, steps)
+            label = f["label"]
+            self.accept(f)
+            self.cmd(label + ".run", ["run", f["reference"]], outcome=None)
+            self.groups_absent(f)
+            events = self.harness_clean(f)
+            replies = {e["label"]: e for e in events if e["event"] == "seq-raw-reply"}
+            if name == "parse":
+                after = replies.get("ping-after-notification", {})
+                value = transport_loads(bytes.fromhex(after["raw_hex"])) if after.get("raw_hex") else {}
+                self.eq(label + ".notification-unanswered", (value.get("id"), value.get("result")), ("after-notification", {}))
+            got = replies.get("malformed", {})
+            self.require(label + ".reply-observed", bool(got.get("raw_hex")), got)
+            reply_raw = bytes.fromhex(got["raw_hex"])
+            try:
+                value = transport_loads(reply_raw)
+            except ValueError:
+                value = {}
+            error = value.get("error") if isinstance(value.get("error"), dict) else {}
+            self.eq(label + ".envelope", (sorted(value), value.get("jsonrpc"), "id" in value, value.get("id")),
+                    (["error", "id", "jsonrpc"], "2.0", True, None))
+            self.check(label + ".error-shape", isinstance(error.get("code"), int) and not isinstance(error.get("code"), bool)
+                       and isinstance(error.get("message"), str), error)
+            self.eq(label + ".error-code", error.get("code"), code)
+            self.check(label + ".raw-capture-before-decoding", raw in self.captured_channel(f, "mcp"),
+                       {"sought": raw.hex()})
+            self.check(label + ".reply-retained", reply_raw in self.captured_channel(f, "mcp-out"),
+                       {"sought": reply_raw.hex()})
+            status = self.inspect_runtime(f)
+            self.eq(label + ".no-entry", (status["data"].get("answer") or {}).get("entries"), 0)
+            # Only the harness's own tools/call requests (its readiness re-entry) are call records.
+            calls = sorted((self.audit_path(f) / "runs" / "1").glob("call-*.json"))
+            sent = [e for e in events if e["event"] == "rpc-send" and e["value"].get("method") == "tools/call"]
+            self.eq(label + ".call-records-are-tool-calls", (len(calls), any(raw.strip() in c.read_bytes() for c in calls)),
+                    (len(sent), False))
+            # The placement continues: the next ping is answered, and it is the harness's own
+            # exit that later ends it, not the error frame.
+            later = replies.get("ping-after-error", {})
+            answer = transport_loads(bytes.fromhex(later["raw_hex"])) if later.get("raw_hex") else {}
+            continued = self.eq(label + ".next-ping-answered", (answer.get("id"), answer.get("result")), ("after-error", {}))
+            ended = self.run_ended_record(f, 1)[1] or {}
+            self.eq(label + ".ended-by-harness-exit", [e["event"] for e in events if e["event"] == "deliberate-interruption"],
+                    ["deliberate-interruption"])
+            self.eq(label + ".ending", ((ended.get("body") or {}).get("ending"), (ended.get("body") or {}).get("cause")),
+                    ("interrupted", "protocol_anomaly"))
+            nulls.append("id" in value and value.get("id") is None and bool(error) and continued)
+        self.control("undetermined-request-id-is-null-and-placement-continues",
+                     len(nulls) == len(arms) and all(nulls))
+
     def runtime_cancellation(self):
         f = self.fixture("runtime-cancellation", scenario="cancel")
         label = f["label"]
@@ -3437,10 +3612,53 @@ class Driver:
         second = next((e for e in events if e["event"] == "second-relay"), None)
         self.note(label + ".second-relay", "the attempt finished before the stop and received %d bytes"
                   % (len(second.get("received_hex", "")) // 2) if second else
-                  "the placement was stopped before the second relay's attempt finished; "
-                  "refusal of a second connection was not exercised")
+                  "the placement was stopped before the second relay's attempt finished "
+                  "(runtime-second-relay attempts one while the first relay is live)")
         self.note(label + ".cause", "relay loss ended the placement with cause %s after %.1f seconds"
                   % (data.get("cause"), elapsed))
+
+    def runtime_second_relay(self):
+        """CONTRACT, wire and process: a placement serves one MCP relay connection; another
+        attachment is a wire rule violation that executes nothing and stops the placement
+        (`interrupted`, `protocol_anomaly`)."""
+        f = self.fixture("runtime-second-relay", scenario="second-relay")
+        label = f["label"]
+        self.accept(f)
+        reply = self.cmd(label + ".run", ["run", f["reference"]], outcome=None)
+        data = reply.get("data") or {}
+        self.groups_absent(f)
+        events = self.harness_clean(f)
+        started = [e for e in events if e["event"] == "second-relay-started"]
+        self.require(label + ".harness-second-relay-attempted", len(started) == 1 and started[0].get("first_alive")
+                     and (f["witness"] / "second-relay.stdout").exists(), started)
+        finished = [e for e in events if e["event"] == "second-relay"]
+        attempt = finished[0] if finished else {}
+        received = (f["witness"] / "second-relay.stdout").read_bytes()
+        replies = []
+        for line in received.splitlines():
+            try:
+                replies.append(mcp_message_loads(line))
+            except ValueError:
+                replies.append({"undecodable_hex": line.hex()})
+        executed = [r for r in replies if r.get("id") == 9002 and (self.core_reply(r) or {}).get("outcome") == "completed"]
+        self.eq(label + ".second-connection-executed-nothing", executed, [])
+        run = self.audit_path(f) / "runs" / "1"
+        foreign = [path.name for path in sorted(run.glob("call-*.json"))
+                   if CONCURRENT_RELAY.encode() in path.read_bytes()
+                   or transport_loads(path.read_bytes()).get("id") == 9002]
+        self.eq(label + ".no-call-record-from-second-connection", foreign, [])
+        self.note(label + ".second-connection", "the second relay received %d bytes (%d frames); %s" % (
+            len(received), len(replies),
+            "it was stopped with the harness group before it finished" if not attempt
+            else "it exited %r%s" % (attempt.get("exit"), " after the 3-second bound" if attempt.get("timed_out") else "")))
+        self.eq(label + ".ending", (data.get("ending"), data.get("cause")), ("interrupted", "protocol_anomaly"))
+        status = self.inspect_runtime(f)
+        self.eq(label + ".first-entry-retained", (status["data"].get("answer") or {}).get("entries"), 1)
+        after = [e for e in events if e["event"] == "first-relay-after-second"]
+        self.check(label + ".first-relay-not-served-after", not any(
+            (e.get("response") or {}).get("outcome") == "completed" for e in after), after)
+        self.control("second-relay-stops-the-placement", not executed and not foreign
+                     and (data.get("ending"), data.get("cause")) == ("interrupted", "protocol_anomaly"))
 
     def runtime_usage_series(self):
         f = self.fixture("runtime-usage-series", scenario="checkpoint-then-crash")
@@ -5242,6 +5460,38 @@ class Driver:
         self.eq(label + ".log-unchanged", snapshot(self.audit_path(f) / "log"), log_before)
         return reply.get("reason") == "runtime_profile_invalid" and self.launch_count(f) == launches
 
+    def runtime_run_reverification(self):
+        """CONTRACT: before any launch, and before reserving a start, run verifies the executable
+        and check bindings again and consumes no start on a difference.
+        Its pinned-surface comparison has no black-box firing control: the audit's writer is the
+        binary whose surface was captured, and another binary refuses as writer_mismatch first
+        (surface-two-builds). The executable digest is the binding a manager can change."""
+        f = self.fixture("run-reverification", scenario="submit")
+        label = f["label"]
+        self.accept(f)
+        launches = self.launch_count(f)
+        marker = Path(str(f["executable"]) + ".started")
+        before = marker.read_bytes() if marker.exists() else None
+        log_before = snapshot(self.audit_path(f) / "log")
+        original = f["executable"].read_bytes()
+        f["executable"].write_bytes(original + b"# changed after commission\n")
+        (f["witness"] / "changed-executable-at-run").write_bytes(f["executable"].read_bytes())
+        try:
+            reply = self.cmd(label + ".changed-executable", ["run", f["reference"]], outcome="refused")
+        finally:
+            f["executable"].write_bytes(original)
+        self.refusal_without_start(f, label, reply, "runtime_profile_invalid", launches)
+        self.eq(label + ".no-start-marker", marker.read_bytes() if marker.exists() else None, before)
+        self.eq(label + ".log-unchanged", snapshot(self.audit_path(f) / "log"), log_before)
+        self.control("run-reverifies-executable-before-reservation", reply.get("reason") == "runtime_profile_invalid"
+                     and self.launch_count(f) == launches and snapshot(self.audit_path(f) / "log") == log_before)
+        # Differing: with the executable restored, the same audit starts and seals.
+        self.cmd(label + ".restored", ["run", f["reference"]])
+        runs = self.cmd(label + ".status-sealed", ["status", f["reference"]])
+        self.eq(label + ".restored-is-first-placement", (runs["data"].get("runs") or {}).get("count"), 1)
+        self.groups_absent(f)
+        self.check_delivery(f, runs)
+
     def runtime_launch_directory(self):
         fired = []
         # An instruction entry in the temporary directory or an ancestor refuses before the
@@ -6213,7 +6463,14 @@ def synthetic_harness(scenario_path, environment_path, argv):
                           facts=facts, frame_bytes=size, next_bytes=step.get("next_bytes"), probe=probe)
                 elif op == "call_begin":
                     value = frame("tools/call", {"name": step["tool"], "arguments": step.get("arguments", {})})
-                    send_frames([value])
+                    try:
+                        send_frames([value])
+                    except OSError as error:
+                        # Only a step that allows it may find the relay already gone.
+                        if not step.get("unsendable_ok"):
+                            raise
+                        event("seq-call-unsent", label=step["label"], id=value["id"], error=str(error))
+                        continue
                     pending[step["label"]] = value["id"]
                     event("seq-call-sent", label=step["label"], id=value["id"], group=os.getpgrp())
                 elif op == "marker":
@@ -6240,6 +6497,36 @@ def synthetic_harness(scenario_path, environment_path, argv):
                         os.write(fd, compact({"signal": signum, "monotonic_ns": time.monotonic_ns()}) + b"\n")
                     signal.signal(signal.SIGTERM, resisted)
                     event("seq-resisting-term")
+                elif op == "raw":
+                    # Exact bytes, possibly not a valid request; the next frame, if any, is its reply.
+                    raw = bytes.fromhex(step["hex"])
+                    event("seq-raw-sent", label=step["label"], raw_hex=raw.hex())
+                    try:
+                        transmit(mcp.stdin, raw, "rpc-raw-transmitted", label=step["label"])
+                    except OSError as error:
+                        event("seq-raw-reply", label=step["label"], unsent=str(error))
+                        continue
+                    if step.get("reply", True):
+                        try:
+                            line = read_frame(time.monotonic() + step.get("timeout", 3))
+                        except RuntimeError as error:
+                            event("seq-raw-reply", label=step["label"], eof=str(error))
+                            continue
+                        event("seq-raw-reply", label=step["label"], raw_hex=line.hex() if line else None)
+                elif op == "hook":
+                    # Announce first: a group KILL may end the helper before it returns.
+                    event("seq-hook-started", when=step["when"], tool=step["tool"])
+                    hook(step["tool"], step["when"])
+                elif op == "await_term":
+                    path = witness / "term-received.jsonl"
+                    until = time.monotonic() + step.get("timeout", 20)
+                    while not (path.exists() and path.stat().st_size > 0):
+                        if time.monotonic() >= until:
+                            event("seq-term-timeout")
+                            time.sleep(600)
+                            return 9
+                        time.sleep(0.005)
+                    event("seq-term-observed")
                 elif op == "assistant_tool":
                     emit({"type": "assistant", "session_id": scenario["session"], "parent_tool_use_id": None,
                           "message": {"model": scenario["model"], "id": "sequence-%d" % index, "role": "assistant",
@@ -6580,6 +6867,50 @@ def synthetic_harness(scenario_path, environment_path, argv):
             except OSError as exc:
                 event("second-relay", error=str(exc))
             time.sleep(600)
+            return 9
+        if scenario["mode"] == "second-relay":
+            # The first connection has recorded an entry and stays open. One more relay,
+            # started as configured in the same directory, attempts a call of its own.
+            recorded = tool("record_account", {"text": scenario["account"]})
+            if recorded.get("outcome") != "completed":
+                raise RuntimeError("record_account did not complete: %r" % recorded)
+            attempt = b"".join(compact(value) + b"\n" for value in (
+                {"jsonrpc": "2.0", "id": 9001, "method": "initialize", "params": {
+                    "protocolVersion": "2025-11-25", "capabilities": {},
+                    "clientInfo": {"name": "stewart-independent-synthetic", "version": "1"}}},
+                {"jsonrpc": "2.0", "method": "notifications/initialized"},
+                {"jsonrpc": "2.0", "id": 9002, "method": "tools/call", "params": {
+                    "name": "record_account", "arguments": {"text": CONCURRENT_RELAY}}}))
+            # The second relay's input and output are files in the witness directory, so
+            # they survive if Stewart stops this group before the attempt finishes.
+            publish_witness(witness / "second-relay.stdin", attempt)
+            with (witness / "second-relay.stdin").open("rb") as stdin, \
+                    (witness / "second-relay.stdout").open("xb") as stdout, \
+                    (witness / "second-relay.stderr").open("xb") as stderr:
+                event("second-relay-started", relay_pid=mcp.pid, first_alive=mcp.poll() is None)
+                second = subprocess.Popen([server["command"]] + server["args"], stdin=stdin,
+                                          stdout=stdout, stderr=stderr, env=os.environ.copy())
+            until = time.monotonic() + 3
+            while second.poll() is None and time.monotonic() < until:
+                time.sleep(0.01)
+            timed_out = second.poll() is None
+            if timed_out:
+                second.kill()
+                second.wait(timeout=5)
+            event("second-relay", exit=second.returncode, timed_out=timed_out, first_alive=mcp.poll() is None)
+            try:
+                after = tool("what_am_i_working_with", {})
+            except (TimeoutError, RuntimeError, OSError) as error:
+                event("first-relay-after-second", error=str(error))
+                time.sleep(600)
+                return 9
+            event("first-relay-after-second", response=after)
+            if after.get("outcome") != "completed":
+                time.sleep(600)
+                return 9
+            prepared = tool("prepare", {})
+            send("tools/call", {"name": "submit", "arguments": {"prepared": prepared["data"]["prepared"], "confirm": True}})
+            time.sleep(600)  # Only Stewart's stop after the confirmed submit ends this process.
             return 9
         if scenario["mode"] == "cancel":
             first = frame("tools/call", {"name": "record_account", "arguments": {"text": scenario["account"]}})

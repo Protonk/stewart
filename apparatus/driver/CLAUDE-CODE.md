@@ -67,8 +67,8 @@ before EOF; each segment is observed before the next is sent. Separate arms
 half-close the socket immediately after sending a reply, before observing
 stdout, and close empty inputs. The hook helper must forward its arbitrary
 input bytes through EOF and copy an arbitrary reply and a reply of exactly
-64 KiB unchanged, exiting zero. An empty reply and one byte more than 64 KiB
-must each produce a diagnostic, exit 2 and no stdout. A raw pipe control
+64 KiB unchanged, exiting zero. An empty reply, one byte more than 64 KiB and a
+socket no owner serves must each produce a diagnostic, exit 2 and no stdout. A raw pipe control
 exercises the same observer with an idle writer, bytes while the writer remains
 open, and EOF.
 
@@ -105,7 +105,9 @@ without printing its text. With a featureless binary, the runtime fields are
 unknown keys, the topic and notice are absent, and both builds write the same
 scaffold.
 Invariance cases change outer profile whitespace, manager HOME/CWD and accepted
-source files.
+source files. A `check.checked_at` that is a date or free UTF-8 text rather than
+a timestamp is a label: the profile prepares and its captured bytes and digest
+are unchanged, while a number refuses.
 
 The driver rebuilds the [launch surface](../../docs/claude-code/CONTRACT.md#launch-surface)
 from the contract's member table and its own copies of the pinned texts. Its
@@ -253,13 +255,20 @@ on the last allowed placement. The cancellation control also requires the
 harness journal to show its cancellation, ping, refused reply, re-entry and
 confirmed retry in that order.
 
-Five further runtime cases use the same synthetic executable:
+Further runtime cases use the same synthetic executable:
 
 - **Hooks and effort.** The harness runs the configured hook command as it
   would before a tool call. The helper must deny a pinned tool before startup
   has passed, admit pinned tools afterwards and deny four unpinned names, with
   the exact denial object of the launch surface. A question that selects an
   effort must reach the launch as the surface's effort arguments.
+- **Hook after admission.** `runtime-hook-after-admission` asks the hook about
+  the same pinned tool twice: while the placement admits calls, which must
+  print `{}`, and after an ordinary ending has decided the placement, once the
+  harness has witnessed the shutdown TERM it resists. The owner no longer serves
+  `h` then, so the second call must print nothing, give a reason on stderr and
+  exit 2, which blocks the call. A record call attempted after the ending, if
+  the relay still accepts it, must add no entry.
 - **Cancellation and queuing.** A cancellation arriving after completion and
   one naming no request change nothing. Two uncancelled calls written together
   must both complete, with their replies and entries in arrival order. A separate pair puts a small
@@ -279,6 +288,13 @@ Five further runtime cases use the same synthetic executable:
   let a fresh session finish with nothing added. The harness also starts a
   second relay in the dead placement; the stop usually ends that attempt
   first, and a note says whether it finished.
+- **Second relay.** In `runtime-second-relay` the first relay records an entry
+  and stays open while the harness starts another relay as configured, which
+  initializes and calls `record_account`. That connection must execute nothing:
+  no completed reply, no call record and no entry. Its received bytes are
+  witnessed in files that survive the group's stop. The attachment must stop
+  the placement `interrupted` with cause `protocol_anomaly`, retaining the first
+  entry, and the first relay must not serve a later call.
 - **Usage series.** One session reports a checkpoint and dies during its
   reminder turn; a second session reports a lower one and ends unsubmitted.
   The report is the sum of each session's latest checkpoint, one interval stays
@@ -548,6 +564,11 @@ not shared between processes on every host. The harness draws no conclusions.
   temporary directory that is the archive, the submission folder or the
   directory of a byte-identical writer copy, or lies within the archive or the
   submission folder, refuses the same way.
+- **Run re-verification.** `runtime-run-reverification` changes the pinned
+  harness executable's bytes after commissioning. `run` must refuse
+  `runtime_profile_invalid` before reserving a start: no launch, `run_started`,
+  run directory, log record or used start. With the bytes restored, the same
+  audit starts its first placement and seals.
 - **Notices.** `runtime-notice-transmission` sends the reminder, a compaction
   boundary, the near-limit notice and another boundary, each awaited before the
   next harness event: both notices are `sent`, numbered 1 and 2 in log order, the
@@ -602,15 +623,25 @@ not shared between processes on every host. The harness draws no conclusions.
 - **Request reuse.** `runtime-identity-across-placements` also requires JSON-RPC
   error `-32600` with the reused ID, for an identical repeated call and for a
   `ping`, contiguous call numbers and one call file per ID.
+- **Undetermined request IDs.** `runtime-null-error-id` sends, in separate
+  audits, an unparseable line, a JSON scalar, a request whose `id` is `true` and
+  one with a repeated `id`. Each must be retained raw and answered by one error
+  envelope with exactly `jsonrpc`, a null `id` and `error`: `-32700` for the
+  parse error, `-32600` otherwise, per JSON-RPC 2.0. No call record or entry
+  follows. The placement goes on serving: the next ping is answered, and the
+  harness's own later exit ends it. A well-formed notification sent first is
+  followed directly by the next ping's reply.
 
 Preparation acceptance reads back every selected material, not only the default
 report, against the driver's own bytes.
 
-Not exercised: the internal waiting state or queue count/byte overflow;
-`run`'s own re-verification of a pinned surface, which has no
-black-box firing control because one binary cannot hold an arrangement that
-pins a different surface; a hook call after the placement has stopped admitting
-calls. The contract's
+Not exercised: the internal waiting state or queue count/byte overflow, and
+`run`'s comparison of the pinned surface with the one it supplies. That
+comparison has no black-box firing control: an audit's writer captured its own
+surface, another binary is refused as `writer_mismatch` first
+(`surface-two-builds`), and altering the captured arrangement is archive damage
+rather than a surface difference. The executable binding that `run` also
+rechecks is exercised above. The contract's
 [demonstrated scope](../../docs/claude-code/CONTRACT.md) distinguishes this
 synthetic runtime evidence from other checks and remaining qualification work.
 

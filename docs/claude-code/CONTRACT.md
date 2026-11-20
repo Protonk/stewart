@@ -71,6 +71,14 @@ Not yet demonstrated with the real harness under the selected launch:
 - launching the binary from an already-open descriptor, given that it reads
   its executable from disk while running.
 
+Three limits of the offline evidence are covered only by unit tests: a close,
+signal and deadline observed at the same instant (each ordering is exercised
+black-box at fault pauses); a failed write of the final `runtime-stop.json` or
+usage checkpoint, for which Appendix C has no fault point; and the instant a
+call enters the runtime's internal queue, which no external witness can see.
+The checked invariant is that an entry exists exactly when its call has a
+completed reply.
+
 ## Arrangement and observation
 
 The profile pins the native executable, model, local launch configuration,
@@ -366,6 +374,9 @@ observed behavior. Recheck them at every harness pin.
   managed and server-managed policy still load. The pinned binary's three
   built-in plugins (an instruction loader, a privacy guard and plugin-authoring
   support) remain, by decision, with the privacy guard preserved.
+- **Hook exit status.** A `PreToolUse` command hook that exits 2 blocks the
+  tool call, with its stderr as the reason. Any other non-zero status is a
+  non-blocking error and the call proceeds, so the hook helper fails only with 2.
 - **Login storage.** A `/login` credential is stored in the macOS Keychain, or in
   `.credentials.json` under the configuration directory on Linux. Stewart
   never reads either.
@@ -517,10 +528,11 @@ learns the required digest and the exact document from a refusal alone.
 The source profile's exact UTF-8 text is captured in prepared settings as
 `runtime: {kind:"claude-code/1",profile_path,profile}`. Its `limits` object is
 exactly `{max_placements,placement_timeout_seconds}`. Subsequent receipt readback
-uses captured bytes, never a changed live profile. Before any launch, `run`
-verifies the executable and check bindings again, including that the pinned
-surface is the one the running binary supplies; a difference refuses with
-`runtime_profile_invalid`, naming both digests. The runtime never opens the
+uses captured bytes, never a changed live profile. Before any launch, and
+before reserving a start, `run` verifies the executable and check bindings
+again, including that the pinned surface is the one the running binary
+supplies; a difference refuses with `runtime_profile_invalid`, naming both
+digests, and consumes no start. The runtime never opens the
 named credential directory.
 
 The arrangement schema is `stewart.claude-code.arrangement/3`. Its exact members
@@ -724,7 +736,10 @@ the relay and hook name relatively.
 The hook helper prints one LF-terminated JSON object. It admits a call with `{}`
 when the tool is a pinned prefixed name, startup has passed and the placement
 still admits calls. Otherwise it prints the denial object given as
-`hook_replies.deny` in the [launch surface](#launch-surface).
+`hook_replies.deny` in the [launch surface](#launch-surface). When the owner no
+longer serves `h`, as after the placement's ending or the owner's loss, the
+helper prints nothing on stdout, writes its reason to stderr and exits 2, which
+blocks the call. It never fails with another status.
 
 The child environment is rebuilt, with nothing inherited. It is exactly the
 fifteen names and values that the [launch surface](#launch-surface) lists as
@@ -780,7 +795,8 @@ delivery of their replies after the transport closes.
 
 JSON-RPC envelopes and errors use the transport's number grammar, including
 negative error codes. An error whose request ID cannot be determined uses
-JSON null for `id`; a well-formed notification still receives no reply. The
+JSON null for `id`; a well-formed notification still receives no reply. A
+frame answered with a JSON-RPC error does not by itself stop the placement. The
 unsigned-integer rule for Stewart control arguments
 does not apply to them. After confirmed submission, the runtime captures and
 attempts to send the MCP tool response, then stops the harness without another
@@ -839,7 +855,9 @@ parsing; outgoing bytes are retained before transmission and do not by
 themselves prove transmission succeeded. Failed captures leave an explicit gap.
 `call-C.json` holds the original MCP request. Common `tool_result` records
 retain the actual core reply; `request` and `attempt` are 1 and `block` is C
-for this single MCP connection. These are transport coordinates, not HTTP
+for this single MCP connection. A placement serves one MCP relay connection;
+another attachment is a wire rule violation that executes nothing and stops the
+placement (`interrupted`, `protocol_anomaly`). These are transport coordinates, not HTTP
 requests. Harness `run_ended.requests` and `attempts` are zero. No harness
 accounting record is interpreted as an API charge.
 

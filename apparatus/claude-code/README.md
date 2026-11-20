@@ -351,7 +351,13 @@ discard, changed bindings, one-use slots, failed independent assessments, silent
 fixture failure, worker/descendant stopping, owner loss and an observer that
 stalls beyond the process deadline. The owner-loss control retains its bounded
 group-status observations: permission denial remains unknown, and only an
-explicit absence observation passes. Cleanup failures are recorded separately
+explicit absence observation passes. On 2026-11-12 one owner-loss run on the
+development Mac saw signal-0 probes of the owned group return present, then
+`EPERM` once, then `ESRCH`; an earlier run saw `EPERM` for both the probe and
+its cleanup `SIGKILL`. The cause of that transient denial is not established.
+Classifying it as unknown and polling until an explicit absence is fail-safe: a
+denial that persists leaves stopping unknown and blocks another start; it never
+counts as absence. Cleanup failures are recorded separately
 and no cleanup signal is sent after observed absence. These controls establish
 no real-harness observation.
 
