@@ -16,7 +16,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 | --- | --- | --- |
 | Current | Review driver coverage against every acceptance claim, then prepare the release documentation and source package. | [The requirements below](#coverage-and-acceptance-policy-review) |
 | Separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
-| Separate release work, commissioned | Build endpoint alignment and align the endpoints the release names. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
+| Separate release work | Specify and build endpoint alignment offline; align the endpoints the release names under a commission. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |
 | After the first release | Investigate shortening test and suite wall-clock time. | [Test wall-clock](development/TEST-WALL-CLOCK-PLAN.md) |
 | Unselected | Broader blinded evaluation and family dogfooding. | [Deferred studies](#deferred-studies) |
