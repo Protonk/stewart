@@ -9,6 +9,11 @@ the workspace the launcher designates with `--workspace DIR`. CLI `prepare`
 checks the actual submission directory, and `commission` accepts an exact
 prepared selection. Nothing here prepares, accepts or runs an audit.
 
+The server is a separate entry point of the same binary. It shares no session,
+audit handle or tool surface with the auditor's tools, and it cannot waive a CLI
+rule: an exception a future contract permits must be explicit and captured.
+Choosing a family grants no execution, access or budget.
+
 ## Transport
 
 Use the MCP `2025-11-25` [stdio transport](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
