@@ -193,6 +193,7 @@ pub enum Edit<'a> {
 /// order, and how much of the reserve the edits made since the retained
 /// bytes first reached the cap have drawn.
 pub fn retained_over<'a>(edits: impl IntoIterator<Item = Edit<'a>>) -> (u64, u64) {
+    let (cap, _) = retained_limits();
     let mut current: HashMap<&str, u64> = HashMap::new();
     let (mut kept, mut reserve, mut reached) = (0u64, 0u64, false);
     for e in edits {
@@ -205,9 +206,19 @@ pub fn retained_over<'a>(edits: impl IntoIterator<Item = Edit<'a>>) -> (u64, u64
             }
             Edit::Remove { id } => kept += current.remove(id).unwrap_or(0),
         }
-        reached |= kept >= RETAINED_CAP_BYTES;
+        reached |= kept >= cap;
     }
     (kept, reserve)
+}
+
+/// The retained-payload cap and reserve (7.4). A test build's
+/// `STEWART_TEST_RETAINED_LIMITS`, which `run` validated before its first
+/// request, replaces them; the capped edit size does not change.
+fn retained_limits() -> (u64, u64) {
+    match crate::fault::transport::retained_limits() {
+        Ok(Some(limits)) => limits,
+        _ => (RETAINED_CAP_BYTES, RETAINED_RESERVE_BYTES),
+    }
 }
 
 /// `retained_over` the log's `entry` records.
@@ -230,11 +241,12 @@ pub fn retained(state: &LogState) -> (u64, u64) {
 /// (7.4), given the accounting so far. Delete, prepare and submit never
 /// refuse on the cap.
 pub fn cap_refusal(kept: u64, reserve: u64, size: u64) -> Option<&'static str> {
-    if kept < RETAINED_CAP_BYTES {
+    let (cap, reserve_limit) = retained_limits();
+    if kept < cap {
         None
     } else if size > CAPPED_EDIT_BYTES {
         Some("retained_payload_cap")
-    } else if reserve + size > RETAINED_RESERVE_BYTES {
+    } else if reserve + size > reserve_limit {
         Some("retained_payload_reserve_exhausted")
     } else {
         None
@@ -270,17 +282,18 @@ fn bounds(ctx: &Ctx, sel: &[Item], size: u64, replacing: Option<&Item>) -> Resul
         ));
     }
     let (kept, reserve) = retained(&ctx.state);
+    let (cap, reserve_limit) = retained_limits();
     match cap_refusal(kept, reserve, size) {
         Some(reason @ "retained_payload_cap") => Err(refused(
             reason,
             format!(
-                "Superseded and deleted payloads have reached {RETAINED_CAP_BYTES} bytes, so edits larger than {CAPPED_EDIT_BYTES} bytes are refused."
+                "Superseded and deleted payloads have reached {cap} bytes, so edits larger than {CAPPED_EDIT_BYTES} bytes are refused."
             ),
         )),
         Some(reason) => Err(refused(
             reason,
             format!(
-                "The {RETAINED_RESERVE_BYTES}-byte reserve for edits after the retained-payload cap is used up."
+                "The {reserve_limit}-byte reserve for edits after the retained-payload cap is used up."
             ),
         )),
         None => Ok(()),

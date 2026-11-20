@@ -22,6 +22,13 @@ use std::collections::BTreeMap;
 const OP: &str = "commission";
 
 fn eff(acceptance: &'static str, attempt: &'static str) -> Vec<(&'static str, &'static str)> {
+    // The `omit_partial_effect` sabotage control hides a partial attempt.
+    #[cfg(feature = "sabotage")]
+    let attempt = if attempt == "partial" && crate::sabotage!("omit_partial_effect") {
+        "none"
+    } else {
+        attempt
+    };
     vec![("acceptance", acceptance), ("attempt", attempt)]
 }
 
@@ -82,7 +89,7 @@ fn accepted_data(
         .with("accepted_at", at)
         .with("receipt_sha256", receipt_sha)
         .with("already_accepted", already)
-        .with("checks", json::strs(checks))
+        .with("checks", json::strs(&records::presented_checks(checks)))
         .with("declaration", J::obj().with("i_am_finished", declared))
         .with(
             "materials",
@@ -230,16 +237,25 @@ fn commission(audit: &Audit, handle: &str, declared: bool, state: LogState) -> R
             );
         }
     };
+    // The `repeat_after_lost_reply` sabotage control begins a new intake
+    // attempt for the accepted handle instead of returning its receipt.
+    #[cfg(feature = "sabotage")]
+    let repeat = crate::sabotage!("repeat_after_lost_reply");
+    #[cfg(not(feature = "sabotage"))]
+    let repeat = false;
     if let Some(acc) = state.accepted() {
         if matches!(&acc.body, Body::Accepted { prepared, .. } if prepared == handle) {
-            return already_accepted(audit, acc);
+            if !repeat {
+                return already_accepted(audit, acc);
+            }
+        } else {
+            return Fail::refused(
+                "reference_already_accepted",
+                format!("This reference already accepted another preparation (log/{}.json); another commission needs its own reference from new.", acc.n),
+            )
+            .next(Next::new(audit.argv(&["receipt", &audit.reference]), "Read the accepted commission."))
+            .into_reply(OP, eff("accepted", "none"));
         }
-        return Fail::refused(
-            "reference_already_accepted",
-            format!("This reference already accepted another preparation (log/{}.json); another commission needs its own reference from new.", acc.n),
-        )
-        .next(Next::new(audit.argv(&["receipt", &audit.reference]), "Read the accepted commission."))
-        .into_reply(OP, eff("accepted", "none"));
     }
     if state.close_requested().is_some() {
         return Fail::refused(
@@ -332,8 +348,9 @@ fn commission(audit: &Audit, handle: &str, declared: bool, state: LogState) -> R
             Ok(()) => notes.push(format!(
                 "intake {gone} ended without an outcome; recorded as process_gone"
             )),
-            Err(e) => {
-                return Fail::failed("record_failed", format!("The earlier intake {gone} could not be reconciled ({e}); nothing new was captured."))
+            Err((why, cause)) => {
+                return Fail::failed("record_failed", format!("The earlier intake {gone} could not be reconciled ({why}); nothing new was captured."))
+                    .cause(cause)
                     .next(Next::new(audit.argv(&["status", &audit.reference]), "See the audit's state."))
                     .into_reply(OP, eff("absent", "none"));
             }
@@ -420,7 +437,7 @@ fn commission(audit: &Audit, handle: &str, declared: bool, state: LogState) -> R
                 "The preparation is no longer in the log.",
             ));
         }
-        if st.accepted().is_some() {
+        if st.accepted().is_some() && !repeat {
             return Err(Fail::refused(
                 "reference_already_accepted",
                 "Another commission was accepted meanwhile.",
@@ -529,6 +546,10 @@ fn commission(audit: &Audit, handle: &str, declared: bool, state: LogState) -> R
             return end_with(audit, handle, attempt, ending);
         }
     }
+    #[cfg(feature = "sabotage")]
+    if crate::sabotage!("scan_as_snapshot") {
+        checks.push(records::SNAPSHOT_CLAIM);
+    }
 
     // Step 5: the receipt, then acceptance.
     let captures: Vec<(MFile, String)> = manifest
@@ -620,10 +641,7 @@ fn commission(audit: &Audit, handle: &str, declared: bool, state: LogState) -> R
                 .next(Next::new(audit.argv(&["status", &audit.reference]), "See how the reference ended."))
                 .into_reply(OP, eff("absent", "partial"));
             if let Err(e) = ended {
-                r.message = Some(format!(
-                    "{} The intake's ending could not be recorded ({e}); the next close reconciles it.",
-                    r.message.unwrap_or_default()
-                ));
+                ending_unrecorded(&mut r, e, "close");
             }
             return r;
         }
@@ -707,9 +725,32 @@ fn open_source(folder: &Dir, name: &str) -> Result<(Dir, String), std::io::Error
     let (leaf, dirs) = parts.split_last().expect("non-empty name");
     let mut cur = folder.open_dir_bytes(b".", true)?;
     for d in dirs {
-        cur = cur.open_dir_bytes(d.as_bytes(), nofollow)?;
+        let actual = actual_name(&cur, d);
+        cur = cur.open_dir_bytes(actual.as_bytes(), nofollow)?;
     }
-    Ok((cur, leaf.to_string()))
+    let leaf = actual_name(&cur, leaf);
+    Ok((cur, leaf))
+}
+
+/// The entry a recorded name component denotes. Names are exact, except
+/// under the `fold_name_case` sabotage control, whose recorded names are
+/// folded to lower case: it takes the first entry that folds to the name.
+fn actual_name(dir: &Dir, recorded: &str) -> String {
+    #[cfg(feature = "sabotage")]
+    if crate::sabotage!("fold_name_case") {
+        if let Ok((names, _)) = dir.names_bounded(usize::MAX) {
+            let mut names: Vec<String> = names
+                .iter()
+                .map(|n| String::from_utf8_lossy(n).into_owned())
+                .collect();
+            names.sort();
+            if let Some(n) = names.into_iter().find(|n| n.to_lowercase() == recorded) {
+                return n;
+            }
+        }
+    }
+    let _ = dir;
+    recorded.to_string()
 }
 
 fn changed(name: &str) -> Ending {
@@ -925,7 +966,8 @@ fn final_scan(folder: &Dir, m: &Manifest, observed: &BTreeMap<String, Stat>) -> 
     }
 }
 
-/// Publish `intake_ended` for an attempt that has no outcome.
+/// Publish `intake_ended` for an attempt that has no outcome. A failure
+/// is described for the message and given as a cause for the reply.
 fn end_intake(
     audit: &Audit,
     attempt: u64,
@@ -933,7 +975,7 @@ fn end_intake(
     message: &str,
     cause: Option<&Cause>,
     changes: Option<J>,
-) -> Result<(), String> {
+) -> Result<(), (String, Cause)> {
     let by = "commission";
     log::publish(audit, "intake_ended", |st| {
         let has = st
@@ -955,7 +997,32 @@ fn end_intake(
             .with("changes", changes.clone()))
     })
     .map(|_| ())
-    .map_err(|e| e.describe())
+    .map_err(|e| {
+        let cause = match &e {
+            PubErr::NotPublished(c) | PubErr::Uncertain { cause: c, .. } => c.clone(),
+            other => Cause::new("publish intake_ended", other.describe()),
+        };
+        (e.describe(), cause)
+    })
+}
+
+/// Account in the reply for an intake ending that could not be recorded:
+/// the message says so, and its failure follows the original cause in
+/// `causes` (INTERFACE 5.4, 1.3). A refusal with no cause of its own has
+/// itself as the original.
+fn ending_unrecorded(r: &mut Reply, (why, cause): (String, Cause), reconciler: &str) {
+    r.message = Some(format!(
+        "{} The intake's ending could not be recorded ({why}); the next {reconciler} reconciles it.",
+        r.message.clone().unwrap_or_default()
+    ));
+    if r.causes.is_empty() {
+        r.causes.push(Cause::new(
+            r.operation,
+            r.reason.clone().unwrap_or_default(),
+        ));
+    }
+    r.causes.push(cause);
+    r.show_causes = true;
 }
 
 fn end_with(audit: &Audit, handle: &str, attempt: u64, ending: Ending) -> Reply {
@@ -1066,10 +1133,7 @@ fn end_with(audit: &Audit, handle: &str, attempt: u64, ending: Ending) -> Reply 
     let ended = end_intake(audit, attempt, outcome, &msg, cause.as_ref(), changes);
     let mut r = fail.into_reply(OP, eff("absent", "partial"));
     if let Err(e) = ended {
-        r.message = Some(format!(
-            "{} The intake's ending could not be recorded ({e}); the next commission or close reconciles it.",
-            r.message.unwrap_or_default()
-        ));
+        ending_unrecorded(&mut r, e, "commission or close");
     }
     r
 }
@@ -1100,10 +1164,7 @@ fn receipt_failed(audit: &Audit, handle: &str, attempt: u64, cause: Cause) -> Re
         ))
         .into_reply(OP, eff("absent", "partial"));
     if let Err(e) = ended {
-        r.message = Some(format!(
-            "{} The intake's ending could not be recorded ({e}); the next commission or close reconciles it.",
-            r.message.unwrap_or_default()
-        ));
+        ending_unrecorded(&mut r, e, "commission or close");
     }
     r
 }

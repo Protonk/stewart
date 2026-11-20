@@ -16,6 +16,23 @@ pub const CHECKS: [&str; 3] = [
     "final_scan_matches_preparation",
 ];
 
+/// The checks a receipt presents: the recorded ones. The
+/// `scan_as_snapshot` sabotage control adds a snapshot claim that no check
+/// establishes (INTERFACE Appendix C.2).
+pub fn presented_checks(recorded: &[String]) -> Vec<String> {
+    #[allow(unused_mut)]
+    let mut checks = recorded.to_vec();
+    #[cfg(feature = "sabotage")]
+    if crate::sabotage!("scan_as_snapshot") && !checks.iter().any(|c| c == SNAPSHOT_CLAIM) {
+        checks.push(SNAPSHOT_CLAIM.into());
+    }
+    checks
+}
+
+/// The claim `scan_as_snapshot` adds (sabotage builds only).
+#[cfg(feature = "sabotage")]
+pub const SNAPSHOT_CLAIM: &str = "source_snapshot_verified";
+
 pub fn reader_j() -> J {
     J::obj()
         .with("id", crate::forms::READER_ID)
@@ -685,12 +702,12 @@ pub fn load_receipt(
         .dir
         .open_dir("intake")
         .and_then(|d| d.open_dir(attempt))
-        .map_err(|e| {
-            if e.raw_os_error() == Some(libc::ENOENT) {
-                ReceiptLoadError::Missing
-            } else {
-                ReceiptLoadError::Unreadable(util::describe(&e))
-            }
+        .map_err(|e| match classify_dir_open(&e) {
+            DirOpen::Missing => ReceiptLoadError::Missing,
+            DirOpen::Unsupported => ReceiptLoadError::Unsupported(format!(
+                "intake/{attempt} is not a directory (a link or another entry stands in its place), so the receipt it holds is unusable"
+            )),
+            DirOpen::Unreadable => ReceiptLoadError::Unreadable(util::describe(&e)),
         })?;
     let (bytes, _) = dir
         .read_regular("receipt.json", RECORD_LIMIT)
@@ -709,6 +726,26 @@ pub fn load_receipt(
     let r =
         decode_receipt(&bytes).map_err(|e| ReceiptLoadError::Unsupported(format!("{rel}: {e}")))?;
     Ok((r, bytes))
+}
+
+/// Why a directory on the way to a recorded item or receipt did not open
+/// (INTERFACE 5.5): it is absent, something other than a directory (a
+/// symbolic link or a file) stands in its place, or it cannot be read.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DirOpen {
+    Missing,
+    Unsupported,
+    Unreadable,
+}
+
+/// Classify the error of a no-follow directory open. A link in place of a
+/// directory fails with `ELOOP` or `ENOTDIR`, depending on the platform.
+pub(crate) fn classify_dir_open(e: &std::io::Error) -> DirOpen {
+    match e.raw_os_error() {
+        Some(libc::ENOENT) => DirOpen::Missing,
+        Some(libc::ENOTDIR) | Some(libc::ELOOP) => DirOpen::Unsupported,
+        _ => DirOpen::Unreadable,
+    }
 }
 
 pub enum ReceiptLoadError {
@@ -740,6 +777,18 @@ impl ReceiptLoadError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A link or file in place of a directory on the way to the receipt or
+    /// an item is unsupported, never merely unreadable.
+    #[test]
+    fn a_directory_replaced_by_a_link_is_unsupported() {
+        let err = |n| std::io::Error::from_raw_os_error(n);
+        assert_eq!(classify_dir_open(&err(libc::ENOENT)), DirOpen::Missing);
+        assert_eq!(classify_dir_open(&err(libc::ENOTDIR)), DirOpen::Unsupported);
+        assert_eq!(classify_dir_open(&err(libc::ELOOP)), DirOpen::Unsupported);
+        assert_eq!(classify_dir_open(&err(libc::EACCES)), DirOpen::Unreadable);
+        assert_eq!(classify_dir_open(&err(libc::EIO)), DirOpen::Unreadable);
+    }
 
     fn decode(family: &str, guidance: Option<&str>) -> Result<Settings, String> {
         let guidance = guidance

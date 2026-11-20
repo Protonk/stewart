@@ -110,6 +110,10 @@ pub struct Reply {
     pub effects: Vec<(&'static str, &'static str)>,
     pub retained: Vec<String>,
     pub causes: Vec<Cause>,
+    /// Present `causes` although the reply is neither failed nor reporting
+    /// an unwritten diagnostic: an intake's ending could not be recorded
+    /// (1.3).
+    pub show_causes: bool,
     /// Manager next calls; used by `to_j`.
     pub next: Vec<Next>,
     /// Auditor next calls; used by `auditor_j`.
@@ -233,6 +237,7 @@ impl Reply {
             effects,
             retained: Vec::new(),
             causes: Vec::new(),
+            show_causes: false,
             next: Vec::new(),
             tool_next: Vec::new(),
             data: Some(data),
@@ -315,7 +320,10 @@ impl Reply {
         if failing && !auditor {
             o.push("retained", crate::json::strs(&self.retained));
         }
-        if self.outcome == Outcome::Failed || self.effect("diagnostic") == Some("reported_only") {
+        if self.outcome == Outcome::Failed
+            || self.effect("diagnostic") == Some("reported_only")
+            || self.show_causes
+        {
             o.push(
                 "causes",
                 J::Arr(self.causes.iter().map(|c| c.to_j()).collect()),
@@ -717,6 +725,7 @@ mod tests {
             ],
             retained: vec!["/a/intake/1".into()],
             causes: vec![Cause::new("fsync log directory", "EIO")],
+            show_causes: false,
             next: vec![],
             tool_next: vec![],
             data: None,

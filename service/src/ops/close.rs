@@ -84,6 +84,12 @@ pub fn run(reference: &str, flags: &Flags) -> Reply {
     let ctx = Ctx::default();
     let mut reply = close(&audit, flags, &ctx);
     ctx.account(&audit, &mut reply);
+    // The `failed_publication_as_clean` sabotage control reports a closing
+    // record that could not be linked as published.
+    #[cfg(feature = "sabotage")]
+    if ctx.closed_unlinked.get() && crate::sabotage!("failed_publication_as_clean") {
+        reply.set_effect("closure", "complete");
+    }
     audit.diagnose(
         &mut reply,
         J::obj().with("reference", audit.reference.as_str()),
@@ -108,6 +114,10 @@ struct Ctx {
     before: RefCell<Option<[Vec<String>; 2]>>,
     /// The delivery plans and packages this invocation created.
     delivered: RefCell<Vec<String>>,
+    /// This invocation could not link its `closed` record (for the
+    /// `failed_publication_as_clean` sabotage control).
+    #[cfg(feature = "sabotage")]
+    closed_unlinked: Cell<bool>,
 }
 
 fn entries(audit: &Audit, dir: &str) -> Vec<String> {
@@ -119,6 +129,12 @@ fn entries(audit: &Audit, dir: &str) -> Vec<String> {
 }
 
 impl Ctx {
+    /// Note that the `closed` record could not be linked.
+    fn closed_unlinked(&self) {
+        #[cfg(feature = "sabotage")]
+        self.closed_unlinked.set(true);
+    }
+
     /// Note the entries that exist when close takes the active lock.
     fn snapshot(&self, audit: &Audit) {
         *self.before.borrow_mut() = Some(CREATED_DIRS.map(|d| entries(audit, d)));
@@ -601,6 +617,7 @@ fn before_launch(audit: &Audit, flags: &Flags, state: &LogState, ctx: &Ctx) -> R
         sabotage_empty_return(audit);
     }
     if let Err(e) = crate::fault!("close.before_closed_link") {
+        ctx.closed_unlinked();
         return Fail::failed(
             "record_failed",
             format!(
@@ -662,7 +679,12 @@ fn before_launch(audit: &Audit, flags: &Flags, state: &LogState, ctx: &Ctx) -> R
             "Repeating close returns the recorded outcome.",
         ))
         .into_reply(OP, eff_unknown("unknown")),
-        Err(e) => publication_failure(audit, "The closing record", e, eff_before("unfinished")),
+        Err(e) => {
+            if !matches!(e, PubErr::Damaged(_)) {
+                ctx.closed_unlinked();
+            }
+            publication_failure(audit, "The closing record", e, eff_before("unfinished"))
+        }
     }
 }
 
@@ -1333,6 +1355,7 @@ fn after_launch(audit: &Audit, flags: &Flags, state: LogState, ctx: &Ctx) -> Rep
         );
     };
     if let Err(e) = crate::fault!("close.before_closed_link") {
+        ctx.closed_unlinked();
         return Fail::failed(
             "record_failed",
             format!(
@@ -1417,13 +1440,29 @@ fn after_launch(audit: &Audit, flags: &Flags, state: LogState, ctx: &Ctx) -> Rep
             "Repeating close returns the recorded outcome.",
         ))
         .into_reply(OP, eff("ended", seal_effect, delivery_effect, "unknown")),
-        Err(e) => publication_failure(
-            audit,
-            "The closing record",
-            e,
-            eff("ended", seal_effect, delivery_effect, closure_failed),
-        ),
+        Err(e) => {
+            if !matches!(e, PubErr::Damaged(_)) {
+                ctx.closed_unlinked();
+            }
+            publication_failure(
+                audit,
+                "The closing record",
+                e,
+                eff("ended", seal_effect, delivery_effect, closure_failed),
+            )
+        }
     }
+}
+
+/// The seal effect of a `seal` record that could not be linked: none,
+/// except that the `failed_publication_as_clean` sabotage control reports it
+/// recorded.
+fn unlinked_seal() -> &'static str {
+    #[cfg(feature = "sabotage")]
+    if crate::sabotage!("failed_publication_as_clean") {
+        return "recorded";
+    }
+    "none"
 }
 
 /// The seal step: keep an existing seal, whoever made it; otherwise prepare
@@ -1531,7 +1570,7 @@ fn ensure_seal(
                 c.operation, c.error
             ),
             Some(c),
-            "none",
+            unlinked_seal(),
         ),
         Err(SealError::Damaged(why)) => fail(
             "record_failed",

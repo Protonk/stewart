@@ -303,10 +303,13 @@ def c_tls_proxy(t):
       mode="both", needs=("loopback",))
 def c_test_variables(t):
     """Appendix C (as amended): on the test build an out-of-range or malformed
-    STEWART_TEST_PROVIDER_TIMEOUT or STEWART_TEST_RETRY_DELAYS refuses test_variable_invalid,
+    STEWART_TEST_PROVIDER_TIMEOUT, STEWART_TEST_RETRY_DELAYS or STEWART_TEST_RETAINED_LIMITS
+    (one, three, zero, over 1 GiB, signed, spaced or fractional) refuses test_variable_invalid,
     and a missing, relative, empty, certificate-free or over-1-MiB STEWART_TEST_TLS_ROOT
     refuses test_tls_root_invalid, each before any request and publishing nothing. The TLS
-    root is checked even for an http:// loopback provider (literal reading: "refuses run").
+    root is checked even for an http:// loopback provider (literal reading: "refuses run"). An
+    empty STEWART_TEST_RETAINED_LIMITS counts as unset: in its own audit the run proceeds to an
+    ordinary ending.
     The release build contains none of these names, so the same environment changes nothing:
     its run proceeds to an ordinary ending."""
     sub = run_submission(t)
@@ -331,6 +334,15 @@ def c_test_variables(t):
            ("delays-over", {"STEWART_TEST_RETRY_DELAYS": "30001,0,0"}, "test_variable_invalid"),
            ("delays-negative", {"STEWART_TEST_RETRY_DELAYS": "-1,0,0"}, "test_variable_invalid"),
            ("delays-spaces", {"STEWART_TEST_RETRY_DELAYS": "0, 0, 0"}, "test_variable_invalid"),
+           ("retained-one", {"STEWART_TEST_RETAINED_LIMITS": "1048576"}, "test_variable_invalid"),
+           ("retained-three", {"STEWART_TEST_RETAINED_LIMITS": "1,1,1"}, "test_variable_invalid"),
+           ("retained-zero-cap", {"STEWART_TEST_RETAINED_LIMITS": "0,1"}, "test_variable_invalid"),
+           ("retained-zero-reserve", {"STEWART_TEST_RETAINED_LIMITS": "1,0"}, "test_variable_invalid"),
+           ("retained-cap-over", {"STEWART_TEST_RETAINED_LIMITS": "1073741825,1"}, "test_variable_invalid"),
+           ("retained-reserve-over", {"STEWART_TEST_RETAINED_LIMITS": "1,1073741825"}, "test_variable_invalid"),
+           ("retained-negative", {"STEWART_TEST_RETAINED_LIMITS": "-1,1"}, "test_variable_invalid"),
+           ("retained-spaces", {"STEWART_TEST_RETAINED_LIMITS": "1, 1"}, "test_variable_invalid"),
+           ("retained-fraction", {"STEWART_TEST_RETAINED_LIMITS": "1.5,1"}, "test_variable_invalid"),
            ("root-missing", {"STEWART_TEST_TLS_ROOT": os.path.join(d, "absent.pem")}, "test_tls_root_invalid"),
            ("root-relative", {"STEWART_TEST_TLS_ROOT": "ca.pem"}, "test_tls_root_invalid"),
            ("root-empty", {"STEWART_TEST_TLS_ROOT": empty}, "test_tls_root_invalid"),
@@ -344,6 +356,15 @@ def c_test_variables(t):
         t.eq("testvars.no-exchanges", len(fx.exchanges), 0)
         st = t.status(sub, name="testvars.status")
         t.eq("testvars.status.condition", st.data.get("condition"), "not_started")
+        # An empty test variable counts as unset (Appendix C): in an audit of its own, so its
+        # ordinary ending cannot touch the refusals above, the run proceeds with the default limits.
+        sub_e = run_submission(t)
+        fx_e = rs.provider(t, fp.Script(list(steps)), label="retained-empty")
+        name = "testvars.retained-empty"
+        rep = rs.run(t, sub_e, fx_e, name=name, env={"STEWART_TEST_RETAINED_LIMITS": ""})
+        rs.check_run_reply(t, rep, sub_e, name, ending="ended_unsubmitted", run_number=1, fx=fx_e,
+                           limits=rs.limits_of(sub_e))
+        t.eq(name + ".exchanges", len(fx_e.exchanges), 2)
     else:
         env = {}
         for _, e, _ in bad:

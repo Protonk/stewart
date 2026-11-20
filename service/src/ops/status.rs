@@ -919,6 +919,20 @@ fn closure_j(audit: &Audit, state: &LogState, lock: Lock) -> J {
 pub fn run(reference: &str) -> Reply {
     let audit = match Audit::open(reference) {
         Ok(a) => a,
+        // The `missing_archive_closed` sabotage control reports an audit
+        // whose archive is unavailable as closed.
+        #[cfg(feature = "sabotage")]
+        Err(f)
+            if f.reason == "archive_unavailable" && crate::sabotage!("missing_archive_closed") =>
+        {
+            return Reply::completed(
+                OP,
+                vec![],
+                J::obj()
+                    .with("condition", "closed")
+                    .with("closure", "complete"),
+            );
+        }
         Err(f) => return f.into_reply(OP, vec![]),
     };
     let mut state = log::read(&audit);

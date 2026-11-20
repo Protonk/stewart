@@ -87,6 +87,7 @@ impl Fail {
             effects,
             retained: self.retained,
             causes: self.causes,
+            show_causes: false,
             next: self.next,
             tool_next: Vec::new(),
             data: self.data,
@@ -657,6 +658,13 @@ impl Audit {
             }
             Err(cause) => {
                 reply.set_effect("diagnostic", "reported_only");
+                // The `secondary_cause_only` sabotage control drops the
+                // original cause and keeps only the diagnostic's failure.
+                #[cfg(feature = "sabotage")]
+                if crate::sabotage!("secondary_cause_only") {
+                    reply.causes = vec![cause];
+                    return;
+                }
                 if reply.causes.is_empty() {
                     // The original cause comes first: the refusal itself.
                     reply.causes.push(Cause::new(

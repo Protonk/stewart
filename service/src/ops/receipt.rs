@@ -133,14 +133,15 @@ pub fn check(audit: &Audit, it: &Item) -> Check {
     for comp in dir_rel.split('/').filter(|c| !c.is_empty()) {
         dir = match dir.open_dir(comp) {
             Ok(d) => d,
-            Err(e) if e.raw_os_error() == Some(libc::ENOENT) => return Check::Missing,
-            Err(e)
-                if e.raw_os_error() == Some(libc::ENOTDIR)
-                    || e.raw_os_error() == Some(libc::ELOOP) =>
-            {
-                return Check::Unsupported(format!("{dir_rel} is not a directory"));
+            Err(e) => {
+                return match records::classify_dir_open(&e) {
+                    records::DirOpen::Missing => Check::Missing,
+                    records::DirOpen::Unsupported => {
+                        Check::Unsupported(format!("{dir_rel} is not a directory"))
+                    }
+                    records::DirOpen::Unreadable => Check::Unreadable(util::describe(&e)),
+                };
             }
-            Err(e) => return Check::Unreadable(util::describe(&e)),
         };
     }
     let (expect_size, expect_sha) = match &it.within {
@@ -298,7 +299,7 @@ pub fn run(reference: &str, verify: bool) -> Reply {
                     audit.abs(&format!("prep/{}/arrangement.json", r.prep)),
                 ),
         )
-        .with("checks", json::strs(&r.checks))
+        .with("checks", json::strs(&records::presented_checks(&r.checks)))
         .with(
             "declaration",
             J::obj().with("i_am_finished", r.i_am_finished),

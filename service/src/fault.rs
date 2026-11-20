@@ -146,6 +146,13 @@ pub const SABOTAGE: &[&str] = &[
     "candidate_forecast_as_written",
     "candidate_unreported_partial",
     "candidate_overwrites_existing",
+    "scan_as_snapshot",
+    "secondary_cause_only",
+    "repeat_after_lost_reply",
+    "omit_partial_effect",
+    "missing_archive_closed",
+    "fold_name_case",
+    "failed_publication_as_clean",
 ];
 
 #[cfg(feature = "fault-injection")]
@@ -381,6 +388,32 @@ pub mod transport {
         }
     }
 
+    /// `STEWART_TEST_RETAINED_LIMITS`: the retained-payload cap and
+    /// reserve of 7.4 in bytes, `<cap>,<reserve>`, each 1–1,073,741,824,
+    /// in place of 1 GiB and 64 MiB. `Ok(None)` when unset; an error for
+    /// any other value.
+    pub fn retained_limits() -> Result<Option<(u64, u64)>, String> {
+        let Some(v) = var("STEWART_TEST_RETAINED_LIMITS") else {
+            return Ok(None);
+        };
+        let bytes = |s: &str| {
+            let ok = !s.is_empty()
+                && s.len() <= 10
+                && s.bytes().all(|b| b.is_ascii_digit())
+                && !s.starts_with('0');
+            ok.then(|| s.parse::<u64>().ok())
+                .flatten()
+                .filter(|n| (1..=1_073_741_824).contains(n))
+        };
+        let parts: Vec<Option<u64>> = v.split(',').map(bytes).collect();
+        match parts.as_slice() {
+            [Some(cap), Some(reserve)] => Ok(Some((*cap, *reserve))),
+            _ => Err(format!(
+                "STEWART_TEST_RETAINED_LIMITS {v:?} is not two comma-separated byte counts of 1 to 1073741824"
+            )),
+        }
+    }
+
     /// `STEWART_TEST_RETRY_DELAYS`: three comma-separated delays in
     /// milliseconds, each 0–30,000, in place of 2, 8 and 30 seconds. A
     /// `retry-after` value still applies. `Ok(None)` when unset.
@@ -408,6 +441,9 @@ pub mod transport {
         Ok(None)
     }
     pub fn retry_delays() -> Result<Option<[u64; 3]>, String> {
+        Ok(None)
+    }
+    pub fn retained_limits() -> Result<Option<(u64, u64)>, String> {
         Ok(None)
     }
 }
@@ -554,6 +590,7 @@ mod tests {
                 "STEWART_TEST_TLS_ROOT",
                 "STEWART_TEST_PROVIDER_TIMEOUT",
                 "STEWART_TEST_RETRY_DELAYS",
+                "STEWART_TEST_RETAINED_LIMITS",
             ]
         {
             differences.push("variables");

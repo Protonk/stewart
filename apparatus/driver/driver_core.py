@@ -343,10 +343,13 @@ SABOTAGES = ("accept_without_affirmation", "accept_changed_source", "skip_hidden
              "stale_preparation_retargets", "prepare_claims_seal", "leak_custody_path",
              "accept_unknown_tool_field", "seal_uncertain_as_none", "submit_claims_delivery",
              "candidate_dry_run_writes", "candidate_forecast_as_written", "candidate_unreported_partial",
-             "candidate_overwrites_existing")
+             "candidate_overwrites_existing", "scan_as_snapshot", "secondary_cause_only",
+             "repeat_after_lost_reply", "omit_partial_effect", "missing_archive_closed", "fold_name_case",
+             "failed_publication_as_clean")
 # Appendix C: the release binary contains none of these names; the test build all of them.
 TEST_ENV_NAMES = (b"STEWART_TEST_FAULT", b"STEWART_TEST_SABOTAGE", b"STEWART_TEST_FAULT_DIR",
-                  b"STEWART_TEST_TLS_ROOT", b"STEWART_TEST_PROVIDER_TIMEOUT", b"STEWART_TEST_RETRY_DELAYS")
+                  b"STEWART_TEST_TLS_ROOT", b"STEWART_TEST_PROVIDER_TIMEOUT", b"STEWART_TEST_RETRY_DELAYS",
+                  b"STEWART_TEST_RETAINED_LIMITS")
 
 ID_RE = r"[a-z2-7]{16}"
 REF_RE = re.compile(r"^stw1:(a" + ID_RE + r"):(s" + ID_RE + r"):(/.*)$")
@@ -1972,7 +1975,12 @@ class T:
             self.check("envelope.retained", "retained" not in obj, "%s: retained on a completed reply" % name)
         causes_due = outcome == "failed" or (isinstance(eff, dict) and eff.get("diagnostic") == "reported_only")
         causes = obj.get("causes")
-        if causes_due:
+        # 1.3 also gives causes to a refused intake whose ending could not be recorded: the refusal,
+        # then the ending's failure. A reply alone cannot show that the ending is unrecorded, so
+        # here such causes need only be well formed; c17.intake-ending-unrecorded judges the rest.
+        intake_ending = (op == "commission" and outcome == "refused" and isinstance(causes, list)
+                         and len(causes) >= 2)
+        if causes_due or intake_ending:
             self.check("envelope.causes", isinstance(causes, list) and len(causes) >= 1 and all(isinstance(c, dict) for c in causes),
                        "%s: causes required: %r" % (name, causes))
         else:

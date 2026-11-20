@@ -441,12 +441,16 @@ def c_changed(t):
         t.check_readback_ok(sub, item, exp, "changed.readback")
 
 
-@case("c11.compose", ["C11", "C15", "C20"], "prepare and commission compose; repeats return the recorded acceptance")
+@case("c11.compose", ["C11", "C15", "C20"], "prepare and commission compose; repeats return the recorded acceptance",
+      controls=[Control("scan_as_snapshot", [r"^compose\.(commission|repeat)\.data\.checks$",
+                                             r"^compose\.receipt\.checks$"])])
 def c_compose(t):
     """Commission runs from prepare's own next argv with no pause. Repeating the accepted
     handle returns the recorded acceptance (same receipt digest and time) without new
     records; another handle and a later prepare refuse reference_already_accepted; source
-    edits after acceptance change no readback."""
+    edits after acceptance change no readback. Commission and the receipt name exactly the
+    three checks that matched (5.4, 5.5): matching scans are not presented as a verified source
+    snapshot."""
     sub = t.submission(basic_entries())
     t.new_ref(sub)
     t.prepare(sub, name="compose.prepare-1")
@@ -462,6 +466,10 @@ def c_compose(t):
     if rep.outcome == "completed":
         t.check_accepted(rep, sub, h2, "compose.commission", sub.writer)
     kinds, intakes = t.log_kinds(sub), t.intake_dirs(sub)
+    # The receipt's checks that matched are exactly commission's: every list naming a check is that list.
+    r = t.cmd(["receipt", sub.ref], name="compose.receipt", expect="completed")
+    lists = [v for v in iter_values(r.data) if isinstance(v, list) and COMMISSION_CHECKS[0] in v]
+    t.check("compose.receipt.checks", bool(lists) and all(v == COMMISSION_CHECKS for v in lists), lists)
     rep2 = t.commission(sub, h2, name="compose.repeat", already=True)
     t.eq("compose.repeat.receipt", rep2.data.get("receipt_sha256"), first.get("receipt_sha256"))
     t.eq("compose.repeat.accepted_at", rep2.data.get("accepted_at"), first.get("accepted_at"))
@@ -539,9 +547,14 @@ def c_readback(t):
 def c_damage(t):
     """One flipped bit makes that item item_damaged with no bytes written, while another
     material still verifies. receipt --verify reports each item's own state and never
-    the whole commission from one member. A moved-away capture is item_missing, a mode
-    000 capture item_unreadable (unprivileged only), a capture replaced by a link to a
-    good copy item_unsupported. The default receipt is unchanged throughout."""
+    the whole commission from one member; each failed item adds a nonempty `problem` and a
+    verified item has none (5.5). A moved-away capture is item_missing, a mode 000 capture
+    item_unreadable (unprivileged only), a capture replaced by a link to a good copy
+    item_unsupported. In another audit the preparation directory holding the arrangement items is
+    replaced by a link to itself moved: both are item_unsupported and `unsupported` with a
+    problem, while the captures outside it still verify. A link in place of the intake directory
+    that holds the receipt makes the receipt unusable: receipt, --verify and every --read refuse
+    item_unsupported. The default receipt is unchanged throughout."""
     entries = [F("a.txt", b"apple\n"), F("b.txt", b"banana\n"), F("c.txt", b"cherry\n"), F("d.txt", b"date\n"),
                F("e.txt", b"elderberry\n")]
     sub = t.submission(entries)
@@ -559,6 +572,7 @@ def c_damage(t):
             want = states.get(item, "verified")
             t.check("verify.%s.%s" % (label, "own-state" if item in states else "others-verified"), got.get(item) == want,
                     {"item": item, "expected": want, "got": got.get(item)})
+        check_problems(t, "verify.%s" % label, items)
         r = t.cmd(["receipt", sub.ref], name="receipt-after-%s" % label, expect="completed")
         t.eq("damage.%s.receipt-unchanged" % label, r.data, r0)
 
@@ -594,8 +608,64 @@ def c_damage(t):
     t.driver_change("replace a capture with a link to an identical copy", plant)
     t.check_readback_refused(sub, "materials/d.txt", "item_unsupported", "damage.read-link")
     rep = t.cmd(["receipt", sub.ref, "--verify"], name="verify-link", expect="completed")
-    st = item_state(find_items(rep.data, set(expected)).get("materials/d.txt", {}))
-    t.check("verify.link.own-state", st in ("unsupported", "unreadable"), st)
+    items = find_items(rep.data, set(expected))
+    t.eq("verify.link.own-state", item_state(items.get("materials/d.txt", {})), "unsupported")
+    check_problems(t, "verify.link", items)
+    # A symbolic link above items (5.5): the preparation directory holding the two arrangement
+    # items is replaced by a link to itself moved; the captures elsewhere still verify.
+    sub2 = t.submission([F("a.txt", b"apple\n"), F("b/c.txt", b"cherry\n")])
+    h2, _ = t.accept(sub2, prefix="above.")
+    exp2 = sub2.items()
+    machine = (sub2.prep.get(h2, {}).get("arrangement") or {}).get("machine")
+    t.require("above.located", isinstance(machine, str) and os.path.isfile(machine), machine)
+    real = os.path.dirname(machine)
+    moved = os.path.join(t.mkdir("above quarantine"), os.path.basename(real))
+
+    def link_above():
+        shutil.move(real, moved)
+        os.symlink(moved, real)
+    t.mode_exempt.add(real)
+    t.driver_change("replace the preparation directory with a link to itself moved", link_above)
+    for item in ("arrangement", "arrangement-readable"):
+        t.check_readback_refused(sub2, item, "item_unsupported", "above.read")
+    t.check_readback_ok(sub2, "materials/b/c.txt", exp2["materials/b/c.txt"], "above.read-capture")
+    rep = t.cmd(["receipt", sub2.ref, "--verify"], name="above.verify", expect="completed")
+    items = find_items(rep.data, set(exp2))
+    t.eq("above.verify.linked", {k: item_state(items.get(k, {})) for k in ("arrangement", "arrangement-readable")},
+         {"arrangement": "unsupported", "arrangement-readable": "unsupported"})
+    t.eq("above.verify.outside-the-link", {k: item_state(items.get(k, {})) for k in ("materials/a.txt", "materials/b/c.txt")},
+         {"materials/a.txt": "verified", "materials/b/c.txt": "verified"})
+    check_problems(t, "above.verify", items)
+    # A link in place of the intake directory that holds the receipt leaves the receipt itself
+    # unusable: receipt and every --read refuse item_unsupported (5.5).
+    sub3 = t.submission([F("a.txt", b"apple\n")])
+    t.accept(sub3, prefix="receipt-dir.")
+    atts = t.intake_dirs(sub3)
+    t.require("receipt-dir.one-attempt", len(atts) == 1, atts)
+    real = os.path.join(sub3.audit_dir, "intake", atts[0])
+    moved = os.path.join(t.mkdir("receipt-dir quarantine"), atts[0])
+
+    def link_intake():
+        shutil.move(real, moved)
+        os.symlink(moved, real)
+    t.mode_exempt.add(real)
+    t.driver_change("replace the intake directory holding the receipt with a link to itself moved", link_intake)
+    for args, label in ((["receipt", sub3.ref], "receipt"), (["receipt", sub3.ref, "--verify"], "verify")):
+        t.cmd(args, name="receipt-dir." + label, expect="refused", reason="item_unsupported")
+    for item in sorted(sub3.items()):
+        t.check_readback_refused(sub3, item, "item_unsupported", "receipt-dir.read")
+
+
+def check_problems(t, name, items):
+    """INTERFACE 5.5: each failed --verify item adds a nonempty `problem` string; a verified
+    item adds none."""
+    for item, entry in sorted(items.items()):
+        state = item_state(entry)
+        if state == "verified":
+            t.check(name + ".no-problem-when-verified", "problem" not in entry, {"item": item, "entry": entry})
+        else:
+            p = entry.get("problem")
+            t.check(name + ".problem", isinstance(p, str) and bool(p.strip()), {"item": item, "entry": entry})
 
 
 @case("c15.arrangement-damage", ["C15", "C19"], "readback returns pinned arrangement bytes or diagnoses damage",
@@ -773,6 +843,7 @@ def c_log_damaged(t):
 
 @case("c17.t1-lost-commission-reply", ["C17", "C20", "C15"],
       "T1: commission killed after acceptance; the repeat returns the recorded receipt", mode="test",
+      controls=[Control("repeat_after_lost_reply", [r"^t1\.repeat\.(no-new-log|no-new-intake)$"])],
       faults=("commission.after_accepted_link=kill",))
 def c_t1(t):
     """commission.after_accepted_link=kill leaves no reply after accepted is linked. After
@@ -793,9 +864,11 @@ def c_t1(t):
     t.check_status(st, sub, "t1.status", condition="not_started", accepted="yes", next_cmds=("run", "close"))
     t.edit(mat(sub, "a.txt"), b"alpha edited after the lost reply\n")
     kinds, intakes = t.log_kinds(sub), t.intake_dirs(sub)
-    t.commission(sub, h, name="t1.repeat", already=True)
+    # Judged whatever the outcome: a repeat that begins a new intake must be seen doing so.
+    rep = t.commission(sub, h, name="t1.repeat", expect=None, already=True)
     t.eq("t1.repeat.no-new-log", t.log_kinds(sub), kinds)
     t.eq("t1.repeat.no-new-intake", t.intake_dirs(sub), intakes)
+    t.require("t1.repeat.completed", rep.outcome == "completed", rep.obj)
     for item in ("materials/a.txt", "question-file"):
         t.check_readback_ok(sub, item, original[item], "t1.readback")
 
@@ -933,7 +1006,7 @@ def c_acceptance_uncertain(t):
 
 
 @case("c17.t11-diagnostic-write", ["C17", "C20"], "T11: a failed diagnostic write keeps the original cause first",
-      mode="test",
+      mode="test", controls=[Control("secondary_cause_only", [r"^t11\.(two-causes|original-first)$"])],
       faults=("diag.write=eio",))
 def c_t11(t):
     """diag.write=eio with a selection_changed refusal: the reason stays
@@ -949,7 +1022,8 @@ def c_t11(t):
     rep = t.commission(sub, h, name="t11", expect="refused", reason="selection_changed", fault="diag.write=eio")
     t.eq("t11.diagnostic", rep.effects.get("diagnostic"), "reported_only")
     causes = (rep.obj or {}).get("causes") or []
-    t.check("t11.two-causes", len(causes) >= 2, causes)
+    # INTERFACE 1.3: the original cause first, then the reporting failure.
+    t.eq("t11.two-causes", len(causes), 2)
     if causes:
         first, last = json.dumps(causes[0]), json.dumps(causes[-1])
         t.check("t11.original-first", re.search(r"selection|changed", first, re.I) and "EIO" not in first, causes)
@@ -1035,14 +1109,17 @@ def c_source_permission(t):
 
 
 @case("c17.capture-failures", ["C17", "C6"], "capture, verification and receipt failures each keep their own account",
-      mode="test",
-      faults=("commission.capture_write=eio", "commission.capture_write=enospc", "commission.capture_corrupt=corrupt", "commission.receipt_write=eio"))
+      mode="test", controls=[Control("omit_partial_effect", [r"^failure\.[a-z-]+\.attempt$"])],
+      faults=("commission.capture_write=eio", "commission.capture_write=enospc", "commission.capture_corrupt=corrupt",
+              "commission.receipt_write=eio", "commission.before_accepted_link=eio", "log.publish:accepted=eio"))
 def c_capture_failures(t):
     """capture_write eio/enospc fail capture_failed, capture_corrupt fails
-    capture_unverified, receipt_write fails receipt_record_failed. Each: acceptance
-    absent, a partial attempt, a durable diagnostic, retained locations, a cause with the
-    injected error, intake_ended with its own outcome, a next action, and status
-    intake_failed. The same handle then commissions; every attempt stays."""
+    capture_unverified, receipt_write fails receipt_record_failed, and so does a failed
+    publication of the acceptance record before its link (commission.before_accepted_link and
+    log.publish:accepted, 5.4), which links no accepted record. Each: acceptance absent, a
+    partial attempt, a durable diagnostic, retained locations, a cause with the injected error,
+    intake_ended with its own outcome, a next action, and status intake_failed. The same handle
+    then commissions; every attempt stays."""
     sub = t.submission(basic_entries())
     t.new_ref(sub)
     t.prepare(sub)
@@ -1050,7 +1127,9 @@ def c_capture_failures(t):
     cases_ = [("capture-eio", "commission.capture_write=eio", "capture_failed", "EIO", ("partial",)),
               ("capture-enospc", "commission.capture_write=enospc", "capture_failed", "ENOSPC", ("partial",)),
               ("capture-corrupt", "commission.capture_corrupt=corrupt", "capture_unverified", None, ("partial",)),
-              ("receipt-eio", "commission.receipt_write=eio", "receipt_record_failed", "EIO", ("partial",))]
+              ("receipt-eio", "commission.receipt_write=eio", "receipt_record_failed", "EIO", ("partial",)),
+              ("before-link-eio", "commission.before_accepted_link=eio", "receipt_record_failed", "EIO", ("partial",)),
+              ("publish-eio", "log.publish:accepted=eio", "receipt_record_failed", "EIO", ("partial",))]
     for label, fault, reason, err, attempts in cases_:
         n0 = len(t.intake_dirs(sub))
         before = t.audit_locations(sub)
@@ -1058,6 +1137,7 @@ def c_capture_failures(t):
         p = "failure.%s" % label
         t.eq(p + ".acceptance", rep.effects.get("acceptance"), "absent")
         t.check(p + ".attempt", rep.effects.get("attempt") in attempts, rep.effects)
+        t.check(p + ".no-accepted", "accepted" not in t.log_kinds(sub), t.log_kinds(sub))
         t.eq(p + ".diagnostic", rep.effects.get("diagnostic"), "durable")
         t.check_retained(rep, sub, p, before)
         if err:
@@ -1866,10 +1946,12 @@ def c_overlap(t):
     t.prepare(base, name="overlap.destination.disjoint")
 
 
-@case("c18.missing-archive", ["C18", "C15"], "a missing archive is diagnosed, never recreated")
+@case("c18.missing-archive", ["C18", "C15"], "a missing archive is diagnosed, never recreated",
+      controls=[Control("missing_archive_closed", [r"^missing\.status\.(outcome|reason|no-closure-claim)$"])])
 def c_missing_archive(t):
     """With the archive moved away every command refuses archive_unavailable and nothing
-    appears at the old path; moved back, the same reference reads its accepted audit."""
+    appears at the old path; status claims no closure it cannot establish; moved back, the
+    same reference reads its accepted audit."""
     sub = t.submission(basic_entries())
     h, _ = t.accept(sub)
     away = sub.archive + " moved"
@@ -1878,8 +1960,12 @@ def c_missing_archive(t):
     for label, args in (("status", ["status", sub.ref]), ("receipt", ["receipt", sub.ref]),
                         ("prepare", ["prepare", sub.ref]), ("commission", ["commission", sub.ref, h, "--i-am-finished"]),
                         ("close", ["close", sub.ref])):
-        t.cmd(args, name="missing.%s" % label, expect="refused", reason="archive_unavailable")
+        r = t.cmd(args, name="missing.%s" % label, expect="refused", reason="archive_unavailable")
         t.check("missing.%s.not-recreated" % label, not os.path.lexists(sub.archive), sub.archive)
+        if label == "status":
+            hl = r.data.get("headline") if isinstance(r.data.get("headline"), dict) else {}
+            t.check("missing.status.no-closure-claim", r.data.get("closure") is None and hl.get("closed") in (None, "unknown")
+                    and r.effects.get("closure") in (None, "unknown"), r.obj)
     t.check_readback_refused(sub, "materials/a.txt", ("archive_unavailable", "item_missing", "item_unreadable"),
                              "missing.read")
     t.driver_change("move the archive back", lambda: os.rename(away, sub.archive))
@@ -2260,6 +2346,18 @@ def _probe_names(t, names):
         return False
     finally:
         shutil.rmtree(d, ignore_errors=True)
+
+
+@case("c19.name-case", ["C19", "C15"], "mixed-case material names keep their case through prepare, capture and readback",
+      controls=[Control("fold_name_case", [r"^name-case\.(prepare\.(files|directories)|read\.bytes)$"])])
+def c_name_case(t):
+    """On any filesystem, case-sensitive or not: a mixed-case directory and file name are
+    prepared, captured and read back under their exact names, and the lower-case spelling is
+    item_unknown (5.5: item names are exact). Case-only siblings are c19.names'."""
+    mixed = t.submission([F("Upper/MixedCase.TXT", b"case kept\n"), F("lower.txt", b"lower\n")])
+    t.accept(mixed, prefix="name-case.", check_witness=True)
+    t.check_readback_ok(mixed, "materials/Upper/MixedCase.TXT", b"case kept\n", "name-case.read")
+    t.check_readback_refused(mixed, "materials/upper/mixedcase.txt", "item_unknown", "name-case.folded")
 
 
 @case("c19.names", ["C19", "C20"], "names are exact UTF-8 without control characters; no normalization")

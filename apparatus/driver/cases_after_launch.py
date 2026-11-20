@@ -2006,6 +2006,148 @@ def _after_started(t, a):
     confirm_and_close(t, a, "c8.after-started.confirm", tok)
 
 
+@case("c8.close-publication-failures", ["C8", "C17", "C20", "C16"],
+      "a close whose seal, delivery or closed record fails to publish, or publishes uncertainly, reports only what "
+      "it established; the next close resumes", mode="test", needs=("loopback",),
+      controls=[Control("failed_publication_as_clean", [r"^pub\.seal-link\.close\.effects$",
+                                                        r"^pub\.closed-link\.confirm\.effects$"])],
+      faults=("log.publish:seal=eio", "log.dirsync:seal=eio", "log.publish:delivery_planned=eio",
+              "log.publish:delivery_ended=eio", "log.dirsync:closed=eio", "log.publish:closed=eio",
+              "log.publish:run_ended=eio"))
+def c_close_publication_failures(t):
+    """INTERFACE 5.8, "A failed close reports the facts established before its failure", each
+    after an ordinary ending, each failing record_failed. The seal's link fails: seal none,
+    delivery none, closure requested, and no seal linked. The seal is linked but its log sync
+    fails: seal unknown, closure requested. delivery_planned fails to link: seal recorded,
+    delivery unknown, nothing at the destination, and the next attempt is 2 because attempt 1's
+    plan file stays claimed. delivery_ended fails to link after the package
+    is written: delivery unknown; the next close reconciles that attempt as failed process_gone
+    and makes attempt 2. Each next close resumes without a second close_requested, keeps one
+    seal, delivers and awaits confirmation. Confirming with closed's link failing: closure stays
+    unfinished, nothing closed; with closed linked but unsynced: closure unknown, and status then
+    reads closed and a repeat returns already_closed. A run whose run_ended cannot be linked
+    fails record_failed with effects.run started (5.7, 1.4); status reports it interrupted with no
+    recorded ending, and the next run records that ending (process_gone, by run) and continues."""
+    scenario(t, "run-ended", _pub_run_ended, audit(t, "pub.run-ended"))
+    scenario(t, "seal-link", _pub_seal_link, audit(t, "pub.seal-link"))
+    scenario(t, "seal-uncertain", _pub_seal_uncertain, audit(t, "pub.seal-uncertain"))
+    scenario(t, "planned", _pub_planned, audit(t, "pub.planned"))
+    scenario(t, "ended", _pub_ended, audit(t, "pub.ended"))
+
+
+def _pub_ended_run(t, a, name):
+    text = "Recorded before the run ended."
+    with_script(t, a, [record_step("toolu_p1", "kept", text), end_step("Done."), end_step("Stopping.")])
+    run_scripted_ending(t, a, name)
+    return [observation("e1", "kept", text)]
+
+
+def _pub_failed(t, a, name, fault, effects, opts=()):
+    rep = close_cmd(t, a, name, opts, expect="failed", reason="record_failed", fault=fault)
+    t.eq(name + ".effects", no_diag(rep.effects), effects)
+    return rep
+
+
+def _pub_resume(t, a, name, entries, *, seal, attempt=1):
+    """The next close: one close_requested, one seal, a verified delivery awaiting confirmation."""
+    rep = close_cmd(t, a, name)
+    if seal == "recorded":
+        manager_sealed(t, a, rep.data.get("seal"), name + ".seal", entries, 1)
+    else:
+        manager_sealed(t, a, status_seal(t, a, name + ".status-seal"), name + ".seal", entries, 1)
+    tok = cf_token(t, a, attempt)
+    check_close_obj(t, a, name, rep.obj, closure="unfinished", reason="awaiting_confirmation", token=tok,
+                    actor="manager", attempt=attempt, delivery="verified",
+                    effects={"run": "ended", "seal": seal, "delivery": "verified", "closure": "unfinished"})
+    kinds = t.log_kinds(a.sub)
+    t.eq(name + ".one-request", kinds.count("close_requested"), 1)
+    t.eq(name + ".one-seal", kinds.count("seal"), 1)
+    check_package_at(t, a, name + ".copy", attempt)
+    return tok
+
+
+def _pub_run_ended(t, a):
+    with_script(t, a, [end_step("Done."), end_step("Stopping."), end_step("Stopping again.")])
+    rep = run_cmd(t, a, "pub.run-ended.run", expect="failed", reason="record_failed",
+                  fault="log.publish:run_ended=eio")
+    t.eq("pub.run-ended.run.effects", no_diag(rep.effects),
+         {"run": "started", "answer": "unchanged", "seal": "none", "delivery": "none"})
+    t.check("pub.run-ended.no-ending", "run_ended" not in t.log_kinds(a.sub), t.log_kinds(a.sub))
+    st = t.status(a.sub, name="pub.run-ended.status")
+    t.eq("pub.run-ended.status.condition", st.data.get("condition"), "interrupted")
+    t.eq("pub.run-ended.status.last-ending", ((st.data.get("runs") or {}).get("last") or {}).get("ending"), None)
+    rep = run_cmd(t, a, "pub.run-ended.continue")
+    rs.check_run_reply(t, rep, a.sub, "pub.run-ended.continue", ending="ended_unsubmitted", run_number=2,
+                       fx=a.fx, limits=rs.limits_of(a.sub))
+    first = log_record(t, a.sub, "run_ended", lambda b: b.get("run") == 1)
+    body = first[2] if first else {}
+    t.eq("pub.run-ended.reconciled", [body.get(k) for k in ("ending", "cause", "recorded_by")],
+         ["interrupted", "process_gone", "run"])
+
+
+def _pub_seal_link(t, a):
+    entries = _pub_ended_run(t, a, "pub.seal-link.run")
+    n0 = log_len(t, a.sub)
+    _pub_failed(t, a, "pub.seal-link.close", "log.publish:seal=eio",
+                {"run": "ended", "seal": "none", "delivery": "none", "closure": "requested"})
+    t.eq("pub.seal-link.published", t.log_kinds(a.sub)[n0:], ["close_requested"])
+    t.eq("pub.seal-link.destination-empty", sorted(os.listdir(a.sub.dest)), [])
+    tok = _pub_resume(t, a, "pub.seal-link.resume", entries, seal="recorded")
+    # Confirmation whose closed record cannot be linked: still unfinished, nothing closed.
+    n1 = log_len(t, a.sub)
+    _pub_failed(t, a, "pub.closed-link.confirm", "log.publish:closed=eio",
+                {"run": "ended", "seal": "existing", "delivery": "verified", "closure": "unfinished"},
+                opts=["--confirm", tok or "cf1.aaaaaa"])
+    t.eq("pub.closed-link.published-nothing", log_len(t, a.sub), n1)
+    confirm_and_close(t, a, "pub.closed-link.retry", tok)
+
+
+def _pub_seal_uncertain(t, a):
+    entries = _pub_ended_run(t, a, "pub.seal-uncertain.run")
+    n0 = log_len(t, a.sub)
+    _pub_failed(t, a, "pub.seal-uncertain.close", "log.dirsync:seal=eio",
+                {"run": "ended", "seal": "unknown", "delivery": "none", "closure": "requested"})
+    t.eq("pub.seal-uncertain.published", t.log_kinds(a.sub)[n0:], ["close_requested", "seal"])
+    t.eq("pub.seal-uncertain.destination-empty", sorted(os.listdir(a.sub.dest)), [])
+    tok = _pub_resume(t, a, "pub.seal-uncertain.resume", entries, seal="existing")
+    # Confirmation whose closed record is linked but its log sync fails: closure unknown.
+    _pub_failed(t, a, "pub.closed-uncertain.confirm", "log.dirsync:closed=eio",
+                {"run": "ended", "seal": "existing", "delivery": "verified", "closure": "unknown"},
+                opts=["--confirm", tok or "cf1.aaaaaa"])
+    t.eq("pub.closed-uncertain.linked", t.log_kinds(a.sub)[-1:], ["closed"])
+    st = t.status(a.sub, name="pub.closed-uncertain.status")
+    t.eq("pub.closed-uncertain.status.closed", (st.data.get("headline") or {}).get("closed"), "yes")
+    n1 = log_len(t, a.sub)
+    rep = close_cmd(t, a, "pub.closed-uncertain.repeat")
+    t.eq("pub.closed-uncertain.repeat.already_closed", rep.data.get("already_closed"), True)
+    t.eq("pub.closed-uncertain.repeat.published-nothing", log_len(t, a.sub), n1)
+
+
+def _pub_planned(t, a):
+    entries = _pub_ended_run(t, a, "pub.planned.run")
+    n0 = log_len(t, a.sub)
+    _pub_failed(t, a, "pub.planned.close", "log.publish:delivery_planned=eio",
+                {"run": "ended", "seal": "recorded", "delivery": "unknown", "closure": "requested"})
+    t.eq("pub.planned.published", t.log_kinds(a.sub)[n0:], ["close_requested", "seal"])
+    t.eq("pub.planned.destination-empty", sorted(os.listdir(a.sub.dest)), [])
+    # Attempt 1's plan file was claimed before its record failed to link, so the next attempt
+    # claims the next number (4.3, 8.3 step 1).
+    _pub_resume(t, a, "pub.planned.resume", entries, seal="existing", attempt=2)
+
+
+def _pub_ended(t, a):
+    entries = _pub_ended_run(t, a, "pub.ended.run")
+    n0 = log_len(t, a.sub)
+    _pub_failed(t, a, "pub.ended.close", "log.publish:delivery_ended=eio",
+                {"run": "ended", "seal": "recorded", "delivery": "unknown", "closure": "requested"})
+    t.eq("pub.ended.published", t.log_kinds(a.sub)[n0:], ["close_requested", "seal", "delivery_planned"])
+    _pub_resume(t, a, "pub.ended.resume", entries, seal="existing", attempt=2)
+    first = log_record(t, a.sub, "delivery_ended", lambda b: b.get("attempt") == 1)
+    body = first[2] if first else {}
+    t.eq("pub.ended.reconciled", [body.get(k) for k in ("outcome", "cause", "recorded_by")],
+         ["failed", {"operation": "deliver", "error": "process_gone"}, "close"])
+
+
 @case("c8.close-running", ["C8", "C12", "C16", "C3"],
       "T13: close stops a held run; a stopped holder leaves close run_still_held; a seal alone is not a stop",
       mode="test", needs=("loopback", "lock"), heavy=True,

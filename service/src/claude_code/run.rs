@@ -42,6 +42,14 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
         return reject("runtime_credential_forbidden", "This runtime accepts only the harness-owned subscription login. Remove credential arguments and credential environment variables; no credential was read.".into());
     }
     drop(input);
+    // The edit rules this runtime shares read the retained-payload limits;
+    // a test build's invalid setting refuses before anything starts.
+    if let Err(e) = crate::fault::transport::retained_limits() {
+        return reject(
+            "test_variable_invalid",
+            format!("{e}. No harness was launched."),
+        );
+    }
     let _lock = match audit.try_lock() {
         Ok(Some(lock)) => lock,
         Ok(None) => {

@@ -215,6 +215,10 @@ fn environment(audit: &Audit, input: crate::credential::Input) -> Result<Environ
         .map_or(REQUEST_TIMEOUT, Duration::from_secs);
     let delays = crate::fault::transport::retry_delays()
         .map_err(|e| env_fail(audit, "test_variable_invalid", format!("{e}.")))?;
+    // The answer tools read the retained-payload limits when they apply
+    // them; an invalid value refuses here, before any request.
+    crate::fault::transport::retained_limits()
+        .map_err(|e| env_fail(audit, "test_variable_invalid", format!("{e}.")))?;
     Ok(Environment {
         key,
         route: Route::new(endpoint, proxy),

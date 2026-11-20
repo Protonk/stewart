@@ -69,6 +69,16 @@ fn nofollow() -> bool {
     !crate::sabotage!("follow_symlinks")
 }
 
+/// A material name as recorded: exact, except that the `fold_name_case`
+/// sabotage control folds it to lower case.
+fn recorded_name(name: String) -> String {
+    #[cfg(feature = "sabotage")]
+    if crate::sabotage!("fold_name_case") {
+        return name.to_lowercase();
+    }
+    name
+}
+
 /// Check the folder's root: exactly `question.md` (a regular file) and
 /// `materials/` (a directory), allowing guidance.md only when selected.
 /// Its type and contents are checked by read_guidance after parsing the selector.
@@ -268,7 +278,7 @@ pub fn scan(folder: &Dir, exclude: &Exclude, selected_guidance: bool) -> Result<
             if crate::sabotage!("skip_hidden_entries") && raw.starts_with(b".") {
                 continue;
             }
-            let child = material_path(&public, &raw)?;
+            let child = recorded_name(material_path(&public, &raw)?);
             let st = dir.stat_at_bytes(&raw, nofollow()).map_err(|e| {
                 refusal(
                     "source_unreadable",
@@ -436,7 +446,8 @@ pub fn rescan(folder: &Dir) -> Rescan {
                     if crate::sabotage!("skip_hidden_entries") && raw.starts_with(b".") {
                         continue;
                     }
-                    let child = format!("{public}/{}", String::from_utf8_lossy(&raw));
+                    let child =
+                        recorded_name(format!("{public}/{}", String::from_utf8_lossy(&raw)));
                     match dir.stat_at_bytes(&raw, nofollow()) {
                         Ok(st) => {
                             if st.kind == Kind::Dir && depth < PATH_COMPONENTS {

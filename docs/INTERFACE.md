@@ -96,7 +96,7 @@ only, never an audit or an answer. The envelope's keys, in this order:
 | `message` | refused, failed | One or two plain sentences: what Stewart could not do and why. |
 | `effects` | always | Operation-specific facts (1.4), on completed replies too. |
 | `retained` | manager refused or failed | Archive locations holding attempts, partials and diagnostics: every location this invocation created and kept, each directory it created (a capture attempt, a preparation, a run directory, a delivery package) and each file it created in a directory it did not create (an entry payload, a seal manifest, a delivery plan, its diagnostic when that was written); and, on `log_damaged`, the log directory. Log records and stage files are not listed: the log holds the records, and status reports a stage file without its record as an interrupted publication (4.3). A refused preparation read also identifies its existing `prep/<n>` evidence. Location order is not significant. |
-| `causes` | failed, or `effects.diagnostic` is `reported_only` | The original cause first, then any reporting failure. |
+| `causes` | failed, `effects.diagnostic` is `reported_only`, or an intake's ending could not be recorded | The original cause first, then any reporting failure. |
 | `next` | always | Supported next calls, each with an explanation (1.5). May be empty. |
 | `data` | completed; refused or failed when useful | Operation data, such as the current entry handle on a stale target. |
 
@@ -1296,7 +1296,7 @@ before an intake starts, with `acceptance: "absent"` and `attempt: "none"`.
 A failure writing the receipt or publishing acceptance before its log link fails
 `receipt_record_failed`, with acceptance known absent and the attempt partial.
 It records that intake ending when possible; failure to record the ending is
-reported separately. If the acceptance link was made but its durability cannot
+reported separately, as a second entry in `causes` (1.3). If the acceptance link was made but its durability cannot
 be established, the reply is `acceptance_record_uncertain`, with acceptance
 unknown and the completed capture attempt recorded:
 
@@ -1336,7 +1336,9 @@ stdout. It then writes one JSON line to stderr: the item, size, SHA-256 and
 `item_missing`, `item_unreadable` or `item_unsupported`). Bytes that fail
 verification are not written. A symbolic link in place of an item or a
 containing directory is unsupported
-(`item_unsupported`), even if its target has the expected bytes. Items:
+(`item_unsupported`), even if its target has the expected bytes. A link in place
+of the intake directory that holds the receipt leaves the receipt itself
+unusable: `receipt` and every `--read` refuse `item_unsupported`. Items:
 `question-file`, `question-body`, `guidance-file` when supplied,
 `arrangement`, `arrangement-readable` and `materials/<name>`. The live source
 and the currently installed forms are never consulted.
@@ -1899,7 +1901,8 @@ sent on every request, including later requests carrying its signed block.
 `host` carries the port only when the URL names one.
 The response is read to its end by `content-length`, chunked transfer coding or
 the connection closing. Response status/header lines share a 262,144-byte
-bound across interim and final heads. Statuses 100–199 except 101 are interim;
+bound across interim and final heads; heads beyond it make the framing
+malformed, as below. Statuses 100–199 except 101 are interim;
 only the final response supplies retained headers and body. A folded header
 continuation joins the preceding value with one space after removing its leading
 spaces and tabs. Content lengths must be decimal digits (at most 19), and all
@@ -2481,7 +2484,8 @@ To cite a span, take `start` from the read or search result at its beginning and
   on a 64 MiB reserve (`retained_payload_reserve_exhausted` when it runs out).
   Admission uses the retained total before the edit. The edit that first reaches
   or crosses 1 GiB uses no reserve; later additions and replacements charge
-  their full new payload size to it. Deletion consumes no reserve.
+  their full new payload size to it, and are admitted only when that whole
+  charge fits in the reserve left. Deletion consumes no reserve.
   Delete, prepare and submit never refuse on that cap. Through the model
   adapter one call carries at most 4 MiB (7.1), so an entry recorded by a model
   is bounded by that; the 64 MiB per-entry bound applies to the core.
@@ -3004,8 +3008,9 @@ The release binary is built without them and contains neither the code nor the
 environment variable names below; the suite checks this against the test build
 as its firing control. The names are `STEWART_TEST_FAULT`,
 `STEWART_TEST_FAULT_DIR`, `STEWART_TEST_SABOTAGE`, `STEWART_TEST_TLS_ROOT`,
-`STEWART_TEST_PROVIDER_TIMEOUT` and `STEWART_TEST_RETRY_DELAYS`; the last three
-are compiled with `fault-injection`.
+`STEWART_TEST_PROVIDER_TIMEOUT`, `STEWART_TEST_RETRY_DELAYS` and
+`STEWART_TEST_RETAINED_LIMITS`; the last four are compiled with
+`fault-injection`.
 
 ### C.1 Fault points
 
@@ -3090,13 +3095,15 @@ result, `entry.after_link`; just before the seal `linkat`, `log.publish:seal`
 `delivery.after_ended`; after confirmation and before its reply,
 `close.after_closed_link`.
 
-Provider and transport, for the fake provider:
+Provider and transport, for the fake provider. An empty value of any test
+variable counts as unset:
 
 | Variable | Effect |
 | --- | --- |
 | `STEWART_TEST_TLS_ROOT` | Absolute path of a PEM file, at most 1 MiB, holding one or more certificates. They are added to the trust roots for the provider connection, directly or through `HTTPS_PROXY`. A missing, unreadable or certificate-free file refuses `run` before any request (`test_tls_root_invalid`). |
 | `STEWART_TEST_PROVIDER_TIMEOUT` | Request timeout in seconds, 1–600, in place of the pinned 600; attempt records state the value used. Any other value refuses `run` before any request (`test_variable_invalid`). |
 | `STEWART_TEST_RETRY_DELAYS` | Three comma-separated delays in milliseconds, each 0–30,000, in place of 2, 8 and 30 seconds; a `retry-after` value still applies. Any other value refuses `run` before any request (`test_variable_invalid`). |
+| `STEWART_TEST_RETAINED_LIMITS` | Two comma-separated byte counts, each 1–1,073,741,824: the retained-payload cap and reserve of 7.4, in place of 1 GiB and 64 MiB. The 1 MiB edit size that the cap refuses is unchanged. Any other value refuses `run` before any request (`test_variable_invalid`). |
 
 ### C.2 Sabotage controls
 
@@ -3178,6 +3185,13 @@ the check for that property must fail. The claims are ACCEPTANCE's.
 | `candidate_forecast_as_written` | A dry-run `assemble` reports `writes.state: "complete"` with every proposed entry as created (C21) |
 | `candidate_unreported_partial` | A failed creation reports `writes` as state `none` with no created or incomplete entries (C21) |
 | `candidate_overwrites_existing` | Creation into an existing candidate directory opens it and replaces its proposed files instead of refusing `destination_exists` (C21) |
+| `scan_as_snapshot` | Commission's and the receipt's `checks` add `source_snapshot_verified`, presenting matching scans as proof of a source snapshot (C11) |
+| `secondary_cause_only` | When a diagnostic cannot be written after a failure, the reply's `causes` hold only the diagnostic write failure, dropping the original cause (C17) |
+| `repeat_after_lost_reply` | Commission for a handle whose acceptance is already recorded begins a new intake attempt instead of returning the recorded receipt (C17) |
+| `omit_partial_effect` | A failed intake reports `effects.attempt` as `none` where it was `partial` (C17) |
+| `missing_archive_closed` | `status` on a reference whose archive is unavailable completes with data `{"condition":"closed","closure":"complete"}`, reporting the audit closed, instead of refusing `archive_unavailable` (C18) |
+| `fold_name_case` | Prepare and commission record material names folded to lower case (C19) |
+| `failed_publication_as_clean` | When close cannot link a `seal` or `closed` record, its reply reports that effect as published (`seal: "recorded"` or `closure: "complete"`) (C17, C20) |
 
 Sabotage items in ACCEPTANCE that are not build flags:
 
@@ -3186,3 +3200,7 @@ Sabotage items in ACCEPTANCE that are not build flags:
 | C7, "requires a module for open inquiry" | Not applicable in this release: no module mechanism exists, so no build can require one. The C7 open-inquiry pass case stands with its differing and invariance cases. |
 | C19, "auto-expand an archive" | Not applicable: no expansion code exists to enable. Archive-format materials are raw text cases under C19. |
 | C5, "a payload corrupted in Stewart's storage before delivery" | A deliberately broken input (an "Also" case): the driver alters a payload file, or uses `entry.payload_corrupt` or `delivery.source_read`. |
+| C11, "omit an entry" | `skip_hidden_entries` (C19) omits entries from the scan and serves this item. |
+| C18, "fall back to live source bytes" | `readback_live_source` (C15) and `read_live_source` (C2). |
+| C18, "prune on pressure" | Not applicable in this release: no code removes retained records under storage pressure, which appears instead as write failures (`enospc` at the fault points). The `remove_*` controls show that a deletion is detected. |
+| C18, "treat retained internal bytes as delivered elsewhere" | `seal_as_delivered` (C16, C20) reports delivery from the archive's own state. |
