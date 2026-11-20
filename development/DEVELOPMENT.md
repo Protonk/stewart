@@ -346,7 +346,9 @@ originals locally and report the missing backup.
 [`qualified.py`](../apparatus/qualified.py) maintains
 [`qualified.json`](../apparatus/qualified.json) and its generated Markdown. For
 each suite/platform keep the latest result and, if it failed, the last qualified
-result. `check` verifies retained results and reports source drift. A result
+result. `check` verifies retained results, checks that the front release and
+runtime runs used the toolchain images the latest toolchain run recorded, and
+reports source drift. A result
 applies to its recorded binary and source, not automatically to later code.
 
 During review keep the independent witness, actual command outputs, counts,

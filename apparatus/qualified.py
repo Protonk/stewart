@@ -1681,6 +1681,29 @@ def front(entries):
     return keep
 
 
+def toolchain_mismatches(entries):
+    """Messages for front release and runtime runs built with a toolchain image other than the one the latest
+    toolchain run built for that platform. A release is qualified with the toolchain its record names."""
+    built = {}
+    toolchains = [e for e in entries if e["kind"] == "suite" and e["suite"] == "toolchain"]
+    for e in sorted(toolchains, key=lambda e: (e["date"], e["id"])):
+        for platform, pl in e["platforms"].items():
+            if pl.get("toolchain_image"):
+                built[platform] = (e["id"], pl["toolchain_image"])
+    keep = front(entries)
+    messages = []
+    for e in entries:
+        if e["kind"] != "suite" or e["suite"] == "toolchain" or e["id"] not in keep:
+            continue
+        for platform, pl in sorted(e["platforms"].items()):
+            image = pl.get("toolchain_image")
+            if platform in built and image and image != built[platform][1]:
+                messages.append("%s %s: built with toolchain image %s, not %s from %s; run step2.sh to record "
+                                "the toolchain in use" % (e["id"], platform, image, built[platform][1],
+                                                          built[platform][0]))
+    return messages
+
+
 def apply_front(record, out):
     """Drop every entry that is neither on the front nor pinned; report what leaves."""
     keep = front(record["entries"])
@@ -2109,6 +2132,10 @@ def run_check(ctx, strict=False, out=print, with_drift=True, require_evidence=Fa
                 e["id"], "digests, counts and outcome" if e["kind"] == "suite" else
                 "result digest and date" if "files" not in e["result"] else
                 "listing digest of %d files, and date" % e["result"]["files"]))
+    mismatches = toolchain_mismatches(entries)
+    fails += [("toolchain", msg) for msg in mismatches]
+    if not mismatches:
+        out("ok   front release and runtime runs used the recorded toolchain images")
     for tag, msg in fails:
         out("FAIL %s: %s" % (tag, msg))
     print_pins(record, out)
@@ -3178,6 +3205,23 @@ def _self_test_controls(base, isolated, control):
     step4 = ids()
     control("front: an older unpinned run leaves", step4 == ["run-b", "run-c"],
             "record after unpinning run-a: %s" % step4)
+
+    # Toolchain rule: front release and runtime runs name the toolchain run that built their images.
+    def suite_run(run_id, suite, date, image):
+        return {"id": run_id, "kind": "suite", "suite": suite, "date": date,
+                "platforms": {"linux-aarch64": {"outcome": "qualified", "toolchain_image": image}}}
+    built = suite_run("tool", "toolchain", "2026-01-01T00:00:00Z", "sha256:" + "a" * 64)
+    same = [built, suite_run("rel", "acceptance", "2026-01-02T00:00:00Z", "sha256:" + "a" * 64)]
+    other = [built, suite_run("rel", "acceptance", "2026-01-02T00:00:00Z", "sha256:" + "b" * 64)]
+    older = [built, suite_run("rel", "acceptance", "2026-01-02T00:00:00Z", "sha256:" + "b" * 64),
+             suite_run("rel-2", "acceptance", "2026-01-03T00:00:00Z", "sha256:" + "a" * 64)]
+    control("toolchain: a front run built with the recorded toolchain image passes (invariance)",
+            toolchain_mismatches(same) == [], "mismatches %s" % toolchain_mismatches(same))
+    control("toolchain: a front run built with another toolchain image is reported",
+            len(toolchain_mismatches(other)) == 1 and "sha256:" + "b" * 64 in toolchain_mismatches(other)[0],
+            "mismatches %s" % toolchain_mismatches(other))
+    control("toolchain: a run that has left the front is not judged (differing)",
+            toolchain_mismatches(older) == [], "mismatches %s" % toolchain_mismatches(older))
 
     # Check: a clean record passes; each tampering fires its own failure.
     clean = run_check(ctx, out=quiet, with_drift=False)

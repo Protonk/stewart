@@ -102,38 +102,22 @@ The requirements remain those of ACCEPTANCE while its review is open.
 
 ### Coverage and acceptance-policy review
 
-Check driver cases against every ACCEPTANCE claim. Uncovered requirements need a
-case or an explicit disposition. Add independent black-box comparisons for
-interim/folded/conflicting-length response heads and the retained-payload reserve
-boundary. The driver also lacks cases for close's `unknown`
-seal, delivery and closure effects after a failed publication, the `--verify`
-`problem` member and a symbolic link above an item, `receipt_record_failed`
-on failed publication of the acceptance record before its link, a `checked_at`
-that is not a timestamp, and a null JSON-RPC error `id` from the binary.
-The earlier receipt-write error is covered by `c17.capture-failures`.
+Every sabotage item in ACCEPTANCE now has a C.2 control or a disposition in
+INTERFACE Appendix C, and the driver gaps found in review have cases. The
+release and runtime suites run every case on both Linux architectures without
+skips; native runs skip only Linux-only expectations.
 
-Review whether the C17 and C18 witnesses detect omitted partial effects,
-blind repetition and false clean or delivery reports. Actual pressure pruning
-and C11's scan-versus-snapshot distinction also need dispositions.
+- [ ] Qualify the review's new cases and controls with the release and runtime
+  suites.
+- [ ] Settle the endpoint evidence the release names through
+  [endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md).
 
-Use the current acceptance claims to assess these test and apparatus choices.
-Any change to the evidence owed belongs in ACCEPTANCE.
-
-- Review coverage of Linux-specific behavior, the evidence for the endpoints
-  the release names, and the disposition of failures and skips.
-- Decide how to verify the toolchain used for a release build against the
-  recorded toolchain digest.
-- Carry the readiness reassessment's accepted limitations. Its surviving
-  mutants were equivalent mutants in the gate and settings slices, and three
-  agent races reachable only at the exact deadline instant or a failed final
-  checkpoint write, for which no fault point exists. Two tests failed once
-  each under heavy machine load and passed on every rerun: the delivery test
-  of a run still holding the lock, and the Messages credential-descriptor
-  deadline test. The runtime's exact queue-entry instant remained unobserved.
-  The mutation logs were released with the readiness working evidence;
-  `READINESS-FOLLOW-UP-PLAN.md` at `ba551c6` keeps the summary. Decide which
-  of these need a case, a fault point or an explicit disposition.
-- Decide which hosts the documented qualification procedure should support.
+Accepted limitations: the readiness reassessment's surviving mutants were
+equivalent; the runtime's unit-only limits are stated in its
+[contract](docs/claude-code/CONTRACT.md#evidence-owed). Two tests each failed
+once under heavy machine load and passed on rerun (the native held-lock
+delivery test and the credential-descriptor deadline, now a driver case);
+rerun a timing-sensitive failure alone before acting on it.
 
 ### Release documentation and source package
 
@@ -147,7 +131,15 @@ needs no provider key. AGENTS, DEVELOPMENT and the crate guide let an outside
 agent find the code, build it from the archive without network access and run
 the checks natively on Linux, knowing which checks qualify nothing.
 
-Needs: the archive recipe, and a final outside-reader pass after the manager
-interface settles the documentation it changes.
+Users verify a download against a `SHA256SUMS` file covering both binaries,
+signed by the maintainer with `ssh-keygen -Y sign -n file` and checked with
+`ssh-keygen -Y verify` against an `allowed_signers` file in the repository. This
+needs only OpenSSH. The maintainer signs; the release build is reproducible
+(`step2.sh` builds twice and compares), so a reader can also rebuild from the
+source archive and compare digests. Qualification stays on the development
+Mac's container suites; supporting other development hosts is not a goal.
+
+Needs: the archive recipe, the signing procedure in the README, and a final
+outside-reader pass.
 
 Deferred product scope belongs in CONTRACTS; it is not additional release work.
