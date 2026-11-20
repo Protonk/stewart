@@ -162,16 +162,38 @@ needs its own matching reviewed check. Procedures and profiles grant no starts.
   ordering, accounting and submission. Include host/server-managed configuration
   and distinguish supplied configuration from observed enforcement. Fixed
   synthetic answer text cannot be the oracle for a real model's answer.
-- [ ] Name the unresolved observations explicitly: usage in a submitting
-  placement's final interval; several calls from one response; placement of the
-  post-compaction notice; startup validation before the first question reaches
-  the provider; actual turn-cap and per-response output enforcement. An unknown
-  interval remains unknown, rather than inferred from settings or an intended cap.
+- [ ] Choose which of the unresolved observations below a trial should
+  settle. An unknown interval remains unknown, rather than inferred from settings
+  or an intended cap.
 - [ ] Freeze each proposed commission's exact inputs, binaries, surface/profile
   pins, model, authentication route, paid-extra-usage-disabled setting, maximum
   starts/placements and duration/resource bound, stopping rules, replacement
   policy and retained witnesses. Include availability probes and authentication
   launches in the requested allowance.
+
+#### Unresolved observations
+
+The synthetic runtime suite exercises each of these against the actual core; it
+says nothing about how the real harness behaves. "Service check" means review of
+Stewart's own captures, stop records and archives through the service procedure;
+they are service-owned, not independent witnesses.
+
+| Observation | A live trial would have to observe | Witness | Missing |
+| --- | --- | --- | --- |
+| Startup validation before the question reaches the provider | Whether question bytes leave the host before `system/init` | stdin/stdout ordering only | A provider or network witness, which the credential boundary excludes; record ordering only |
+| Failure recovery and complete provider accounting | The harness after tool errors and API errors, with final results | Service check; package witness | A provider usage witness and a design that elicits errors |
+| Relay loss | The harness's reaction to its MCP server dying mid-session | Service check stop and process records | External apparatus that kills the relay, with an outside witness |
+| Cancellation and what an interrupt leaves queued | When the harness sends `notifications/cancelled`; what a witnessed interrupt leaves | Stewart's MCP capture | An external interruption barrier and trigger (the interruption item above) |
+| Usage across placements | Each session's results over a deadline continuation | Service check across starts | Only a commission; provider completeness stays unverified |
+| Compaction, re-entry, notice placement, one reminder | A compaction boundary, then the notice, a re-entry call and the reminder still unspent | Stewart's input and output captures | A cheap compaction trigger; otherwise a long, costly run |
+| Several calls from one response | A response with two or more tool calls, and whether they arrive together or in turn | Service check correlating calls with assistant frames | A prompt that elicits parallel reads |
+| Usage in a submitting placement's final interval | Whether a result frame arrives before the stop that follows submission | Service check stream review | A provider usage witness, or a decision on a drain grace period |
+| Turn cap and per-response output enforcement | Reaching the turn or output cap; gating before or after consumption | Stream results | A separately commissioned cap study |
+
+Launching from an already-open descriptor is not a trial question: it is a
+design gap between the digest check and execution, kept as a stated limitation.
+The environment the harness receives is known only from Stewart's launch
+records; a wrapper witness would change the pinned executable digest.
 
 ### Run only the approved packet and review what occurred
 
@@ -188,28 +210,6 @@ needs its own matching reviewed check. Procedures and profiles grant no starts.
   route, writer and binaries. Apply retention rules after review. An API result
   cannot qualify this harness profile, and a subscription result cannot satisfy
   the Messages API release gate.
-
-### Remaining offline runtime coverage and evidence review
-
-- [ ] Add second-relay-connection refusal within an active placement and a hook
-  call after admission stops. Add an independent comparison for `run`'s own
-  pinned-surface re-verification or explicitly retain its unit-only limitation.
-- [ ] Resolve the qualification-index disposition for
-  `.scratch/claude-code-probe-01` and `.scratch/claude-code-probe-02`, whose
-  original records lack UTC timestamps. Preserve those originals; do not invent
-  dates or rewrite receipts to register them.
-- [ ] Finish unresolved observer/failure reviews before releasing their selected
-  witnesses: socket errors in `.tmp/observer-repair/`, stopping-observer EPERM in
-  `.tmp/bounded-observer/`, relay-copy behavior in `.scratch/relay-diagnostic-03`,
-  and observer scope in `.scratch/environment-observer-02`. Recover specific
-  original paths from their records and Git when needed. Distinguish an observed
-  workaround from an established OS/library cause; missing witnesses remain a
-  review limitation. Do not restart old diagnostics or probes.
-- [ ] Apply [evidence retention](DEVELOPMENT.md#evidence-and-retention) after each
-  review. Release reproducible or superseded working trees when their purpose
-  ends; preserve originals needed for unresolved findings and open custody.
-  The [qualification index](../apparatus/qualified.md) owns retained suite results
-  and selected encounters, not this plan.
 
 ## Verification and completion
 

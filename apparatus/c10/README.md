@@ -106,12 +106,13 @@ reads back every file through `receipt --read`. Catalog hashes bind metadata
 and recursive material membership, including empty directories. Submission
 hashes bind the rendered question and input bytes separately in each audit.
 
-The full gate needs three default-effort repetitions of each commission, plus
-one effort-set audit, one compaction audit and one killed-and-continued audit:
-18 + 3 = 21 audits per model. Placements and provider request attempts are
-separate counts. The interrupted audit needs more than one placement: its first
-is launched with a witnessed interruption and each later one is a separately
-approved [continuation](#continue-a-retained-audit). Killing the process is a
+The endpoint alignment tier needs one run of each case per named model, spread
+across the effort values, plus one compaction run. Repetitions, effort
+comparisons and killed-and-continued audits are experiment-tier questions
+([ACCEPTANCE](../../ACCEPTANCE.md#the-endpoint-alignment-tier)). Placements and
+provider request attempts are separate counts. An interrupted audit needs more
+than one placement: its first is launched with a witnessed interruption and each
+later one is a separately approved [continuation](#continue-a-retained-audit). Killing the process is a
 different case that this apparatus does not exercise. These quantities grant no
 spending authority.
 
