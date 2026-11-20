@@ -20,8 +20,11 @@ launch, its documented facts and what remains undemonstrated with the real
 harness.
 
 Design and rehearse the comparisons offline. Before a live start, verify that
-the bounded commission covers the packet, credential route and budget. Keep
-open audits and their exact writers until closure or explicit disposition.
+the bounded commission covers the packet, credential route and budget, and that
+a rehearsal of the committed apparatus with that writer is current: a change to
+the apparatus, a driver helper it imports or the writer needs a new rehearsal
+([DEVELOPMENT](development/DEVELOPMENT.md#what-to-run-for-what-you-changed)).
+Keep open audits and their exact writers until closure or explicit disposition.
 
 ## 1. Specify the alignment check
 

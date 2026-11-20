@@ -114,10 +114,16 @@ separately from the answer. Delivery verifies the entire accepted capture
 before copying the body. Independent comparisons cover a changed header, a
 missing receipt, partial intake, lost replies, and substituted package members.
 
-- [ ] Run and review the
+- [ ] Run and review a new
   [offline C10 rehearsal](../apparatus/c10/README.md#run-the-offline-checks)
-  with the qualified standalone CLI writer. Select its retained Linux aarch64
-  release entry in the [qualification record](../apparatus/qualified.md).
+  of the committed apparatus with the qualified standalone CLI writer: the
+  Linux aarch64 entry on the acceptance front of the
+  [qualification record](../apparatus/qualified.md). The C10 and sanity sources
+  have changed since `c10-q2-01`, so its bindings no longer cover the current
+  apparatus. Pin the selected acceptance run before the rehearsal creates
+  audits with its writer. After review, release the `c10-q2-01` pins once the
+  new rehearsal covers its comparison and its retained audits are closed or
+  disposed of; the `acceptance-question2-01` writer pin follows those audits.
 
 ### 4. Implement the bounded manager MCP surface
 
