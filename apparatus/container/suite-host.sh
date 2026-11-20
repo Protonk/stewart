@@ -56,10 +56,11 @@ done
 # Source identity: a git archive of HEAD; uncommitted files are not built or run.
 mkdir -p "$OUT/staging"
 hstep commit git -C "$REPO" rev-parse HEAD || stop_here "not a git checkout"
-hstep worktree git -C "$REPO" status --porcelain -- service apparatus docs
-[ -s "$OUT/host/worktree.stdout" ] && note "note: service/, apparatus/ or docs/ differ from HEAD; the suite uses HEAD"
-# docs/ goes in too: the driver's self-test compares its pinned texts with QUESTION-FORMS.
-hstep archive git -C "$REPO" archive --format=tar -o "$OUT/staging/source.tar" HEAD service apparatus docs \
+hstep worktree git -C "$REPO" status --porcelain -- service apparatus docs examples
+[ -s "$OUT/host/worktree.stdout" ] && note "note: service/, apparatus/, docs/ or examples/ differ from HEAD; the suite uses HEAD"
+# docs/ and examples/ go in too: the driver's self-test compares its pinned texts
+# with them, and its walkthrough cases run the documented commands.
+hstep archive git -C "$REPO" archive --format=tar -o "$OUT/staging/source.tar" HEAD service apparatus docs examples \
     || stop_here "git archive failed"
 cp "$OUT/host/commit.stdout" "$OUT/staging/COMMIT"
 shasum -a 256 "$OUT/staging/source.tar" >"$OUT/host/source.sha256"

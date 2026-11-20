@@ -1392,8 +1392,11 @@ def c_close_before_launch(t):
     complete, close_requested then closed (before_launch), no seal, delivery or answer files
     and nothing at the destination (no empty return is owed before launch), status
     closed_before_launch with no next calls, a repeat returns already_closed and publishes
-    nothing, prepare/commission refuse reference_closed. After acceptance the receipt still
-    reads the witness. The empty_return_before_launch control runs the accepted stage."""
+    nothing, prepare/commission refuse reference_closed. run refuses reference_closed at every
+    stage, before acceptance too (the closed reference takes precedence over not_accepted, 5.7),
+    with no credential needed, nothing launched and status alone as its next call. After
+    acceptance the receipt still reads the witness. The empty_return_before_launch control runs
+    the accepted stage."""
     stages = (("accepted", 2),) if t.sabotage else (("new", 0), ("prepared", 1), ("accepted", 2))
     for label, stage in stages:
         sub = t.submission(basic_entries())
@@ -1471,6 +1474,17 @@ def c_close_before_launch(t):
             n_int = t.intake_dirs(sub)
             t.commission(sub, sub.handles[-1], name=p + ".commission-after", already=True)
             t.eq(p + ".commission-after.no-capture", t.intake_dirs(sub), n_int)
+        # No credential is given: the closed reference is refused before the credential (5.7 step 2).
+        n = len(t.log_kinds(sub))
+        r = t.cmd(["run", sub.ref], name=p + ".run-after", expect="refused", reason="reference_closed",
+                  env={"ANTHROPIC_API_KEY": None})
+        t.eq(p + ".run-after.effects", no_diag(r.effects),
+             {"run": "not_started", "answer": "unchanged", "seal": "none", "delivery": "none"})
+        t.eq(p + ".run-after.next", r.next_argvs(), [[sub.writer, "status", sub.ref]])
+        t.eq(p + ".run-after.exit", r.rc, 3)
+        t.eq(p + ".run-after.published-nothing", len(t.log_kinds(sub)), n)
+        t.check(p + ".run-after.no-runs", not os.path.exists(os.path.join(sub.audit_dir, "runs"))
+                or not os.listdir(os.path.join(sub.audit_dir, "runs")), sub.audit_dir)
         if stage == 2:
             t.cmd(["receipt", sub.ref], name=p + ".receipt", expect="completed")
             for item, exp in sub.items().items():

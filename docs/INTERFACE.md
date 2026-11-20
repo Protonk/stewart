@@ -1529,8 +1529,9 @@ nothing; its effects state the recorded facts (1.4), with `answer: "unchanged"`.
 1. The reference, archive and writer (`reference_invalid`,
    `reference_unknown`, `archive_*`, `writer_mismatch`) and the log
    (`log_damaged`).
-2. The audit's state: `not_accepted`; `reference_closed` when `close_requested`
-   exists; `authoring_ended` when authoring has ended, which a seal or a
+2. The audit's state: `reference_closed` when `close_requested` exists,
+   whether or not the commission was accepted; then `not_accepted`;
+   `authoring_ended` when authoring has ended, which a seal or a
    placement ending `ended_unsubmitted`, `limit_reached` or `damaged`
    establishes (or, for the development runtime, the final permitted
    placement's `interrupted` ending, 1.6), with `data.ended_by` (`seal`,
@@ -1605,7 +1606,8 @@ An interrupted run reply applies the same allowance-aware advice and summary
 as status (5.6), without replacing its recorded ending or cause.
 
 Refusals carry the next calls that fit: `close` (and `status`) for
-`authoring_ended` and `reference_closed`; `status` and `close` for `run_held`;
+`authoring_ended` and for `reference_closed` while the close is unfinished,
+`status` alone once the audit is closed; `status` and `close` for `run_held`;
 `receipt REF --verify` and `close` for `commission_damaged`; for the
 environment refusals, the same `run` once the environment is set.
 

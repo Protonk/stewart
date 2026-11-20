@@ -7,7 +7,8 @@ errors and family-specific advice. The preparation MCP supports discovery,
 explanation, prospective assessment and candidate assembly in a workspace the
 launcher designates. The standalone CLI exposes command effects and delivers the
 accepted question with the answer. The manager walkthroughs and the
-fake-provider integration demonstration remain open.
+fake-provider integration comparison are written; their Linux qualification
+remains.
 Live trials require a separate bounded commission.
 
 This plan owns the manager CLI, optional preparation MCP server, question-type
@@ -29,7 +30,7 @@ This inventory distinguishes existing behavior from work still owed.
 | MCP boundary | The stdio server discovers families, explains them, assesses a supplied question and inventory, and proposes or explicitly creates a candidate folder in the launcher's workspace ([preparation protocol](../docs/MANAGER-PREPARATION.md)). | Keep assembly within that workspace; no lifecycle access. |
 | Shared rules | The CLI and MCP, including candidate assembly, use the same parser, material bounds, role assessment and family descriptors. | Retain independent acceptance checks. |
 | Material roles | Families have different purposes, instructions and recording tools. Empty materials and intellectual insufficiency remain admissible. | Validate declared role structure and references; give type-specific warnings for missing evidence roles and suggestions for improvements. Do not introduce an evidence-completeness gate. |
-| Documentary output | Help and `describe` expose the same compiled command effects, including assembly's conditional writes. The preparation MCP has versioned schemas and per-call detail. | Publish the manager walkthroughs. |
+| Documentary output | Help and `describe` expose the same compiled command effects, including assembly's conditional writes. The preparation MCP has versioned schemas and per-call detail. | Keep the walkthroughs executed against the release binary. |
 | Return context | The [returned-question contract](../CONTRACTS.md#returned-question-and-answer) binds the accepted question body separately from the auditor’s answer. | Apply the same package checks to MCP-assisted commissions. |
 | Lifecycle | Custody, interruption, continuation, delivery and close use one operation core. | Demonstrate that optional preparation preserves CLI authority, custody and recovery. |
 | Runtime evidence | [Current demonstrations](../README.md#status) and [retained evidence](../apparatus/qualified.md) identify the reviewed native service use and synthetic acceptance coverage. | Reuse the apparatus for bounded question-family trials. Fake-provider evidence establishes the manager-interface boundary; live trials establish only the additional mechanisms actually witnessed. |
@@ -120,41 +121,16 @@ missing receipt, partial intake, lost replies, and substituted package members.
   with the pinned `one-owner-release-02` writer, now covers its comparison.
   The `acceptance-question2-01` writer pin follows those audits.
 
-### 4. Finish the documentary interface
+### 4. Qualify the walkthroughs and the integration
 
-- [ ] Publish one file-only walkthrough and an equivalent optional-MCP walkthrough,
-  with required fields, advisory roles, diagnostics, creation effects, failure
-  remedies and the CLI acceptance boundary. Update scaffold/help/examples and
-  status descriptions to agree with the implemented behavior. A run refused
-  after a completed close must describe the closed state and offer a next
-  action that fits it; today a reference closed before acceptance refuses
-  `not_accepted` with "Prepare and commission it first".
-- [ ] Test terse and detailed response examples, effect descriptions and generated
-  candidates against the declared schemas and actual rules. Extend the CLI
-  checks of the ordinary and inadequate-evidence worked packets to their
-  MCP-created equivalents.
-- [ ] Explain bounded autonomy, dead-placement continuation and the distinction
-  between intellectual outcome, authoring end, seal, verified delivery and close.
-  Say where continuation is explained that the reminder is spent once per audit:
-  a continued placement can end authoring at its first unsubmitted turn.
-  Keep required acknowledgment, placement confirmation and loss surrender; do not
-  turn them into intellectual endorsement or remove them as unnecessary approvals.
+The [manager walkthroughs](../examples/manager/README.md) follow one audit with
+files only and through the preparation server. Independent driver cases run
+them against the release binary with a scripted provider, compare the
+MCP-created and file-only routes through delivery and close, and repeat that
+comparison for every worked packet.
 
-**Complete when:** examples execute as documented, a manager can identify each
-command's effects without executing it, and guidance never represents a candidate
-assessment as acceptance, sufficient evidence or an assured answer.
-
-### 5. Demonstrate integration without a real model
-
-Use the [manager acceptance criteria](../ACCEPTANCE.md#c21--manager-preparation-and-command-inspection)
-to compare an MCP-created candidate with an equivalent file-only commission.
-Exercise the preparation boundary, family-specific remedies and the filesystem
-effects of assembly. Compare advertised command effects with observed custody,
-interruption and recovery through the CLI. Keep independent originals through
-delivery and close.
-
-**Complete when:** the qualified release binary demonstrates the manager
-boundary and lifecycle claims.
+- [ ] Qualify them with the release container suite. The manager boundary and
+  lifecycle claims are then demonstrated by the qualified release binary.
 
 ## Additional Claude Code subscription testing
 

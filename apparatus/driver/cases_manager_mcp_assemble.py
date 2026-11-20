@@ -222,7 +222,8 @@ class Server:
     """`stewart manager-mcp [--workspace W]` driven one request at a time. The session's stdin
     is kept in the evidence; the process counts as a live writer for inventories while it runs."""
 
-    def __init__(self, t, name, workspace=None, fault=None, timeout=240):
+    def __init__(self, t, name, workspace=None, fault=None, timeout=240, initialize=True):
+        """initialize=False leaves the handshake to the caller (send_raw), for exact frames."""
         self.t, self.name, self.fault = t, name, fault
         self.argv = [t.bin["path"], "manager-mcp"] + (["--workspace", workspace] if workspace is not None else [])
         self.env = t.env(None, fault)
@@ -237,6 +238,8 @@ class Server:
         self.handle = {"proc": self.proc, "env": self.env, "name": name, "op": "manager-mcp", "argv": self.argv,
                        "cwd": t.cwd, "fault": fault}
         t.bg.append(self.handle)
+        if not initialize:
+            return
         self.send(INITIALIZE)
         init = self.reply("init", 30)
         t.require(name + ".initialize", isinstance(init, dict) and init.get("result") == {
@@ -245,7 +248,10 @@ class Server:
         self.send(INITIALIZED)
 
     def send(self, frame):
-        data = compact(frame) + b"\n"
+        self.send_raw(compact(frame) + b"\n")
+
+    def send_raw(self, data):
+        """Exact bytes on the server's stdin, kept in the session's evidence."""
         self.sent += data
         try:
             self.proc.p.stdin.write(data)

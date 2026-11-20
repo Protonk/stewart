@@ -1721,18 +1721,18 @@ def check_population(t, name, sub):
       controls=[Control("skip_confirmation", [r"^c8\.t8\.close\.(closure|not-closed)$"])])
 def c_close_every_state(t):
     """Failed intake: closed without acceptance, nothing at the destination. T8: an ordinary
-    ending, the reminder once, run refused authoring_ended (ordinary_ending, naming the run_ended
-    record) with effects stating what is recorded; before any copy, --destination is
+    ending, the reminder once, run refused authoring_ended (ordinary_ending, naming the
+    run_ended record) with effects stating what is recorded; before any copy, --destination is
     destination_not_replaceable and --confirm is refused; close seals as manager, delivers, and
     stays unfinished awaiting_confirmation with cf1 (a copy made by close needs confirmation); a
     repeat re-presents the same attempt and token publishing nothing; --destination is then
     delivery_already_verified and a wrong token refused; --confirm closes (placement confirmed);
-    a repeat is already_closed; run is reference_closed. An interruption (retry-after 61) is
-    sealed by the manager with the entry it recorded. A damaged log after launch: status
-    log_damaged, close unfinished log_damaged publishing nothing, run refused. Close before
-    launch is close.before-launch; a copy delivered before the close request is confirmed by an
-    ordinary close in c5.package (the differing case); an empty answer's honest return is in
-    c8.close-faults; status at each point after launch is c16.status-after-launch."""
+    a repeat is already_closed; run is reference_closed with status alone next. An interruption
+    (retry-after 61) is sealed by the manager with the entry it recorded. A damaged log after
+    launch: status log_damaged, close unfinished log_damaged publishing nothing, run refused.
+    Close before launch is close.before-launch; a copy delivered before the close request is
+    confirmed by an ordinary close in c5.package (the differing case); an empty answer's honest
+    return is in c8.close-faults; status at each point after launch is c16.status-after-launch."""
     if not t.sabotage:
         scenario(t, "failed-intake", _failed_intake)
     scenario(t, "t8", _t8, audit(t, "c8.t8"))
@@ -1824,7 +1824,7 @@ def _t8(t, a):
                     placement="confirmed", actor="manager", attempt=1, delivery="verified")
     t.eq("c8.t8.again.published-nothing", log_len(t, a.sub), n_log)
     rep = run_cmd(t, a, "c8.t8.run-closed", expect="refused", reason="reference_closed", mark=False)
-    t.check("c8.t8.run-closed.next", "close" in commands_of(rep.obj), rep.next)
+    t.eq("c8.t8.run-closed.next", commands_of(rep.obj), ["status"])
 
 
 def _interrupted_close(t, a):
@@ -1847,7 +1847,8 @@ def _interrupted_close(t, a):
                     runs={"count": 1, "held": False, "last_ending": "interrupted"})
     check_package_at(t, a, "c8.interrupted.copy-1", 1)
     confirm_and_close(t, a, "c8.interrupted.confirm", tok, actor="manager")
-    run_cmd(t, a, "c8.interrupted.run-closed", expect="refused", reason="reference_closed", mark=False)
+    rep = run_cmd(t, a, "c8.interrupted.run-closed", expect="refused", reason="reference_closed", mark=False)
+    t.eq("c8.interrupted.run-closed.next", commands_of(rep.obj), ["status"])
 
 
 def _damaged_log(t, a):
@@ -2220,15 +2221,15 @@ def c_status_after_launch(t):
     run continues to an auditor seal and a verified delivery (delivered_open, location); a
     changed delivered copy changes nothing status reports and causes no copy; close, then
     closed. Ordinary unsubmitted stop: sealed none, next close; close killed after its request:
-    close_unfinished with no reason, run refused reference_closed; continued with no second
-    close_requested: awaiting_confirmation with the token, the same on a repeat a second later;
-    confirmed: closed. Limit stop: limit_reached, sealed none, run refused (limit). Differing,
-    killed after the auditor's seal link: sealed_undelivered by the auditor, not delivered; run
-    refuses authoring_ended naming the seal record and publishes nothing; close reconciles the
-    run (process_gone), keeps the auditor's seal, delivers without a provider request and awaits
-    confirmation; confirming closes. Each status in JSON and for people, carrying the same facts.
-    A partial delivery's status is c5.partial-delivery's; a close with surrendered losses is
-    c5.t10-damaged-payload's."""
+    close_unfinished with no reason, run refused reference_closed offering close and status;
+    continued with no second close_requested: awaiting_confirmation with the token, the same on
+    a repeat a second later; confirmed: closed. Limit stop: limit_reached, sealed none, run
+    refused (limit). Differing, killed after the auditor's seal link: sealed_undelivered by the
+    auditor, not delivered; run refuses authoring_ended naming the seal record and publishes
+    nothing; close reconciles the run (process_gone), keeps the auditor's seal, delivers without
+    a provider request and awaits confirmation; confirming closes. Each status in JSON and for
+    people, carrying the same facts. A partial delivery's status is c5.partial-delivery's; a
+    close with surrendered losses is c5.t10-damaged-payload's."""
     if not t.sabotage:
         scenario(t, "interrupted", _st_interrupted, audit(t, "c16.interrupted"))
     if t.sabotage in (None, "ended_as_submitted"):
@@ -2288,7 +2289,9 @@ def _st_ordinary(t, a):
     t.eq("c16.ordinary.close-killed.log-tail", t.log_kinds(a.sub)[-1:], ["close_requested"])
     status_point(t, a, "c16.ordinary.status-requested", condition="close_unfinished", closed="unfinished", last=last,
                  seal=None, closure={"unfinished_reason": None}, next_cmds=("close", "status"))
-    run_cmd(t, a, "c16.ordinary.run-after-request", expect="refused", reason="reference_closed", mark=False)
+    rep = run_cmd(t, a, "c16.ordinary.run-after-request", expect="refused", reason="reference_closed", mark=False)
+    # The close is unfinished, so close and status both fit (5.7).
+    t.eq("c16.ordinary.run-after-request.next", commands_of(rep.obj), ["close", "status"])
     rep = close_cmd(t, a, "c16.ordinary.close")
     t.eq("c16.ordinary.close.one-request", t.log_kinds(a.sub).count("close_requested"), 1)
     manager_sealed(t, a, rep.data.get("seal"), "c16.ordinary.close.seal", entries, rev)

@@ -107,25 +107,37 @@ fn run_next(audit: &Audit, why: &str) -> Next {
     Next::new(audit.argv(&["run", &audit.reference]), why)
 }
 
-/// The audit's state (the second check of 5.7).
+/// The audit's state (the second check of 5.7). A close request decides
+/// before acceptance does: a reference closed before acceptance can never be
+/// prepared or commissioned again, so it is refused as closed.
 pub(crate) fn state_refusal(audit: &Audit, state: &LogState) -> Option<Fail> {
+    if let Some(r) = state.close_requested() {
+        let data = J::obj().with("record", r.name());
+        return Some(match state.closed() {
+            Some(closed) => Fail::refused(
+                "reference_closed",
+                format!("The audit is closed ({}), so no run can start.", closed.name()),
+            )
+            .data(data)
+            .next(Next::new(
+                audit.argv(&["status", &audit.reference]),
+                "See how the audit closed.",
+            )),
+            None => Fail::refused(
+                "reference_closed",
+                format!("Close was requested ({}), so no run can start.", r.name()),
+            )
+            .data(data)
+            .next(close_next(audit, "Continue the close."))
+            .next(status_next(audit)),
+        });
+    }
     if state.accepted().is_none() {
         return Some(
             Fail::refused(
                 "not_accepted",
                 "This reference has no accepted commission, so there is nothing to run. Prepare and commission it first.",
             )
-            .next(status_next(audit)),
-        );
-    }
-    if let Some(r) = state.close_requested() {
-        return Some(
-            Fail::refused(
-                "reference_closed",
-                format!("Close was requested ({}), so no run can start.", r.name()),
-            )
-            .data(J::obj().with("record", r.name()))
-            .next(close_next(audit, "Continue the close."))
             .next(status_next(audit)),
         );
     }

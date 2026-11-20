@@ -70,6 +70,8 @@ assess a proposed question and file inventory, or assemble a candidate
 submission folder in a workspace you designate. An assessment reports errors
 and advice. You may edit and assess again, or use the CLI to prepare the
 actual files. See the [preparation protocol](docs/MANAGER-PREPARATION.md).
+The [manager walkthroughs](examples/manager/README.md) follow one audit from an
+empty folder to close, with files only and with the preparation server.
 
 ## Before running
 

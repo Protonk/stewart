@@ -24,6 +24,9 @@ semantic support and include empty and conflicting answer cases.
 
 ## Preparing an example
 
+The [manager walkthroughs](../manager/README.md) take the open-inquiry example
+through every command, from `new` to close.
+
 The materials are exact bytes: the walkthroughs, the citation controls and
 [QUESTION-FORMS](../../docs/QUESTION-FORMS.md) cite their byte ranges and line
 numbers, so copy them unchanged. With the `stewart` binary built

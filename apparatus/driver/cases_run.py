@@ -1449,11 +1449,12 @@ def c_run_refusals(t):
     ending and a seal, run refuses authoring_ended with ended_by ordinary_ending or seal and the
     record that ended authoring, effects stating the recorded facts and next calls close and
     status (a limit stop's refusal is c7.prompts'). On a closed reference it refuses
-    reference_closed. While another run holds the lock during a request stalled at the
-    independent provider (Linux) it refuses run_held naming the holder's observations; this is
-    the release binary's observation of run_held. Invariance: the same audit run from another
-    directory and HOME differs only in run_started observations, which name a process and user
-    ID, never a person. Both controls target the commission, so they stop after it."""
+    reference_closed with status alone as its next call. While another run holds the lock during
+    a request stalled at the independent provider (Linux) it refuses run_held naming the
+    holder's observations; this is the release binary's observation of run_held. Invariance: the
+    same audit run from another directory and HOME differs only in run_started observations,
+    which name a process and user ID, never a person. Both controls target the commission, so
+    they stop after it."""
     watch = rs.provider(t, fp.Script([]), label="commission-watch")
     sub = t.submission(scenario_entries(), body=b"Is the reminder sent twice?\n", dest_watch="additions")
     t.new_ref(sub)
@@ -1505,7 +1506,9 @@ def c_run_refusals(t):
     t.cmd(["close", sub_d.ref], name="c12.refusals.d.close", expect="completed")
     fxd = rs.provider(t, fp.Script([]), label="closed")
     r2 = rs.run(t, sub_d, fxd, name="c12.refusals.d.run", expect="refused", reason="reference_closed")
-    t.eq("c12.refusals.d.next", sorted({a[1] for a in r2.next_argvs()}), ["close", "status"])
+    # Once the audit is closed only status fits (5.7); close and status while a close is unfinished
+    # are c16.status-after-launch's and c12.start-races-close's.
+    t.eq("c12.refusals.d.next", sorted({a[1] for a in r2.next_argvs()}), ["status"])
     t.eq("c12.refusals.d.no-request", len(fxd.exchanges), 0)
     if is_linux():
         sub_e = run_submission(t)

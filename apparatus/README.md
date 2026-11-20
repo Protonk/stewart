@@ -84,6 +84,11 @@ black-box driver. It was written from [INTERFACE.md](../docs/INTERFACE.md),
 reading `service/`, and drives two binaries only through their command line:
 the release build and the test build (`--features fault-injection,sabotage`,
 INTERFACE Appendix C). It uses the Python standard library only.
+The walkthrough cases (`cases_manager_walkthroughs.py`) read the
+[manager walkthroughs](../examples/manager/README.md) and the
+[worked examples](../examples/questions/README.md) at run time, execute them
+as written and compare the binary's output with their text; without
+`examples/` beside the driver they are skipped.
 
 `stewart_driver.py` is the entrypoint. It puts its own directory on `sys.path`
 (isolated mode does not) and imports every `cases_*.py` beside it, so a new
@@ -220,9 +225,10 @@ sh apparatus/acceptance.sh "$PWD/.scratch/acceptance-NN"  # from the repository 
 One container suite runs the whole driver on Linux aarch64 and x86_64 (on the
 development Mac, aarch64 natively and x86_64 under Rosetta), offline. It needs
 the toolchain images and `service/vendor` from `step2.sh`, and pulls the pinned
-python image (its only network use). It archives `service`, `apparatus` and
-`docs` from `HEAD` (the driver's self-test compares its pinned texts and
-examples with `docs/`), and for each architecture, offline:
+python image (its only network use). It archives `service`, `apparatus`,
+`docs` and `examples` from `HEAD` (the driver compares its pinned texts and
+examples with `docs/` and runs the walkthroughs in `examples/`), and for each
+architecture, offline:
 
 1. builds the release and fault/sabotage binaries and runs the same static
    linkage check on both and on a tiny dynamically linked C executable, which

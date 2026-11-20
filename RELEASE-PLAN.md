@@ -1,7 +1,7 @@
 # Release and work plan
 
-The next step is the manager walkthroughs, then the fake-provider integration
-demonstration of the manager interface.
+The next step is Linux qualification of the manager walkthroughs and the
+fake-provider integration comparison.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
@@ -13,7 +13,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Publish the manager walkthroughs and demonstrate integration with the fake provider. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
+| Current | Qualify the manager walkthroughs and the fake-provider integration comparison. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separate release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |

@@ -27,8 +27,8 @@ echo "${EMULATION:-none}" >/out/emulation.txt
 
 mkdir -p /work/driver /work/tmp /work/run || exit 1
 # The driver is several modules plus test data (apparatus/driver/); its self-test
-# also reads docs/QUESTION-FORMS.md and docs/INTERFACE.md. Extract all of them.
-tar -xf /in/source.tar -C /work/driver apparatus/driver docs || exit 1
+# also reads docs/, and its walkthrough cases read examples/. Extract all of them.
+tar -xf /in/source.tar -C /work/driver apparatus/driver docs examples || exit 1
 if ! id -u stewartdrv >/dev/null 2>&1; then
     if command -v useradd >/dev/null 2>&1; then
         rec user-add useradd -u 1000 -M -d /work/tmp -s /bin/sh stewartdrv
