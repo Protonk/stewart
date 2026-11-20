@@ -53,6 +53,8 @@ The campaign is finished when:
   disposition;
 - the runtime contract's undemonstrated list, the README's status where
   demonstrated status changed, and the unresolved record are current;
+- the route-disagreement and instrumentation rules, as honed by the campaign,
+  are in the live-testing procedure;
 - retention is settled, the exit report is written and this plan is deleted.
 
 The exit report gives the completed changes, the reviewed evidence and what
@@ -180,7 +182,8 @@ Wave 2's composition is adaptive within the remaining bounds. It may:
 - investigate a newly found bug;
 - give a slot to another question within scope, such as several tool calls
   from one response, or relay loss or cancellation once their instruments are
-  built and rehearsed offline.
+  built and rehearsed offline under the
+  [instrumentation rule](#instrumenting-an-elusive-event).
 
 It does not replicate wave 1 for its own sake. Before each wave-2 packet is
 frozen, write its card with the question, the reason it was selected, its
@@ -191,8 +194,12 @@ Adaptation happens between packets, never within one.
 
 Complete the in-scope implementation, offline verification and qualification.
 Update the contract, the README's status where demonstrated status changed,
-and the unresolved record. Settle custody and retention, write the exit report
-and delete this plan.
+and the unresolved record. Move the honed
+[route-disagreement rule](#route-disagreements) and
+[instrumentation rule](#instrumenting-an-elusive-event) into
+[live testing](development/LIVE-TESTING.md), with the cases that shaped them
+recorded as examples rather than history. Settle custody and retention, write
+the exit report and delete this plan.
 
 ## Wave 1
 
@@ -205,7 +212,10 @@ one of two points:
   record appears, before any recorded work.
 - **P2, between prepare and submit:** as soon as the auditor's `prepare` call
   has a completed result record in the run directory. `prepare` publishes no
-  log record, so this is a new trigger.
+  log record, so this is a new trigger. The window is at least one model turn
+  wide: `submit` needs the handle `prepare` returns, so the model must read
+  that reply and respond before any seal. The realistic miss is an auditor that
+  never prepares.
 
 | Trial | Route | What happens | Starts or placements |
 | --- | --- | --- | --- |
@@ -228,10 +238,11 @@ service procedure allows per packet.
 The witness watches the audit from outside Stewart's process. When its trigger
 appears, it signals the placement's process group or, for R4 and M3, runs
 `stewart close REF`. It keeps the triggering record, the process identity and
-the observed termination outside the archive. If the placement ends or moves
-past the point first, which P2's narrow window allows, the interruption is
-unexercised. That is an outcome to record, not a failure and not permission for
-another audit.
+the observed termination outside the archive. If the placement ends before
+reaching the point, or moves past it first, the interruption is unexercised.
+That is an outcome to record, not a failure and not permission for another
+audit. Both P1 and P2 are realistic triggers: they watch from outside and alter
+nothing.
 
 S0 precedes the harness trials, and R1 precedes R2. The other trials run in any
 order once their apparatus is ready.
@@ -329,8 +340,10 @@ None of these is a criterion.
   - the wave, trial and question, and for wave 2 the reason for selection;
   - the packet digest, writer, apparatus commit, profile, harness version and
     model;
-  - the conditions;
-  - the outcome and the review digest.
+  - the conditions, and for an instrumented trial what was altered and which
+    claims that excludes;
+  - the outcome and the review digest;
+  - any route disagreement met, with its layer and disposition.
 - **Before each launch:** check fresh bindings and the envelope's remaining
   bounds. Starts are reserved durably. An uncertain outcome is kept, and no
   later start follows uncertain termination or effects. Reaching an allowance
@@ -361,6 +374,76 @@ evidence; it does not judge accuracy or usefulness. Keep reading notes
 attributed and apart from the trial records. A return of limits alone is a
 valid answer.
 
+## Route disagreements
+
+This is a working rule. The campaign hones it, and at the finish it moves to
+the live-testing procedure, where a live-test manager with design authority
+needs it. When the two routes disagree, first find the layer the disagreement
+is in:
+
+| Layer | Examples | Response |
+| --- | --- | --- |
+| Custody facts | Ledger, seal attribution, continuation, reminder count, close | **Fix** the route that is wrong, with a scripted regression test. Custody is common to both routes, and a difference here is never accepted. |
+| Endpoint behavior | Call batching, cancellation, partial usage reports | **Accommodate** in that route's adapter, mapping the behavior onto the common semantics. If the mapping cannot preserve them, **isolate** the difference as a stated limit in the runtime contract. An accepted difference concerns what Stewart can know or account for, never what it does with custody. |
+| What the auditor experiences | Texts, tools, notices, re-entry | **Keep identical.** A change prompted by one route goes to both, as the runtime contract asks, so that what is learned on one holds on the other. |
+| Model behavior | Re-entry habits, tool-call patterns | **Record** it as an observation. The harness adds its own context, and the core does not adapt to it. |
+
+Two checks apply to any proposed fix:
+
+- **Would a manager see the same custody facts for the same events on both
+  routes?** If not, fix.
+- **Does the fix make the shared core branch on the route?** That is a warning
+  sign. The Messages route is the shipped product, so a harness-motivated
+  change to the shared core must keep or improve Messages behavior and carry
+  Messages evidence of its own.
+
+Within this commission the agent fixes custody disagreements on either route,
+accommodates in the adapters, changes auditor-facing texts on both routes
+together, and states accepted limits in the runtime contract. Record each
+disagreement in the ledger with its layer and disposition: fix, accommodate,
+isolate, keep identical or record. When a case fits no layer, or a response
+proves wrong, revise this rule and note the case that prompted the revision.
+
+## Instrumenting an elusive event
+
+This is a working rule, still under discussion as a general question. The
+campaign applies and hones it. Some events cannot be caught by watching from
+outside, such as a stop while a tool call is in flight, what a harness
+interrupt leaves queued, or relay loss. Making one observable may alter the
+system. What the model can see and where the property under test lives decide
+what the evidence can answer:
+
+| Kind | What changes | What it can answer |
+| --- | --- | --- |
+| Realistic encounter | Nothing; the trigger only watches from outside | Everything, including whether the event occurs in ordinary use |
+| Instrumented live experiment | Timing only, invisible to the model, sampling a condition that can occur naturally, such as a slow tool reply or a held request | How the real endpoint reacts to that condition; not how often it occurs, nor anything about the altered timing |
+| Synthetic | The endpoint itself | Stewart's own behavior given a state; nothing about the real endpoint |
+
+Evidence from an instrumented or synthetic run settles a question about
+realistic encounters only when the answer does not depend on what was
+altered. In particular:
+
+- **Continuation questions tolerate instrumentation.** A continuing placement
+  is a fresh conversation that sees only Stewart's records. If an instrumented
+  stop leaves the archive as a natural stop would, which a comparison of the
+  two archives can show, the continuation is fully realistic.
+- **Prefer instruments outside the binary under test.** A pause point inside
+  a fault-injection build makes the evidence about that test build, and it
+  covers only behavior that does not involve the pause machinery.
+- **Never alter what the model sees.** A pause the model could notice, or a
+  changed text, makes the run evidence about a different route.
+
+Escalate in this order:
+
+1. a realistic trigger;
+2. a wider realistic trigger;
+3. an instrument outside Stewart;
+4. a test build;
+5. a synthetic test.
+
+Each step gives up claims, and the card names what was altered and which
+claims it excludes. An instrumented result is never relabeled as an encounter.
+
 ## Decisions
 
 Within the envelope, the agent decides, implements and tests rather than
@@ -369,7 +452,9 @@ recommending. Examples:
 - the P2 continuation text or re-entry report;
 - a drain grace period for a submitting placement's final usage interval;
 - trigger and review designs;
-- fixes to stopping and continuation.
+- fixes to stopping and continuation;
+- the disposition of a route disagreement, under the
+  [rule above](#route-disagreements).
 
 When a decision exceeds the envelope, the agent states the precise boundary,
 stops only the affected work and continues the rest.
