@@ -20,8 +20,8 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [one-owner-release-01](#one-owner-release-01) | 2026-11-20T01:36:05Z | `91ce22a` | qualified | latest |
-| acceptance | linux-x86_64 | [one-owner-release-01](#one-owner-release-01) | 2026-11-20T01:36:05Z | `91ce22a` | qualified | latest |
+| acceptance | linux-aarch64 | [one-owner-release-02](#one-owner-release-02) | 2026-11-20T02:31:33Z | `c752c6f` | qualified | latest |
+| acceptance | linux-x86_64 | [one-owner-release-02](#one-owner-release-02) | 2026-11-20T02:31:33Z | `c752c6f` | qualified | latest |
 | runtime | linux-aarch64 | [one-owner-runtime-01](#one-owner-runtime-01) | 2026-11-20T02:20:04Z | `91ce22a` | qualified | latest |
 | runtime | linux-x86_64 | [one-owner-runtime-01](#one-owner-runtime-01) | 2026-11-20T02:20:04Z | `91ce22a` | qualified | latest |
 | toolchain | linux-aarch64 | [toolchain-runtime-01](#toolchain-runtime-01) | 2026-11-12T03:48:38Z | `31bced7` | qualified | latest |
@@ -152,15 +152,15 @@ not carry them.
 | Synthetic runtime evidence listing SHA-256 | `189f5ce74fdd042b80014102530a5f8a5b69c8c55efaca35c0c1d129fe71043e` | `f74c9140924a3990a0d589669bbb806b94f56ae2593eb9cba3282d30aa950ca5` |
 | Synthetic runtime work archive SHA-256 | `302f6c89d1d119dc581771d362d6272828e27b414625808a405abfae215e229c` | `df641fc90d84050c10f555ed67953c7bfcf4ed4906da328f74db2aac8753044c` |
 
-### one-owner-release-01
+### one-owner-release-02
 
 - Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `8c6babd9b3e52f39f3e9013d623c4c86df899ab9e0faf084ee9ba66f1c837975` at the source commit)
-- Source commit: `91ce22a240ea9c7f03f72c5f38a4384eb5bb312f`; archive SHA-256 `19650984317b14c3ae963d08636b22bcd311602d39b0a88d354a7c5ebda49fc4`
-- Finished: 2026-11-20T01:36:05Z
+- Source commit: `c752c6f4c30d72c64dfdb80925f781c4d0116dc8`; archive SHA-256 `d99ae1caa380bf4ffb39e61e96b9db18f2c60f8e49e5d2cf14b779097c6d8da9`
+- Finished: 2026-11-20T02:31:33Z
 - Outcome: **qualified**
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/one-owner-release-01` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/one-owner-release-02` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -175,14 +175,14 @@ not carry them.
 | Cases passed | 157/157 | 157/157 |
 | Cases | selected 157, ran 157, passed 157, failed 0, skipped 0 | selected 157, ran 157, passed 157, failed 0, skipped 0 |
 | Variants (a fired control's variant fails) | ran 280, passed 194, failed 86, skipped 0 | ran 280, passed 194, failed 86, skipped 0 |
-| Checks | passed 176387, failed outside controls 0, failed inside controls 767 | passed 176387, failed outside controls 0, failed inside controls 767 |
+| Checks | passed 177104, failed outside controls 0, failed inside controls 768 | passed 177104, failed outside controls 0, failed inside controls 768 |
 | Sabotage control variants fired (INTERFACE C.2) | 86/86 | 86/86 |
 | Driver controls fired | 26/26 | 26/26 |
-| Timing samples | 3620 command, 1886 protocol | 3620 command, 1886 protocol |
+| Timing samples | 3636 command, 1886 protocol | 3636 command, 1886 protocol |
 | End to end (`e2e.reacting-audit`) | pass, 854/854 checks | pass, 854/854 checks |
 | Release binary SHA-256 | `259c5d7056348e84e5ea2954de8dfb09b64af69d10a37d00b29d1a064bcd3122` | `b72e8a393536005d3b8c785598de80eb49010034f9f1ff76d1ea14705aa70b93` |
 | Test binary SHA-256 | `7f0427b83c613c710e9fd30c1dd1ab6066dad4ceab6ee5db1e9404ce7eb98aa0` | `aa52fa525ebdd59a47fce937ce5e13fd00c94084752aae530b710a53586198ff` |
-| RESULT.json SHA-256 | `fc266c7e8f4a7b83bc4bea0eed3288bb5f11e7306d33ba05d9ba9683bffefc32` | `d95045b91ca3ffef7a3bfd9dc46c6ff30d0a99d04fb86b12b1a2e6f0d93b6dab` |
+| RESULT.json SHA-256 | `25c58f15260cadf5f613b50ea934e27f8497d0fbc10fcc89508abecc0b825aa9` | `753b81a3cdd98612938381fe869eb9ccbf5273b80b1415b7f58fb3f33ecfaf0c` |
 
 ### one-owner-runtime-01
 

@@ -629,16 +629,16 @@
       }
     },
     {
-      "id": "one-owner-release-01",
+      "id": "one-owner-release-02",
       "kind": "suite",
       "suite": "acceptance",
       "script": {
         "path": "apparatus/acceptance.sh",
         "sha256": "8c6babd9b3e52f39f3e9013d623c4c86df899ab9e0faf084ee9ba66f1c837975"
       },
-      "source_commit": "91ce22a240ea9c7f03f72c5f38a4384eb5bb312f",
-      "source_archive_sha256": "19650984317b14c3ae963d08636b22bcd311602d39b0a88d354a7c5ebda49fc4",
-      "date": "2026-11-20T01:36:05Z",
+      "source_commit": "c752c6f4c30d72c64dfdb80925f781c4d0116dc8",
+      "source_archive_sha256": "d99ae1caa380bf4ffb39e61e96b9db18f2c60f8e49e5d2cf14b779097c6d8da9",
+      "date": "2026-11-20T02:31:33Z",
       "outcome": "qualified",
       "failures": [],
       "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
@@ -675,9 +675,9 @@
             "skipped": 0
           },
           "checks": {
-            "passed": 176387,
+            "passed": 177104,
             "failed_outside_controls": 0,
-            "failed_inside_controls": 767
+            "failed_inside_controls": 768
           },
           "controls": {
             "fired": 86,
@@ -688,7 +688,7 @@
             "total": 26
           },
           "timing_samples": {
-            "commands": 3620,
+            "commands": 3636,
             "protocol": 1886
           },
           "e2e": {
@@ -699,7 +699,7 @@
           },
           "release_sha256": "259c5d7056348e84e5ea2954de8dfb09b64af69d10a37d00b29d1a064bcd3122",
           "test_sha256": "7f0427b83c613c710e9fd30c1dd1ab6066dad4ceab6ee5db1e9404ce7eb98aa0",
-          "result_sha256": "fc266c7e8f4a7b83bc4bea0eed3288bb5f11e7306d33ba05d9ba9683bffefc32"
+          "result_sha256": "25c58f15260cadf5f613b50ea934e27f8497d0fbc10fcc89508abecc0b825aa9"
         },
         "linux-x86_64": {
           "execution": "emulated (Rosetta)",
@@ -733,9 +733,9 @@
             "skipped": 0
           },
           "checks": {
-            "passed": 176387,
+            "passed": 177104,
             "failed_outside_controls": 0,
-            "failed_inside_controls": 767
+            "failed_inside_controls": 768
           },
           "controls": {
             "fired": 86,
@@ -746,7 +746,7 @@
             "total": 26
           },
           "timing_samples": {
-            "commands": 3620,
+            "commands": 3636,
             "protocol": 1886
           },
           "e2e": {
@@ -757,11 +757,11 @@
           },
           "release_sha256": "b72e8a393536005d3b8c785598de80eb49010034f9f1ff76d1ea14705aa70b93",
           "test_sha256": "aa52fa525ebdd59a47fce937ce5e13fd00c94084752aae530b710a53586198ff",
-          "result_sha256": "d95045b91ca3ffef7a3bfd9dc46c6ff30d0a99d04fb86b12b1a2e6f0d93b6dab"
+          "result_sha256": "753b81a3cdd98612938381fe869eb9ccbf5273b80b1415b7f58fb3f33ecfaf0c"
         }
       },
       "evidence": {
-        "path": ".scratch/one-owner-release-01",
+        "path": ".scratch/one-owner-release-02",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": null
