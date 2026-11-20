@@ -49,20 +49,23 @@ budget on the `stewart-haiku` key.
 | R1 | runtime | Uninterrupted reference audit | 1 start |
 | R2 | runtime | The placement deadline stops the first placement after recorded work; `run` continues | Up to 3 starts |
 | R3 | runtime | A witnessed signal stops the first placement after its first recorded entry; `run` continues | 2 starts |
+| R4 | runtime | `close` is requested while the first placement is running, after its first recorded entry; close stops it and seals the recorded work as manager | 1 start |
 | M1 | Messages | Uninterrupted reference audit | 1 placement |
 | M2 | Messages | A witnessed signal stops the first placement after its first recorded entry; `run` continues | 2 placements |
+| M3 | Messages | `close` is requested while the first placement is running, after its first recorded entry | 1 placement |
 
 R2's deadline is chosen from R1 before R2's packet is frozen: the elapsed time,
 from the start reservation, at which R1 had recorded about half its entries.
-R3 and M2 interrupt at the same point, the first `entry` record, so the two
-routes can be compared. The witness watches the audit log from outside
+R3, R4, M2 and M3 act at the same point, the first `entry` record, so the two
+routes and the two kinds of interruption can be compared. For R4 and M3 the
+witness runs `stewart close REF` from outside instead of sending a signal. The witness watches the audit log from outside
 Stewart's process, signals the placement's process group when the record
 appears, and keeps the record, the process identity and the observed
 termination outside the archive. If the placement ends first, the interruption
 is unexercised; that is an outcome, not permission for another audit.
 
-Order: S0, R1, R2, R3. M1 and M2 can run at any point after their apparatus is
-ready. Each step is reviewed before the next is commissioned.
+Order: S0, R1, R2, R3, R4. M1, M2 and M3 can run at any point after their
+apparatus is ready. Each step is reviewed before the next is commissioned.
 
 ## Criteria fixed before any run
 
@@ -76,6 +79,12 @@ Every placement passes these, or the series stops:
 
 R1 and M1 pass when the auditor seals and the package is delivered and
 verified. Any other ending is incomplete, with its cause named.
+
+R4 and M3 pass when close stops the placement (`stopped_by_close`), seals the
+recorded entries with manager attribution and no claim of auditor submission,
+delivers a package that verifies, awaits or completes confirmation as close
+requires, and `run` afterwards refuses `reference_closed`; criteria 2, 5 and 8
+below also apply.
 
 R2, R3 and M2 pass when all of these hold:
 
@@ -138,24 +147,25 @@ own reason. A return of limits alone is a valid answer.
 ## Budget
 
 The runtime trials use included subscription usage: S0's check sessions plus at
-most six service starts, each with one authentication check and at most one
+most seven service starts, each with one authentication check and at most one
 model session. The Messages runs use `claude-sonnet-5-5` at $2 per million
 input and $10 per million output tokens. With limits of 12 turns, 90,000 input
 and 16,000 output tokens per audit, each audit's worst case is about $0.50:
 the input limit plus one more request whose size is known only afterwards
-(INTERFACE 6.4), and the whole output limit. M2's interrupted request can add
-one estimated charge, so M1 and M2 together stay under $1.50. Confirm before commissioning that the
-`stewart-haiku` key's workspace permits Sonnet.
+(INTERFACE 6.4), and the whole output limit. An interrupted or closed request
+can add one estimated charge, so M1, M2 and M3 together stay under $2. The key
+can call any model.
 
 ## Before any commission
 
-- [ ] Add a witnessed signal interruption to the service procedure: watch the
-  log from outside, signal the placement's process group after the k-th
-  `entry` record, keep the witness outside the archive, and permit continuation
-  after a reviewed signal interruption. Rehearse it offline with the synthetic
-  peer, including an unexercised control.
-- [ ] Let C10 live packets select the `entry_record` interruption point, which
-  only rehearsals use today, and rehearse it.
+- [ ] Add a witnessed interruption to the service procedure: watch the log
+  from outside and, after the k-th `entry` record, either signal the
+  placement's process group or run `stewart close REF`; keep the witness
+  outside the archive; permit continuation after a reviewed signal
+  interruption, and review a close made during a placement. Rehearse both
+  offline with the synthetic peer, including an unexercised control.
+- [ ] Let C10 live packets select the `entry_record` point, which only
+  rehearsals use today, and close as well as a signal; rehearse both.
 - [ ] Encode the criteria above in the procedure's and C10's reviews where they
   are mechanical, so an outcome is computed rather than judged.
 - [ ] Build a native gated writer from a qualified commit for the runtime
@@ -200,7 +210,7 @@ change the pinned executable digest.
   asking the model to avoid parallel calls.
 - **Compaction:** later, defined at Stewart's boundary: what the auditor gets
   after losing context, not how the harness or the provider summarizes.
-- **Other interruptions:** killing the harness or Stewart, close during a
-  running placement, relay loss and cancellation.
+- **Other interruptions:** killing the harness or Stewart, relay loss and
+  cancellation.
 - **Wider coverage:** other families, the inadequate-evidence variants,
   turn and output caps, and Haiku or Opus in the harness.
