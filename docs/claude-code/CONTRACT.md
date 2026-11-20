@@ -72,6 +72,9 @@ Not yet demonstrated with the real harness under the selected launch:
 - launching the binary from an already-open descriptor, given that it reads
   its executable from disk while running.
 
+[Unresolved operations](../../development/UNRESOLVED-OPERATIONS.md) records
+what is known about each of these and which investigations could settle them.
+
 Three limits of the offline evidence are covered only by unit tests: a close,
 signal and deadline observed at the same instant (each ordering is exercised
 black-box at fault pauses); a failed write of the final `runtime-stop.json` or

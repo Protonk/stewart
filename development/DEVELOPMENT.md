@@ -27,7 +27,10 @@ before running it. See [Container suites](#container-suites) for host access
 and commands.
 
 When a specification changes pinned bytes or behavior, update the affected
-implementation and independent witnesses and apply their check rows too. The
+implementation and independent witnesses and apply their check rows too. A
+change whose correctness depends on how a real model, provider or harness
+behaves may also warrant a [live test](LIVE-TESTING.md). A live test adds to a
+row's checks and replaces none. The
 [driver authorship rule](../AGENTS.md#preserve-independent-evidence) applies.
 
 The link check, the driver's self-test and its case list:
@@ -117,7 +120,8 @@ Before citing the record, run `python3 -I -B apparatus/qualified.py check`.
 - `docs/`: the interface and question forms; `docs/claude-code/` holds the
   development runtime's contract.
 - `examples/questions/`: worked submissions and walkthroughs for each family.
-- `development/`: this guide and long-term plans.
+- `development/`: this guide, [live testing](LIVE-TESTING.md), the record of
+  [unresolved operations](UNRESOLVED-OPERATIONS.md) and long-term plans.
 
 To fix the distributed binary, `service/`, `docs/`, the release driver and these
 guides suffice; the development runtime adds its contract under

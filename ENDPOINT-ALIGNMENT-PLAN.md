@@ -36,9 +36,9 @@ been run or spent.
 - [ ] Settle decisions D1–D5 with the maintainer, then fix the run table.
 - [ ] Run the shape inventory over the retained captures listed in 1.3 and
   resolve the differences it finds before any spend.
-- [ ] Define harness alignment (1.6): which of the runtime's unresolved
-  observations an alignment run settles, and which stay with commissioned
-  trials.
+- [ ] Define harness alignment (1.6): which of the
+  [unresolved operations](development/UNRESOLVED-OPERATIONS.md) an alignment
+  run settles, and which stay with commissioned trials.
 
 ### 1.1 Endpoint assumptions to compare
 
@@ -291,11 +291,13 @@ Keep it brief. Recheck the pinned version's documented facts in the runtime
 contract against current documentation. Run a reviewed supplied-surface check
 that produces the profile's `check` attestation, and one short audit to the
 auditor's own submission. Add targeted observations for the contract's
-not-yet-demonstrated list where a bounded run reaches them; the runtime
-inventory is being prepared separately.
+not-yet-demonstrated list where a bounded run reaches them;
+[unresolved operations](development/UNRESOLVED-OPERATIONS.md) designs those
+observations.
 
-Most of the externally fixed USD 49 live budget goes to those runtime trials.
-The Messages set above is held to a ceiling of about USD 8.
+Harness runs use included subscription usage. The externally fixed USD 49 API
+budget is shared with other Messages commissions; the Messages set above is
+held to a ceiling of about USD 8.
 
 ### Decisions needed
 

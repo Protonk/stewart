@@ -15,7 +15,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 | Order | Remaining work | Owner |
 | --- | --- | --- |
 | Current | Review driver coverage against every acceptance claim, then prepare the release documentation and source package. | [The requirements below](#coverage-and-acceptance-policy-review) |
-| Separately commissioned | Runtime trials of interruption and continuation with the real harness, and matching Messages runs. A real-service result is not an entry gate for the release. | [Runtime trials](RUNTIME-TRIALS-PLAN.md) |
+| Delegated campaign | Runtime trials: two live waves on interruption, continuation and close, with the real harness and the Messages route, under one commission envelope, with implementation between and after them. A real-service result is not an entry gate for the release. | [Runtime trials](RUNTIME-TRIALS-PLAN.md) |
 | Separate release work | Specify and build endpoint alignment offline; align the endpoints the release names under a commission. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |
 | After the first release | Investigate shortening test and suite wall-clock time. | [Test wall-clock](development/TEST-WALL-CLOCK-PLAN.md) |
