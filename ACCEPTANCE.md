@@ -164,8 +164,8 @@ manager close, including:
 - repeated confirmed submits, which return the same submission;
 - repeated exact deletion, which reports its recorded removal, and stale
   replacement/deletion targets that cannot mutate a newer version;
-- submit racing close, run many times, with exactly one winner each time and
-  correct attribution;
+- submit racing close, with each order fixed at a failure point, which has
+  exactly one winner and correct attribution;
 - close after auditor launch on an empty answer, giving an honest empty return;
 - the limits on elements and sizes, and the edits that are still allowed at them.
 
@@ -502,7 +502,8 @@ launch; each must fail.
 - **Differing:** kill before versus after sealing. The former may continue
   through run under existing limits; the latter continues delivery through close
   without a provider call. Neither is called a completed delivery.
-- **Invariance:** changing elapsed time establishes no liveness or completion;
+- **Invariance:** status derives no liveness or completion from elapsed time,
+  and a repeated status reports the same facts;
   changing a previously delivered copy does not cause status to certify its
   present safety or silently undertake another delivery. Status is read-only.
 - **Also:** damaged or unreadable controlling records keep their diagnostics,

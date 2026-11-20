@@ -11,7 +11,6 @@ case "$KEEP_WORK" in failed|all) ;; *) echo "retention must be failed or all" >&
 [ "$#" -le 2 ] || { echo "usage: sh apparatus/acceptance.sh EVIDENCE_DIR [failed|all]" >&2; exit 2; }
 SUITE=acceptance
 DRIVER_SCRIPT=acceptance-inner-driver.sh
-TEST_VARS="STEWART_TEST_FAULT STEWART_TEST_SABOTAGE STEWART_TEST_FAULT_DIR STEWART_TEST_TLS_ROOT STEWART_TEST_PROVIDER_TIMEOUT STEWART_TEST_RETRY_DELAYS"
 . "$REPO/apparatus/container/suite-host.sh"
 
 for p in $PLATFORMS; do
@@ -22,13 +21,6 @@ for p in $PLATFORMS; do
     expect "$OUT/$b/static-stewart-test.exit" 0 "$p: test binary is static"
     expect "$OUT/$b/build-dynamic-control.exit" 0 "$p: dynamic ELF control builds"
     expect "$OUT/$b/static-dynamic-control.exit" 1 "$p: control fired: the static check rejects the dynamic ELF"
-    expect "$OUT/$b/cmp-release-test.exit" 1 "$p: control fired: cmp distinguishes the release and test binaries"
-    for var in $TEST_VARS; do
-        expect "$OUT/$b/strings-stewart-$var.exit" 1 "$p: release binary lacks $var"
-        expect "$OUT/$b/strings-stewart-test-$var.exit" 0 "$p: control fired: the test binary contains $var"
-    done
-    expect "$OUT/$b/markers-release.exit" 0 "$p: release binary lacks all adapter markers"
-    expect "$OUT/$b/markers-test.exit" 0 "$p: test binary lacks all adapter markers"
     expect "$OUT/$b/run-release.exit" 0 "$p: release binary runs (help)"
     expect "$OUT/$b/run-test.exit" 0 "$p: test binary runs (help)"
     run_driver stewart stewart-test || continue

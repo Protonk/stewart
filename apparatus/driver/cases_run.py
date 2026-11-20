@@ -158,8 +158,6 @@ def c_e2e(t):
     t.check("e2e.compacted", len(aud.compactions) == 1, aud.compactions)
     rs.check_requests(t, fx, sub, "e2e")
     rs.check_history(t, fx, "e2e")
-    if fx.exchanges:
-        rs.check_first_message(t, fx.exchanges[0], sub.body, False, "e2e")
     rs.check_access_log(t, sub, aud, "e2e")
     rs.check_run_records(t, sub, "e2e")
     rs.check_run_ended_usage(t, sub, fx, ["e2e.run"], "e2e")
@@ -185,47 +183,6 @@ def c_e2e(t):
     t.eq("e2e.close.placement", rep.data.get("placement"), "delivered_before_close")
     t.eq("e2e.close.outcome", rep.data.get("outcome"), "closed_delivered")
     t.eq("e2e.close.provider-untouched", len(fx.exchanges), len(fx.exchanges_of("e2e.run")))
-
-
-# ---------------------------------------------------------------------------
-# C13 / T7: a kill after an entry, then continuation.
-# ---------------------------------------------------------------------------
-
-@case("c13.t7-kill-after-entry", ["C13", "C4", "C3", "C6", "C16"],
-      "T7: killed after an entry is linked; status says interrupted; run continues without re-adding it",
-      mode="test", needs=("loopback", "lock"),
-      linux_reason="interruption is observed through the free OFD lock, a Linux-only expectation")
-def c_t7(t):
-    """entry.after_link=kill stops run 1 after its first entry and before the call's result.
-    Status reports interrupted from a run_started without run_ended and a free lock. run REF
-    records run_ended process_gone for run 1, starts run 2 whose first message carries the
-    question and the continuation notice, and the reacting auditor, its memory gone, finds the
-    entry through what_am_i_working_with and does not add it again. The run seals with every
-    goal exactly once; run_ended usage of both runs equals the fake's charges."""
-    sub = run_submission(t)
-    aud = auditor_for(t, sub, scenario_goals(sub), calls_per_turn=1)
-    fx = rs.provider(t, aud)
-    rs.run(t, sub, fx, name="t7.run-1", fault="entry.after_link=kill", killed=True)
-    st = t.status(sub, name="t7.status")
-    t.eq("t7.status.condition", st.data.get("condition"), "interrupted")
-    runs = st.data.get("runs") or {}
-    t.eq("t7.status.runs", [runs.get("count"), runs.get("held"), runs.get("holder")], [1, False, None])
-    t.check("t7.status.evidence", any("run_ended" in (e.get("evidence") or "") or "lock" in (e.get("evidence") or "")
-                                      for e in st.data.get("evidence") or []), st.data.get("evidence"))
-    r2 = rs.run(t, sub, fx, name="t7.run-2")
-    rs.check_run_reply(t, r2, sub, "t7.run-2", ending="sealed", run_number=2, fx=fx, limits=rs.limits_of(sub),
-                       seal_actor="auditor", delivery_outcome="verified")
-    ended = t.log_bodies(sub, "run_ended")
-    t.check("t7.run-1.reconciled", ended and ended[0].get("cause") == "process_gone"
-            and ended[0].get("recorded_by") == "run" and ended[0].get("ending") == "interrupted", ended[:1])
-    second = fx.exchanges_of("t7.run-2")
-    if second:
-        rs.check_first_message(t, second[0], sub.body, True, "t7.run-2")
-    rs.check_auditor(t, aud, "t7")
-    t.eq("t7.two-conversations", aud.conversations, 2)
-    rs.check_requests(t, fx, sub, "t7")
-    rs.check_history(t, fx, "t7")
-    rs.check_run_ended_usage(t, sub, fx, ["t7.run-1", "t7.run-2"], "t7")
 
 
 # ---------------------------------------------------------------------------
@@ -462,8 +419,8 @@ def answer_of(t, rep, name):
 @case("c1.requests", ["C1", "C7", "C20"],
       "every request carries exactly the family's pinned tools, system blocks, model and max_tokens",
       needs=("loopback",),
-      controls=[Control("extra_tool", [r"^c1\..*\.(tools|tools-pinned-bytes|spliced)$"]),
-                Control("arrangement_mismatch", [r"^c1\..*\.(system-bytes|system-pinned-bytes)$"])])
+      controls=[Control("extra_tool", [r"^c1\.open-inquiry\.request-\d+\.(tools|tools-pinned-bytes)$"]),
+                Control("arrangement_mismatch", [r"^c1\.open-inquiry\.request-\d+\.(system-bytes|system-pinned-bytes)$"])])
 def c_c1_requests(t):
     """For each family an audit lists the materials and ends ordinarily. Every request has the
     6.1 shape and the 4.5 splice of the arrangement's pinned model, system and tools bytes (the
@@ -471,11 +428,14 @@ def c_c1_requests(t):
     the first max_tokens is 16,000. The receipt and run_started name the arrangement whose bytes
     were carried. Differing: the families' tool lists differ exactly by their recording tools,
     and their system blocks only in the second (instructions) block. Invariance: other
-    materials leave the open-inquiry tools and system bytes unchanged."""
+    materials leave the open-inquiry tools and system bytes unchanged. The controls run the
+    open-inquiry audit."""
     raw = {}
     for label, family, entries in (("open-inquiry", "open-inquiry", None), ("inquiry-framing", "inquiry-framing", None),
                                    ("comparison", "comparison", None),
                                    ("other-materials", "open-inquiry", [F("other.txt", b"entirely different\n")])):
+        if t.sabotage and label != "open-inquiry":
+            continue
         sub = run_submission(t, entries=entries, family=family)
 
         def body(p):
@@ -585,9 +545,9 @@ def c2_entries():
 @case("c2.question-and-reads", ["C2", "C19", "C4"],
       "the question body and every material page reach the auditor byte for byte",
       needs=("loopback",),
-      controls=[Control("read_live_source", [r"^auditor\.read\.", r"^c2\..*\.auditor-clean$"]),
-                Control("normalize_read", [r"^auditor\.read\.", r"^c2\..*\.auditor-clean$"]),
-                Control("paraphrase_question", [r"^auditor\.first-message\.", r"^c2\..*\.first-message$"])])
+      controls=[Control("read_live_source", [r"^auditor\.read\.bytes$"]),
+                Control("normalize_read", [r"^auditor\.read\.bytes$"]),
+                Control("paraphrase_question", [r"^auditor\.first-message\.question$"])])
 def c_c2(t):
     """The first message carries the question body exactly (CRLF, a page longer than one
     read, essential text last). The reacting auditor reads the question and every material
@@ -595,9 +555,12 @@ def c_c2(t):
     lines against the witness; blank and empty pages come in data.text, others in a second
     block. A material is rewritten in the folder after commission: reads still serve the
     capture. Differing: a question differing in one byte arrives differing in exactly that
-    byte. Invariance: the same materials from another folder read identically."""
+    byte. Invariance: the same materials from another folder read identically. The reacting
+    auditor judges the first message and every page as it arrives; the controls run audit a."""
     firsts = {}
     for label, change in (("a", None), ("b", 7)):
+        if t.sabotage and label != "a":
+            continue
         body = long_question().replace(b"\n", b"\r\n", 3)
         if change is not None:
             body = body[:change] + bytes([body[change] ^ 0x20]) + body[change + 1:]
@@ -611,7 +574,6 @@ def c_c2(t):
         rs.check_auditor(t, aud, "c2.%s" % label)
         rs.check_fake(t, fx, "c2.%s" % label)
         if fx.exchanges:
-            rs.check_first_message(t, fx.exchanges[0], sub.body, False, "c2.%s" % label)
             firsts[label] = (fx.exchanges[0].messages() or [None])[0]
         reads = [e for e in aud.events if e["event"] == "read complete"]
         t.eq("c2.%s.sources-read" % label, sorted(e["source"] for e in reads),
@@ -717,7 +679,7 @@ def c_paging(t):
 @case("c3.edits", ["C3", "C20", "C6"],
       "T5: stale targets never touch a newer version; equal adds stay distinct; a known invocation replays",
       needs=("loopback",),
-      controls=[Control("merge_equal_adds", [r"^c3\.edits\.(equal-adds|selection|revision|entry-records)"]),
+      controls=[Control("merge_equal_adds", [r"^c3\.edits\.equal-adds-(distinct|label-duplicate|revisions)$"]),
                 Control("replay_reexecutes", [r"^c3\.edits\.replay"]),
                 Control("stale_target_overwrites", [r"^c3\.edits\.stale"])])
 def c_edits(t):
@@ -811,24 +773,32 @@ def c_edits(t):
          "invocation_id_reused")
 
 
-@case("c3.interruptions", ["C3", "C13", "C16", "C6"],
-      "kills while appending, before the seal link and after it: only complete records count",
-      mode="test", needs=("loopback", "lock"),
+@case("c3.interruptions", ["C3", "C13", "C4", "C16", "C6"],
+      "kills while appending an entry, before linking it, after linking it (T7) and before the seal link: "
+      "only complete records count", mode="test", needs=("loopback", "lock"),
       linux_reason="interruption is observed through the free OFD lock, a Linux-only expectation",
       controls=[Control("torn_as_entry", [r"^int\.(torn|unlinked)\.status-entries$",
-                                          r"^int\.unlinked\.(reentry-empty|selection-recorded)$", r"^auditor\."])])
+                                          r"^int\.unlinked\.(reentry-empty|selection-recorded)$"])],
+      faults=("stage.torn:entry=kill", "log.publish:entry=kill", "entry.after_link=kill", "log.publish:seal=kill"))
 def c_interruptions(t):
     """stage.torn:entry=kill leaves a half-written stage file and no entry; log.publish:entry=kill
     leaves a complete, decodable entry stage file that was never linked. In both, status
     (interrupted) counts no entry and reports the interrupted publication, and in the
     continuation re-entry shows no entry, so the reacting auditor adds each goal once; every
     entry of the sealed answer has its entry record in the log (an unlinked stage file is never
-    an element, 4.3). log.publish:seal=kill dies before the seal: status shows no seal; run
-    continues and the auditor seals. seal.after_link=kill dies after it: status shows the
-    auditor seal undelivered, and run refuses authoring_ended (ended_by seal) with effects
-    run ended, seal existing."""
-    for label, fault in (("torn", "stage.torn:entry=kill"), ("unlinked", "log.publish:entry=kill"),
-                         ("pre-seal", "log.publish:seal=kill"), ("post-seal", "seal.after_link=kill")):
+    an element, 4.3). Differing, T7: entry.after_link=kill stops run 1 after its first entry is
+    linked and before the call's result: status reports interrupted with one entry from a
+    run_started without run_ended and a free lock (runs 1, not held, no holder); run reconciles
+    run 1 (process_gone, recorded by run) and the reacting auditor, its memory gone, finds the
+    entry through re-entry and does not add it again; both run_ended usages equal the fake's
+    charges. log.publish:seal=kill dies before the seal: status shows no seal; run continues and
+    the auditor seals. A kill after the seal link is c16.status-after-launch's sealed-undelivered
+    point. The torn_as_entry control runs the torn and unlinked arms."""
+    arms = (("torn", "stage.torn:entry=kill"), ("unlinked", "log.publish:entry=kill"),
+            ("linked", "entry.after_link=kill"), ("pre-seal", "log.publish:seal=kill"))
+    for label, fault in arms:
+        if t.sabotage and label not in ("torn", "unlinked"):
+            continue
         pre = "int." + label
         sub = run_submission(t)
         aud = auditor_for(t, sub, scenario_goals(sub))
@@ -836,31 +806,33 @@ def c_interruptions(t):
         rs.run(t, sub, fx, name=pre + ".run-1", fault=fault, killed=True)
         st = t.status(sub, name=pre + ".status")
         hl = st.data.get("headline") or {}
+        t.eq(pre + ".condition", st.data.get("condition"), "interrupted")
         if label in ("torn", "unlinked"):
             t.eq(pre + ".no-entry-record", len(rs.entry_bodies(t, sub)), 0)
-            t.eq(pre + ".condition", st.data.get("condition"), "interrupted")
             t.eq(pre + ".status-entries", (st.data.get("answer") or {}).get("entries"), 0)
             t.check(pre + ".interrupted-publication", mentions(st.data.get("diagnostics"), "stage"),
                     st.data.get("diagnostics"))
-        elif label == "pre-seal":
-            t.eq(pre + ".condition", st.data.get("condition"), "interrupted")
-            t.eq(pre + ".no-seal", [st.data.get("seal"), hl.get("seal")], [seal_observation(), seal_observation()])
+        elif label == "linked":
+            t.eq(pre + ".status-entries", (st.data.get("answer") or {}).get("entries"), 1)
+            runs = st.data.get("runs") or {}
+            t.eq(pre + ".status.runs", [runs.get("count"), runs.get("held"), runs.get("holder")], [1, False, None])
+            t.check(pre + ".status.evidence", any("run_ended" in (e.get("evidence") or "") or "lock" in
+                                                  (e.get("evidence") or "") for e in st.data.get("evidence") or []),
+                    st.data.get("evidence"))
         else:
-            t.eq(pre + ".condition", st.data.get("condition"), "sealed_undelivered")
-            t.eq(pre + ".sealed-by", hl.get("seal"), seal_observation("auditor"))
-            r2 = rs.run(t, sub, fx, name=pre + ".run-2", expect="refused", reason="authoring_ended")
-            t.eq(pre + ".ended_by", r2.data.get("ended_by"), "seal")
-            t.check(pre + ".record", isinstance(r2.data.get("record"), str) and r2.data["record"].startswith("log/"),
-                    r2.data.get("record"))
-            t.eq(pre + ".effects", {k: v for k, v in r2.effects.items() if k != "diagnostic"},
-                 {"run": "ended", "answer": "unchanged", "seal": "existing", "delivery": "none"})
-            t.eq(pre + ".no-request", len(fx.exchanges_of(pre + ".run-2")), 0)
-            continue
+            t.eq(pre + ".no-seal", [st.data.get("seal"), hl.get("seal")], [seal_observation(), seal_observation()])
         r2 = rs.run(t, sub, fx, name=pre + ".run-2")
         rs.check_run_reply(t, r2, sub, pre + ".run-2", ending="sealed", run_number=2, fx=fx, limits=rs.limits_of(sub),
                            seal_actor="auditor", delivery_outcome="verified")
         rs.check_auditor(t, aud, pre)
         rs.check_run_ended_usage(t, sub, fx, [pre + ".run-1", pre + ".run-2"], pre)
+        if label == "linked":
+            ended = t.log_bodies(sub, "run_ended")
+            t.eq(pre + ".run-1.reconciled", [(ended[0] if ended else {}).get(k) for k in
+                                             ("ending", "cause", "recorded_by")], ["interrupted", "process_gone", "run"])
+            t.eq(pre + ".two-conversations", aud.conversations, 2)
+            rs.check_requests(t, fx, sub, pre)
+            rs.check_history(t, fx, pre)
         if label in ("torn", "unlinked"):
             seen = [e.get("entries") for e in aud.events
                     if e["event"] == "re-entry identified entries" and e["conversation"] == 2]
@@ -879,53 +851,53 @@ def c_interruptions(t):
       "T6: submit racing close has exactly one winner, which names its actual actor",
       mode="test", needs=("loopback", "lock"),
       linux_reason="close waits on the OFD lock the run holds, a Linux-only expectation",
-      controls=[Control("manager_seal_as_auditor", [r"^t6\.close-wins\.\d+\.seal-actor$"])])
+      controls=[Control("manager_seal_as_auditor", [r"^t6\.close-wins\.seal-actor$"])],
+      faults=("log.publish:seal=pause", "seal.after_link=pause"))
 def c_t6(t):
     """Close wins: the run pauses just before its seal link (log.publish:seal), close publishes
     close_requested, the run is released: the submit is refused authoring_ended with ended_by
     close, close_requested_at and an absent seal observation; the run ends stopped_by_close; close seals
     revision 1 as manager. Submit wins: the run pauses after its seal (seal.after_link), close
     is requested, the run is released: it delivers and ends sealed; the only seal is the
-    auditor's. Each order twice."""
+    auditor's. The pause points fix each order, so each runs once."""
     for order, point in (("close-wins", "log.publish:seal"), ("submit-wins", "seal.after_link")):
-        for i in (1, 2):
-            pre = "t6.%s.%d" % (order, i)
-            sub = run_submission(t)
+        pre = "t6.%s" % order
+        sub = run_submission(t)
 
-            def body(p):
-                turn = yield p.calls_step(("record_observation", {"text": "Recorded before the race.", "label": "race"}))
-                p.eq("recorded", turn.reply(0).outcome, "completed")
-                yield from prepare_and_submit(p)
-            p = proc(sub, body)
-            fx = rs.provider(t, p, label="%s-%d" % (order, i))
-            h = rs.start_run(t, sub, fx, name=pre + ".run", fault=point + "=pause")
-            stem = t.wait_paused(point.split(":")[0], h)
-            cl = t.start(["close", sub.ref], name=pre + ".close", timeout=120)
-            t.check(pre + ".close-requested", rs.wait_for(lambda: "close_requested" in t.log_kinds(sub), 15),
-                    t.log_kinds(sub))
-            t.release(stem)
-            rr = rs.finish_run(t, h)
-            t.finish(cl, expect="completed")
-            rs.check_procedure(t, p, pre, fx)
-            seals = [b for b in t.log_bodies(sub, "seal") if isinstance(b, dict)]
-            st = t.status(sub, name=pre + ".status")
-            if order == "close-wins":
-                t.eq(pre + ".run-ending", rr.data.get("ending"), "stopped_by_close")
-                tid = last_call(p, "submit")
-                res = rs.result_for(sub, tid)
-                env = rs.result_envelope(res[3]) if res else None
-                d = (env or {}).get("data") or {}
-                t.eq(pre + ".submit-refused", ((env or {}).get("outcome"), (env or {}).get("reason")),
-                     ("refused", "authoring_ended"))
-                t.check(pre + ".submit-data", d.get("ended_by") == "close" and isinstance(d.get("close_requested_at"), str)
-                        and AT_RE.match(d["close_requested_at"]) and d.get("seal") == seal_observation() and "sealer" not in d, d)
-                t.eq(pre + ".seal-actor", [b.get("actor") for b in seals], ["manager"])
-                t.eq(pre + ".seal-revision", [b.get("revision") for b in seals], [1])
-                t.eq(pre + ".status-actor", (st.data.get("seal") or {}).get("actor"), "manager")
-            else:
-                t.eq(pre + ".run-ending", rr.data.get("ending"), "sealed")
-                t.eq(pre + ".seal-actor", [b.get("actor") for b in seals], ["auditor"])
-                t.eq(pre + ".status-actor", (st.data.get("seal") or {}).get("actor"), "auditor")
+        def body(p):
+            turn = yield p.calls_step(("record_observation", {"text": "Recorded before the race.", "label": "race"}))
+            p.eq("recorded", turn.reply(0).outcome, "completed")
+            yield from prepare_and_submit(p)
+        p = proc(sub, body)
+        fx = rs.provider(t, p, label=order)
+        h = rs.start_run(t, sub, fx, name=pre + ".run", fault=point + "=pause")
+        stem = t.wait_paused(point.split(":")[0], h)
+        cl = t.start(["close", sub.ref], name=pre + ".close", timeout=120)
+        t.check(pre + ".close-requested", rs.wait_for(lambda: "close_requested" in t.log_kinds(sub), 15),
+                t.log_kinds(sub))
+        t.release(stem)
+        rr = rs.finish_run(t, h)
+        t.finish(cl, expect="completed")
+        rs.check_procedure(t, p, pre, fx)
+        seals = [b for b in t.log_bodies(sub, "seal") if isinstance(b, dict)]
+        st = t.status(sub, name=pre + ".status")
+        if order == "close-wins":
+            t.eq(pre + ".run-ending", rr.data.get("ending"), "stopped_by_close")
+            tid = last_call(p, "submit")
+            res = rs.result_for(sub, tid)
+            env = rs.result_envelope(res[3]) if res else None
+            d = (env or {}).get("data") or {}
+            t.eq(pre + ".submit-refused", ((env or {}).get("outcome"), (env or {}).get("reason")),
+                 ("refused", "authoring_ended"))
+            t.check(pre + ".submit-data", d.get("ended_by") == "close" and isinstance(d.get("close_requested_at"), str)
+                    and AT_RE.match(d["close_requested_at"]) and d.get("seal") == seal_observation() and "sealer" not in d, d)
+            t.eq(pre + ".seal-actor", [b.get("actor") for b in seals], ["manager"])
+            t.eq(pre + ".seal-revision", [b.get("revision") for b in seals], [1])
+            t.eq(pre + ".status-actor", (st.data.get("seal") or {}).get("actor"), "manager")
+        else:
+            t.eq(pre + ".run-ending", rr.data.get("ending"), "sealed")
+            t.eq(pre + ".seal-actor", [b.get("actor") for b in seals], ["auditor"])
+            t.eq(pre + ".status-actor", (st.data.get("seal") or {}).get("actor"), "auditor")
 
 
 @case("c3.limits", ["C3", "C20"], "256 entries and 4 MiB inputs: the limits refuse, and edits at the limits still work",
@@ -974,12 +946,11 @@ def c_limits(t):
 @case("c4.reentry", ["C4", "C13", "C20", "C14"],
       "re-entry pages every entry, refuses a stale page, keeps refusals and gaps, and counts allowances across runs",
       needs=("loopback",),
-      controls=[Control("reentry_omit_entry", [r"^c4\.(pages|continuation)\.entries$", r"^auditor\."]),
+      controls=[Control("reentry_omit_entry", [r"^c4\.(pages|continuation)\.entries$"]),
                 Control("reentry_truncate_page", [r"^c4\.(pages|continuation)\.(entries|shape)$"]),
                 Control("reentry_omit_last_page", [r"^c4\.(pages|continuation)\.(entries|shape)$"]),
                 Control("reentry_mix_revisions", [r"^c4\.stale-view$"]),
-                Control("reentry_placement_allowances", [r"^c4\.continuation\.allowances$",
-                                                         r"^auditor\.reentry\.allowances$"])])
+                Control("reentry_placement_allowances", [r"^c4\.continuation\.allowances$"])])
 def c_reentry(t):
     """Seventy entries come back over two re-entry pages (64 then 6, later pages holding only
     entries and page), ids and handles in order. A page cursor taken before an edit is refused
@@ -988,7 +959,8 @@ def c_reentry(t):
     is then damaged. In the continuation, re-entry reports run 2, all 71 entries, the damaged
     record as a gap (recorded data it could not read, distinct from lost context) and the
     allowances of both runs. Invariance: the reacting auditor seals the same answer.json bytes
-    with and without a compaction, including an entry longer than one read page."""
+    with and without a compaction, including an entry longer than one read page. Every control's
+    target is in the scripted part, so the controls do not run the invariance pair."""
     sub = run_submission(t, body=b"Short question for re-entry pages.\n")
     box = {}
 
@@ -1050,6 +1022,8 @@ def c_reentry(t):
     r2 = rs.run(t, sub, fx, name="c4.run-2")
     rs.check_run_reply(t, r2, sub, "c4.run-2", ending="ended_unsubmitted", run_number=2, fx=fx, limits=rs.limits_of(sub))
     rs.check_procedure(t, p, "c4", fx)
+    if t.sabotage:
+        return
     answers = {}
     for label, compact_after in (("compacted", (3,)), ("uncompacted", ())):
         s2 = run_submission(t)
@@ -1073,8 +1047,9 @@ def c_reentry(t):
 @case("c6.records", ["C6", "C14", "C18"],
       "the access log equals the auditor's calls, refused and replayed ones included; payloads are never removed",
       needs=("loopback",),
-      controls=[Control("rewrite_record_in_place", [r"^inventory\.", r"^log\.", r"^c6\."]),
-                Control("remove_superseded_payload", [r"^inventory\.", r"^c6\.payload"]),
+      controls=[Control("rewrite_record_in_place", [r"^inventory\.[a-z-]*(rewritten|replaced)", r"^log\.records$"]),
+                Control("remove_superseded_payload", [r"^c6\.payload-(kept\.e1\.v1|files)$",
+                                                      r"^inventory\.[a-z-]*removed"]),
                 Control("skip_search_capture", [r"^c6\.(access-log|search-captured)"])])
 def c_records(t):
     """list, read, search, a refused read and a replay of the search are each in the access log
@@ -1130,9 +1105,9 @@ def find_cites(data):
 @case("c7.families", ["C7", "C5", "C14", "C1"],
       "each family's sections and notices; open inquiry and inability are ordinary routes; citation controls",
       needs=("loopback",),
-      controls=[Control("framing_task_elsewhere", [r"^c7\..*\.system-bytes$"]),
-                Control("grade_support", [r"^c7\.cite\.recorded"]),
-                Control("block_incomplete", [r"^c7\..*\.prepare-"])])
+      controls=[Control("framing_task_elsewhere", [r"^c7\.[a-z-]+\.request-\d+\.system-bytes$"]),
+                Control("grade_support", [r"^c7\.cite\.recorded\."]),
+                Control("block_incomplete", [r"^c7\.[a-z-]+\.prepare-partial\.(counts|notices)$"])])
 def c_families(t):
     """For each family: prepare with no entries gives the single answer_empty notice, an empty
     selection and "No answer entries recorded."; after an account stating that the question
@@ -1393,20 +1368,21 @@ def c_allowance_advice(t):
 
 
 @case("c12.run-refusals", ["C12", "C16", "C20"],
-      "run refuses an ended, limited, sealed, closed or held audit with a sign; commission needs no key or network",
+      "run refuses an ended, sealed, closed or held audit with a sign; commission needs no key or network",
       needs=("loopback",),
       controls=[Control("relative_run_line", [r"^c12\.refusals\.(run-line|commission\.data\.run_line)"]),
                 Control("commission_over_network", [r"^c12\.refusals\.commission"])])
 def c_run_refusals(t):
     """Commission succeeds without ANTHROPIC_API_KEY while STEWART_PROVIDER_URL points at the
     fake, which sees no connection; its run line names the absolute writer. After an ordinary
-    ending, a limit stop and a seal, run refuses authoring_ended with ended_by ordinary_ending,
-    limit or seal and the record that ended authoring, effects stating the recorded facts and
-    next calls close and status. On a closed reference it refuses reference_closed. While
-    another run holds the lock during a request stalled at the independent provider (Linux)
-    it refuses run_held naming the holder's
-    observations. Invariance: the same audit run from another directory and HOME differs only
-    in run_started observations, which name a process and user ID, never a person."""
+    ending and a seal, run refuses authoring_ended with ended_by ordinary_ending or seal and the
+    record that ended authoring, effects stating the recorded facts and next calls close and
+    status (a limit stop's refusal is c7.prompts'). On a closed reference it refuses
+    reference_closed. While another run holds the lock during a request stalled at the
+    independent provider (Linux) it refuses run_held naming the holder's observations; this is
+    the release binary's observation of run_held. Invariance: the same audit run from another
+    directory and HOME differs only in run_started observations, which name a process and user
+    ID, never a person. Both controls target the commission, so they stop after it."""
     watch = rs.provider(t, fp.Script([]), label="commission-watch")
     sub = t.submission(scenario_entries(), body=b"Is the reminder sent twice?\n", dest_watch="additions")
     t.new_ref(sub)
@@ -1416,6 +1392,8 @@ def c_run_refusals(t):
     t.check("c12.refusals.commission-offline", rep.outcome == "completed" and not watch.exchanges
             and not watch.provider.events, {"outcome": rep.outcome, "exchanges": len(watch.exchanges)})
     t.eq("c12.refusals.run-line", rep.data.get("run_line"), [sub.writer, "run", sub.ref])
+    if t.sabotage:
+        return
     replies = {}
     for label, subx, cwd, home in (("a", sub, t.fresh_dir("cwd a"), t.fresh_dir("home a")),
                                    ("a2", run_submission(t, body=b"Is the reminder sent twice?\n"),
@@ -1441,18 +1419,6 @@ def c_run_refusals(t):
     if len(replies) == 2:
         pick = lambda r: (r.data.get("ending"), r.data.get("usage"), r.data.get("notices"))
         t.eq("c12.refusals.invariance", pick(replies["a2"]), pick(replies["a"]))
-    sub_b = run_submission(t, q={"turns": "1"})
-
-    def one_call(p):
-        while True:
-            yield p.calls_step(("list", {}))
-    pb = proc(sub_b, one_call)
-    fxb = rs.provider(t, pb, label="limit")
-    r = rs.run(t, sub_b, fxb, name="c12.refusals.b.run")
-    rs.check_run_reply(t, r, sub_b, "c12.refusals.b.run", ending="limit_reached", run_number=1, fx=fxb,
-                       limits=rs.limits_of(sub_b))
-    r2 = rs.run(t, sub_b, fxb, name="c12.refusals.b.again", expect="refused", reason="authoring_ended")
-    t.eq("c12.refusals.b.ended_by", r2.data.get("ended_by"), "limit")
     sub_c = run_submission(t)
 
     def seal_body(p):
@@ -1509,16 +1475,19 @@ def c_run_refusals(t):
       "kills during a request, while a result is written and between turns: the continuation finishes once",
       mode="test", needs=("loopback", "lock"),
       linux_reason="interruption is observed through the free OFD lock, a Linux-only expectation",
-      controls=[Control("reset_limits_on_continuation", [r"^c13\.cont\..*\.allowances$", r"^auditor\.reentry\.allowances$",
-                                                         r"^c13\.cont\..*\.auditor-clean$"]),
-                Control("fresh_ledger_on_continuation", [r"^auditor\.", r"^c13\.cont\..*\.(same-answer|auditor-clean)$"])])
+      controls=[Control("reset_limits_on_continuation", [r"^c13\.cont\.[a-z-]+\.run-2\.allowances$",
+                                                         r"^auditor\.reentry\.allowances$"]),
+                Control("fresh_ledger_on_continuation", [r"^c13\.cont\.[a-z-]+\.same-answer$"])],
+      faults=("provider.sent:12=kill", "stage.torn:tool_result=kill", "run.between_turns:11=kill"))
 def c_continuation(t):
     """A reference audit seals the reacting auditor's goals. Three more are killed at
     provider.sent:12 (the request was sent, its answer never read: reconciliation charges one
     estimate), stage.torn:tool_result and run.between_turns:11. Each: status interrupted with
     one run; run continues with the same pinned system and tools bytes and the continuation
     notice, cumulative allowances, every earlier element once, and seals the same answer.json
-    bytes as the reference; both run_ended records equal the fake's charges."""
+    bytes as the reference; both run_ended records equal the fake's charges. The reacting
+    auditor judges each first message. The controls run the reference and the between-turns
+    kill."""
     ref = run_submission(t)
     aud = auditor_for(t, ref, scenario_goals(ref), calls_per_turn=1)
     fx = rs.provider(t, aud, label="reference")
@@ -1528,6 +1497,8 @@ def c_continuation(t):
     for label, fault, sent_k in (("during-request", "provider.sent:12=kill", 12),
                                  ("result-write", "stage.torn:tool_result=kill", None),
                                  ("between-turns", "run.between_turns:11=kill", None)):
+        if t.sabotage and label != "between-turns":
+            continue
         pre = "c13.cont." + label
         sub = run_submission(t)
         aud = auditor_for(t, sub, scenario_goals(sub), calls_per_turn=1)
@@ -1552,7 +1523,6 @@ def c_continuation(t):
             a, b = first[0].body_node(), second[0].body_node()
             t.check(pre + ".same-pinned-bytes", a is not None and b is not None
                     and (a.get("system").raw, a.get("tools").raw) == (b.get("system").raw, b.get("tools").raw), "differs")
-            rs.check_first_message(t, second[0], sub.body, True, pre + ".run-2")
         rs.check_run_ended_usage(t, sub, fx, [pre + ".run-1", pre + ".run-2"], pre)
         t.check(pre + ".same-answer", want is not None and answer_of(t, r2, pre) == want, "answer differs from the reference")
 
@@ -1675,38 +1645,30 @@ def c_provider_shapes(t):
     rs.check_run_ended_usage(t, sub, fx, labels, "shape")
 
 
-@case("c13.stopping", ["C13", "C8", "C6"],
-      "signals and close abort an in-flight request; a signal after the seal fails only the delivery",
+@case("c13.stopping", ["C13", "C6"],
+      "signals abort an in-flight request; a signal after the seal fails only the delivery",
       mode="test", needs=("loopback", "lock"),
-      linux_reason="close reaches a held run through the OFD lock, a Linux-only expectation")
+      linux_reason="an interrupted placement is observed through its free OFD lock, a Linux-only expectation",
+      faults=("delivery.after_member:1=pause",))
 def c_stopping(t):
     """With a request stalled at the fake, SIGTERM, SIGINT and SIGHUP each abort it
     (aborted_by_signal, charged an estimate) and end the placement interrupted with cause
-    signal, exit 5; run continues each time. Close during a stalled request aborts it
-    (aborted_by_close) and the run ends stopped_by_close with exit 0 and next status and close.
-    After a seal, SIGTERM while delivery is paused fails that delivery with cause signal and
-    the placement still ends sealed."""
+    signal, exit 5; run continues each time. After a seal, SIGTERM while delivery is paused fails
+    that delivery with cause signal and the placement still ends sealed. Close during a stalled
+    request is c8.close-running's T13."""
     sub = run_submission(t)
-    fx = rs.provider(t, fp.Script([fp.Stall(60.0) for _ in range(4)]))
-    stops = (("sigterm", signal.SIGTERM), ("sigint", signal.SIGINT), ("sighup", signal.SIGHUP), ("close", None))
+    fx = rs.provider(t, fp.Script([fp.Stall(60.0) for _ in range(3)]))
+    stops = (("sigterm", signal.SIGTERM), ("sigint", signal.SIGINT), ("sighup", signal.SIGHUP))
     for i, (label, sig) in enumerate(stops, 1):
         pre = "stop." + label
         h = rs.start_run(t, sub, fx, name=pre)
         t.check(pre + ".request-in-flight", rs.wait_for(lambda: len(fx.exchanges_of(pre)) >= 1, 30), "no request")
         rs.wait_for(lambda: False, 0.3)
-        if sig is not None:
-            t.signal(h, sig)
-            rep = rs.finish_run(t, h)
-            rs.check_run_reply(t, rep, sub, pre, ending="interrupted", cause="signal", run_number=i, fx=fx,
-                               limits=rs.limits_of(sub))
-            want = "aborted_by_signal"
-        else:
-            cl = t.start(["close", sub.ref], name=pre + ".close", timeout=120)
-            rep = rs.finish_run(t, h)
-            rs.check_run_reply(t, rep, sub, pre, ending="stopped_by_close", run_number=i, fx=fx,
-                               limits=rs.limits_of(sub))
-            t.finish(cl, expect="completed")
-            want = "aborted_by_close"
+        t.signal(h, sig)
+        rep = rs.finish_run(t, h)
+        rs.check_run_reply(t, rep, sub, pre, ending="interrupted", cause="signal", run_number=i, fx=fx,
+                           limits=rs.limits_of(sub))
+        want = "aborted_by_signal"
         rd = rs.run_dirs(sub).get(i)
         att = ((rd.attempts.get((1, 1)) or {}).get("body") or {}) if rd else {}
         t.eq(pre + ".attempt", (att.get("outcome"), att.get("request_written"), (att.get("charged") or {}).get("basis")),
@@ -1912,11 +1874,13 @@ BAD_INPUT_RULES = {
       "strict tool inputs refuse usefully with raw bytes kept; views hide custody; seal facts are exact",
       needs=("loopback",),
       controls=[Control("accept_unknown_tool_field", [r"^c20\.inputs\.input\.unknown-field$"]),
-                Control("leak_custody_path", [r"^c20\.inputs\.reply\.envelope\.read$"]),
+                Control("leak_custody_path", [r"^c20\.inputs\.reply\.discloses\.read$"]),
                 Control("prepare_claims_seal", [r"^c20\.inputs\.prepare-no-sealer$"]),
                 Control("stale_preparation_retargets", [r"^c20\.inputs\.stale-preparation"]),
                 Control("seal_uncertain_as_none", [r"^c20\.uncertain\.effects$"]),
-                Control("submit_claims_delivery", [r"^c20\.inputs\.submit-data$"])])
+                Control("submit_claims_delivery", [r"^c20\.inputs\.submit-data$"]),
+                Control("omit_effects_on_refusal", [r"^c20\.inputs\.reply\.effects\.[a-z_]+$"])],
+      faults=("log.dirsync:seal=eio",))
 def c_tool_inputs(t):
     """Duplicate and escape-equivalent keys, an unknown field, NUL, a non-object input, the
     wrong type, nesting deeper than 16, out-of-bound and non-integer starts and a missing
@@ -1932,7 +1896,9 @@ def c_tool_inputs(t):
     for confirm is input_invalid; a dry run seals nothing; the confirmed submit's recorded data
     is exactly seal with state, actor, handle, sealed_at, revision and manifest_sha256, claiming no delivery. On
     the test build an uncertain seal publication (log.dirsync:seal=eio) fails seal_uncertain
-    with effects.seal unknown and the same submit as next call."""
+    with effects.seal unknown and the same submit as next call. Every refused reply carries its
+    effects (C9), each tool reply judged as it arrives. Only the seal_uncertain_as_none control
+    runs the uncertain seal."""
     sub = run_submission(t)
     box = {}
 
@@ -2018,7 +1984,7 @@ def c_tool_inputs(t):
     t.eq("c20.inputs.submit-seal-keys", list(d.get("seal", {})), ["state", "actor", "handle", "sealed_at", "revision", "manifest_sha256"])
     t.eq("c20.inputs.submit-sealer", d.get("seal", {}).get("actor"), "auditor")
     t.eq("c20.inputs.submit-seal-state", d.get("seal", {}).get("state"), "present")
-    if t.bin["kind"] != "test":
+    if t.bin["kind"] != "test" or t.sabotage not in (None, "seal_uncertain_as_none"):
         return
     sub2 = run_submission(t)
 

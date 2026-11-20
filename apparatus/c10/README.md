@@ -123,9 +123,14 @@ From the repository root:
 python3 -I -B apparatus/c10/test_c10.py
 python3 -I -B apparatus/c10/test_placements.py
 python3 -I -B apparatus/sanity/test_launch.py
-python3 -I -B apparatus/driver/stewart_driver.py --self-test
 python3 -I -B apparatus/check_links.py
 ```
+
+The apparatus imports specification-derived helpers from the release driver
+(`driver_core.py`, `rawjson.py`, `answer_witness.py`, `credential_observer.py`).
+When one of those changes, run these checks as well as the driver's own
+self-test; they are in the apparatus source binding, so a change to them also
+needs a new rehearsal.
 
 Native iteration uses an existing native binary and a new absolute directory.
 Run it where the fake provider can listen on loopback. It makes no model calls.

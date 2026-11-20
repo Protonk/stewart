@@ -1,6 +1,5 @@
 #!/bin/sh
 # Build the selected Linux suite's binaries offline from /in/source.tar and /vendor.
-# The runtime suite uses a featureless release as its negative control.
 set -u
 step() {
     name=$1
@@ -42,36 +41,27 @@ static_check() {
 }
 
 build release stewart release
-must marker-list cp /work/apparatus/claude-code-markers.txt /out/claude-code-markers.txt
-markers=/work/apparatus/check-build-markers.sh
-step markers-release sh "$markers" absent /out/claude-code-markers.txt /out/stewart
 if [ "$suite" = acceptance ]; then
+    # The driver's apparatus.identity case owns the test-only names and distinct
+    # builds; this step owns static linkage, with a dynamic ELF as its control.
     build test stewart-test release --features fault-injection,sabotage
-    set -- stewart stewart-test
-    # A real dynamically linked ELF exercises the same readelf check as both writers.
     echo 'int main(void) { return 0; }' >/work/dynamic-control.c || exit 1
     must build-dynamic-control cc /work/dynamic-control.c -o /out/dynamic-control
-    static_check dynamic-control
-    step cmp-release-test cmp -s /out/stewart /out/stewart-test
-    step markers-test sh "$markers" absent /out/claude-code-markers.txt /out/stewart-test
-    for writer do
-        for var in STEWART_TEST_FAULT STEWART_TEST_SABOTAGE STEWART_TEST_FAULT_DIR STEWART_TEST_TLS_ROOT \
-            STEWART_TEST_PROVIDER_TIMEOUT STEWART_TEST_RETRY_DELAYS; do
-            step "strings-$writer-$var" grep -a -F -q "$var" "/out/$writer"
-        done
+    for binary in stewart stewart-test dynamic-control; do
+        static_check "$binary"
     done
+    step run-release /out/stewart help
+    step run-test /out/stewart-test help
 else
+    # Each listed marker must be absent from the release and present in both
+    # development writers, which are the firing controls for the absence check.
     build local stewart-local release --features claude-code
-    build local-variant stewart-local-variant debug --features claude-code,fault-injection
-    set -- stewart stewart-local stewart-local-variant
-    step cmp-local-variant cmp -s /out/stewart-local /out/stewart-local-variant
+    build local-variant stewart-local-variant release --features claude-code,fault-injection
+    must marker-list cp /work/apparatus/claude-code-markers.txt /out/claude-code-markers.txt
+    markers=/work/apparatus/check-build-markers.sh
+    step markers-release sh "$markers" absent /out/claude-code-markers.txt /out/stewart
     for kind in local local-variant; do
         step "markers-$kind" sh "$markers" present /out/claude-code-markers.txt "/out/stewart-$kind"
     done
 fi
-for writer do
-    static_check "$writer"
-    case "$writer" in stewart) label=release ;; *) label=${writer#stewart-} ;; esac
-    step "run-$label" "/out/$writer" help
-done
 exit 0

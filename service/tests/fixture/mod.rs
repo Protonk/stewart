@@ -8,7 +8,8 @@
 //! The test keeps its own copy of every byte it supplies (entry texts,
 //! artifact bytes, the prepared answer and rendering it wrote), so a
 //! delivered package is compared against that witness, never against
-//! Stewart's records alone.
+//! Stewart's records alone. Shared calls of the after-launch tests are here
+//! too.
 
 #![allow(dead_code)]
 // Publication preconditions return the crate's `Fail` by value, as the
@@ -20,11 +21,11 @@ use stewart::bodies::{
     Action, Actor, CloseFlags, CloseRequested, EntryRec, Invocation, ProviderUse, RunEnded,
     RunObservations, RunStarted, SealRec, Version,
 };
-use stewart::json::{self, J};
+use stewart::json::{J, Json};
 use stewart::log;
 use stewart::usage::{Split, Usage};
 
-use crate::common::Env;
+use crate::common::{Env, Out};
 
 const QUESTION: &[u8] = b"Audit our app to make sure there are no bugs.\n";
 
@@ -60,7 +61,7 @@ pub fn accepted(e: &Env) -> String {
     r
 }
 
-pub fn provider() -> ProviderUse {
+fn provider() -> ProviderUse {
     ProviderUse {
         base_url: "https://api.anthropic.com".into(),
         overridden: false,
@@ -72,10 +73,6 @@ pub fn provider() -> ProviderUse {
 /// Publish `run_started` for placement `run` and create `runs/<run>`, as a
 /// run does before its first request.
 pub fn start_run(a: &Audit, run: u64) -> u64 {
-    start_run_with(a, run, provider())
-}
-
-pub fn start_run_with(a: &Audit, run: u64, provider: ProviderUse) -> u64 {
     let st = log::read(a);
     let arrangement_sha256 = st
         .latest_prepared()
@@ -89,7 +86,7 @@ pub fn start_run_with(a: &Audit, run: u64, provider: ProviderUse) -> u64 {
             runtime: None,
             run,
             arrangement_sha256,
-            provider: Some(provider),
+            provider: Some(provider()),
             observations: RunObservations::current(),
         }
         .to_j(),
@@ -291,156 +288,58 @@ pub fn request_close(a: &Audit) -> u64 {
 pub struct Sealed {
     pub record: u64,
     pub manifest: Vec<u8>,
-    pub manifest_sha256: String,
     pub answer: Vec<u8>,
-    /// `None` when the rendering is unproduced.
-    pub rendering: Option<Vec<u8>>,
-    /// Produced artifacts: member name and bytes.
+    pub rendering: Vec<u8>,
+    /// The artifact members: member name and bytes.
     pub artifacts: Vec<(String, Vec<u8>)>,
-    /// Unproduced entry IDs and their failures.
-    pub unproduced: Vec<(String, String)>,
 }
 
-fn heading(kind: &str) -> String {
-    if kind == "record_artifact" {
-        return "Artifact".into();
-    }
-    let k = kind.trim_start_matches("record_").replace('_', " ");
-    let mut c = k.chars();
-    match c.next() {
-        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-        None => k,
-    }
-}
-
-/// Seal the selection at log position `through` (the end of the log when
-/// `None`) as `actor`, writing `prepared/<n>` per QUESTION-FORMS and the
-/// return manifest, then the `seal` record. A selected payload whose bytes
-/// do not verify is written in its unproduced form, and the rendering is
-/// then unproduced too (8.1).
-pub fn seal(a: &Audit, actor: Actor, through: Option<u64>, run: u64) -> Sealed {
+/// Seal the current selection as the auditor of placement `run`, as a run's
+/// `submit` does: claim `prepared/<n>`, write the answer, the rendering and
+/// the return manifest, then publish the `seal` record. Delivery copies the
+/// prepared answer and rendering by path without reading them, so here they
+/// are opaque bytes naming the sealed revision. The manifest and the
+/// artifact members are exact, because delivery and close decode the one
+/// and verify the other. Every selected payload must still verify.
+pub fn seal(a: &Audit, run: u64) -> Sealed {
     let st = log::read(a);
-    let through = through.unwrap_or(u64::MAX);
-    let selection = st.selection_through(through);
-    let revision = st.revision_through(through);
-    let mut lines = Vec::new();
-    let mut members_after = Vec::new();
+    let selection = st.selection();
+    let revision = st.revision();
+    let mut artifact_members = Vec::new();
     let mut artifacts = Vec::new();
-    let mut unproduced = Vec::new();
-    let mut rendering = b"Rendered by Stewart. Entry text is attributed to the auditor.\n".to_vec();
     for c in &selection {
         let v = c.version;
-        let path = format!("{}/{}", a.dir.path, v.payload.file);
-        let bytes = std::fs::read(&path);
-        let failure = match &bytes {
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Some("missing"),
-            Err(_) => Some("unreadable"),
-            Ok(b)
-                if stewart::util::sha256_hex(b) != v.payload.sha256
-                    || b.len() as u64 != v.payload.size =>
-            {
-                Some("damaged")
-            }
-            Ok(_) => None,
-        };
-        let head = format!(
-            "{{\"id\":{},\"version\":{},\"kind\":{},\"label\":{}",
-            json::quote(&v.id),
-            v.version,
-            json::quote(&v.kind),
-            json::quote(&v.label)
-        );
-        if let Some(f) = failure {
-            lines.push(format!(
-                "{head},\"unproduced\":{{\"sha256\":\"{}\",\"size\":{},\"failure\":\"{f}\"}}}}",
-                v.payload.sha256, v.payload.size
-            ));
-            unproduced.push((v.id.clone(), f.to_string()));
+        if !v.is_artifact() {
             continue;
         }
-        let bytes = bytes.unwrap();
-        let mut title = format!("\n## {} — {}", heading(&v.kind), v.id);
-        if !v.label.is_empty() {
-            title.push_str(&format!(" · {}", v.label));
-        }
-        rendering.extend_from_slice(format!("{title}\n\n").as_bytes());
-        if v.is_artifact() {
-            let name = format!("artifact-{}.bin", v.id);
-            lines.push(format!(
-                "{head},\"encoding\":{},\"member\":\"{name}\",\"size\":{},\"sha256\":\"{}\"}}",
-                json::quote(v.encoding.as_deref().unwrap_or("utf-8")),
-                v.payload.size,
-                v.payload.sha256
-            ));
-            members_after.push(member(&name, "artifact", &bytes));
-            artifacts.push((name, bytes.clone()));
-        } else {
-            lines.push(format!(
-                "{head},\"text\":{},\"citations\":[]}}",
-                json::quote(&String::from_utf8_lossy(&bytes))
-            ));
-        }
-        let text = String::from_utf8_lossy(&bytes).into_owned();
-        if text.is_empty() {
-            rendering.extend_from_slice(b"*No text recorded.*\n");
-        } else {
-            for l in text.strip_suffix('\n').unwrap_or(&text).split('\n') {
-                if l.is_empty() {
-                    rendering.extend_from_slice(b">\n");
-                } else {
-                    rendering.extend_from_slice(format!("> {l}\n").as_bytes());
-                }
-            }
-        }
+        let bytes = std::fs::read(format!("{}/{}", a.dir.path, v.payload.file)).unwrap();
+        assert_eq!(
+            stewart::util::sha256_hex(&bytes),
+            v.payload.sha256,
+            "the fixture seals intact payloads only"
+        );
+        let name = stewart::names::artifact_member(&v.id);
+        artifact_members.push(member(&name, "artifact", &bytes));
+        artifacts.push((name, bytes));
     }
-    let answer = if lines.is_empty() {
-        format!("{{\"schema\":\"stewart.answer/1\",\"revision\":{revision},\"entries\":[]}}\n")
-    } else {
-        format!(
-            "{{\"schema\":\"stewart.answer/1\",\"revision\":{revision},\"entries\":[\n{}]}}\n",
-            lines.join(",\n")
-        )
-    }
+    let answer = format!(
+        "fixture answer: revision {revision}, {} entries\n",
+        selection.len()
+    )
     .into_bytes();
-    if selection.is_empty() {
-        rendering = b"No answer entries recorded.\n".to_vec();
-    }
-    let rendering = unproduced.is_empty().then_some(rendering);
+    let rendering = format!("fixture rendering: revision {revision}\n").into_bytes();
     let (n, dir) = stewart::names::claim_prepared(a).unwrap_or_else(|c| panic!("{}", c.error));
-    let answer_sha = stewart::names::write_prepared_file(a, &dir, n, "answer.json", &answer)
+    let answer_sha256 = stewart::names::write_prepared_file(a, &dir, n, "answer.json", &answer)
+        .unwrap_or_else(|c| panic!("{}", c.error));
+    let rendering_sha256 = stewart::names::write_prepared_file(a, &dir, n, "answer.md", &rendering)
         .unwrap_or_else(|c| panic!("{}", c.error));
     let mut members = vec![
         member("question.md", "manager_question", QUESTION),
         member("answer.json", "answer", &answer),
+        member("answer.md", "rendering", &rendering),
     ];
-    let rendering_sha = rendering.as_ref().map(|r| {
-        let sha = stewart::names::write_prepared_file(a, &dir, n, "answer.md", r)
-            .unwrap_or_else(|c| panic!("{}", c.error));
-        members.push(member("answer.md", "rendering", r));
-        sha
-    });
-    members.extend(members_after);
-    let mut losses: Vec<J> = unproduced
-        .iter()
-        .map(|(id, f)| {
-            J::obj()
-                .with("name", id.as_str())
-                .with("role", "entry")
-                .with("failure", f.as_str())
-                .with("dependency", J::Null)
-        })
-        .collect();
-    if !unproduced.is_empty() {
-        let ids: Vec<_> = unproduced.iter().map(|(id, _)| id.as_str()).collect();
-        losses.push(
-            J::obj()
-                .with("name", "answer.md")
-                .with("role", "rendering")
-                .with("failure", "not_rendered")
-                .with("dependency", json::strs(&ids)),
-        );
-    }
-    let mut bytes = J::obj()
+    members.extend(artifact_members);
+    let mut manifest = J::obj()
         .with("schema", "stewart.return/2")
         .with("audit", a.id.as_str())
         .with("store", a.archive.store.as_str())
@@ -450,29 +349,29 @@ pub fn seal(a: &Audit, actor: Actor, through: Option<u64>, run: u64) -> Sealed {
         .with(
             "seal",
             J::obj()
-                .with("actor", actor.name())
+                .with("actor", Actor::Auditor.name())
                 .with("sealed_at", stewart::util::now_utc()),
         )
         .with("revision", revision)
         .with("members", J::Arr(members))
-        .with("unproduced", J::Arr(losses))
+        .with("unproduced", J::Arr(vec![]))
         .bytes();
-    bytes.push(b'\n');
+    manifest.push(b'\n');
     let (_, name) =
-        stewart::names::write_manifest(a, &bytes).unwrap_or_else(|c| panic!("{}", c.error));
-    let manifest_sha256 = stewart::util::sha256_hex(&bytes);
+        stewart::names::write_manifest(a, &manifest).unwrap_or_else(|c| panic!("{}", c.error));
+    let manifest_sha256 = stewart::util::sha256_hex(&manifest);
     let record = put(
         a,
         "seal",
         SealRec {
-            actor,
+            actor: Actor::Auditor,
             prepared: n,
-            answer_sha256: answer_sha,
-            rendering_sha256: rendering_sha,
+            answer_sha256,
+            rendering_sha256: Some(rendering_sha256),
             revision,
             manifest: name,
-            manifest_sha256: manifest_sha256.clone(),
-            invocation: (actor == Actor::Auditor).then(|| Invocation {
+            manifest_sha256,
+            invocation: Some(Invocation {
                 run,
                 tool_use_id: "toolu_fixture_submit".into(),
                 call: 1000,
@@ -482,12 +381,10 @@ pub fn seal(a: &Audit, actor: Actor, through: Option<u64>, run: u64) -> Sealed {
     );
     Sealed {
         record,
-        manifest: bytes,
-        manifest_sha256,
+        manifest,
         answer,
         rendering,
         artifacts,
-        unproduced,
     }
 }
 
@@ -517,15 +414,15 @@ pub fn deliver_as_run_with(
     d
 }
 
-/// A placement with three entries (an account, an observation and a text
-/// artifact) that the auditor sealed and the run delivered to `dest`.
+/// An accepted audit whose placement 1 recorded three entries.
 pub struct Scenario {
     pub r: String,
     pub audit: Audit,
     pub entries: Vec<Entry>,
 }
 
-/// Accepted, launched, three entries recorded in run 1.
+/// Accepted, launched, three entries recorded in run 1: an account, an
+/// observation and a text artifact (`e3`).
 pub fn launched_with_entries(e: &Env) -> Scenario {
     let r = accepted(e);
     let audit = open(&r);
@@ -561,17 +458,14 @@ pub fn package_members(path: &str) -> Vec<String> {
 }
 
 /// Check a delivered package against the witness: exactly the manifest, the
-/// answer, the rendering (unless unproduced) and the produced artifacts,
-/// byte for byte.
+/// question, the answer, the rendering and the artifacts, byte for byte.
 pub fn assert_package(path: &str, s: &Sealed) {
     let mut want = vec![
         "question.md".to_string(),
         "answer.json".to_string(),
+        "answer.md".to_string(),
         "manifest.json".to_string(),
     ];
-    if s.rendering.is_some() {
-        want.push("answer.md".to_string());
-    }
     for (m, _) in &s.artifacts {
         want.push(m.clone());
     }
@@ -581,10 +475,41 @@ pub fn assert_package(path: &str, s: &Sealed) {
     assert_eq!(read("manifest.json"), s.manifest);
     assert_eq!(read("question.md"), QUESTION);
     assert_eq!(read("answer.json"), s.answer);
-    if let Some(r) = &s.rendering {
-        assert_eq!(&read("answer.md"), r);
-    }
+    assert_eq!(read("answer.md"), s.rendering);
     for (m, b) in &s.artifacts {
         assert_eq!(&read(m), b, "{m}");
     }
+}
+
+/// The path of delivery attempt `attempt`'s package of reference `r` in
+/// `dest`.
+pub fn package(dest: &str, r: &str, attempt: u64) -> String {
+    format!(
+        "{dest}/{}",
+        stewart::names::package_name(r.split(':').nth(1).unwrap(), attempt)
+    )
+}
+
+/// `close REF [extra…] --json`.
+pub fn close(e: &Env, r: &str, extra: &[&str]) -> Out {
+    close_faulted(e, r, extra, None)
+}
+
+/// `close REF [extra…] --json`, with `STEWART_TEST_FAULT` set to `fault`
+/// when given (test builds only).
+pub fn close_faulted(e: &Env, r: &str, extra: &[&str], fault: Option<&str>) -> Out {
+    let mut args = vec!["close", r];
+    args.extend_from_slice(extra);
+    args.push("--json");
+    match fault {
+        Some(f) => e.run_env(&args, &[("STEWART_TEST_FAULT", f)]),
+        None => e.run(&args),
+    }
+}
+
+/// `status REF --json`, which must complete.
+pub fn status(e: &Env, r: &str) -> Json {
+    let o = e.run(&["status", r, "--json"]);
+    assert_eq!(o.code, Some(0), "{}{}", o.text(), o.stderr);
+    o.json()
 }

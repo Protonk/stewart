@@ -275,25 +275,22 @@ class ControllerControls(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             c.attest(self.packet, digest, 'synthetic parser reviewer', out / 'CHECK.json')
 
-    def test_review_refuses_failed_or_unexercised_observation(self):
-        for state in ('failed', 'unexercised'):
-            self.packet = self.root / state
-            out, value = self.review_fixture()
-            value['checks'][0]['outcome'] = state
-            (out / 'OBSERVATION.json').write_bytes(c.p.compact(value))
-            with self.assertRaisesRegex(ValueError, 'complete, stopped and observed'):
-                c.attest(self.packet, c.digest_file(out / 'OBSERVATION.json'), 'synthetic parser reviewer', out / 'CHECK.json')
-            self.assertFalse((out / 'CHECK.json').exists())
-
-    def test_review_refuses_missing_witness_and_input_directory_output(self):
+    def test_review_refuses_an_incomplete_budget_and_input_directory_output(self):
+        # Observation eligibility belongs to profile.validate_observation (test_profile).
         out, _ = self.review_fixture()
         digest = c.digest_file(out / 'OBSERVATION.json')
         with self.assertRaisesRegex(ValueError, 'outside the frozen packet'):
             c.attest(self.packet, digest, 'synthetic parser reviewer', self.packet / 'invalid-review.json')
-        (out / 'parser-fixture.txt').unlink()
-        with self.assertRaises((ValueError, OSError)):
-            c.attest(self.packet, digest, 'synthetic parser reviewer', out / 'CHECK.json')
-
+        # An otherwise eligible observation whose budget left a slot unstarted.
+        (out / 'execution/FINISH.json').write_bytes(c.p.compact({'invocations_reserved': 5, 'invocations_unstarted': 1,
+                                                                 'failed': False, 'resume_allowed': False}) + b'\n')
+        (out / 'EVIDENCE.json').write_bytes(c.p.compact(c.surface.manifest(out)) + b'\n')
+        observation = c.p.decode((out / 'OBSERVATION.json').read_bytes())
+        observation['evidence_manifest_sha256'] = c.digest_file(out / 'EVIDENCE.json')
+        (out / 'OBSERVATION.json').write_bytes(c.p.compact(observation))
+        with self.assertRaisesRegex(ValueError, 'complete approved budget'):
+            c.attest(self.packet, c.digest_file(out / 'OBSERVATION.json'), 'synthetic parser reviewer', out / 'CHECK.json')
+        self.assertFalse((out / 'CHECK.json').exists())
 
 if __name__ == '__main__':
     print('Retained offline controller controls: ' + str(RUN), flush=True)

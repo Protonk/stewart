@@ -78,47 +78,26 @@ there with network access. Builds are otherwise offline:
 ## The independent driver
 
 [`driver/stewart_driver.py`](driver/stewart_driver.py) is the independent
-black-box driver. Its manager-foundation cases cover `new`, `prepare`,
-`commission`, `receipt`, `status`, close before launch and `help`; its run and
-after-launch cases are listed under "Cases" below. It was written from
-[INTERFACE.md](../docs/INTERFACE.md),
+black-box driver. It was written from [INTERFACE.md](../docs/INTERFACE.md),
 [QUESTION-FORMS.md](../docs/QUESTION-FORMS.md),
 [CONTRACTS.md](../CONTRACTS.md) and [ACCEPTANCE.md](../ACCEPTANCE.md) without
 reading `service/`, and drives two binaries only through their command line:
 the release build and the test build (`--features fault-injection,sabotage`,
 INTERFACE Appendix C). It uses the Python standard library only.
 
-The driver is a directory of modules; `stewart_driver.py` is the entrypoint and
-puts its own directory on `sys.path` (isolated mode does not). The framework
-(`driver_core.py`) holds the case registry, the per-case context, inventories
-and evidence; support modules hold the fake Messages API (`fake_provider.py`),
-the reacting auditor (`reacting_auditor.py`), a scripted auditor for exact
-protocol-shape cases (`procedure.py`: a case writes its calls as a generator
-and reads Stewart's actual replies), the expected answer, rendering
-and manifest bytes (`answer_witness.py`), byte-exact JSON spans (`rawjson.py`)
-and the run harness (`run_support.py`). Cases live in `cases_*.py` files, which
-the entrypoint imports in name order, so a new group of cases is a new file.
-`mini_stewart.py` is a small stand-in used only by self-tests; it is never run
-against a binary. Test-only TLS certificates are in
-[`driver/testdata/`](driver/testdata/README.md).
-
-Each case keeps its own witness of everything it supplies under the evidence
-folder, and inventories every archive (path, type, inode, size, mode, mtime,
-SHA-256) before and after every command: an earlier entry may never change or
-disappear (C6), except that a file first seen while a Stewart process was
-still running may grow, keeping its earlier bytes as a prefix. Folders, homes
-and working directories may not change at all, and a destination may only gain
-entries once a run can deliver. A release case with sabotage controls also runs
-on the test binary. The clean runs exercise the full case. Each control then
-runs on the test binary and can use just the fixtures that exercise its target
-checks. A control fires when one of those checks fails. The driver reports an
-unfired control as a broken check. Fault cases run on the test binary.
+`stewart_driver.py` is the entrypoint. It puts its own directory on `sys.path`
+(isolated mode does not) and imports every `cases_*.py` beside it, so a new
+group of cases is a new file. `driver_core.py` holds the case registry, the
+per-case context, inventories and evidence; `run_support.py` is the run
+harness; the fake Messages API, the two auditors and the byte-exact witnesses
+are described below. `mini_stewart.py` is a stand-in used only by self-tests.
+Test-only TLS certificates are in [`driver/testdata/`](driver/testdata/README.md).
 
 Natively, for example on the development Mac against a development build
 (not qualification evidence):
 
 ```sh
-python3 -I -B apparatus/driver/stewart_driver.py --list
+python3 -I -B apparatus/driver/stewart_driver.py --list [--describe]
 python3 -I -B apparatus/driver/stewart_driver.py --self-test
 python3 -I -B apparatus/driver/stewart_driver.py \
     --binary /abs/stewart --test-binary /abs/stewart-test \
@@ -126,32 +105,61 @@ python3 -I -B apparatus/driver/stewart_driver.py \
 ```
 
 Build the test binary into its own target folder, for example with
-`CARGO_TARGET_DIR`, so the two builds never share artifacts. Linux-only
-expectations (the ext4/xfs/btrfs allowlist, OFD lock behavior, byte-string
-file names) are skipped with their reason elsewhere. The evidence
-folder holds `START.json`, `RESULT.json`, `RESULTS.md`, each command's argv,
-streams, exit status and timing, the inventories, and the witnesses. The exit
-status is 0 only when no case failed and every control fired.
+`CARGO_TARGET_DIR`, so the two builds never share artifacts. Expectations that
+only Linux can show, such as OFD lock behavior, `/proc` observations, the
+archive filesystem allowlist and byte-string names, are skipped elsewhere with
+their reason. `--skip-heavy` skips the cases `--list` marks heavy: bound-sized
+inputs and close's bounded waits. The evidence folder holds `START.json`,
+`RESULT.json`, `RESULTS.md`, each command's argv, streams, exit status and
+timing, the inventories, and the witnesses. The exit status is 0 only when no
+case failed and every control fired.
+
+### Cases, variants and controls
+
+`--list` prints the case inventory: each case's ID, the ACCEPTANCE claims it
+bears on, its title, and where they apply its mode, needs, whether it is heavy,
+its sabotage controls (INTERFACE C.2) and the failure points it sets (C.1).
+`--list --describe` adds each case's description where it says more than the
+title: what passes, what differs and what must stay the same. The description
+is the case's docstring and is copied into its `RESULT.json`. A case can set
+only the failure points it declares.
+
+A release case runs on the release binary. A release case with sabotage
+controls also runs in full on the test binary with no test variable set. That
+baseline is the evidence that an unarmed test build behaves as the release
+does, which lets the fault cases, run only on the test build, stand for
+release behavior; it is also the clean comparison for the controls. Each
+control then runs on the test binary and may use only the fixtures that hold
+its target checks. A control fires when one of those checks fails, and its
+targets name the checks that identify the violated property rather than any
+failure in the case. The driver reports an unfired control, or one whose
+baseline failed, as a broken check.
+
+Each case keeps its own witness of everything it supplies under the evidence
+folder, and inventories every archive (path, type, inode, size, mode, mtime,
+SHA-256) before and after every command: an earlier entry may never change or
+disappear (C6), except that a file first seen while a Stewart process was
+still running may grow, keeping its earlier bytes as a prefix. Folders, homes
+and working directories may not change at all, and a destination may only gain
+entries once a run can deliver.
 
 ### Provider, network and witnesses
 
 - The fake Messages API (`fake_provider.py`) listens only on `127.0.0.1` with
   port 0, and the driver connects only to ports its own listeners hold; both
-  rules are enforced in code (`Listener`, `own_connect`). Modes: plain HTTP
+  rules are enforced in code. Modes: plain HTTP
   (`STEWART_PROVIDER_URL=http://127.0.0.1:PORT`, release and test binaries),
   HTTPS with the test CA (`STEWART_TEST_TLS_ROOT`, test binary), and HTTPS to
   `provider.test` through the CONNECT proxy (`HTTPS_PROXY`). The case where the
   binary itself resolves `provider.test` runs only with `--network-isolated`.
   Where listening is not permitted, cases needing the fake skip with
   "loopback listening unavailable".
-- What the fake accepts is declared as data (`Accepts` in `fake_provider.py`):
-  the request members of the pinned API version, the members of
-  `output_config`, the effort levels and on-demand `compaction`. A gate judges every request body
-  against it before the case's responder answers, and refuses a mismatch as
-  the Messages API does. A case that needs a provider which has moved away from
-  what the release sends changes one fact of it (`renamed`, `without`,
-  `withdrawn`, `answering`); a parameter added later joins the model the same
-  way.
+- What the fake accepts is declared as data: the request members of the pinned
+  API version, the members of `output_config`, the effort levels and on-demand
+  `compaction`. A gate judges every request body against it before the case's
+  responder answers, and refuses a mismatch as the Messages API does. A case
+  that needs a provider which has moved away from what the release sends
+  changes one fact of that model.
 - Witnesses outside every archive, under the case's evidence folder: each
   request and response byte for byte (`provider-<label>/`), CONNECT requests
   and tunnel counts, the auditor's goals, calls, replies and anomalies
@@ -159,16 +167,20 @@ status is 0 only when no case failed and every control fired.
   computed by `answer_witness.py` from the goals and the material witness.
 - Accounting: each attempt's charge under INTERFACE 6.4 is computed by the
   fake from what it did (reported usage, replacing top-level totals with valid
-  iteration sums when supplied; an estimate for a lost response; or none); `run_ended` usage, run and status allowances and re-entry allowances
-  are compared with those sums. A case that kills a run before an attempt
-  record exists overrides that attempt's charge to the estimate 6.4 states.
+  iteration sums when supplied; an estimate for a lost response; or none);
+  `run_ended` usage, run and status allowances and re-entry allowances are
+  compared with those sums. A case that kills a run before an attempt record
+  exists overrides that attempt's charge to the estimate 6.4 states.
 - Protocol timing (C9): for a response holding one tool call, the time from
   its last byte to the next request's connection. This interval includes writing
   captures and starting the next request. On every architecture the timing
   table reports the sample count, median, 95th percentile and maximum per
   operation and binary. These observations carry no qualification threshold.
 
-### The reacting auditor
+### The two auditors
+
+A scripted auditor (`procedure.py`) serves exact protocol-shape cases: a case
+writes its calls as a generator and reads Stewart's actual replies.
 
 `reacting_auditor.py` is a deterministic policy with a goal list (label, kind,
 text, citations; optionally a draft replaced later, a text or base64 artifact,
@@ -184,119 +196,20 @@ follows the replies' `next` calls for pages. At configured mutation counts it
 emits an opaque `compaction` block in an ordinary response and discards its own
 memory. This tests re-entry after fake memory loss; it does not exercise provider
 summary requests or establish live model compaction. Every new conversation
-(a continuation after a kill) starts with empty memory and checks the first
-message's question and continuation notice bytes. It never consults earlier
-replies except through its memory. Each reply is checked as it arrives
-(envelope, `is_error`, effects keys, no host paths or manager identifiers,
-citations as recorded, allowances against the fake's charges, reminder and
-near-limit text and their once-per-audit allowance); each failed expectation is
-an anomaly that becomes a failed check `auditor.<check>`. Because it re-adds
-only what re-entry does not show, an omitted entry produces a duplicate, and
-the duplicate is counted in the selection bytes Stewart produced. Endings:
+(a continuation after a kill) starts with empty memory. It never consults
+earlier replies except through its memory. Because it re-adds only what
+re-entry does not show, an omitted entry produces a duplicate, and the
+duplicate is counted in the selection bytes Stewart produced. Endings:
 `submit`, or `ordinary` (end the turn; after the reminder either submit or end
 again).
 
-### Cases
-
-`cases_run.py` holds the run adapter and answer protocol cases,
-`cases_compaction.py` the provider summary transitions and accounting,
-`cases_effort.py` the effort setting and provider rejection cases,
-`cases_notices.py` the notice claim, durability and transmission cases,
-`cases_placements.py` the in-placement output floor and cross-placement
-invocation identity, `cases_stopping_gate.py` the signal's publication gate and
-close winning a start reservation, and `cases_after_launch.py` the delivery, close and status
-cases after launch (T8–T10, T13 and T14), marked "after launch" in the table. They build on
-`run_support.py`, whose public functions are a stable API. Fault points are
-Appendix C.1 `point=action` items; controls are C.2 names. Every C.2 name is
-assigned to at least one case (fourteen of them to manager-foundation cases); a
-name may serve a manager and an auditor case.
-
-| Claim | Case | Pass; differing; invariance | Controls | Fault points |
-| --- | --- | --- | --- | --- |
-| C1 | `c1.requests` | For each family, and for open inquiry with other materials, an audit lists the materials and ends ordinarily. Every request: 6.1 line and exactly the seven headers in order, including the compaction beta, the 4.5 splice of the pinned model, system and tools bytes, no `output_config` (no effort is set) and a pinned `request_extra` of `{}`, tools equal to the family's, `max_tokens` from 1,024 to 16,000 and 16,000 first; the receipt and `run_started` name the arrangement whose bytes were carried. Differing: comparison and inquiry framing each differ from open inquiry exactly by their recording tools, sharing the first system block and differing in the second (instructions). Invariance: other materials, same tools and system bytes. | `extra_tool`, `arrangement_mismatch` | none |
-| C1 | `c1.outside-paths` | `read` refuses `source_unknown` for names that leave the material (`../`, absolute host and archive paths, archive names, near misses, directories), and `search` for the first six of them; a near miss (`materials/A.py`) names the real name as a hint; a constructed `list` cursor refuses `handle_invalid`; no host or archive path, reference or store identity in any reply; first-page re-entry and prepare identify the captured family/version. Differing: the real name reads. Invariance: a second audit elsewhere refuses the same relative names with the same reasons. | none (C20 holds the custody-path control) | none |
-| C1, C19, C20 | `c1.effort-levels` | Prepare accepts each effort level of 3.2 (`low`, `medium`, `high`, `xhigh`, `max`): the prepared record's settings carry `effort` right after `limits` (with `inquiry` and `varies` after it when given), the reply shows no other level, and the arrangement pins `request_extra` `{"output_config":{"effort":<level>}}`. Differing: without the key the settings have no `effort` and `request_extra` is `{}`. Refused `setting_invalid`, recording no preparation: `High`, `MAX`, `xHigh`, `extreme`, `none`, `default`, `minimal`, `3`; a second `effort` line is `front_matter_invalid`. | none | none |
-| C1, C2 | `c1.effort` | The same question and materials commissioned with `effort: high` and without; each run meets a 529 with retry-after 61 (one attempt), then continues, lists, reads and ends ordinarily. With the effort, every request (first and continuation) has `,"output_config":{"effort":"high"}` spliced after `tools` and nothing else added, matching the pinned `request_extra`; the fake's model of the pinned API version accepts each; no system block, tool or message contains the word effort; first messages carry the question exactly. Differing: without it the arrangement differs only in `request_extra` (`{}`), no request has `output_config` and a provider model without `output_config` accepts every request; request by request the system, tools and messages bytes are equal and each body is the other with exactly that member removed. | `misspell_effort`, `effort_in_prompt` | none |
-| C1, C12 | `c1.tls-proxy` | Through `HTTPS_PROXY` every attempt is CONNECT `provider.test:443` with host `provider.test:443`, then TLS with SNI `provider.test`, the key never in clear; the run ends ordinarily; `run_started` records the base URL, override, proxy and API version, and status shows the override and proxy. Differing: a certificate from another CA fails all four attempts (`connection_failed`), no request reaches the fake, and the run ends `interrupted` `provider_unavailable` with every provider fact null (request 1, attempt 4). | none | none |
-| C1, C6, C12, C14 | `c1.captured-wire` | Replays local HTTP and CONNECT transcripts. A 503 retries. A 200 preserves the same body across length, chunked and close-delimited framing. A 407 ends each tunnel attempt before any provider request. | none | none |
-| C2 | `c2.question-and-reads` | The first message holds the question body exactly (CRLF, over one read page, essential text last); the reacting auditor reads the question and every material page by page, each page's range, bytes, `cite` and lines equal to the 7.2 page rule and the witness (CRLF, BOM, multibyte, long lines, a hidden file, a lone CR, blank and empty pages in `data.text`); a material rewritten in the folder after commission still reads as captured; the access log equals the reads. Differing: a question one byte different arrives different in exactly that byte. Invariance: the same materials from another folder read identically. | `read_live_source`, `normalize_read`, `paraphrase_question` | none |
-| C2, C19 | `c19.paging` | A line of three-byte characters pages at 65,534 bytes, never splitting a code point or losing bytes; a start inside a code point is `range_invalid` naming the nearest boundaries, a start past the end `range_invalid`, and a start at the end gives an empty complete page. Search reports every literal hit, overlapping ones included, in position order with its `cite` and line, over pages of at most 128 hits with cursors and the last page complete; absence is reported only with `complete: true`; a 1,025-byte search text is refused and 1,024 bytes accepted. Differing: `aaa` gives one hit per line. Invariance: naming the default scope (the question, then the materials in index order) gives the same hits. | `read_truncate_silently`, `search_omit_last_page` | none |
-| C3 | `c3.edits` (T5) | Equal-byte adds are distinct entries, the second with `label_duplicate`; a stale `replace` or `delete` refuses `stale_entry` with the current handle, which still reads its bytes; a repeated delete reports `already_removed`; a `tool_use` ID repeated with identical raw input is a replay (the same result, `replay_of`, no entry), with other input `invocation_id_reused`, and a fresh call with the same arguments is a new entry; reads change no revision; the prepared selection equals the witness at revision 6. | `merge_equal_adds`, `replay_reexecutes`, `stale_target_overwrites` | none |
-| C3 | `c3.interruptions` | Killed while appending an entry (a torn stage file) or before linking it (a complete stage file never linked): status `interrupted` counts no entry and reports the stage file, the continuation's re-entry shows none, the auditor adds each goal once and every sealed entry has its entry record. Killed before the seal link: no seal, and the continuation seals. Killed after it: status `sealed_undelivered` with the auditor's seal, and `run` refuses `authoring_ended` (`ended_by` seal) without a request. | `torn_as_entry` | `stage.torn:entry=kill`, `log.publish:entry=kill`, `log.publish:seal=kill`, `seal.after_link=kill` |
-| C3 | `c3.submit-races-close` (T6) | Close wins: with the run paused before its seal link, close is requested and the run released; submit refuses `authoring_ended` (`ended_by` close, `close_requested_at`, an absent seal observation), the run ends `stopped_by_close` and close seals revision 1 as manager. Submit wins: with the run paused after its seal link, close is requested and the run released; it ends `sealed` and the only seal is the auditor's. Each order twice. | `manager_seal_as_auditor` | `log.publish:seal=pause`, `seal.after_link=pause` |
-| C3 | `c3.limits` (heavy) | 256 entries recorded in four responses of 64 calls; the 257th refuses `entry_limit` with the answer unchanged; at the limit a replace and a delete work, then one add fits and the next refuses; a record input of 4 MiB + 1 byte refuses `input_too_large` and one of exactly 4 MiB is recorded. | none | none |
-| C3, C13, C6 | `c3.identity-across-placements` | Placement 1 records `toolu_identity_same` as e1, then an unavailable provider interrupts it. In the continuation the same ID with identical raw input is a new invocation (identity is the placement plus the `tool_use` ID): e2, with `label_duplicate` and no `replay_of`. Repeated inside placement 2 it replays: the same content, `replay_of` naming placement 2's call, no entry. A fresh ID with the same bytes records e3, and the sealed selection holds e1–e3. | `replay_reexecutes` | none |
-| C4 | `c4.reentry` | Seventy entries come back over two re-entry pages (64, then 6 with only `entries` and `page`); a page cursor taken before an edit refuses `stale_view` with a call to start again; a refused citation is listed in `latest_refusals` with its operation and revision. An unavailable provider ends run 1 and a result record is then damaged: the continuation's re-entry reports run 2, all 71 entries, the damaged record in `gaps` and the cumulative allowances. Invariance: the reacting auditor seals the same `answer.json` bytes with and without fake memory loss, including an entry longer than one read page. | `reentry_omit_entry`, `reentry_truncate_page`, `reentry_omit_last_page`, `reentry_mix_revisions`, `reentry_placement_allowances` | none |
-| C4, C1, C6, C18 | `c4.provider-compaction` | Two top-level usage totals reach exactly 150,000 with input, cache and output all contributing; iteration totals deliberately differ. Summary requests carry the pinned beta, model, effort, system, tools and every pending tool result. Signed content arrays, including unknown fields, whitespace and escapes, replace the active context exactly; the next request has the post-compaction notice. Re-entry still sees both existing entries. Every original request reconstructs from retained captures and reset markers, and responses, charges and call captures match the external witness. One placement, three answer entries and one seal. Differing: 149,999 top-level tokens with larger iteration sums sends no summary. Invariance: identical sealed answer. | none | none |
-| C4, C13, C14 | `c4.compaction-failures` | Missing, unsigned, empty, mistyped, repeated-type and multiple signed blocks; tools alone or beside a summary; ordinary stop, output cutoff, refusal and exhausted context; absent/null/empty/repeated/malformed usage iterations, unknown types, missing/negative/noninteger/repeated counts and count/sum overflow. Each keeps the raw response, interrupts with the specified cause and charge, executes no summary tools and consumes no reminder. | none | none |
-| C4, C13 | `c4.compaction-budgets` | Turn, input and output allowances each stop before the summary when exhausted, or after accounted summary iterations without sending another request. Output cap shrinks to 1,200 on the summary; an ended audit cannot resume. | none | none |
-| C4, C7, C13 | `c4.compaction-notices` | A near-limit notice triggered by summary usage follows the signed block beside the post-compaction notice, with exact remaining allowances. A second specimen shows a successful summary leaves the ordinary-stop reminder available. | none | none |
-| C4, C9, C13 | `c4.compaction-rejection` | A provider schema that rejects the summary parameter, and a provider refusing the beta header, each interrupt with the provider's own facts, retain captures and make no fallback request. Status remains interrupted. | none | none |
-| C4, C13 | `c4.compaction-usage-fallback` | Ordinary absent/null iterations use top-level counts; valid message/compaction iterations replace them. Malformed iteration data in an ordinary response is undecodable rather than falling back to smaller top-level totals. | none | none |
-| C4, C13 | `c4.compaction-retries` | A 529 on the summary request retries identical bytes, counts no usage for the HTTP error, accounts the summary response once, then resets to an ordinary request. | none | none |
-| C4, C13, C8 | `c4.compaction-stopping` | SIGTERM, SIGINT, SIGHUP and close during an in-flight summary abort through the normal path with estimated usage, retained request capture and no reminder. | none | none |
-| C6 | `c6.records` | `list`, `read`, `search`, a refused read and a replayed search are in the access log in order with their exact input bytes and outcomes, and the search is captured; a replace keeps both versions' payload files with their bytes; every run record decodes strictly; `run_ended` usage equals the fake's charges; inventories around every command (archives and destinations only grow). | `rewrite_record_in_place` (run records), `remove_superseded_payload`, `skip_search_capture` | none |
-| C7 | `c7.families` | Each family's requests carry its own system and tools bytes. With no entries, prepare gives only `answer_empty`, and its views are the empty selection and `No answer entries recorded.`; after an account saying the question cannot be answered as asked, prepare lists one `section_unfilled` per unfilled expected section in tools order and names no sealer, and submit seals; comparison counts an observation without expecting it as a section. Open-inquiry citation controls: a range, a quote, both, an irrelevant but valid citation and a read page's `cite` are recorded with Stewart's additions; a changed range, a missing quote and an ambiguous quote (its occurrences listed) refuse with no entry; prose resembling a citation is not scraped. T12: an empty answer seals and delivers an empty `answer.json` and the rendering `No answer entries recorded.` | `framing_task_elsewhere`, `grade_support`, `block_incomplete` | none |
-| C7 | `c7.prompts` | An ordinary stop gets the exact reminder; after an unavailable provider interrupts the run, a stop in the continuation ends it without a second reminder (one per audit). With a 10,000-token output limit, `max_tokens` is the lesser of 16,000 and the remaining output; the near-limit notice is sent once with the exact remaining amounts; the run ends `limit_reached` after executing the last call, with no seal, and `run` then refuses `authoring_ended` (limit). | `reset_notice_allowance` | none |
-| C7, C6, C13, C17 | `c7.notice-durability` | The reminder's notice record is linked but its directory sync fails: the archive write failure ends the placement `interrupted` (`archive_write_failed`, exit 5) with no request carrying it. The run reply and `run_ended` (whole body checked) list the linked notice `not_sent`, and status is `interrupted`. The continuation's re-entry shows the reminder used, and its first ordinary stop ends authoring without a reminder. Differing: the notice is never linked, so no notice is listed, status names the interrupted stage publication, and the continuation receives the reminder once. Invariance: the same fault run from another directory and HOME gives the same `run_ended` body and run reply. | `reset_notice_allowance` | `log.dirsync:notice=eio`, `log.publish:notice=eio` |
-| C7, C6, C13 | `c7.notice-transmission` | Unfaulted, the reminder rides on request 3 and is `sent`. Killed after linking the notice and before capturing request 3, it is `not_sent` with no estimate. Killed after writing request 3, it is `unknown` and one estimate is charged. Both kills are reconciled by the next `run` (`process_gone`). Re-entry shows the reminder used, and the continuation ends without re-sending it. | `reset_notice_allowance` | `log.dirsync:notice=kill`, `provider.sent:3=kill` |
-| C7, C13 | `c7.near-limit-continuation` | With a 10,000-token output limit and 1,200 per response, the near-limit notice rides on request 8 with the exact remaining amounts. Four 529s on it interrupt the placement with the notice `sent`. The continuation still requests (cap 1,600), its re-entry shows the notice used, and no placement-2 request carries another although its allowance stays below 20 %. The log holds one near-limit notice (run 1) and one reminder (run 2). | `reset_notice_allowance` | none |
-| C9, C6 | `c9.provider-rejections` | One commission with `effort: xhigh` per drift of the fake's declarative provider model (`fake_provider.Accepts`, judged by `Gate` in front of the auditor): the effort renamed, `output_config` removed, the level withdrawn, `output_config` removed with an HTML 400 page instead of an error object (no request ID), and with a message over 1,024 bytes whose cut falls inside a character. Runs 1 and 2 each make one attempt, end `interrupted` `provider_rejected` with exit 5, and give status, error type, error message (cut as the attempt record cuts it) and request ID in the run reply and `run_ended` exactly as the fake sent them, or null; the attempt record is `http_error`, `then` `end`, charged none; the raw response capture holds the body sent; run 2 reports the same refusal; status says `interrupted`. Every request carries the effort. Invariance: with the model moved back to the pinned API version's, run 3 of the same commission is accepted and ends ordinarily. | `hide_provider_message`, `rejection_as_unavailable` | none |
-| C9, C6 | `c9.captured-authentication-error` | Replays the captured 401 with its projected request ID. Changing or removing the header ID exercises the reported ID precedence and fallback. The private body and zero charge stay the same. | `hide_provider_message` | none |
-| C12 | `c12.run-environment` | Before acceptance `run` refuses `not_accepted`. After it, a missing or empty key, a key with bytes outside 0x21–0x7E, a provider URL with another scheme, user information, a query, a fragment or a trailing slash (a non-loopback `http://` URL only with `--network-isolated`) and an invalid proxy are each refused before any request, publishing nothing and offering the same run line; status stays `not_started`. | none | none |
-| C12 | `c12.test-variables` | Test build: invalid `STEWART_TEST_PROVIDER_TIMEOUT` or `STEWART_TEST_RETRY_DELAYS` refuses `test_variable_invalid`, an invalid `STEWART_TEST_TLS_ROOT` `test_tls_root_invalid`, before any request. Differing: the release build ignores the same environment and runs. | none | none |
-| C12 | `e2e.reacting-audit` | The receipt's run line, from another directory and HOME, runs the reacting auditor with fake memory loss to a sealed, verified delivery equal to the witness; every request's shape, the echoed history, the access log and `run_ended` usage are checked; status from a third directory; an ordinary close. | none | none |
-| C12 | `c12.run-refusals` | Commission succeeds with no key while the provider URL names the fake, which sees no connection, and its run line names the absolute writer. `run` refuses `authoring_ended` with `ended_by` `ordinary_ending` (naming its record), `limit` or `seal`; `reference_closed` after close; `run_held` with the holder's observations while a paused run holds the lock. Invariance: the same ordinary run from other directories and HOMEs gives the same ending, usage and notices, and `run_started` observations name a process and user ID. (T13's close behavior is in `cases_after_launch.py`.) | `relative_run_line`, `commission_over_network` | `run.after_started=pause` |
-| C12, C8, C16, C20 | `c12.start-races-close` | Close wins: `run` is held immediately before linking `run_started`, close publishes `close_requested` and is held after it, and `run` is released: it refuses `reference_closed` with exactly `close` and `status` next, changes nothing (`run` `not_started`), exits 3, reaches no provider and creates no run directory; close then completes before launch. Invariance: the same reply when close was requested before `run` began. Differing: the same hold released without close starts the placement, which seals. | none | `log.publish:run_started=pause`, `close.after_requested=pause` |
-| C13 | `c13.t7-kill-after-entry` | Killed after an entry: status `interrupted`; `run` reconciles `process_gone`, continues with the notice, re-adds nothing, seals each goal once. | none | `entry.after_link=kill` |
-| C13 | `c13.continuation` | Killed with a request in flight (its answer never read, charged an estimate), while a result is written and between turns: each status `interrupted` with one run; the continuation carries the same system and tools bytes and the continuation notice, cumulative allowances and every earlier element once; both `run_ended` usages equal the fake's charges. Invariance: each continuation seals the same `answer.json` bytes as an unkilled reference. | `reset_limits_on_continuation`, `fresh_ledger_on_continuation` | `provider.sent:12=kill`, `stage.torn:tool_result=kill`, `run.between_turns:11=kill` |
-| C13, C7 | `c13.output-floor-live` | Output limit 4,096. After a response reporting 3,072 output tokens, request 2 is sent with `max_tokens` 1,024. After one more output token, 1,023 remain: no request 3, the last response's call is executed and recorded, the placement ends `limit_reached` with no reminder or notice, and `run` refuses `authoring_ended` (limit). Differing: 3,073 in the first response leaves one request. Invariance: changing only cache counts leaves the request series and ending unchanged. | none | none |
-| C13 | `c13.provider-shapes` (T15) | One audit, one placement per shape, each continuing the last: thinking, redacted, compaction and unknown blocks echoed byte for byte through chunked and close-delimited bodies; `max_tokens` with a call continues and without one interrupts; `refusal`, `pause_turn`, an unknown stop reason; T15: `model_context_window_exceeded` with one call executes and records it and sends no further request; complete but undecodable 200s (not JSON, missing usage, repeated member, gzip, and over 32 MiB unless `--skip-heavy`) as `response_undecodable`; a 200 cut off mid-body as `connection_lost` (retried) and a cut-off 500 as `http_error`; timeouts under `STEWART_TEST_PROVIDER_TIMEOUT=1`; a `tool_use` without an ID or with U+0000 in it, captured and not executed; stop reason `tool_use` without a `tool_use` block; U+0000 in a tool name (`tool_unknown`), in `model` (recorded null) and `stop_reason`, and in an error body's type and message (recorded null in the attempt record and the run reply); a retry-after date ignored for the test delay. Each ending, cause, attempt outcome and charge as 6.3 to 6.6 state. | none | none |
-| C13 | `t16.provider-unavailable` | Four 529s: four attempts with the same bytes, none charged, ending `interrupted` `provider_unavailable` with exit 5, the run reply and `run_ended` giving the last attempt's status, error type, error message and request ID (request 1, attempt 4). Continuing, a 529 with retry-after 61 ends after one attempt (`provider_unavailable`), and a 413 after one attempt (`provider_rejected`). | none | none |
-| C13 | `c13.stopping` | SIGTERM, SIGINT and SIGHUP during a stalled request each abort it (`aborted_by_signal`, charged an estimate) and end the placement `interrupted` with cause `signal`, exit 5; close during one aborts it (`aborted_by_close`) and the run ends `stopped_by_close`. After a seal, SIGTERM while delivery is paused fails the delivery with cause `signal`, ending `sealed`. | none | `delivery.after_member:1=pause` |
-| C13, C3, C8, C20 | `c13.signal-gate` | A signal while a mutation is held before its log link closes the gate: SIGTERM at the seal's link refuses the submit `placement_stopped` in its result record, links no seal and ends the placement `interrupted` (`signal`, exit 5); status is `interrupted` and the continuation re-enters to the unsealed observation and seals. Invariance: SIGHUP at an entry's link refuses the record call the same way, with no entry. Differing: SIGTERM or SIGINT after the seal's `linkat` (its directory sync, or after publication) lets the begun link complete: the auditor's seal stands, the submit completed naming it, the placement ends `sealed` and the delivery attempt fails with cause `signal`. With both a durable `close_requested` and a signal, in either order, close won the held link's log slot, so the submit is refused `authoring_ended` (`ended_by` close, `close_requested_at`, absent seal); the first observed decides the ending: `stopped_by_close` (exit 0) when close came first, `interrupted`/`signal` (exit 5) when the signal did. | none | `log.publish:seal=pause`, `log.publish:entry=pause`, `log.dirsync:seal=pause`, `seal.after_link=pause`, `close.after_requested=pause` |
-| C14 | `c14.refusals-recorded` | A refused citation, a path outside the material, a stale replace and a duplicate-key input each keep a call capture with the exact block bytes and a result record with the reason, `is_error` and the content sent, creating no entry; the audit seals and delivers; no manifest, log record, result envelope, run reply or status holds a key that grades the answer, and the manifest has exactly its 8.2 keys. Differing: each kind has its own reason. Invariance: without the refused calls, the same `answer.json` bytes. | `drop_refused_capture`, `manifest_verdict` | none |
-| C20 | `c20.tool-inputs` | Duplicate and escape-equivalent keys, an unknown field (naming the expected keys), NUL, a non-object input, a wrong type, nesting deeper than 16, out-of-bound and non-integer starts and a missing field refuse `input_invalid` (naming the field's JSON pointer), raw bytes kept; an unknown tool refuses `tool_unknown`, and constructed entry and view handles `handle_invalid`; no reply carries a custody path; prepare names no sealer; a stale preparation refuses `stale_preparation` with `revision_now`; `"true"` for `confirm` is `input_invalid`; a dry run seals nothing; the confirmed submit's data is exactly the seal facts, claiming no delivery. Test build: an uncertain seal publication fails `seal_uncertain` with `effects.seal` unknown and the same submit as next call. | `accept_unknown_tool_field`, `leak_custody_path`, `prepare_claims_seal`, `stale_preparation_retargets`, `seal_uncertain_as_none`, `submit_claims_delivery` | `log.dirsync:seal=eio` |
-| C21 | `c21.command-effects`, `c21.command-effect-access`, `c21.file-only`, `c21.file-only-lost-reply` | Inspect every entry point. Compare direct and wrapped file-only workflows, reply loss, credential refusal, interrupted provider calls and closed packages against independent inputs and observations. | Altered forecasts, archive open/read observation on Linux, inherited key descriptor and loopback peer controls | Lost commission reply |
-| C5, C21 | `c5.question-capture` | Compare the accepted question body, sealed identity and delivered bytes. Damage the accepted capture or receipt and check the recorded failure, attribution and available custody actions. | Changed capture or receipt | none |
-| C5 | `c5.package` (after launch) | Five goals (quoted and ranged citations, a replaced draft, a text and a binary artifact) are delivered as exactly `manifest.json`, the accepted `question.md`, `answer.json`, `answer.md` and two artifact members, equal to the witness, mode 0700/0600, verifying from their own manifest, whose digest the run printed at seal; status `delivered_open`; an ordinary close confirms placement with no provider request or second copy. Differing: one changed byte in an entry's text changes `answer.json` and `answer.md` only there. Invariance: another archive, destination, directory and HOME give the same members, byte for byte, apart from the manifest. | `drop_last_entry`, `deliver_conversation`, `regenerate_rendering`, `render_conclusion` | none |
-| C5 | `c5.partial-delivery` (after launch) | A failed `answer.md` write leaves the run's attempt 1 partial (`write_failed`, the package kept) and the run still ends `sealed`; status `sealed_undelivered` offers `--destination`. Close with `answer.json` corrupted in the copy makes attempt 2 partial (`not_verified`), since verification reads members back; close again makes a verified attempt 3, presented for confirmation as a copy made after the close request. Packages 1 and 2 keep their bytes; confirming closes. | `skip_delivery_verification`, `remove_partial_package` | `delivery.member_write:answer.md=eio`, `delivery.member_corrupt:answer.json=corrupt` |
-| C5 | `c5.t9-destination` (after launch) | T9: with the commissioned destination removed after commission, the run's attempt 1 and close's attempt 2 fail, and close stays unfinished offering `--destination`; a missing path or a file as `--destination` is `destination_invalid`, publishing nothing; `--destination DIR` makes a verified attempt 3 there for confirmation, after which another `--destination` is `delivery_already_verified`. Confirming closes; the commissioned path is not recreated and no close sends a provider request. | none | none |
-| C5 | `c5.conflicting-package` (after launch) | With a directory planted under the first package's name, attempt 1 ends `name_taken` and attempt 2 delivers `-002`, equal to the witness; the planted directory is neither adopted, emptied nor overwritten; an ordinary close confirms the copy. | none | none |
-| C5 | `c5.lost-run-reply` (after launch) | A run killed after its verified delivery and before `run_ended`: status shows the delivery; close from another directory and HOME reconciles the run (`process_gone`) and closes `delivered_before_close` with no other attempt or copy. | none | `delivery.after_ended=kill` |
-| C5 | `c5.t10-damaged-payload` (after launch) | T10: with one bit of a payload flipped after an ordinary ending, close seals as manager with that entry unproduced (`damaged`) and no `answer.md`, delivered `verified_with_losses` for confirmation; `--destination` is `delivery_already_verified`, `--confirm` alone or surrendering one of the two losses `surrender_required`, an unknown loss `handle_invalid`, `--surrender` without `--confirm` a usage error; surrendering both closes `closed_with_surrendered_losses`, and status never shows a complete delivery. | none | none |
-| C5 | `c5.payload-corrupt-fault` (after launch) | Payloads corrupted as they were written, then an ordinary ending: close seals as manager with exactly those entries unproduced, delivers `verified_with_losses` and closes only when every loss is surrendered. | none | `entry.payload_corrupt=corrupt` |
-| C5 | `c5.unknown-membership` (after launch) | Close killed after its manager seal, then the archived seal manifest damaged: close's attempt fails `manifest_unavailable` with no package, token or loss IDs, as does an attempt to a new `--destination`, which stays empty; `--confirm` is refused; nothing is closed and no empty return is delivered. | `unknown_membership_empty` | `close.after_seal=kill` |
-| C8 | `c8.close-every-state` (after launch) | Close before launch (`closed_before_launch`, nothing sealed or delivered) and after a failed intake (`closed_without_acceptance`). T8, after an ordinary ending: `--destination` and `--confirm` are refused before any copy; close seals as manager and delivers for confirmation; a repeat re-presents the same token publishing nothing, a wrong token is refused, and `--confirm` closes. Differing: a copy delivered before the close request is confirmed by an ordinary close (`delivered_before_close`). Also an interruption sealed by the manager with its entry, an empty answer's honest empty return, and a damaged log (status `log_damaged`, close unfinished publishing nothing, `run` refused). | `skip_confirmation`, `empty_return_before_launch` | none |
-| C8 | `c8.close-faults` (after launch) | Close killed after its request (status `close_unfinished`, `run` refuses `reference_closed`, close continues to a manager seal), after its seal (close delivers without sealing again), after its delivery (T14: status shows the token, and close from another directory and HOME re-presents it) and after `closed` (status closed, close `already_closed`). A run killed after its seal (close reconciles it, keeps the auditor's seal and delivers) or before its first request (close seals an empty selection as manager). | none | `close.after_requested=kill`, `close.after_seal=kill`, `delivery.after_ended=kill`, `close.after_closed_link=kill`, `seal.after_link=kill`, `run.after_started=kill` |
-| C8 | `c8.close-running` (after launch) | T13: while a run stalls in a request, a second run refuses `run_held`; close stops the run (`aborted_by_close`, `stopped_by_close`, exit 0), seals its entry as manager and delivers for confirmation. A SIGSTOPped holder leaves close `run_still_held` after about 30 s; continued, it stops by close and a later close resumes. A run paused in delivery after its seal still holds the lock: close replies `run_still_held` with the auditor's seal, never treating the seal as a stop. | `seal_as_stopped` | `delivery.after_member:1=pause` |
-| C16 | `c16.status-after-launch` (after launch) | Status in JSON and for people, with the same facts, and unchanged by elapsed time, after: a kill between turns, its continuation to a delivery (a changed delivered copy changes nothing) and close; an ordinary stop, a close killed after its request, awaiting confirmation and closed; a limit stop; a kill after the seal (`sealed_undelivered`, close delivers without a provider request); a partial delivery; a close with surrendered losses (`delivered.verified` false). | `ended_as_submitted`, `seal_as_delivered` | `run.between_turns:7=kill`, `close.after_requested=kill`, `seal.after_link=kill`, `delivery.member_write:answer.md=eio` |
-| C17 | `c17.close-failures` (after launch) | After an ordinary ending, a failed preparation write and then failed seal-manifest and diagnostic writes each fail close `record_failed` with the original cause first, stated effects and retained locations, status `close_unfinished` between them; a close whose reply is lost does its work, status supplies the token, and a repeat re-presents the same attempt publishing nothing; confirming closes; every retained path still exists. | none | `prepared.write=eio`, `seal.manifest_write=eio`, `diag.write=eio`, `reply.write=epipe` |
-| C18 | `c18.after-launch-custody` (after launch) | With the original question and materials removed after acceptance, every receipt item reads back before and after close; the archive holds only the 4.2 layout and keeps the superseded draft payload; the archived seal manifest is the delivered one. With the archive moved away, status and receipt refuse `archive_unavailable` without recreating it, and the package still verifies; restored, status is unchanged; an externally removed member changes nothing status reports and causes no copy. | none | none |
-
-Linux-only parts (skipped with their reason elsewhere): everything observed
-through the OFD lock (`run_held`, `run_active`, interruption with a free lock,
-close waiting on a run, T13), `/proc` observations (`start_ticks`, `boot_id`),
-the archive filesystem allowlist and byte-string names.
-
-### Pre-launch expectations of the full interface
-
-The manager-foundation cases (`cases_foundation.py`) check the pre-launch side
-of the interface that run, delivery and close extend: status data has its
-members in the 5.6 order, with `runs.holder`, `allowances` (null before
-acceptance, zero against the limits after it), `provider_proxy`, and `closure`
-with its eight keys (null placement and surrender before launch); close before
-launch refuses `--confirm`/`--surrender` (`confirmation_mismatch`) and
-`--destination` (`destination_not_replaceable`) publishing nothing, a closed
-reference ignores options, the `closed` body carries `accepted` and its
-`outcome`, and `close_requested` carries `flags` and `observations`; an
-unfinished close reports `closure: unfinished` (not `requested`) with its
-`intake` and next calls `close` and `status`; close on a damaged log reports
-every effect `unknown` and its `bad_records`; `close_unfinished` status offers
-`status` too; `--surrender` without `--confirm` and `--destination` with it are
-usage errors (exit 2), as are malformed `run` operands; the identity check
-covers all six test-only variable names; and `run` exits 5 for an interrupted
-placement.
+Both auditors check each reply as it arrives (envelope, `is_error`, effects,
+no host paths or manager identifiers, the tool results answering exactly the
+calls just made); the reacting auditor also checks each conversation's first
+message, citations as recorded, allowances against the fake's charges, and the
+reminder and near-limit text with their once-per-audit allowance. Each failed
+expectation becomes a failed check, and a case judging the same run does not
+repeat these comparisons after the fact.
 
 ## `acceptance.sh`: the scripted acceptance tier
 
@@ -314,12 +227,10 @@ examples with `docs/`), and for each architecture, offline:
 1. builds the release and fault/sabotage binaries and runs the same static
    linkage check on both and on a tiny dynamically linked C executable, which
    must be rejected;
-2. checks that the two writers differ, the release lacks the test-only
-   environment names, the test build contains them, and both lack the
-   development-adapter markers;
-3. runs the independent release driver's self-test and every case, unprivileged,
-   with loopback only. Each assigned sabotage and driver control must fire;
-4. exports the evidence. On failure, or when requested with `all`, it retains
+2. runs the independent release driver's self-test and every case, unprivileged,
+   with loopback only. The driver also checks which build carries the test-only
+   names. Each assigned sabotage and driver control must fire;
+3. exports the evidence. On failure, or when requested with `all`, it retains
    working copies in `driver-<arch>/work.tar`. The named container remains
    available through review.
 
@@ -339,9 +250,10 @@ Build containers are removed on exit.
 
 Run `sh apparatus/runtime-acceptance.sh "$PWD/.scratch/runtime-NN"` to exercise
 the source-only adapter on Linux ARM64 and x86_64. This independent job builds a
-featureless release for comparison, a development writer and a distinct
-fault-enabled development writer. It checks the adapter markers and runs the
-standalone driver's self-test and full synthetic case inventory on each platform.
+featureless release, a development writer and a distinct fault-enabled
+development writer. It checks that the adapter markers are absent from the
+release and present in both writers, and runs the standalone driver's self-test
+and full synthetic case inventory on each platform.
 Each run retains its own `host/DONE`, per-platform results under
 `driver-<arch>/runtime-evidence/` and the complete `runtime-work.tar`,
 including launch witnesses outside the evidence directory. See the

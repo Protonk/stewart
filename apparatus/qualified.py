@@ -679,8 +679,12 @@ def read_header(ctx, ev, suite):
     return head
 
 
-def acceptance_expectations(ev, script_text):
-    """The exit-record expectations acceptance.sh states, as (folder, name, value, label)."""
+def acceptance_expectations(ev, script_text, suite="acceptance"):
+    """The exit-record expectations a suite's script states, as (folder, name, value, label).
+
+    They are read from the script at the run's own source commit, so each run is held to the build and driver
+    records its layout produces: a historical run to its TEST_VARS and glibc controls, a current one to its
+    dynamic-ELF control, a runtime run to its marker controls."""
     m = re.search(r'^TEST_VARS="([^"]*)"', script_text, re.M)
     names = m.group(1).split() if m else []
     out = []
@@ -693,7 +697,7 @@ def acceptance_expectations(ev, script_text):
             out.append((folder, sub(m.group(2)), int(m.group(3)), sub(m.group(4))))
     if not out or any("$" in name for _, name, _, _ in out):
         ev.problem("%s at the source commit: its expect lines could not be read"
-                   % SUITES["acceptance"]["script"])
+                   % SUITES[suite]["script"])
         return []
     return out
 
@@ -1036,7 +1040,7 @@ def extract_acceptance(ctx, ev, suite):
             native = m.group(1)
         else:
             ev.problem("host/driver.log: the start line names no native architecture")
-    expectations = acceptance_expectations(ev, head["script_text"]) if head["script_text"] else []
+    expectations = acceptance_expectations(ev, head["script_text"], suite) if head["script_text"] else []
     bins = ev.binaries(need=head["finished"])
     platforms = {}
     reader = runtime_platform if suite == "runtime" else acceptance_platform
@@ -2451,6 +2455,19 @@ def cmd_render(ctx, out=print):
 # ---------------------------------------------------------------- self-test
 
 FIXTURE_SCRIPT = """#!/bin/sh
+note "acceptance suite start; repository $REPO; native architecture $NATIVE"
+    expect "$OUT/$b/build-release.exit" 0 "$p: release build"
+    expect "$OUT/$b/build-test.exit" 0 "$p: test build"
+    expect "$OUT/$b/static-stewart.exit" 0 "$p: release binary is static"
+    expect "$OUT/$b/static-stewart-test.exit" 0 "$p: test binary is static"
+    expect "$OUT/$b/build-dynamic-control.exit" 0 "$p: dynamic ELF control builds"
+    expect "$OUT/$b/static-dynamic-control.exit" 1 "$p: control fired: the static check rejects the dynamic ELF"
+    expect "$OUT/$b/run-release.exit" 0 "$p: release binary runs (help)"
+    expect "$OUT/$b/run-test.exit" 0 "$p: test binary runs (help)"
+    expect "$OUT/$d/selftest.exit" 0 "$p: driver self-test"
+"""
+# The build layout of earlier acceptance runs, whose records must keep re-extracting under their own script.
+HISTORICAL_FIXTURE_SCRIPT = """#!/bin/sh
 TEST_VARS="STEWART_TEST_A STEWART_TEST_B"
 note "acceptance suite start; repository $REPO; native architecture $NATIVE"
     expect "$OUT/$b/build-release.exit" 0 "$p: release build"
@@ -2461,6 +2478,23 @@ note "acceptance suite start; repository $REPO; native architecture $NATIVE"
     done
     expect "$OUT/$d/selftest.exit" 0 "$p: driver self-test"
 """
+BUILD_EXITS = {
+    "current": (("build-release", 0), ("build-test", 0), ("static-stewart", 0), ("static-stewart-test", 0),
+                ("build-dynamic-control", 0), ("static-dynamic-control", 1), ("run-release", 0), ("run-test", 0)),
+    "historical": (("build-release", 0), ("static-stewart-glibc", 1), ("strings-stewart-STEWART_TEST_A", 1),
+                   ("strings-stewart-STEWART_TEST_B", 1), ("strings-stewart-test-STEWART_TEST_A", 0),
+                   ("strings-stewart-test-STEWART_TEST_B", 0)),
+}
+# The runtime suite's build checks: the release lacks every adapter marker, both development writers have them.
+RUNTIME_FIXTURE_BUILD = """    expect "$OUT/$b/build-release.exit" 0 "$p: release build"
+    expect "$OUT/$b/build-local.exit" 0 "$p: development build"
+    expect "$OUT/$b/build-local-variant.exit" 0 "$p: second development build"
+    expect "$OUT/$b/markers-release.exit" 0 "$p: release binary lacks all adapter markers"
+    expect "$OUT/$b/markers-local.exit" 0 "$p: control fired: development binary contains every adapter marker"
+    expect "$OUT/$b/markers-local-variant.exit" 0 "$p: control fired: second development binary contains every adapter marker"
+"""
+RUNTIME_BUILD_EXITS = (("build-release", 0), ("build-local", 0), ("build-local-variant", 0), ("markers-release", 0),
+                       ("markers-local", 0), ("markers-local-variant", 0))
 FIXTURE_TOOLCHAIN_SCRIPT = """#!/bin/sh
 note "step2 apparatus check start; repository $REPO"
 """
@@ -2473,8 +2507,8 @@ def _write(base, rel, text):
         handle.write(text)
 
 
-def _fixture_run(ctx, run_id, commit, date, failing):
-    """A small acceptance run in the layout acceptance.sh writes; FAILING breaks one case on aarch64."""
+def _fixture_run(ctx, run_id, commit, date, failing, layout="current"):
+    """A small acceptance run in the build LAYOUT its script declares; FAILING breaks one case on aarch64."""
     d = os.path.join(ctx.scratch, run_id)
     w = lambda rel, text: _write(d, rel, text)
     w("host/commit.stdout", commit + "\n")
@@ -2493,9 +2527,7 @@ def _fixture_run(ctx, run_id, commit, date, failing):
         w("host/toolchain-inspect-%s.stdout" % p, image("toolchain-" + p))
         w("host/build-%s.exit" % p, "0\n")
         w("host/driver-%s.exit" % p, "%d\n" % broken)
-        for rel, value in (("build-release", 0), ("static-stewart-glibc", 1), ("strings-stewart-STEWART_TEST_A", 1),
-                           ("strings-stewart-STEWART_TEST_B", 1), ("strings-stewart-test-STEWART_TEST_A", 0),
-                           ("strings-stewart-test-STEWART_TEST_B", 0)):
+        for rel, value in BUILD_EXITS[layout]:
             w("build-%s/%s.exit" % (p, rel), "%d\n" % value)
         w("build-%s/toolchain.stdout" % p, "rustc 0.0.0 (fixture)\n")
         release, test = sha256(("%s-%s-r" % (run_id, p)).encode()), sha256(("%s-%s-t" % (run_id, p)).encode())
@@ -2538,7 +2570,8 @@ def _runtime_self_test(base, isolated, record_control):
         for name in ("runtime-driver", "runtime-selftest", "runtime-complete",
                      "runtime-evidence-copy", "runtime-retention"))
     _write(root, "apparatus/acceptance.sh", script)
-    _write(root, "apparatus/runtime-acceptance.sh", script[script.index('    expect "$OUT/$d/runtime-driver'):])
+    _write(root, "apparatus/runtime-acceptance.sh",
+           RUNTIME_FIXTURE_BUILD + script[script.index('    expect "$OUT/$d/runtime-driver'):])
     sources = {"claude_code.py": 'CASES = (("runtime-one", "fixture"),)\n',
                "driver_core.py": "# specification fixture\n", "rawjson.py": "# decoder fixture\n"}
     for name, contents in sources.items():
@@ -2552,6 +2585,9 @@ def _runtime_self_test(base, isolated, record_control):
     binaries = _read(os.path.join(folder, "host/binaries.sha256")).decode()
     for p, _key, _machine in PLATFORMS:
         _write(folder, "driver-%s/env-machine.stdout" % p, _machine + "\n")
+        for rel, value in RUNTIME_BUILD_EXITS:
+            if not os.path.exists(os.path.join(folder, "build-%s" % p, rel + ".exit")):
+                _write(folder, "build-%s/%s.exit" % (p, rel), "%d\n" % value)
         prefix = "driver-%s/runtime-evidence/" % p
         release = sha256(("runtime-%s-r" % p).encode())
         local, variant = sha256((p + "-local").encode()), sha256((p + "-variant").encode())
@@ -2562,7 +2598,7 @@ def _runtime_self_test(base, isolated, record_control):
                   "counts": {"cases": 1, "passed": 1, "failed": 0, "skipped": 0, "checks": 1,
                              "checks_passed": 1, "checks_failed": 0, "controls": 1, "controls_fired": 1},
                   "cases": [{"name": "runtime-one", "outcome": "passed", "checks": 1,
-                             "failures": 0, "skip_reason": None}],
+                             "failures": 0, "skip_reason": None, "elapsed_seconds": 0.25}],
                   "checks": [{"case": "runtime-one", "name": "fixture", "passed": True}],
                   "controls": [{"case": "runtime-one", "name": "fixture-control", "fired": True}]}
         environment = {"qualification": False, "binary_sha256": local, "release_sha256": release,
@@ -2602,11 +2638,21 @@ def _runtime_self_test(base, isolated, record_control):
             separate["outcome"] == "qualified" and not record_problems(separate_record)
             and "Synthetic runtime cases" in render(separate_record)
             and all(v["runtime"] == baseline["platforms"][k]["runtime"] for k, v in separate["platforms"].items()))
+    control("runtime: the suite's own build checks are read from its script, marker controls included",
+            all(v["script_checks"] == {"passed": 11, "total": 11, "controls_fired": 2, "controls_total": 2}
+                for v in separate["platforms"].values()), repr([v["script_checks"] for v in separate["platforms"].values()]))
     _write(standalone, "driver-arm64/runtime-driver.exit", "1\n")
     rejected = extract_suite(ctx, "runtime-only", "runtime")
     control("runtime: standalone failing process changes only its platform verdict",
             rejected["outcome"] == "failed" and rejected["platforms"]["linux-aarch64"]["outcome"] == "failed"
             and rejected["platforms"]["linux-x86_64"]["outcome"] == "qualified")
+    _write(standalone, "driver-arm64/runtime-driver.exit", "0\n")
+    _write(standalone, "build-arm64/markers-local.exit", "1\n")
+    unmarked = extract_suite(ctx, "runtime-only", "runtime")["platforms"]["linux-aarch64"]
+    control("runtime: a development writer without the adapter markers fails its marker control",
+            unmarked["outcome"] == "failed" and unmarked["script_checks"]["controls_fired"] == 1
+            and any("markers-local.exit is 1, expected 0" in f for f in unmarked["failures"]), repr(unmarked["failures"]))
+    _write(standalone, "build-arm64/markers-local.exit", "0\n")
 
     def mutate(name, rel, transform, expected, unreadable=False):
         path = os.path.join(folder, rel)
@@ -2682,6 +2728,53 @@ def _runtime_self_test(base, isolated, record_control):
         os.unlink(os.path.join(folder, special))
     control("runtime: restoring every mutation preserves the baseline",
             extract_suite(ctx, "runtime", "acceptance") == baseline)
+
+
+def _layout_self_test(base, isolated, record_control):
+    """Each acceptance run is held to the build checks its own script declares, in either build layout."""
+    root = os.path.join(base, "layout-repo")
+    os.mkdir(root)
+    ctx = Ctx(root, git_env=isolated)
+    commits = {}
+    _write(root, ".gitignore", ".scratch/\n")
+    ctx.git(["init", "-q"])
+    for layout, script in (("historical", HISTORICAL_FIXTURE_SCRIPT), ("current", FIXTURE_SCRIPT)):
+        _write(root, "apparatus/acceptance.sh", script)
+        ctx.git(["add", "-A"])
+        ctx.git(["commit", "-q", "--no-verify", "-m", layout])
+        commits[layout] = ctx.git(["rev-parse", "HEAD"]).stdout.decode().strip()
+        _fixture_run(ctx, layout, commits[layout], "2026-01-05T00:00:00Z", False, layout)
+    extracted = {layout: extract_suite(ctx, layout, "acceptance") for layout in commits}
+    # Build checks plus the driver self-test's exit, as each script states them.
+    shapes = {"historical": {"passed": 7, "total": 7, "controls_fired": 3, "controls_total": 3},
+              "current": {"passed": 9, "total": 9, "controls_fired": 1, "controls_total": 1}}
+    for layout, entry in extracted.items():
+        record_control("layout: a %s-layout run qualifies with exactly its own script's build checks" % layout,
+                       entry["outcome"] == "qualified" and not record_problems({"schema": SCHEMA, "entries": [entry]})
+                       and all(pl["script_checks"] == shapes[layout] for pl in entry["platforms"].values()),
+                       repr([pl["script_checks"] for pl in entry["platforms"].values()]))
+    for layout, rel, value, expected in (
+            ("historical", "build-arm64/strings-stewart-test-STEWART_TEST_A.exit", "1\n",
+             "strings-stewart-test-STEWART_TEST_A.exit is 1, expected 0"),
+            ("current", "build-arm64/static-dynamic-control.exit", "0\n",
+             "static-dynamic-control.exit is 0, expected 1")):
+        folder = os.path.join(ctx.scratch, layout)
+        original = _read(os.path.join(folder, rel))
+        _write(folder, rel, value)
+        changed = extract_suite(ctx, layout, "acceptance")["platforms"]["linux-aarch64"]
+        record_control("layout: an unfired %s-layout control fails its platform" % layout,
+                       changed["outcome"] == "failed" and any(expected in f for f in changed["failures"]),
+                       repr(changed["failures"]))
+        _write(folder, rel, original.decode())
+    missing = os.path.join(ctx.scratch, "current", "build-arm64", "run-test.exit")
+    os.unlink(missing)
+    try:
+        extract_suite(ctx, "current", "acceptance")
+        refused = "extracted"
+    except ExtractError as error:
+        refused = "; ".join(error.problems)
+    record_control("layout: a build record the run's script expects cannot be absent",
+                   "build-arm64/run-test.exit" in refused, refused[:200])
 
 
 def _tree_state(path):
@@ -2905,6 +2998,7 @@ def _self_test_controls(base, isolated, control):
                 child.returncode == expected_exit,
                 "exit %d; %s" % (child.returncode, child.stdout.decode('utf-8', 'replace').splitlines()[-2:]))
     _runtime_self_test(base, isolated, control)
+    _layout_self_test(base, isolated, control)
     root = os.path.join(base, "repo")
     os.makedirs(root)
     ctx = Ctx(root, git_env=isolated)
@@ -3223,16 +3317,16 @@ def _self_test_controls(base, isolated, control):
             any(t == "evidence" and "late-link: a link" in m for t, m in late),
             "failures %s" % [m.replace("\n", " ") for _, m in late])
 
-    # Writes: a link in place of qualified.json, qualified.md or their folder is refused and never followed.
-    record_text = dump_json(load_record(ctx))
+    # Writes: a link in place of qualified.json, qualified.md or their folder is refused and never followed. Each
+    # control reaches its command's own write: save is given the record in memory, so nothing is read first.
+    record_value = load_record(ctx)
+    record_text = dump_json(record_value)
     victim_file = os.path.join(base, "victim-file.txt")
     _write(base, "victim-file.txt", "not the record\n")
     _write(base, "victim-record.json", record_text)
     victim_record = os.path.join(base, "victim-record.json")
-    for folder in ("link-md", "link-json", "hard-md", "real-dir"):
+    for folder in ("link-json", "hard-md", "real-dir"):
         os.makedirs(os.path.join(base, folder))
-    _write(base, "link-md/qualified.json", record_text)
-    os.symlink(victim_file, os.path.join(base, "link-md", "qualified.md"))
     os.symlink(victim_record, os.path.join(base, "link-json", "qualified.json"))
     _write(base, "hard-md/qualified.json", record_text)
     os.link(victim_file, os.path.join(base, "hard-md", "qualified.md"))
@@ -3245,25 +3339,25 @@ def _self_test_controls(base, isolated, control):
             if action == "render":
                 cmd_render(trial, out=quiet)
             else:
-                save(trial, load_record(trial), quiet)
+                save(trial, json.loads(record_text), quiet)   # a fresh in-memory copy each time
             return "wrote"
         except Refusal as exc:
             return str(exc)
 
-    victims = lambda: (_read(victim_file), _read(victim_record))
+    victims = lambda: (_read(victim_file), _read(victim_record), _tree_state(os.path.join(base, "real-dir")))
     before = victims()
-    reach = _read(os.path.join(base, "link-md", "qualified.md")) == before[0] and \
-        _read(os.path.join(base, "link-json", "qualified.json")) == before[1]
+    reach = _read(os.path.join(base, "hard-md", "qualified.md")) == before[0] and \
+        _read(os.path.join(base, "link-json", "qualified.json")) == before[1] and \
+        _read(os.path.join(base, "link-dir", "qualified.json")) == record_text.encode("utf-8")
     control("write: each planted link reaches its victim when followed (firing control)", reach,
             "reading through the links gives the victims' bytes: %s" % reach)
     for name, folder, action, expect in (
-            ("qualified.md is a symbolic link", "link-md", "render", "it is a link"),
-            ("qualified.json is a symbolic link", "link-json", "save", "it is a link"),
-            ("qualified.md is a hard link", "hard-md", "render", "a hard link"),
-            ("their folder is a symbolic link", "link-dir", "render", "is a link; links are not followed")):
+            ("save, when qualified.json is a symbolic link", "link-json", "save", "it is a link"),
+            ("save, when their folder is a symbolic link", "link-dir", "save", "is a link; links are not followed"),
+            ("render, when qualified.md is a hard link", "hard-md", "render", "a hard link")):
         got = attempt(folder, action)
-        control("write: refused when %s, and the victim is unchanged" % name,
-                expect in got and victims() == before, "%s: %s" % (action, got))
+        control("write: %s, refuses its own write and the victim is unchanged" % name,
+                got.startswith("refusing to write") and expect in got and victims() == before, "%s: %s" % (action, got))
     got = attempt("real-dir", "render")
     written = os.path.join(base, "real-dir", "qualified.md")
     control("write: a regular file in a real folder is written (invariance)",
@@ -3290,47 +3384,37 @@ def _self_test_controls(base, isolated, control):
             "changed while it was opened" in got and _read(other) == b"old render\n",
             "%s; the other name holds %r" % (got, _read(other) if os.path.lexists(other) else None))
 
-    # Reads: every command reads qualified.json and qualified.md under the rules they are written under, so a
-    # link to identical bytes, a hard link or a FIFO in their place is refused, never read through or waited on.
-    md_text = render(load_record(ctx))
-    _write(base, "read-target/qualified.json", record_text)
-    _write(base, "read-target/qualified.md", md_text)
+    # Reads: every command reads qualified.json and qualified.md under the rules they are written under, so a link,
+    # a hard link, a link in place of their folder or a FIFO is refused, never read through or waited on. One kind
+    # per read site: the record loader every command shares, and check's own reads of the record and its render.
+    md_text = render(record_value)
+    for folder in ("read-real", "read-target"):
+        _write(base, folder + "/qualified.json", record_text)
+        _write(base, folder + "/qualified.md", md_text)
     target_json = os.path.join(base, "read-target", "qualified.json")
     target_md = os.path.join(base, "read-target", "qualified.md")
-    for folder in ("render-json-sym", "render-json-hard", "check-json-sym", "check-json-hard", "check-md-sym",
-                   "check-md-hard", "check-fifo"):
+    os.symlink(os.path.join(base, "read-real"), os.path.join(base, "read-link-dir"))
+    for folder in ("check-json-sym", "check-md-hard", "check-fifo"):
         os.makedirs(os.path.join(base, folder))
-    os.symlink(target_json, os.path.join(base, "render-json-sym", "qualified.json"))
-    os.link(target_json, os.path.join(base, "render-json-hard", "qualified.json"))
     os.symlink(target_json, os.path.join(base, "check-json-sym", "qualified.json"))
     _write(base, "check-json-sym/qualified.md", md_text)
-    os.link(target_json, os.path.join(base, "check-json-hard", "qualified.json"))
-    _write(base, "check-json-hard/qualified.md", md_text)
-    _write(base, "check-md-sym/qualified.json", record_text)
-    os.symlink(target_md, os.path.join(base, "check-md-sym", "qualified.md"))
     _write(base, "check-md-hard/qualified.json", record_text)
     os.link(target_md, os.path.join(base, "check-md-hard", "qualified.md"))
     os.mkfifo(os.path.join(base, "check-fifo", "qualified.json"))
     trial_ctx = lambda folder: Ctx(root, record=os.path.join(base, folder, "qualified.json"), git_env=isolated)
 
-    for name, folder, expect in (("a symbolic link", "render-json-sym", "it is a link"),
-                                 ("a hard link", "render-json-hard", "a hard link")):
-        got = []
-        for command in (lambda c: cmd_render(c, out=quiet), lambda c: run_candidates(c, out=quiet)):
-            try:
-                command(trial_ctx(folder))
-                got.append("proceeded")
-            except Refusal as exc:
-                got.append(str(exc))
-        beside = os.path.lexists(os.path.join(base, folder, "qualified.md"))
-        control("read: render and candidates refuse a qualified.json that is %s, and nothing is written beside it"
-                % name, all(g.startswith("refusing to read") and expect in g for g in got) and not beside,
-                "render: %s; candidates: %s; qualified.md written: %s" % (got[0], got[1], beside))
+    real_before = _tree_state(os.path.join(base, "read-real"))
+    try:
+        cmd_render(trial_ctx("read-link-dir"), out=quiet)
+        got = "proceeded"
+    except Refusal as exc:
+        got = str(exc)
+    control("read: render, whose record loader every command shares, refuses a record whose folder is a symbolic "
+            "link, and writes nothing there", got.startswith("refusing to read") and "links are not followed" in got
+            and _tree_state(os.path.join(base, "read-real")) == real_before, "render: %s" % got)
 
     for name, folder, tag, expect in (
             ("qualified.json is a symbolic link to identical bytes", "check-json-sym", "record", "it is a link"),
-            ("qualified.json is a hard link to identical bytes", "check-json-hard", "record", "a hard link"),
-            ("qualified.md is a symbolic link to identical bytes", "check-md-sym", "render", "it is a link"),
             ("qualified.md is a hard link to identical bytes", "check-md-hard", "render", "a hard link"),
             ("qualified.json is a FIFO, without waiting for a writer", "check-fifo", "record", "a FIFO")):
         try:

@@ -96,6 +96,25 @@ pub fn bin() -> &'static str {
     env!("CARGO_BIN_EXE_stewart")
 }
 
+/// Whether the process died before writing a reply, as a `kill` fault
+/// point leaves it.
+pub fn killed(o: &Out) -> bool {
+    o.code.is_none() && o.stdout.is_empty()
+}
+
+/// Wait until `path` exists, such as the `.paused` file of a `pause` fault
+/// point, failing after 30 seconds.
+pub fn wait_for_file(path: &str) {
+    let start = std::time::Instant::now();
+    while !Path::new(path).exists() {
+        assert!(
+            start.elapsed() < std::time::Duration::from_secs(30),
+            "{path} never appeared"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+}
+
 impl Env {
     /// Scratch space comes from `STEWART_IT_TMP` when set, else the system
     /// temporary directory. On Linux the archive must be on ext4, xfs or

@@ -120,8 +120,7 @@ def continue_and_check(t, sub, fx, p, pre, spent, carried=False):
 @case("c7.notice-durability", ["C7", "C6", "C13", "C17"],
       "a reminder claim linked without a confirmed directory sync ends the placement, is listed not_sent and stays spent",
       mode="test", needs=("loopback",),
-      controls=[Control("reset_notice_allowance",
-                        [r"^notice\.durability\.dirsync-eio(-elsewhere)?\.continuation\.(no-reminder|notices-used)$"])])
+      faults=("log.dirsync:notice=eio", "log.publish:notice=eio"))
 def c_notice_durability(t):
     """log.dirsync:notice=eio links the reminder's notice record, then fails the directory
     sync of its publication (4.3, Appendix C.1). That is an archive write failure (6.5): the
@@ -179,8 +178,7 @@ def c_notice_durability(t):
 @case("c7.notice-transmission", ["C7", "C6", "C13"],
       "a claimed reminder is sent, not_sent or unknown by its request evidence, and is never re-sent after a kill",
       mode="test", needs=("loopback",),
-      controls=[Control("reset_notice_allowance",
-                        [r"^notice\.transmission\.kill-after-(link|send)\.continuation\.(no-reminder|notices-used)$"])])
+      faults=("log.dirsync:notice=kill", "provider.sent:3=kill"))
 def c_notice_transmission(t):
     """6.4: run_ended reports a notice as sent when an attempt record of its planned request
     has request_written other than none, not_sent when no complete request capture exists,

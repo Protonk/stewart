@@ -186,11 +186,13 @@ class ProfileControls(unittest.TestCase):
                 self.rebind(review_change=change)
                 self.refused('review|Review')
 
-    def test_changed_and_unlisted_witnesses_refuse(self):
+    def test_changed_missing_and_unlisted_witnesses_refuse(self):
         path = self.observation / 'witness/observed.bin'
         original = path.read_bytes()
         path.write_bytes(b'changed')
         self.refused('evidence bytes changed')
+        path.unlink()
+        self.refused('No such file|names absent files')
         path.write_bytes(original)
         extra = self.observation / 'witness/unlisted'
         extra.write_bytes(b'not in manifest')

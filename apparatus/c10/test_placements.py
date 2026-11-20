@@ -1,4 +1,7 @@
-"""Offline controls for witnessed interruption, continuation and multi-placement export.
+"""Offline controls for witnessed interruption, continuation, attempt admission and allowance arithmetic.
+
+The export guard's table, one- and two-placement alike, is in apparatus/sanity/test_launch.py
+with the code it tests.
 
 No Stewart binary, model, network or container. A shell stub stands in for
 `stewart status`, so these establish the launcher's own gates and arithmetic.
@@ -9,6 +12,7 @@ import io
 import json
 import os
 from pathlib import Path
+import shutil
 import signal
 import subprocess
 import sys
@@ -20,8 +24,8 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import common
-from common import (CONTINUED, compact, digest, file_hash, read_file, rehearsal_packet, source_hash,
-                    strict_json, validate_continuation, write_json)
+from common import (CONTINUED, AttemptsUnsettled, compact, digest, file_hash, limit_exhausted, read_file,
+                    rehearsal_packet, settled_attempts, source_hash, strict_json, validate_continuation, write_json)
 import batch
 from batch import (allowance_facts, continued_match, credential_marker, first_interruption, next_snapshot,
                    rehearsal_script)
@@ -30,7 +34,8 @@ from fake import Auditor
 import placements
 from placements import Refused, claim, prior_members, run_continuation
 import session
-from session import LogPoint, RequestSeen, Session, export_evidence_state
+from session import LogPoint
+from session_support import signal_timing
 from study_build import system_bytes
 import test_launch
 import verify
@@ -57,19 +62,17 @@ class LogPointTests(unittest.TestCase):
         self.log.mkdir()
 
     def case(self):
-        case = Session.__new__(Session)
-        case.binary, case.root, case.evidence = Path(sys.executable), self.root, self.root
-        case.env = {'PATH': os.environ['PATH'], 'HOME': str(self.root)}
-        case.commission, case.mode, case.index, case.process = {'stop_after_seconds': 60}, 'submitted', 0, None
-        case.spawn = subprocess.Popen
-        return case
+        return test_launch.bare_session(self.root)
 
     def publish(self, number, value):
         (self.log / f'{number}.json').write_bytes(compact(value) + b'\n')
 
     def child(self, number, value, then='time.sleep(60)'):
+        # The record appears whole, as the service links it (LogPoint.look relies on that): it is
+        # written under another name first. Writing it in place let the observer read it empty.
         raw = compact(value) + b'\n'
-        return ('import sys,time; open(sys.argv[1],"xb").write(bytes.fromhex(sys.argv[2])); ' + then,
+        return ('import os,sys,time; part=sys.argv[1]+".part"; open(part,"xb").write(bytes.fromhex(sys.argv[2])); '
+                'os.link(part,sys.argv[1]); ' + then,
                 str(self.log / f'{number}.json'), raw.hex())
 
     def test_published_reminder_is_witnessed_then_signalled(self):
@@ -195,150 +198,6 @@ class LogPointTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             LogPoint(self.log, 'after_ten_seconds', self.root / 'other')
 
-    def test_sanity_interruption_signals_once_its_request_is_seen(self):
-        seen = threading.Event()
-        seen.set()
-        with self.assertRaises(RuntimeError):
-            self.case().command('run', '-I', '-B', '-c', 'import time; time.sleep(60)', interrupt=RequestSeen(seen))
-        command = strict_json((self.root / '01-run.json').read_bytes())
-        self.assertEqual((command['exit'], command['timed_out'], command['process_state']), (-signal.SIGTERM, False, 'exited'))
-        self.assertNotIn('failure', command)
-
-    def test_sanity_interruption_still_needs_its_request_witness(self):
-        unseen = mock.Mock()
-        unseen.wait.return_value = False
-        with self.assertRaisesRegex(RuntimeError, 'interruption witness did not observe the request'):
-            RequestSeen(unseen).await_point(mock.Mock(), 60)
-        unseen.wait.assert_called_once_with(20)
-        self.assertEqual(RequestSeen(unseen).remaining(60), 60)
-
-
-class ExportStateTests(unittest.TestCase):
-    """Every placement must be exportable alone before an audit with several exports."""
-    def two_placements(self, root):
-        test_launch.LaunchTests().complete_evidence(root)
-        evidence, audit = root / 'evidence', root / 'archive/audits/audit'
-        (evidence / 'placement-0002').mkdir()
-        write_json(evidence / 'placement-0002/RESULT.json', {'failure': False})
-        write_json(evidence / '03-run.json', {'argv': ['/bin-in/stewart', 'run', 'stw1:fixture', '--json', '--key-fd', '3'], 'exit': 0, 'timed_out': False})
-        write_json(evidence / '04-status-after-run.json', {'argv': ['/bin-in/stewart', 'status', 'stw1:fixture', '--json'], 'exit': 0, 'timed_out': False})
-        write_json(evidence / '04-status-after-run.stdout', {'data': {'runs': {'held': False, 'count': 2, 'last': {'number': 2, 'ending': 'sealed'}}}})
-        write_json(audit / 'log/3.json', {'kind': 'run_started', 'body': {'run': 2}})
-        write_json(audit / 'log/4.json', {'kind': 'run_ended', 'body': {'run': 2, 'requests': 1, 'attempts': 1}})
-        run = audit / 'runs/2'
-        (run / 'stage').mkdir(parents=True)
-        write_json(run / 'request-1.json', {'request': 1})
-        write_json(run / 'attempt-1-1.json', {'kind': 'provider_attempt', 'body': {'request': 1, 'attempt': 1, 'response': None, 'credential_reflection': {'body': False, 'headers': []}}})
-        return run
-
-    def test_two_complete_placements_export_and_an_unrelated_file_changes_nothing(self):
-        with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder)
-            self.two_placements(root)
-            self.assertEqual(export_evidence_state(root), 'complete')
-            (root / 'evidence/operator-1-status.json').write_text('{}')
-            self.assertEqual(export_evidence_state(root), 'complete')
-
-    def test_each_withholding_reason_fires_for_the_later_placement(self):
-        def change(path, keys, value):
-            def apply(root):
-                target = root / path
-                data = json.loads(target.read_text())
-                item = data
-                for key in keys[:-1]:
-                    item = item[key]
-                item[keys[-1]] = value
-                target.write_text(json.dumps(data) + '\n')
-            return apply
-        def remove(path):
-            return lambda root: (root / path).unlink()
-        def add(path, content=b'orphan'):
-            return lambda root: ((root / path).parent.mkdir(parents=True, exist_ok=True), (root / path).write_bytes(content))
-        run = 'archive/audits/audit/runs/2/'
-        cases = [
-            ('procedure_not_complete', change('evidence/placement-0002/RESULT.json', ['failure'], True)),
-            ('missing_or_malformed_evidence', remove('evidence/placement-0002/RESULT.json')),
-            ('missing_run_observation', lambda root: [(root / 'evidence' / name).unlink() for name in ['04-status-after-run.json', '04-status-after-run.stdout']]),
-            ('missing_run_observation', add('evidence/placement-0003/launch-intent.json', b'{}')),
-            ('mismatched_run_observation', change('evidence/03-run.json', ['argv', 2], 'stw1:another')),
-            ('uncertain_process_exit', change('evidence/03-run.json', ['exit'], -15)),
-            ('uncertain_process_exit', change('evidence/03-run.json', ['timed_out'], True)),
-            ('uncertain_writer_state', change('evidence/04-status-after-run.stdout', ['data', 'runs', 'count'], 1)),
-            ('uncertain_writer_state', change('evidence/04-status-after-run.stdout', ['data', 'runs', 'held'], True)),
-            ('uncertain_writer_state', change('evidence/04-status-after-run.stdout', ['data', 'runs', 'last', 'number'], 1)),
-            ('missing_run_boundary', remove('archive/audits/audit/log/4.json')),
-            ('invalid_run_identity', change('archive/audits/audit/log/3.json', ['body', 'run'], 1)),
-            ('invalid_run_counts', change('archive/audits/audit/log/4.json', ['body', 'requests'], 0)),
-            ('capture_counts_disagree', change('archive/audits/audit/log/4.json', ['body', 'attempts'], 2)),
-            ('unaccounted_capture', add(run + 'response-9-1.bin')),
-            ('credential_reflection_recorded', change(run + 'attempt-1-1.json', ['body', 'credential_reflection', 'body'], True)),
-            ('missing_attempt_evidence', remove(run + 'attempt-1-1.json')),
-            ('unknown_run_membership', add('archive/audits/audit/runs/3/stage/x', b'')),
-        ]
-        for expected, alter in cases:
-            with self.subTest(expected=expected), tempfile.TemporaryDirectory() as folder:
-                root = Path(folder)
-                self.two_placements(root)
-                self.assertEqual(export_evidence_state(root), 'complete')
-                alter(root)
-                self.assertEqual(export_evidence_state(root), expected)
-
-    def test_bound_cut_off_body_is_a_complete_observation_only_for_a_stopped_or_failed_attempt(self):
-        cut = b'{"id":"msg","content":[{"ty'
-        def build(root, *, outcome='aborted_by_signal', complete=False, capture=cut, record=True, reflected=False):
-            run = self.two_placements(root)
-            body = {'request': 1, 'attempt': 1, 'outcome': outcome, 'response': None,
-                    'credential_reflection': {'body': reflected, 'headers': []}}
-            if outcome is None:
-                del body['outcome']
-            if record:
-                body['response'] = {'file': 'response-1-1.bin', 'bytes': len(cut), 'sha256': digest(cut), 'complete': complete}
-            (run / 'attempt-1-1.json').write_text(json.dumps({'kind': 'provider_attempt', 'body': body}))
-            if capture is not None:
-                (run / 'response-1-1.bin').write_bytes(capture)
-        cases = [
-            ('complete', {}),
-            # INTERFACE 6.6 outcomes that received a status line and are not a decodable message.
-            *[('complete', {'outcome': outcome}) for outcome in ['aborted_by_close', 'timeout', 'connection_lost',
-                                                                 'http_error', 'response_undecodable']],
-            ('complete', {'outcome': 'response', 'complete': True}),          # a whole body, as before
-            ('incomplete_response_evidence', {'outcome': 'response'}),       # a used response must be whole
-            ('incomplete_response_evidence', {'outcome': 'connection_failed'}),
-            ('incomplete_response_evidence', {'outcome': None}),
-            ('incomplete_response_evidence', {'outcome': 'made_up'}),
-            ('incomplete_response_evidence', {'complete': None}),
-            ('incomplete_response_evidence', {'complete': 'false'}),
-            ('incomplete_response_evidence', {'capture': b'X' + cut[1:]}),   # same size, one byte changed
-            ('incomplete_response_evidence', {'capture': cut[:-1]}),
-            ('incomplete_response_evidence', {'capture': cut + b'"'}),
-            ('credential_reflection_recorded', {'reflected': True}),
-            ('unaccounted_capture', {'record': False}),
-            ('missing_or_malformed_evidence', {'capture': None}),
-        ]
-        for expected, options in cases:
-            with self.subTest(expected=expected, options=options), tempfile.TemporaryDirectory() as folder:
-                build(Path(folder), **options)
-                self.assertEqual(export_evidence_state(Path(folder)), expected)
-
-    def test_run_and_status_observations_must_alternate(self):
-        with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder)
-            self.two_placements(root)
-            evidence = root / 'evidence'
-            # Two starts and two observations, but the second observation precedes the second start.
-            (evidence / '03-run.json').rename(evidence / '05-run.json')
-            self.assertEqual(export_evidence_state(root), 'missing_run_observation')
-            (evidence / '05-run.json').rename(evidence / '03-run.json')
-            self.assertEqual(export_evidence_state(root), 'complete')
-
-    def test_single_placement_fixture_is_unchanged(self):
-        with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder)
-            test_launch.LaunchTests().complete_evidence(root)
-            self.assertEqual(export_evidence_state(root), 'complete')
-            (root / 'evidence/placement-0002').mkdir()
-            self.assertEqual(export_evidence_state(root), 'missing_run_observation')
-
 
 class ArithmeticTests(unittest.TestCase):
     """Expected values are worked from INTERFACE 6.3 and 6.4 by hand, not from any run."""
@@ -359,13 +218,23 @@ class ArithmeticTests(unittest.TestCase):
         edge = allowance_facts(self.allowances(0, 17023), point)['planned_interruption']
         self.assertTrue(edge['next_placement_ends_limit_reached_before_any_request'])
         self.assertFalse(allowance_facts(self.allowances(0, 17024), point)['planned_interruption']['next_placement_ends_limit_reached_before_any_request'])
+        # Output reported before the point lowers what the estimate leaves.
+        used = allowance_facts(self.allowances(13000, 30000), point)['planned_interruption']
+        self.assertEqual((used['output_charge_if_one_request_is_aborted_in_flight'], used['output_remaining_after_that_charge'],
+                          used['next_placement_ends_limit_reached_before_any_request']), (16000, 1000, True))
 
     def test_exhaustion_before_a_start_is_a_fact_and_no_point_means_no_forecast(self):
+        """common.limit_exhausted is the one rule; the launcher's facts and the reviewer both use it."""
+        self.assertIs(verify.limit_exhausted, limit_exhausted)
         self.assertIsNone(allowance_facts(self.allowances(0, 30000))['planned_interruption'])
         for values, expected in [((0, 30000), False), ((28977, 30000), True), ((28976, 30000), False),
-                                 ((0, 30000, 12), True), ((0, 30000, 11), False), ((0, 30000, 0, 160000), True)]:
+                                 ((0, 30000, 12), True), ((0, 30000, 11), False), ((0, 30000, 0, 160000), True),
+                                 ((0, 30000, 0, 159999), False), ((31000, 30000), True)]:
+            allowances = self.allowances(*values)
             with self.subTest(values=values):
-                self.assertIs(allowance_facts(self.allowances(*values))['this_placement_ends_limit_reached_before_any_request'], expected)
+                self.assertIs(limit_exhausted({key: value['limit'] for key, value in allowances.items()},
+                                              {key: value['used'] for key, value in allowances.items()}), expected)
+                self.assertIs(allowance_facts(allowances)['this_placement_ends_limit_reached_before_any_request'], expected)
 
     def test_notice_sent_states_follow_the_attempt_records(self):
         self.assertEqual(verify.notice_sent(True, ['complete']), 'sent')
@@ -374,7 +243,7 @@ class ArithmeticTests(unittest.TestCase):
         self.assertEqual(verify.notice_sent(True, []), 'unknown')   # a complete capture alone never establishes transmission
         self.assertEqual(verify.notice_sent(False, []), 'not_sent')
 
-    def test_near_limit_and_exhaustion_thresholds(self):
+    def test_near_limit_thresholds(self):
         limits = {'turns': 12, 'input_tokens': 160000, 'output_tokens': 30000}
         used = {'turns': 9, 'input_tokens': 9000, 'output_tokens': 17800}
         self.assertEqual(verify.near_limit(limits, used), (False, {'turns': 3, 'input_tokens': 151000, 'output_tokens': 12200}))
@@ -383,9 +252,6 @@ class ArithmeticTests(unittest.TestCase):
         self.assertTrue(verify.near_limit(limits, {'turns': 0, 'input_tokens': 0, 'output_tokens': 24000})[0])
         self.assertFalse(verify.near_limit(limits, {'turns': 0, 'input_tokens': 0, 'output_tokens': 23999})[0])
         self.assertEqual(verify.near_limit(limits, {'turns': 13, 'input_tokens': 0, 'output_tokens': 0})[1]['turns'], 0)
-        self.assertFalse(verify.limit_exhausted(limits, {'turns': 11, 'input_tokens': 159999, 'output_tokens': 28976}))
-        for key, value in [('turns', 12), ('input_tokens', 160000), ('output_tokens', 28977)]:
-            self.assertTrue(verify.limit_exhausted(limits, {'turns': 0, 'input_tokens': 0, 'output_tokens': 0, key: value}))
 
     def test_first_message_bytes_carry_the_continuation_notice_only_when_continuing(self):
         question = 'Why "this"?\nSecond line \\ é\n'
@@ -491,8 +357,10 @@ class ControlInventoryTests(unittest.TestCase):
                 (True, [{'outcome': 'aborted_by_signal', 'request_written': 'partial'}], 'written_unanswered'),
                 (True, [{'outcome': 'response', 'request_written': 'complete'}], 'answered')]:
             with self.subTest(expected=expected):
-                self.assertEqual(session.signal_timing(captured, attempts), expected)
-                self.assertEqual(verify.signal_timing(captured, attempts), expected)
+                self.assertEqual(signal_timing(captured, attempts), expected)
+        # The launcher's witness and the reviewer classify with this one rule.
+        self.assertIs(session.signal_timing, signal_timing)
+        self.assertIs(verify.signal_timing, signal_timing)
 
     def test_snapshot_numbering_refuses_unknown_members(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -557,6 +425,11 @@ class FakeAuditorTests(unittest.TestCase):
         first = self.auditor('continue-cap', 1)
         with self.assertRaisesRegex(ValueError, 'first message differs'):
             first.respond(self.body(fake.first_message(self.question, 2)))
+
+    def test_transport_pins_are_the_specification_values(self):
+        # The sanity archive carries no driver files, so the fake keeps its own copy; this compares them.
+        import exercise
+        self.assertEqual((exercise.API_VERSION, exercise.ANTHROPIC_BETA), (spec.API_VERSION, spec.ANTHROPIC_BETA))
 
     def test_cap_mirror_is_thinking_only_at_the_request_cap(self):
         status, response = self.auditor('continue-cap').respond(self.body(fake.first_message(self.question, 1)))
@@ -664,6 +537,77 @@ class FakeAuditorTests(unittest.TestCase):
         response, messages = self.drive(auditor, 3, reentry)
         self.assertEqual([(block['name'], block['input']['entry']) for block in response['content']],
                          [('replace', 'e1.v1.aaaaaa'), ('delete', 'e2.v1.bbbbbb')])
+
+
+class AttemptAdmissionTests(unittest.TestCase):
+    """common.settled_attempts, which the host launcher and the container's claim both apply."""
+    AUDIT, PLACEMENT = 'control-continue-cap', 2
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.folder = Path(temp.name) / f'{self.AUDIT}-p2'
+        self.good = {'schema': 'stewart.c10-continuation-session/1', 'audit': self.AUDIT, 'placement': self.PLACEMENT,
+                     'placement_state': 'not_started'}
+
+    def attempt(self, number, value):
+        (self.folder / f'attempt-{number}').mkdir(parents=True)
+        if value is not None:
+            (self.folder / f'attempt-{number}/RESULT.json').write_text(value if isinstance(value, str) else json.dumps(value))
+
+    def settled(self):
+        return settled_attempts(self.folder, self.AUDIT, self.PLACEMENT)
+
+    def test_an_absent_or_settled_history_admits_the_next_attempt_in_number_order(self):
+        self.assertEqual(self.settled(), 0)
+        for number in range(1, 12):
+            self.attempt(number, self.good)
+            self.assertEqual(self.settled(), number)   # attempt-10 and attempt-11 follow attempt-9
+
+    def test_only_results_recording_not_started_admit_another(self):
+        cases = [None, 'not json', {'placement_state': 'not_started'},
+                 *[{**self.good, 'placement_state': state} for state in ['unknown', 'observed', 'started', None]],
+                 {**self.good, 'audit': 'control-continue-entries'}, {**self.good, 'placement': 3},
+                 {**self.good, 'schema': 'stewart.c10-session/2'},
+                 {key: value for key, value in self.good.items() if key != 'placement_state'}]
+        for value in cases:
+            with self.subTest(value=value):
+                shutil.rmtree(self.folder, ignore_errors=True)
+                self.attempt(1, self.good)
+                self.attempt(2, value)
+                if value is None:
+                    write_json(self.folder / 'attempt-2/FAILURE.json', {'phase': 'credential.read'})
+                with self.assertRaises(AttemptsUnsettled) as raised:
+                    self.settled()
+                self.assertEqual((raised.exception.unnumbered, raised.exception.attempt), (False, 'attempt-2'))
+        # Every earlier attempt must say so, not only the latest.
+        shutil.rmtree(self.folder)
+        self.attempt(1, {**self.good, 'placement_state': 'unknown'})
+        self.attempt(2, self.good)
+        with self.assertRaises(AttemptsUnsettled) as raised:
+            self.settled()
+        self.assertEqual(raised.exception.attempt, 'attempt-1')
+
+    def test_anything_but_numbered_attempt_folders_is_unknown_membership(self):
+        def stray_file(): (self.folder / 'notes.txt').write_text('x')
+        def gap(): self.attempt(3, self.good)
+        def file_attempt(): (self.folder / 'attempt-2').write_text('{}')
+        def linked_attempt(): (self.folder / 'attempt-2').symlink_to(self.folder / 'attempt-1')
+        for alter in [stray_file, gap, file_attempt, linked_attempt]:
+            with self.subTest(change=alter.__name__):
+                shutil.rmtree(self.folder, ignore_errors=True)
+                self.attempt(1, self.good)
+                self.assertEqual(self.settled(), 1)
+                alter()
+                with self.assertRaises(AttemptsUnsettled) as raised:
+                    self.settled()
+                self.assertTrue(raised.exception.unnumbered)
+        shutil.rmtree(self.folder)
+        self.folder.parent.joinpath('real').mkdir()
+        self.folder.symlink_to(self.folder.parent / 'real')
+        with self.assertRaises(AttemptsUnsettled) as raised:
+            self.settled()
+        self.assertTrue(raised.exception.unnumbered)
 
 
 class ContinuationTests(unittest.TestCase):
@@ -939,51 +883,15 @@ class ContinuationTests(unittest.TestCase):
             self.attempt(place=unrecorded)
         self.assertEqual(strict_json((self.folder() / 'RESULT.json').read_bytes())['placement_state'], 'unknown')
 
-    def test_tenth_and_later_attempts_follow_in_number_order(self):
+    def test_claim_applies_the_shared_admission_rule_before_making_a_folder(self):
+        # The full admission table is AttemptAdmissionTests; this layer's own effect is the folder it makes.
         parent = self.out / 'continuations' / f'{AUDIT}-p2'
-        good = {'schema': 'stewart.c10-continuation-session/1', 'audit': AUDIT, 'placement': 2, 'placement_state': 'not_started'}
-        for number in range(1, 12):
-            folder, attempt = claim(self.out, self.packet)
-            self.assertEqual((folder, attempt), (parent / f'attempt-{number}', number))
-            write_json(folder / 'RESULT.json', good)
-        # A gap in the numbering is an unknown membership, whatever its text order.
-        (parent / 'attempt-13').mkdir()
-        with self.assertRaises(Refused):
+        self.assertEqual(claim(self.out, self.packet), (parent / 'attempt-1', 1))
+        write_json(parent / 'attempt-1/RESULT.json', {'schema': 'stewart.c10-continuation-session/1', 'audit': AUDIT,
+                                                      'placement': 2, 'placement_state': 'unknown'})
+        with self.assertRaisesRegex(Refused, 'attempt-1 of this placement may have started it'):
             claim(self.out, self.packet)
-        (parent / 'attempt-13').rmdir()
-        write_json(parent / 'attempt-10/RESULT-copy.json', good)
-        (parent / 'attempt-10/RESULT.json').unlink()
-        with self.assertRaises(Refused):
-            claim(self.out, self.packet)
-
-    def test_only_recorded_not_started_attempts_admit_another(self):
-        parent = self.out / 'continuations' / f'{AUDIT}-p2'
-        def earlier(value):
-            (parent / 'attempt-1').mkdir(parents=True)
-            if value is not None:
-                (parent / 'attempt-1/RESULT.json').write_text(value if isinstance(value, str) else json.dumps(value))
-        good = {'schema': 'stewart.c10-continuation-session/1', 'audit': AUDIT, 'placement': 2, 'placement_state': 'not_started'}
-        blocked = [None, 'not json', {**good, 'placement_state': 'unknown'}, {**good, 'placement_state': 'observed'},
-                   {**good, 'audit': 'another'}, {**good, 'schema': 'other'}, {'placement_state': 'not_started'}]
-        for value in blocked:
-            with self.subTest(value=value):
-                self.setUp()
-                parent = self.out / 'continuations' / f'{AUDIT}-p2'
-                earlier(value)
-                if value is None:
-                    write_json(parent / 'attempt-1/FAILURE.json', {'phase': 'credential.read'})
-                with self.assertRaises(Refused):
-                    claim(self.out, self.packet)
-                self.assertEqual(sorted(path.name for path in parent.iterdir()), ['attempt-1'])
-        self.setUp()
-        parent = self.out / 'continuations' / f'{AUDIT}-p2'
-        earlier(good)
-        self.assertEqual(claim(self.out, self.packet), (parent / 'attempt-2', 2))
-        write_json(parent / 'attempt-2/RESULT.json', good)
-        self.assertEqual(claim(self.out, self.packet)[1], 3)
-        (parent / 'notes.txt').write_text('x')
-        with self.assertRaises(Refused):
-            claim(self.out, self.packet)
+        self.assertEqual(sorted(path.name for path in parent.iterdir()), ['attempt-1'])
 
     def test_claim_refuses_names_that_are_not_an_audit_placement(self):
         for audit, placement in [('../x', 2), ('Control', 2), (AUDIT, 1), (AUDIT, 5), (AUDIT, True), (AUDIT, '2')]:

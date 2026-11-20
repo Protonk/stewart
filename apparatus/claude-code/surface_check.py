@@ -360,19 +360,11 @@ def attest(packet, observation_digest, reviewer, output):
     if commission['mode'] != 'real-harness':
         raise ValueError('synthetic rehearsals cannot receive a reviewed check')
     out = packet / 'observation'
-    raw = p.read_file(out / 'OBSERVATION.json')
-    observation = p.decode(raw)
-    p.exact(observation, ('schema', 'mode', 'scope', 'started_at', 'finished_at', *p.BINDINGS,
-                         'evidence_manifest_sha256', 'checks', 'stopping'), 'observation')
-    if (observation['schema'] != 'stewart.claude-code.surface-observation/1'
-            or observation['scope'] != 'supplied-surface'
-            or p.timestamp(observation['finished_at'], 'finish') < p.timestamp(observation['started_at'], 'start')):
-        raise ValueError('observation schema, scope or times differ')
+    # profile.py owns which observations are attestable; this adds the budget binding.
+    raw, observation, _ = p.validate_observation(out)
     if observation_digest != p.sha(raw):
         raise ValueError('reviewed observation digest differs')
     p.text(reviewer, 'independent reviewer')
-    manifest = p.read_file(out / 'EVIDENCE.json')
-    members = p.evidence(out, manifest)
     run = p.decode(p.read_file(out / 'RESULT.json'))
     ledger = p.decode(p.read_file(out / 'execution/FINISH.json'))
     start = p.decode(p.read_file(out / 'execution/START.json'))
@@ -384,17 +376,8 @@ def attest(packet, observation_digest, reviewer, output):
             or start['approved_digest'] != commission['budget_sha256'] or start['extra_usage_disabled'] is not True
             or start['mode'] != 'real-harness' or start['budget_sha256'] != commission['budget_sha256']
             or p.sha(p.read_file(out / 'execution/BUDGET.json')) != commission['budget_sha256']
-            or observation['mode'] != 'real-harness' or observation['stopping'] != 'observed'
-            or observation['evidence_manifest_sha256'] != p.sha(manifest)
-            or {key: observation[key] for key in p.BINDINGS} != commission['bindings']
-            or len(observation['checks']) != len(surface.REQUIRED_CHECKS)
-            or {check['id'] for check in observation['checks']} != set(surface.REQUIRED_CHECKS)
-            or any(check['outcome'] != 'observed' or not check['evidence']
-                   or any(name not in members for name in check['evidence']) for check in observation['checks'])):
-        raise ValueError('review requires a complete, stopped and observed real-harness comparison')
-    for name, key in (('launch', 'launch_sha256'), ('surface', 'surface_sha256'), ('tools', 'tools_sha256')):
-        if p.sha(p.read_file(out / 'inputs' / (name + '.json'))) != commission['bindings'][key]:
-            raise ValueError('reviewed input binding differs')
+            or {key: observation[key] for key in p.BINDINGS} != commission['bindings']):
+        raise ValueError('review requires the complete approved budget and its commissioned bindings')
     output = p.absolute(output)
     if output != out / 'CHECK.json':
         os.close(p.directory(output.parent))

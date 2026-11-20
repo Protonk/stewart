@@ -731,8 +731,22 @@ def conversations(exchanges):
     return convs
 
 
+def owns_tool_result_order(responder):
+    """True when the responder (or the responder it wraps) compares each request's tool_result
+    IDs with the tool_use IDs it sent, reply by reply (Procedure, ReactingAuditor)."""
+    for _ in range(5):
+        if responder is None:
+            return False
+        if getattr(responder, "OWNS_TOOL_RESULT_ORDER", False):
+            return True
+        responder = getattr(responder, "base", None) or getattr(responder, "procedure", None)
+    return False
+
+
 def check_history(t, fx, name, exchanges=None):
-    """6.2: append exact responses and tool results, or replace context after a signed summary."""
+    """6.2: append exact responses and tool results, or replace context after a signed summary.
+    The tool_result IDs are compared here only when the responder does not compare them itself."""
+    ids_owned = owns_tool_result_order(getattr(fx, "responder", None))
     for ci, conv in enumerate(conversations(exchanges if exchanges is not None else fx.exchanges), 1):
         for i in range(1, len(conv)):
             (prev_req, prev_ans), (req, _) = conv[i - 1], conv[i]
@@ -761,8 +775,9 @@ def check_history(t, fx, name, exchanges=None):
                 tp = b.get("type") if b.kind == "object" else None
                 if tp is not None and tp.raw == b'"tool_result"':
                     ids.append(b.get("tool_use_id").value() if b.get("tool_use_id") is not None else None)
-            want = [blk.meta.get("id") for blk in prev_ans.tool_uses()]
-            t.eq(p + ".tool-result-ids", ids, want)
+            if not ids_owned:
+                want = [blk.meta.get("id") for blk in prev_ans.tool_uses()]
+                t.eq(p + ".tool-result-ids", ids, want)
 
 
 def check_first_message(t, ex, question_body, continuing, name, notice=None):
@@ -1195,8 +1210,22 @@ def _selftest_rejection_witness():
     return out
 
 
+def _selftest_tool_result_owner():
+    """check_history leaves the tool_result ID comparison to a responder that makes it itself,
+    through any wrapper, and keeps it for a plain script."""
+    import types
+    from procedure import Procedure
+    proc = Procedure(lambda p: iter(()))
+    cases = (("procedure", proc, True), ("gated", fp.Gate(fp.MESSAGES_API, proc), True),
+             ("injected", fp.Inject(proc, {}), True), ("summarizing", types.SimpleNamespace(procedure=proc), True),
+             ("script", fp.Script([]), False), ("none", None, False))
+    return [("history.tool-result-owner." + label, owns_tool_result_order(r) is want, label)
+            for label, r, want in cases]
+
+
 try:
     from driver_core import selftest as _selftest
+    _selftest(_selftest_tool_result_owner)
     _selftest(_selftest_harness)
     _selftest(_selftest_rejection_witness)
 except ImportError:  # pragma: no cover

@@ -14,6 +14,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'driver'))
+from claude_code import group_observation
 from os_fixtures import group_probe
 
 spec = importlib.util.spec_from_file_location('bounded', Path(__file__).with_name('bounded.py'))
@@ -59,23 +60,16 @@ elif mode in ('stall','descendant'):
 '''
 
 
-def observe_group(group, seconds, probe=None):
-    """Bounded read-only observations: EPERM stays unknown, never absent."""
-    probe = os.killpg if probe is None else probe
+def observe_group(group, seconds):
+    """Bounded read-only observations. The classifier, which keeps a denied probe
+    unknown rather than absent, is the driver's self-tested group_observation."""
     started = bounded.now()
     result = {'group': group, 'clock': bounded.CLOCK_NAME, 'observer_pid': os.getpid(),
               'started': started, 'observations': [], 'state': 'unknown'}
     while True:
-        error = None
-        try:
-            probe(group, 0)
-            state = 'present'
-        except ProcessLookupError as exc:
-            state, error = 'absent', exc.errno
-        except PermissionError as exc:
-            state, error = 'unknown', exc.errno
+        state = group_observation(group)
         observed = bounded.now()
-        result['observations'].append({'at': observed, 'state': state, 'errno': error})
+        result['observations'].append({'at': observed, 'state': state})
         result['state'] = state
         result['elapsed_seconds'] = observed - started
         if state == 'absent' or observed >= started + seconds:
@@ -436,33 +430,6 @@ b.supervise(json.loads(Path(sys.argv[2]).read_bytes()),Path(sys.argv[3]),b.now()
                     cleanup['group_signal'] = 'denied; stopping remains unknown'
                 cleanup['observation'] = observe_group(group, 1)
             bounded.record(self.root / 'owner-loss-cleanup.json', cleanup)
-
-    def test_group_observation_distinguishes_denial_from_absence(self):
-        outcomes = iter(('ready-child', 'denied', 'denied', 'reaped-child'))
-        def transition(group, sig):
-            self.assertEqual(sig, 0)
-            state = next(outcomes)
-            return group_probe(state)(group, sig)
-        result = observe_group(123, 1, transition)
-        bounded.record(self.root / 'transition.json', result)
-        self.assertEqual(result['state'], 'absent')
-        self.assertEqual([item['state'] for item in result['observations']],
-                         ['present', 'unknown', 'unknown', 'absent'])
-        denied = group_probe('denied')
-        result = observe_group(123, 0.04, denied)
-        bounded.record(self.root / 'persistent-denial.json', result)
-        self.assertEqual(result['state'], 'unknown')
-        self.assertTrue(all(item['state'] == 'unknown' for item in result['observations']))
-        self.assertTrue(all(item['errno'] == 1 for item in result['observations']))
-        result = observe_group(123, 0, group_probe('ready-child'))
-        bounded.record(self.root / 'present.json', result)
-        self.assertEqual(result['state'], 'present')
-        absent = group_probe('reaped-child')
-        for identity in (123, 456):
-            result = observe_group(identity, 0, absent)
-            bounded.record(self.root / ('absent-%d.json' % identity), result)
-            self.assertEqual(result['state'], 'absent')
-
 
 if __name__ == '__main__':
     print('Retained offline controls: ' + str(RUN), flush=True)

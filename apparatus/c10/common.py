@@ -56,12 +56,22 @@ SCENARIOS = ['submitted', 'empty', 'unsubmitted', 'provider-rejected',
 BINDINGS = ['qualification_id', 'binary_sha256', 'source_commit', 'apparatus_sha256',
             'image', 'catalog_sha256']
 LIMITS = ['turns', 'input_tokens', 'output_tokens']
+# INTERFACE 6.4: a request needs at least this much of the output allowance.
+MIN_REQUEST_OUTPUT = 1024
 MAX_FILE = 64 * 1024 * 1024
 
 
 def require(ok, reason):
     if not ok:
         raise ValueError(reason)
+
+
+def limit_exhausted(limits, used):
+    """INTERFACE 6.4: no turn remains, the input allowance is used up, or fewer than
+    1,024 output tokens remain. A placement started then ends `limit_reached`
+    before any request; the launcher's sizing facts and the reviewer both use this."""
+    return (used['turns'] >= limits['turns'] or used['input_tokens'] >= limits['input_tokens']
+            or limits['output_tokens'] - used['output_tokens'] < MIN_REQUEST_OUTPUT)
 
 
 def strict_json(raw):
@@ -107,6 +117,52 @@ def read_file(path, limit=MAX_FILE):
     require(len(raw) <= limit and (before.st_ino, before.st_size, before.st_mtime_ns)
             == (after.st_ino, after.st_size, after.st_mtime_ns), 'evidence changed during read')
     return raw
+
+
+class AttemptsUnsettled(ValueError):
+    """An earlier attempt at a placement does not show that it started nothing.
+
+    `unnumbered` is True when the placement's folder holds anything but the
+    numbered attempt folders; otherwise `attempt` names the first earlier attempt
+    whose result does not record `not_started`.
+    """
+    def __init__(self, unnumbered, attempt=None):
+        super().__init__('unnumbered attempt records' if unnumbered else f'{attempt} may have started')
+        self.unnumbered, self.attempt = unnumbered, attempt
+
+
+def settled_attempts(folder, audit, placement):
+    """How many earlier attempts at one later placement exist, each recorded as never started.
+
+    The host launcher asks before it touches the container or a credential; the
+    container's half asks again before it claims the next attempt folder. Attempts
+    are folders `attempt-1` … `attempt-N` without a gap (attempt-10 follows
+    attempt-9). Another attempt is admitted only when every earlier one holds its
+    own `stewart.c10-continuation-session/1` result for this audit and placement
+    saying `not_started`. A missing or unreadable result, a failure record alone or
+    any other state means the placement started or may have started; that raises
+    AttemptsUnsettled and is never attempted again.
+    """
+    folder = Path(folder)
+    if not folder.exists() and not folder.is_symlink():
+        return 0
+    if folder.is_symlink() or not folder.is_dir():
+        raise AttemptsUnsettled(True)
+    members = list(folder.iterdir())
+    names = [f'attempt-{number}' for number in range(1, len(members) + 1)]
+    if (sorted(path.name for path in members) != sorted(names)
+            or any(path.is_symlink() or not path.is_dir() for path in members)):
+        raise AttemptsUnsettled(True)
+    for name in names:
+        try:
+            record = strict_json(read_file(folder/name/'RESULT.json'))
+            settled = (record['schema'] == 'stewart.c10-continuation-session/1' and record['audit'] == audit
+                       and record['placement'] == placement and record['placement_state'] == 'not_started')
+        except (OSError, ValueError, KeyError, TypeError):
+            settled = False
+        if not settled:
+            raise AttemptsUnsettled(False, name)
+    return len(members)
 
 
 def file_hash(path):

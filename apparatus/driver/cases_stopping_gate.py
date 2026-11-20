@@ -91,7 +91,8 @@ def _entry_body(p):
 @case("c13.signal-gate", ["C13", "C3", "C8", "C20"],
       "a signal closes the executing mutation's publication gate before its link; a begun link completes; "
       "a close that won first is named instead",
-      mode="test", needs=("loopback",))
+      mode="test", needs=("loopback",),
+      faults=("log.publish:seal=pause", "log.publish:entry=pause", "log.dirsync:seal=pause", "seal.after_link=pause", "close.after_requested=pause"))
 def c_signal_gate(t):
     """Each arm holds the run at an Appendix C.1 point inside one auditor mutation, signals
     the run, waits, then releases it (6.8).
@@ -237,7 +238,8 @@ def c_signal_gate(t):
 @case("c12.start-races-close", ["C12", "C8", "C16", "C20"],
       "close winning the log order while run holds its start before run_started: refused reference_closed, "
       "nothing launched",
-      mode="test", needs=("loopback",))
+      mode="test", needs=("loopback",),
+      faults=("log.publish:run_started=pause", "close.after_requested=pause"))
 def c_start_races_close(t):
     """close-wins: run is held at log.publish:run_started (immediately before linking its
     start, C.1); close publishes close_requested and is held after it

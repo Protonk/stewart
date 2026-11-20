@@ -2,7 +2,7 @@
 """Observe a separately launched harness against the supplied-surface fixture.
 
 This module has no process launcher, signal sender or spending authority. Its
-self-test and listener rehearsal use synthetic transcripts and socket peers.
+self-test uses synthetic transcripts and socketpair peers.
 Run with python3 -I -B; see CLAUDE-CODE-OBSERVER.md for the launcher boundary.
 """
 from __future__ import annotations
@@ -614,14 +614,9 @@ def _session_capture(case, name):
     return value
 
 
-def _connect(case, endpoint, listeners):
-    if listeners:
-        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        client.settimeout(2)
-        client.connect(str(case.workspace / endpoint))
-    else:
-        server, client = socket.socketpair()
-        (case.attach_mcp if endpoint == "m" else case.attach_hook)(server)
+def _connect(case, endpoint):
+    server, client = socket.socketpair()
+    (case.attach_mcp if endpoint == "m" else case.attach_hook)(server)
     client.settimeout(2)
     return client
 
@@ -685,9 +680,9 @@ def _hook_capture_failure_observed(case, control):
             and not case.gate_open() and not case.hooks and not case.calls and not case.fixture.effects)
 
 
-def _hook_capture_failure(case, listeners=False, order="concurrent"):
+def _hook_capture_failure(case, order="concurrent"):
     """Sabotage only the hook capture; ordered socketpairs exercise close races."""
-    if order not in {"concurrent", "before-sendall", "before-shutdown", "before-recv"} or (listeners and order != "concurrent"):
+    if order not in {"concurrent", "before-sendall", "before-shutdown", "before-recv"}:
         raise ValueError("unsupported synthetic hook-failure ordering")
     raw = _hook_input(case)
     # This peer witness is outside the append being sabotaged. It states the
@@ -721,7 +716,7 @@ def _hook_capture_failure(case, listeners=False, order="concurrent"):
 
     case.append = broken
     try:
-        with _connect(case, "h", listeners) as peer:
+        with _connect(case, "h") as peer:
             _hook_failure_peer(peer, raw, before_operation, control["peer"])
         join_hook()
         try:
@@ -745,11 +740,11 @@ def _hook_capture_failure(case, listeners=False, order="concurrent"):
             surface.save(case.root / "control-hook-failure.json", control)
 
 
-def _traffic(case, listeners=False, fragmented=False, no_attempt=False, bypass=False, result_change=None):
+def _traffic(case, fragmented=False, no_attempt=False, bypass=False, result_change=None):
     raw = compact(_init(case)) + b"\n"
     for chunk in ([raw[n:n + 1] for n in range(len(raw))] if fragmented else [raw]):
         case.feed(chunk)
-    client = _connect(case, "m", listeners)
+    client = _connect(case, "m")
     try:
         def request(raw):
             value = spec.mcp_message_loads(raw)
@@ -775,7 +770,7 @@ def _traffic(case, listeners=False, fragmented=False, no_attempt=False, bypass=F
         for chunk in ([rate[n:n + 1] for n in range(len(rate))] if fragmented else [rate]):
             case.feed(chunk)
         if not no_attempt:
-            with _connect(case, "h", listeners) as hook:
+            with _connect(case, "h") as hook:
                 hook_raw = _hook_input(case)
                 (case.control_sender / "hook-attempted.bin").write_bytes(hook_raw)
                 hook.sendall(hook_raw)
@@ -1018,7 +1013,7 @@ def self_test():
     for endpoint in ("m", "h"):
         case = _control_observer(root, "partial-" + endpoint, "positive")
         case.feed(compact(_init(case)) + b"\n")
-        client = _connect(case, endpoint, False)
+        client = _connect(case, endpoint)
         client.sendall(b'{"partial":')
         time.sleep(0.03)
         result = _finish_control(case)
@@ -1028,7 +1023,7 @@ def self_test():
               and (case.root / member).read_bytes() == b'{"partial":')
     case = _control_observer(root, "malformed-hook", "positive")
     case.feed(compact(_init(case)) + b"\n")
-    with _connect(case, "h", False) as peer:
+    with _connect(case, "h") as peer:
         peer.sendall(b"[]")
         peer.shutdown(socket.SHUT_WR)
         peer.recv(4096)
@@ -1198,71 +1193,11 @@ def self_test():
     return int(passed != len(checks) or any(row["outcome"] != "observed" for row in observation["checks"]))
 
 
-def rehearse_listeners(root):
-    root.mkdir(mode=0o700)
-    controls, cases = [], []
-    for kind in KINDS:
-        case = _control_observer(root, kind, kind)
-        try:
-            case.start_listeners()
-            _traffic(case, listeners=True)
-            record = _finish_control(case)
-            passed = not record["errors"] and all(value == "observed" for value in record["checks"].values())
-            cases.append(case)
-            controls.append({"name": kind, "passed": passed, "detail": record["errors"]})
-        except (OSError, ValueError, ObserverStop) as error:
-            case.close()
-            controls.append({"name": kind, "passed": False, "detail": str(error)})
-    for name in ("bad-startup", "witness-failure"):
-        case = _control_observer(root, name, "positive")
-        control = None
-        try:
-            case.start_listeners()
-            if name == "bad-startup":
-                value = _init(case)
-                value["apiKeySource"] = "environment"
-                try:
-                    case.feed(compact(value) + b"\n")
-                except ObserverStop:
-                    pass
-            else:
-                case.feed(compact(_init(case)) + b"\n")
-                control = _hook_capture_failure(case, listeners=True)
-            try:
-                case.check_stop()
-            except ObserverStop:
-                stopped = True
-            else:
-                stopped = False
-            record = _finish_control(case, stop="observer-stop", guard_reason="owner-stop")
-            controls.append({"name": name, "passed": stopped and bool(record["errors"]) and not case.fixture.effects
-                             and (control is None or control["passed"]),
-                             "detail": record["errors"]})
-        except (OSError, ValueError, ObserverStop) as error:
-            case.close()
-            controls.append({"name": name, "passed": False, "detail": str(error), "observer_errors": list(case.errors)})
-    counts = {"controls": len(controls), "passed": sum(row["passed"] for row in controls),
-              "failed": sum(not row["passed"] for row in controls), "skipped": 0}
-    surface.save(root / "REHEARSAL.json", {"schema": "stewart.claude-code.observer-rehearsal/1", "counts": counts,
-        "controls": controls, "scope": "synthetic peers/transcripts/auth/process-result controls; no subprocess or Claude"})
-    if len(cases) == 3:
-        assess_batch(root, cases, "synthetic-rehearsal")
-    print(json.dumps(counts, sort_keys=True))
-    print("Retained listener rehearsal: " + str(root))
-    return int(bool(counts["failed"]))
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--self-test", action="store_true")
-    parser.add_argument("--rehearse-listeners", action="store_true")
-    parser.add_argument("--work", type=Path, help="fresh absolute listener-rehearsal evidence directory")
-    args = parser.parse_args()
-    if args.self_test and not args.rehearse_listeners:
-        return self_test()
-    if args.rehearse_listeners and not args.self_test and args.work and args.work.is_absolute() and not args.work.exists():
-        return rehearse_listeners(args.work)
-    parser.error("select --self-test or --rehearse-listeners --work /absolute/fresh-directory")
+    parser.add_argument("--self-test", action="store_true", required=True)
+    parser.parse_args()
+    return self_test()
 
 
 if __name__ == "__main__":

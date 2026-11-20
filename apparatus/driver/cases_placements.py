@@ -62,7 +62,7 @@ NOTE_INPUT = {"text": NOTE, "label": "same"}
 @case("c3.identity-across-placements", ["C3", "C13", "C6"],
       "a tool_use ID from an earlier placement names a new invocation; inside a placement it replays",
       needs=("loopback",),
-      controls=[Control("replay_reexecutes", [r"^identity\.(replay\.|selection|entry-records)"])])
+      controls=[Control("replay_reexecutes", [r"^identity\.replay\.(records|same-result)$"])])
 def c_identity_across_placements(t):
     """Placement 1 executes tool_use toolu_identity_same (record_observation, label same) as
     e1, then the provider is unavailable (6.5). In the continuation the same ID with the

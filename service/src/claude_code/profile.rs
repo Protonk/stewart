@@ -460,12 +460,7 @@ pub(crate) mod tests {
 
     #[test]
     fn profile_refusals_name_the_independently_changed_check_member() {
-        let good = fixture(
-            PROFILE_SCHEMA,
-            "surface_sha256",
-            "e8182ecf0009ee1f3889b8e89902bec5eaef34c8bf4c079c2b78c34684780db5",
-            b"[]",
-        );
+        let good = fixture(PROFILE_SCHEMA, "surface_sha256", &surface::sha256(), b"[]");
         Profile::parse(good.as_bytes()).unwrap();
         let wrong_outcome = good.replace(r#""outcome":"observed""#, r#""outcome":"unobserved""#);
         let refusal = Profile::parse(wrong_outcome.as_bytes()).unwrap_err();

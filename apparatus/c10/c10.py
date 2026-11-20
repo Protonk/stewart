@@ -18,9 +18,9 @@ import sys
 import time
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from common import (BINDINGS,CONTINUED,HERE,LIMITS,MAX_PLACEMENTS,REPO,SOURCE_PATHS,catalog,compact,digest,
-    file_hash,identifier,proposal,read_file,rehearsal_packet,require,scan_tree,source_hash,strict_json,
-    validate_continuation,validate_packet,write_json)
+from common import (BINDINGS,CONTINUED,HERE,LIMITS,MAX_PLACEMENTS,REPO,SOURCE_PATHS,AttemptsUnsettled,catalog,
+    compact,digest,file_hash,identifier,proposal,read_file,rehearsal_packet,require,scan_tree,settled_attempts,
+    source_hash,strict_json,validate_continuation,validate_packet,write_json)
 from launch import hidden_credential,host_environment,select_qualification
 from batch import allowance_facts
 from verify import Evidence,ordinary_submission,serial_names,verify
@@ -122,30 +122,15 @@ def attempt_folder(evidence,audit,placement,attempt):
 def next_attempt(evidence,audit,placement):
     """Which attempt of a placement may start now, from what the container already published.
 
-    The container numbers attempts from 1 without gaps. Another attempt is
-    permitted only when every earlier one holds its own result saying no model
-    process was started. A missing or unreadable result, a failure record
-    alone or any other state means the placement started or may have started,
-    and it is never attempted again.
+    The rule is common.settled_attempts; the container's half applies it again
+    before claiming the attempt folder.
     """
-    folder=continuation_folder(evidence,audit,placement)
-    if not folder.exists() and not folder.is_symlink():
-        return 1
-    refuse(folder.is_dir() and not folder.is_symlink(),
-           'the placement holds records that are not numbered attempts; reconcile them before any further launch')
-    earlier=list(folder.iterdir())
-    refuse(sorted(path.name for path in earlier)==sorted(f'attempt-{number}' for number in range(1,len(earlier)+1))
-           and all(path.is_dir() and not path.is_symlink() for path in earlier),
-           'the placement holds records that are not numbered attempts; reconcile them before any further launch')
-    for path in earlier:
-        try:
-            record=strict_json(read_file(path/'RESULT.json'))
-            settled=(record['schema']=='stewart.c10-continuation-session/1' and record['audit']==audit
-                     and record['placement']==placement and record['placement_state']=='not_started')
-        except (OSError,ValueError,KeyError,TypeError):
-            settled=False
-        refuse(settled,'an earlier attempt of this placement started or may have started; reconcile its retained records, never repeat it')
-    return len(earlier)+1
+    try:
+        return settled_attempts(continuation_folder(evidence,audit,placement),audit,placement)+1
+    except AttemptsUnsettled as error:
+        refuse(False,'the placement holds records that are not numbered attempts; reconcile them before any further launch'
+               if error.unnumbered else
+               'an earlier attempt of this placement started or may have started; reconcile its retained records, never repeat it')
 
 
 def ready_record(audit,placement,attempt):

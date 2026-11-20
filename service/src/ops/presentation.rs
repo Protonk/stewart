@@ -507,6 +507,63 @@ mod allowance_tests {
         assert!(request_unavailable(&J::Null).is_none());
     }
 
+    /// Advice reads the allowances a reply presents, while the placement
+    /// stops by `Limits::exhausted`. At every allowance boundary the two
+    /// agree, estimated charges count as used, and the advice names the
+    /// allowance that stops the next request.
+    #[test]
+    fn request_advice_agrees_with_the_stop_rule_at_each_boundary() {
+        use crate::usage::Usage;
+        let limits = Limits {
+            #[cfg(feature = "claude-code")]
+            harness: None,
+            turns: 4,
+            input_tokens: 1_000,
+            output_tokens: 16_000,
+        };
+        let used = |turns, input, output, estimated_output| {
+            let mut u = Usage::default();
+            u.turns.reported = turns;
+            u.input_tokens.reported = input;
+            u.output_tokens.reported = output;
+            u.output_tokens.estimated = estimated_output;
+            u
+        };
+        let output = |n: u64| {
+            format!(
+                "the output token allowance has {n} tokens remaining, fewer than the 1,024 required"
+            )
+        };
+        let turns = "the turn allowance is exhausted".to_string();
+        let input = "the input token allowance is exhausted".to_string();
+        for (label, u, reason) in [
+            ("sufficient", used(1, 100, 8_000, 0), None),
+            ("output 1,024", used(1, 100, 14_976, 0), None),
+            ("output 1,023", used(1, 100, 14_977, 0), Some(output(1_023))),
+            ("output zero", used(1, 100, 16_000, 0), Some(output(0))),
+            (
+                "estimated output",
+                used(1, 100, 8_000, 8_000),
+                Some(output(0)),
+            ),
+            ("turns zero", used(4, 100, 100, 0), Some(turns.clone())),
+            ("input zero", used(1, 1_000, 100, 0), Some(input.clone())),
+            (
+                "input exceeded",
+                used(1, 1_001, 100, 0),
+                Some(input.clone()),
+            ),
+        ] {
+            let advice = request_unavailable(&limits.allowances_j(&u));
+            assert_eq!(
+                advice,
+                reason.map(|r| format!("No further provider request can be sent: {r}.")),
+                "{label}"
+            );
+            assert_eq!(advice.is_some(), limits.exhausted(&u), "{label}");
+        }
+    }
+
     #[test]
     fn interrupted_advice_follows_what_may_continue() {
         let advice = |c: Continuation| interrupted_advice(3, &c);

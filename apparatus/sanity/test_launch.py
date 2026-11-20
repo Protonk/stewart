@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import threading
 import unittest
 from unittest import mock
 import warnings
@@ -21,8 +22,51 @@ import launch
 import exercise
 import review
 from control import safe_state
-from session import Session, export_evidence_state, export_work, failure_details, safe_choice, safe_observation, safe_usage
+from session import RequestSeen, Session, export_evidence_state, export_work, failure_details, safe_choice, safe_observation, safe_usage
 from session_support import credential_bytes, digest, scan_tree, secret_matches, strict_json, validate_commission, write_json
+
+
+def complete_evidence(root, placements=1):
+    """Exportable records of an audit with PLACEMENTS observed placements, each sealed after one request.
+
+    Returns the paths, relative to ROOT, that belong to the last placement, so
+    one alteration can be applied to whichever placement comes last.
+    """
+    root = Path(root)
+    evidence, audit = root / 'evidence', root / 'archive/audits/audit'
+    (audit / 'log').mkdir(parents=True)
+    for number in range(1, placements + 1):
+        own = evidence if number == 1 else evidence / f'placement-{number:04d}'
+        own.mkdir(parents=True)
+        write_json(own / 'RESULT.json', {'failure': False})
+        run_cmd, status = 2 * number - 1, 2 * number
+        write_json(evidence / f'{run_cmd:02}-run.json', {'argv': ['/bin-in/stewart', 'run', 'stw1:fixture', '--json', '--key-fd', '3'], 'exit': 0, 'timed_out': False})
+        write_json(evidence / f'{status:02}-status-after-run.json', {'argv': ['/bin-in/stewart', 'status', 'stw1:fixture', '--json'], 'exit': 0, 'timed_out': False})
+        write_json(evidence / f'{status:02}-status-after-run.stdout', {'data': {'runs': {'held': False, 'count': number, 'last': {'number': number, 'ending': 'sealed'}}}})
+        write_json(audit / f'log/{run_cmd}.json', {'kind': 'run_started', 'body': {'run': number}})
+        write_json(audit / f'log/{status}.json', {'kind': 'run_ended', 'body': {'run': number, 'requests': 1, 'attempts': 1}})
+        run = audit / f'runs/{number}'
+        (run / 'stage').mkdir(parents=True)
+        write_json(run / 'request-1.json', {'request': 1})
+        write_json(run / 'attempt-1-1.json', {'kind': 'provider_attempt', 'body': {'request': 1, 'attempt': 1, 'response': None, 'credential_reflection': {'body': False, 'headers': []}}})
+    last = placements
+    return {'result': ('evidence' if last == 1 else f'evidence/placement-{last:04d}') + '/RESULT.json',
+            'run': f'evidence/{2 * last - 1:02}-run.json', 'later_run': f'evidence/{2 * last + 1:02}-run.json',
+            'status': f'evidence/{2 * last:02}-status-after-run.json', 'status_out': f'evidence/{2 * last:02}-status-after-run.stdout',
+            'start': f'archive/audits/audit/log/{2 * last - 1}.json', 'end': f'archive/audits/audit/log/{2 * last}.json',
+            'dir': f'archive/audits/audit/runs/{last}/', 'next_dir': f'archive/audits/audit/runs/{last + 1}/',
+            'attempt': f'archive/audits/audit/runs/{last}/attempt-1-1.json',
+            'next_placement': f'evidence/placement-{last + 1:04d}', 'number': last}
+
+
+def bare_session(root):
+    """A Session whose commands run local Python children; nothing is installed or launched."""
+    case = Session.__new__(Session)
+    case.binary, case.root, case.evidence = Path(sys.executable), Path(root), Path(root)
+    case.env = {'PATH': os.environ['PATH'], 'HOME': str(root)}
+    case.commission, case.mode, case.index, case.process = {'stop_after_seconds': 60}, 'submitted', 0, None
+    case.spawn = subprocess.Popen
+    return case
 
 
 class FakeTransportTests(unittest.TestCase):
@@ -38,8 +82,8 @@ class FakeTransportTests(unittest.TestCase):
         handler = object.__new__(handler_type)
         handler.path = path
         handler.headers = {'Content-Length': str(len(body) if declared is None else declared),
-            'x-api-key': provider.key, 'anthropic-version': '2026-10-21',
-            'anthropic-beta': 'compact-2026-09-04'}
+            'x-api-key': provider.key, 'anthropic-version': exercise.API_VERSION,
+            'anthropic-beta': exercise.ANTHROPIC_BETA}
         handler.rfile, handler.wfile = io.BytesIO(body), io.BytesIO()
         handler.send_response = mock.Mock()
         handler.send_header = mock.Mock()
@@ -90,23 +134,6 @@ class FakeTransportTests(unittest.TestCase):
 
 
 class LaunchTests(unittest.TestCase):
-    def complete_evidence(self, root):
-        evidence = root / 'evidence'
-        evidence.mkdir()
-        write_json(evidence / 'RESULT.json', {'failure': False})
-        write_json(evidence / '01-run.json', {'argv': ['/bin-in/stewart', 'run', 'stw1:fixture', '--json', '--key-fd', '3'], 'exit': 0, 'timed_out': False, 'pid': 123})
-        write_json(evidence / '02-status-after-run.json', {'argv': ['/bin-in/stewart', 'status', 'stw1:fixture', '--json'], 'exit': 0, 'timed_out': False, 'pid': 124})
-        write_json(evidence / '02-status-after-run.stdout', {'data': {'runs': {'held': False, 'count': 1, 'last': {'number': 1, 'ending': 'sealed'}}}})
-        audit = root / 'archive/audits/audit'
-        (audit / 'log').mkdir(parents=True)
-        write_json(audit / 'log/1.json', {'kind': 'run_started', 'body': {'run': 1}})
-        write_json(audit / 'log/2.json', {'kind': 'run_ended', 'body': {'run': 1, 'requests': 1, 'attempts': 1}})
-        run = audit / 'runs/1'
-        (run / 'stage').mkdir(parents=True)
-        write_json(run / 'request-1.json', {'request': 1})
-        write_json(run / 'attempt-1-1.json', {'kind': 'provider_attempt', 'body': {'request': 1, 'attempt': 1, 'response': None, 'credential_reflection': {'body': False, 'headers': []}}})
-        return run
-
     def packet(self):
         return {'schema': 'stewart.sanity-commission/1', 'model': 'example-model', 'effort': None,
             'limits': {'turns': 12, 'input_tokens': 160000, 'output_tokens': 12000},
@@ -273,7 +300,7 @@ class LaunchTests(unittest.TestCase):
             base = Path(folder)
             root = base / 'private'
             root.mkdir()
-            self.complete_evidence(root)
+            complete_evidence(root)
             original = root / 'record'
             original.write_bytes(b'unchanged ordinary evidence')
             for name in ['clean', 'contaminated', 'failure']:
@@ -291,23 +318,6 @@ class LaunchTests(unittest.TestCase):
             self.assertEqual(failure['outcome'], 'failed')
             self.assertTrue(original.exists())
 
-    def test_export_requires_complete_witness_and_clean_marker(self):
-        with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder)
-            self.assertEqual(export_evidence_state(root), 'missing_or_malformed_evidence')
-            run = self.complete_evidence(root)
-            self.assertEqual(export_evidence_state(root), 'complete')
-            attempt = run / 'attempt-1-1.json'
-            original = attempt.read_bytes()
-            reflected = json.loads(original)
-            reflected['body']['credential_reflection']['body'] = True
-            attempt.write_text(json.dumps(reflected))
-            self.assertEqual(export_evidence_state(root), 'credential_reflection_recorded')
-            attempt.write_bytes(original)
-            (run / 'response-9-1.bin').write_bytes(b'orphaned raw body')
-            self.assertEqual(export_evidence_state(root), 'unaccounted_capture')
-            self.assertTrue((run / 'response-9-1.bin').exists())
-
     def test_incomplete_evidence_withholds_export_until_completed(self):
         with tempfile.TemporaryDirectory() as folder:
             base = Path(folder)
@@ -323,62 +333,17 @@ class LaunchTests(unittest.TestCase):
             self.assertEqual(incomplete['scan']['errors'], 0)
             self.assertEqual(incomplete['evidence_state'], 'missing_or_malformed_evidence')
             self.assertFalse((base / 'incomplete/work.tar').exists())
-            self.complete_evidence(root)
+            complete_evidence(root)
             complete = export_work(root, base / 'complete', b'synthetic-key')
             self.assertEqual(complete['outcome'], 'exported')
             self.assertNotIn('reason', complete)
             self.assertEqual(complete['evidence_state'], 'complete')
             self.assertTrue((base / 'complete/work.tar').is_file())
 
-    def test_run_observation_distinguishes_status_metadata_and_requires_same_audit(self):
-        with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder)
-            self.complete_evidence(root)
-            # Both real command records end in '-run.json'; only the exact
-            # numbered run-command filename identifies the launched placement.
-            self.assertEqual(len(list((root / 'evidence').glob('*-run.json'))), 2)
-            self.assertEqual(export_evidence_state(root), 'complete')
-            status = root / 'evidence/02-status-after-run.json'
-            original = status.read_bytes()
-            changed = json.loads(original)
-            changed['argv'][2] = 'stw1:different-audit'
-            status.write_text(json.dumps(changed))
-            self.assertEqual(export_evidence_state(root), 'mismatched_run_observation')
-            status.write_bytes(original)
-            self.assertEqual(export_evidence_state(root), 'complete')
-
-    def test_incomplete_response_and_missing_marker_withhold_export(self):
-        with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder)
-            run = self.complete_evidence(root)
-            attempt = run / 'attempt-1-1.json'
-            body = json.loads(attempt.read_bytes())
-            del body['body']['credential_reflection']
-            attempt.write_text(json.dumps(body))
-            self.assertEqual(export_evidence_state(root), 'missing_or_malformed_evidence')
-            body['body']['credential_reflection'] = {'body': False, 'headers': []}
-            body['body']['response'] = {'file': 'response-1-1.bin', 'complete': False, 'bytes': 3, 'sha256': digest(b'abc')}
-            (run / 'response-1-1.bin').write_bytes(b'abc')
-            attempt.write_text(json.dumps(body))
-            self.assertEqual(export_evidence_state(root), 'incomplete_response_evidence')
-
-    def test_omitted_attempt_and_response_cannot_look_complete(self):
-        with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder)
-            run = self.complete_evidence(root)
-            end = root / 'archive/audits/audit/log/2.json'
-            original = end.read_bytes()
-            changed = json.loads(original)
-            changed['body']['attempts'] = 2
-            end.write_text(json.dumps(changed))
-            self.assertEqual(export_evidence_state(root), 'capture_counts_disagree')
-            end.write_bytes(original)
-            self.assertEqual(export_evidence_state(root), 'complete')
-
     def test_export_rejects_noninteger_or_nonpositive_record_identities(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            run = self.complete_evidence(root)
+            run = root / complete_evidence(root)['dir']
             attempt = run / 'attempt-1-1.json'
             body = json.loads(attempt.read_bytes())
             body['body']['response'] = {'file': 'response-1-1.bin', 'complete': True, 'bytes': 1, 'sha256': digest(b'x')}
@@ -616,6 +581,140 @@ class LaunchTests(unittest.TestCase):
                 review.summarize(root)
             self.assertTrue(path.exists())
 
+
+
+class ExportStateTests(unittest.TestCase):
+    """Each withholding reason fires for the last placement, whether it is the only one or a later one."""
+    SIZES = (1, 2)
+
+    @staticmethod
+    def change(key, keys, value):
+        """Set one field of a last-placement record; a callable VALUE is given that placement's number."""
+        def apply(root, last):
+            target = root / last[key]
+            data = json.loads(target.read_text())
+            item = data
+            for name in keys[:-1]:
+                item = item[name]
+            item[keys[-1]] = value(last['number']) if callable(value) else value
+            target.write_text(json.dumps(data) + '\n')
+        return apply
+
+    @staticmethod
+    def remove(*keys):
+        return lambda root, last: [(root / last[key]).unlink() for key in keys]
+
+    @staticmethod
+    def add(key, name, content=b'orphan'):
+        def apply(root, last):
+            path = root / last[key] / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
+        return apply
+
+    def test_each_withholding_reason_fires_for_the_last_placement(self):
+        def drop_marker(root, last):
+            path = root / last['attempt']
+            value = json.loads(path.read_text())
+            del value['body']['credential_reflection']
+            path.write_text(json.dumps(value))
+        following = lambda number: number + 1
+        def misordered(root, last):
+            # As many starts as observations, but the last observation precedes its start.
+            (root / last['run']).rename(root / last['later_run'])
+        change, remove, add = self.change, self.remove, self.add
+        cases = [
+            ('complete', lambda root, last: (root / 'evidence/operator-1-status.json').write_text('{}')),   # unrelated (invariance)
+            ('procedure_not_complete', change('result', ['failure'], True)),
+            ('missing_or_malformed_evidence', remove('result')),
+            ('missing_or_malformed_evidence', drop_marker),
+            ('missing_run_observation', remove('status', 'status_out')),
+            ('missing_run_observation', add('next_placement', 'launch-intent.json', b'{}')),
+            ('missing_run_observation', misordered),
+            ('mismatched_run_observation', change('run', ['argv', 2], 'stw1:another')),
+            ('mismatched_run_observation', change('status', ['argv', 2], 'stw1:another')),
+            ('uncertain_process_exit', change('run', ['exit'], -15)),
+            ('uncertain_process_exit', change('run', ['timed_out'], True)),
+            ('uncertain_writer_state', change('status_out', ['data', 'runs', 'count'], following)),
+            ('uncertain_writer_state', change('status_out', ['data', 'runs', 'held'], True)),
+            ('uncertain_writer_state', change('status_out', ['data', 'runs', 'last', 'number'], following)),
+            ('missing_run_boundary', remove('end')),
+            ('invalid_run_identity', change('start', ['body', 'run'], following)),
+            ('invalid_run_counts', change('end', ['body', 'requests'], 0)),
+            ('capture_counts_disagree', change('end', ['body', 'attempts'], 2)),
+            ('unaccounted_capture', add('dir', 'response-9-1.bin')),
+            ('credential_reflection_recorded', change('attempt', ['body', 'credential_reflection', 'body'], True)),
+            ('missing_attempt_evidence', remove('attempt')),
+            ('unknown_run_membership', add('next_dir', 'stage/x', b'')),
+        ]
+        for size in self.SIZES:
+            for expected, alter in cases:
+                with self.subTest(placements=size, expected=expected), tempfile.TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    last = complete_evidence(root, size)
+                    self.assertEqual(export_evidence_state(root), 'complete')
+                    alter(root, last)
+                    self.assertEqual(export_evidence_state(root), expected)
+
+    def test_bound_cut_off_body_is_a_complete_observation_only_for_a_stopped_or_failed_attempt(self):
+        cut = b'{"id":"msg","content":[{"ty'
+        def build(root, size, *, outcome='aborted_by_signal', complete=False, capture=cut, record=True, reflected=False):
+            run = root / complete_evidence(root, size)['dir']
+            body = {'request': 1, 'attempt': 1, 'outcome': outcome, 'response': None,
+                    'credential_reflection': {'body': reflected, 'headers': []}}
+            if outcome is None:
+                del body['outcome']
+            if record:
+                body['response'] = {'file': 'response-1-1.bin', 'bytes': len(cut), 'sha256': digest(cut), 'complete': complete}
+            (run / 'attempt-1-1.json').write_text(json.dumps({'kind': 'provider_attempt', 'body': body}))
+            if capture is not None:
+                (run / 'response-1-1.bin').write_bytes(capture)
+        cases = [
+            ('complete', {}),
+            # INTERFACE 6.6 outcomes that received a status line and are not a decodable message.
+            *[('complete', {'outcome': outcome}) for outcome in ['aborted_by_close', 'timeout', 'connection_lost',
+                                                                 'http_error', 'response_undecodable']],
+            ('complete', {'outcome': 'response', 'complete': True}),          # a whole body, as before
+            ('incomplete_response_evidence', {'outcome': 'response'}),       # a used response must be whole
+            ('incomplete_response_evidence', {'outcome': 'connection_failed'}),
+            ('incomplete_response_evidence', {'outcome': None}),
+            ('incomplete_response_evidence', {'outcome': 'made_up'}),
+            ('incomplete_response_evidence', {'complete': None}),
+            ('incomplete_response_evidence', {'complete': 'false'}),
+            ('incomplete_response_evidence', {'capture': b'X' + cut[1:]}),   # same size, one byte changed
+            ('incomplete_response_evidence', {'capture': cut[:-1]}),
+            ('incomplete_response_evidence', {'capture': cut + b'"'}),
+            ('credential_reflection_recorded', {'reflected': True}),
+            ('unaccounted_capture', {'record': False}),
+            ('missing_or_malformed_evidence', {'capture': None}),
+        ]
+        for size in self.SIZES:
+            for expected, options in cases:
+                with self.subTest(placements=size, expected=expected, options=options), tempfile.TemporaryDirectory() as folder:
+                    build(Path(folder), size, **options)
+                    self.assertEqual(export_evidence_state(Path(folder)), expected)
+
+
+class RequestSeenTests(unittest.TestCase):
+    """The sanity interruption: a signal once the fake provider has seen the request."""
+    def test_signal_follows_the_observed_request(self):
+        seen = threading.Event()
+        seen.set()
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            with self.assertRaises(RuntimeError):
+                bare_session(root).command('run', '-I', '-B', '-c', 'import time; time.sleep(60)', interrupt=RequestSeen(seen))
+            command = strict_json((root / '01-run.json').read_bytes())
+        self.assertEqual((command['exit'], command['timed_out'], command['process_state']), (-signal.SIGTERM, False, 'exited'))
+        self.assertNotIn('failure', command)
+
+    def test_no_signal_without_the_request_witness(self):
+        unseen = mock.Mock()
+        unseen.wait.return_value = False
+        with self.assertRaisesRegex(RuntimeError, 'interruption witness did not observe the request'):
+            RequestSeen(unseen).await_point(mock.Mock(), 60)
+        unseen.wait.assert_called_once_with(20)
+        self.assertEqual(RequestSeen(unseen).remaining(60), 60)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

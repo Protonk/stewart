@@ -156,49 +156,46 @@ release trusts only its built-in roots.
 
 ## Tests
 
-Unit tests sit beside the code in `src/`. The integration tests in `tests/` run
-the real binary from an unrelated working directory, each with its own folder,
-archive and destination; the auditor-tool tests drive the tools in process
-against an audit the real binary commissioned.
+Unit tests sit beside the code in `src/`, and pure rules are tested there. The
+integration tests in `tests/` run the real binary from an unrelated working
+directory, each with its own folder, archive and destination; the auditor-tool
+tests drive the tools in process against an audit the real binary commissioned.
+
+The independent drivers, the [release driver](../apparatus/README.md#the-independent-driver)
+and the [runtime driver](../apparatus/driver/CLAUDE-CODE.md), own the behavior
+they witness; run them natively with `--case` while iterating. An integration
+test here covers what they do not: a fault point or boundary no driver case
+reaches, behavior a driver case observes only on Linux, or exact bytes and
+archive state that only the implementation names.
 
 | File | Covers | Built with |
 | --- | --- | --- |
-| `manager.rs` | The manager commands end to end | any |
-| `faults.rs` | Manager-foundation failure traces at fault points | `fault-injection` |
-| `answer.rs` | The auditor's tools against a live placement | any |
-| `answer_faults.rs` | The answer protocol at its fault points | `fault-injection` |
-| `run.rs` | `stewart run` against a scripted fake provider on loopback | any; some cases need a feature |
+| `manager.rs` | The manager commands before launch | any |
+| `faults.rs` | Manager-foundation failure points and the fault harness | `fault-injection` |
+| `answer.rs` | The auditor's tools in process | any |
+| `answer_faults.rs` | The answer protocol at its failure points | `fault-injection` |
+| `run.rs` | `stewart run` against a scripted fake provider on loopback | any |
+| `run_faults.rs` | `stewart run` at its failure points | `fault-injection` |
 | `delivery.rs` | Delivery, close and status after launch | any |
-| `manager_seal.rs` | Close's manager seal through the answer module | any |
-| `close_faults.rs` | Delivery and close failure traces | `fault-injection` |
-| `claude_code.rs` | The development runtime through the real binary: the runtime fields on `question/2`, the profile and launch-surface binding, help, what people are shown, and one placement of a synthetic executable that fails its status check; and the publication gate in process | `claude-code` |
-| `close_sabotage.rs` | A loopback listener witnesses the `commission_over_network` control reaching the provider (ACCEPTANCE C12) | `sabotage` |
+| `close_faults.rs` | Delivery and close at their failure points | `fault-injection` |
+| `claude_code.rs` | The development runtime through the real binary, and its call dispatch in process; its `faults` module holds the failure points | `claude-code`; `faults` also needs `fault-injection` |
 
 Shared support is in `tests/common/` (the harness), `tests/fixture/` (states
 after launch built with the crate's own writers), `tests/answer_support/` (a
-live placement in process) and `tests/fixtures/` (an expected answer and
-rendering, and test-only TLS certificates).
+live placement in process), `tests/run_support/` (the scripted fake provider)
+and `tests/fixtures/provider/` (test-only TLS certificates).
 
-The synthetic placement in `claude_code.rs` starts a supervised process group
-under the scratch directory. It prints `SKIPPED` and returns when that
-directory lies under a project or configuration tree, where the runtime
-refuses to launch.
-
-Some tests bind a loopback listener: the `run.rs` cases, the transport unit
-tests in `src/provider/transport.rs` and `commission_over_network` in
-`close_sabotage.rs`. Where binding is not permitted, the `run.rs` cases and the
-transport tests print `SKIPPED` and return, which Cargo reports as passing;
-`commission_over_network` fails instead.
+A test that binds a loopback listener or Unix socket, or starts a supervised
+process group, fails and names the reason where the host forbids it. The
+runtime placements likewise fail when the scratch directory lies under a
+project or configuration tree, where the runtime refuses to launch.
 
 ## Building and testing
 
 Run Cargo from this directory, so that `.cargo/config.toml` points it at the
-vendored sources. The release-behavior and fault/sabotage test configurations:
-
-```sh
-cargo test --locked --offline
-CARGO_TARGET_DIR=target-test cargo test --locked --offline --features fault-injection,sabotage
-```
+vendored sources. `cargo test --locked --offline` tests release behavior;
+[DEVELOPMENT](../development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
+names the other configurations each kind of change needs.
 
 ### Development runtime build
 
@@ -221,11 +218,10 @@ any audits it creates: its writer digest differs from the release binary, so
 the release cannot continue or close those audits. A runtime profile's check is
 bound to the [launch surface](../docs/claude-code/CONTRACT.md#launch-surface)
 instead, so a rebuild that leaves the surface unchanged accepts an existing
-profile for new audits. A test in `src/claude_code/surface.rs` compares the
-surface with the contract's worked example byte for byte; a changed surface
-value needs that example and its digest changed too; so does a changed pinned
-runtime text, which a test in `src/claude_code/arrangement.rs` compares with the
-contract's quoted blocks. Gated-build runs are
+profile for new audits. Unit tests compare the surface and the pinned runtime
+texts with the contract byte for byte, so a changed surface value or pinned text
+needs the contract's worked example, digest or quoted block changed too.
+Gated-build runs are
 development iteration and qualify neither the distributed binary nor a model.
 An observation under one credential route does not establish another route.
 
@@ -235,13 +231,12 @@ continuation. It invokes no Claude process. Real setup or runtime checks need
 their own bounded commission; the earlier two-tool probe is not a service
 qualification or a check of this build's launch surface.
 
-The runtime container suite builds `stewart-local` as the firing control for
-[`claude-code-markers.txt`](../apparatus/claude-code-markers.txt). Every listed
-string must be reachable in that build and absent from release/test binaries.
-When adapter code gains an essential identifying string, add it to the list;
-unused strings disappear under fat LTO. The suite records the list and each
-check's output. Fault/sabotage features remain a separate configuration until
-the adapter has fault points of its own.
+The runtime container suite checks
+[`claude-code-markers.txt`](../apparatus/claude-code-markers.txt): every listed
+string must be absent from the release binary and reachable in both
+development writers, which are the check's firing controls. When adapter code
+gains an essential identifying string, add it to the list; unused strings
+disappear under fat LTO.
 
 [DEVELOPMENT.md](../development/DEVELOPMENT.md) covers the rest: producing `vendor/`, the
 release and test builds, the independent driver, and the Linux container

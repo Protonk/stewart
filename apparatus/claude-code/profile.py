@@ -278,53 +278,33 @@ def validated_installation(installation_root):
     return launch_raw, installation_raw
 
 
-def assemble(installation_root, observation_root, review_path, output):
-    output = absolute(output)
-    os.close(directory(output.parent))
-    for root, label in ((installation_root, 'installation'), (observation_root, 'observation')):
-        os.close(directory(root))
-        # Directory identity also catches spelling aliases on case-insensitive
-        # filesystems; a lexical prefix check alone would permit mutation there.
-        if any(os.path.samefile(root, ancestor) for ancestor in output.parents):
-            raise ValueError('profile output must stay outside the ' + label + ' evidence directory')
+def validate_observation(root):
+    """The only observation a reviewed check may attest: a stopped real-harness
+    supplied-surface comparison whose every required check was observed with
+    retained, manifest-bound evidence. Returns its exact bytes, value and members."""
     # This inventory is owned by the implementation-independent fixture author.
     sys.path.insert(0, str(HERE.parent / 'driver'))
     from claude_code_surface import REQUIRED_CHECKS
 
-    raw_observation = read_file(observation_root / 'OBSERVATION.json')
-    observation = decode(raw_observation)
+    raw = read_file(root / 'OBSERVATION.json')
+    observation = decode(raw)
     exact(observation, ('schema', 'mode', 'scope', 'started_at', 'finished_at', *BINDINGS,
                        'evidence_manifest_sha256', 'checks', 'stopping'), 'observation')
     if (observation['schema'] != 'stewart.claude-code.surface-observation/1'
             or observation['mode'] != 'real-harness' or observation['scope'] != 'supplied-surface'
             or observation['stopping'] != 'observed'):
         raise ValueError('profile requires a stopped, real-harness supplied-surface observation; rehearsal is not eligible')
-    started = timestamp(observation['started_at'], 'observation start')
-    finished = timestamp(observation['finished_at'], 'observation finish')
-    if finished < started:
+    if timestamp(observation['finished_at'], 'observation finish') < timestamp(observation['started_at'], 'observation start'):
         raise ValueError('observation finish precedes start')
-    raw_review = read_file(review_path)
-    review = decode(raw_review)
-    exact(review, ('schema', 'scope', *BINDINGS, 'checked_at', 'observation_sha256',
-                   'reviewer', 'reviewed_at', 'outcome'), 'reviewed check')
-    if (review['schema'] != 'stewart.claude-code.reviewed-check/1' or review['scope'] != 'supplied-surface'
-            or review['outcome'] != 'observed' or review['observation_sha256'] != sha(raw_observation)
-            or review['checked_at'] != observation['finished_at']):
-        raise ValueError('review does not attest this completed observation')
-    text(review['reviewer'], 'reviewer')
-    if timestamp(review['reviewed_at'], 'review time') < finished:
-        raise ValueError('review predates the completed observation')
     for key in BINDINGS:
-        if review[key] != observation[key]:
-            raise ValueError('review binding differs: ' + key)
-        (text if key == 'model' else checksum)(review[key], key)
-    manifest_raw = read_file(observation_root / 'EVIDENCE.json')
+        (text if key == 'model' else checksum)(observation[key], key)
+    manifest_raw = read_file(root / 'EVIDENCE.json')
     if sha(manifest_raw) != observation['evidence_manifest_sha256']:
         raise ValueError('evidence manifest differs from the observed binding')
-    members = evidence(observation_root, manifest_raw)
+    members = evidence(root, manifest_raw)
     for name, key in (('launch', 'launch_sha256'), ('surface', 'surface_sha256'), ('tools', 'tools_sha256')):
         member = 'inputs/' + name + '.json'
-        if member not in members or sha(read_file(observation_root / member)) != review[key]:
+        if member not in members or sha(read_file(root / member)) != observation[key]:
             raise ValueError('exact input binding differs: ' + name)
     checks = observation['checks']
     if not isinstance(checks, list):
@@ -338,6 +318,33 @@ def assemble(installation_root, observation_root, review_path, output):
             raise ValueError('required comparison is not observed with retained evidence: ' + str(check['id']))
     if len(identifiers) != len(REQUIRED_CHECKS) or set(identifiers) != set(REQUIRED_CHECKS):
         raise ValueError('required comparison inventory is incomplete or repeated')
+    return raw, observation, members
+
+
+def assemble(installation_root, observation_root, review_path, output):
+    output = absolute(output)
+    os.close(directory(output.parent))
+    for root, label in ((installation_root, 'installation'), (observation_root, 'observation')):
+        os.close(directory(root))
+        # Directory identity also catches spelling aliases on case-insensitive
+        # filesystems; a lexical prefix check alone would permit mutation there.
+        if any(os.path.samefile(root, ancestor) for ancestor in output.parents):
+            raise ValueError('profile output must stay outside the ' + label + ' evidence directory')
+    raw_observation, observation, _ = validate_observation(observation_root)
+    raw_review = read_file(review_path)
+    review = decode(raw_review)
+    exact(review, ('schema', 'scope', *BINDINGS, 'checked_at', 'observation_sha256',
+                   'reviewer', 'reviewed_at', 'outcome'), 'reviewed check')
+    if (review['schema'] != 'stewart.claude-code.reviewed-check/1' or review['scope'] != 'supplied-surface'
+            or review['outcome'] != 'observed' or review['observation_sha256'] != sha(raw_observation)
+            or review['checked_at'] != observation['finished_at']):
+        raise ValueError('review does not attest this completed observation')
+    text(review['reviewer'], 'reviewer')
+    if timestamp(review['reviewed_at'], 'review time') < timestamp(observation['finished_at'], 'observation finish'):
+        raise ValueError('review predates the completed observation')
+    for key in BINDINGS:
+        if review[key] != observation[key]:
+            raise ValueError('review binding differs: ' + key)
     launch_raw, installation_raw = validated_installation(installation_root)
     installation = decode(installation_raw)
     if launch_raw != read_file(observation_root / 'inputs/launch.json'):

@@ -138,46 +138,6 @@ pub fn mcp_tools(bytes: &[u8]) -> Result<Vec<u8>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::json::{self, V};
-
-    #[test]
-    fn every_family_tool_requests_the_same_inline_result_threshold() {
-        for family in &crate::forms::FAMILIES {
-            let original = crate::forms::tools(family).bytes();
-            let mapped = mcp_tools(&original).unwrap();
-            let original_json = json::parse(&original).unwrap();
-            let mapped_json = json::parse(&mapped).unwrap();
-            let original_tools = original_json.as_arr().unwrap();
-            let mapped_tools = mapped_json.as_arr().unwrap();
-            assert_eq!(mapped_tools.len(), original_tools.len(), "{}", family.id);
-            for (original_tool, mapped_tool) in original_tools.iter().zip(mapped_tools) {
-                let original_tool = original_tool.obj("").unwrap();
-                let V::Obj(fields) = &mapped_tool.v else {
-                    panic!("mapped tool is not an object")
-                };
-                let names: Vec<_> = fields.iter().map(|(k, _)| k.as_str()).collect();
-                assert_eq!(names, ["name", "description", "inputSchema", "_meta"]);
-                let mapped_tool = mapped_tool.obj("").unwrap();
-                for key in ["name", "description"] {
-                    assert_eq!(
-                        mapped_tool.str(key).unwrap(),
-                        original_tool.str(key).unwrap()
-                    );
-                }
-                let original_schema = original_tool.req("input_schema").unwrap();
-                let mapped_schema = mapped_tool.req("inputSchema").unwrap();
-                assert_eq!(
-                    &mapped[mapped_schema.start..mapped_schema.end],
-                    &original[original_schema.start..original_schema.end],
-                );
-                let meta = mapped_tool.req("_meta").unwrap();
-                assert_eq!(
-                    &mapped[meta.start..meta.end],
-                    br#"{"anthropic/maxResultSizeChars":500000}"#,
-                );
-            }
-        }
-    }
 
     #[test]
     fn annotation_preserves_noncanonical_input_schema_bytes() {

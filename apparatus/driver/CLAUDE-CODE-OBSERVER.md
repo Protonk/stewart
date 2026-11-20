@@ -11,17 +11,15 @@ observed stopping. There is no live command in this module.
 
 ```sh
 python3 -I -B apparatus/driver/claude_code_observer.py --self-test
-python3 -I -B apparatus/driver/claude_code_observer.py \
-  --rehearse-listeners --work /absolute/path/to/fresh-evidence
 ```
 
-The self-test uses synthetic stream events and socketpairs. The listener rehearsal
-adds actual Unix listeners with controlled synthetic peers. Both supply synthetic
-authentication and process-result controls; neither launches a subprocess or
-Claude. A socket-bind denial is a failed comparison, not a skipped or passing
-control. Every generated directory remains available through review.
+The self-test uses synthetic stream events and socketpairs, with synthetic
+authentication and process-result controls. It launches no subprocess or
+Claude. Actual Unix listeners, helper connections and a launched peer are
+exercised by the [supplied-surface controller's synthetic
+rehearsal](../claude-code/README.md#synthetic-controller-rehearsal).
 
-Rehearsal startup, rate, result, authentication, MCP and hook inputs use the
+Control startup, rate, result, authentication, MCP and hook inputs use the
 [documented C1 capture projections](testdata/README.md#runtime-c1-surface-observer-captures).
 Only the control generators use these fixtures; live callbacks still receive
 observed bytes. The fixtures preserve additional metadata and distinguish allowed
@@ -146,10 +144,8 @@ independent assessment; a callback exception prevents manifest and observation
 finalization. It grants no launch or review authority.
 
 Create all control results before manifest finalization. No additional evidence
-files may be added afterward. The listener rehearsal writes `REHEARSAL.json`
-before finalizing its manifest: five controls cover positive, denial, invariance,
-bad startup and a listener witness failure. Negative-control failures remain in
-their original case records. A run interrupted before all three comparisons
-finish retains partial case evidence and does not emit an eligible batch record.
+files may be added afterward. Negative-control failures remain in their
+original case records. A run interrupted before all three comparisons finish
+retains partial case evidence and does not emit an eligible batch record.
 Keep originals under the repository's
 [evidence rules](../../development/DEVELOPMENT.md#evidence-and-retention).

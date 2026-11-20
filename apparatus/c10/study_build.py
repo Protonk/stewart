@@ -9,6 +9,7 @@ import copy
 from pathlib import Path
 import re
 import subprocess
+import tarfile
 
 from common import (compact, digest, fields, file_hash, identifier,
                     read_file, require, strict_json)
@@ -172,6 +173,27 @@ def check_result(result, baseline, expected, arch):
             'driver controls did not all fire')
 
 
+def build_checks(archive):
+    """The build-folder exit records the study run's own acceptance.sh declares, as (name, exit, is a control).
+
+    The script is read from the run's source archive, whose digest select() binds to the study commit, so a
+    run is held to the static, identity and firing-control checks of the layout it was built with.
+    """
+    with tarfile.open(archive) as source:
+        member = source.getmember('apparatus/acceptance.sh')
+        require(member.isfile() and member.size <= 1024 * 1024, 'study acceptance script is not a regular file')
+        text = source.extractfile(member).read().decode()
+    found = re.search(r'^TEST_VARS="([^"]*)"', text, re.M)
+    names = found.group(1).split() if found else []
+    checks = []
+    for name, code, label in re.findall(r'expect "\$OUT/\$b/([A-Za-z0-9_.$-]+)\.exit" (\d+) "([^"]*)"', text):
+        for var in (names if '$var' in name else [None]):
+            checks.append((name.replace('$var', var) if var else name, int(code), 'control fired' in label))
+    require(checks and not any('$' in name for name, _, _ in checks) and any(control for *_, control in checks),
+            'study acceptance script declares no readable build checks with a firing control')
+    return checks
+
+
 def make(repo, qualification, spec_value, acceptance, expected):
     """Bind existing Linux evidence; never run containers or alter qualification."""
     acceptance = Path(acceptance)
@@ -202,6 +224,9 @@ def select(repo, qualification, value):
             'keep the study source reachable under a ref')
     require(not git('diff', '--name-only', 'HEAD', commit, '--', 'apparatus/driver'),
             'study builds must retain the committed apparatus checkout\'s independent driver')
+    # The paths a study commit may change relative to its own qualified base. A study built on an older base
+    # also changed manager_seal.rs, which held version assertions there; retained study builds still name such
+    # commits, so the entry stays although later bases no longer have that file.
     changed = set(git('diff', '--name-only', qualification['source_commit'], commit, '--', 'service').splitlines())
     require('service/src/forms.rs' in changed and changed <= {
                 'service/src/forms.rs', 'service/tests/manager.rs', 'service/tests/manager_seal.rs'},
@@ -214,6 +239,7 @@ def select(repo, qualification, value):
                                        cwd=repo,env=env)
     require(digest(archived) == value['source_archive_sha256'], 'study archive is not the named commit')
     require(read_file(root/'host/DONE').startswith(b'done '), 'study acceptance stopped early')
+    checks = build_checks(root/'staging/source.tar')
     expected_host_failures = 0
     require(not read_file(root/'host/worktree.stdout').strip(), 'study acceptance used a dirty source checkout')
     for arch in ARCHES:
@@ -228,16 +254,12 @@ def select(repo, qualification, value):
         require(file_hash(root/f'bin-{arch}/stewart-test') == result['binaries']['test']['sha256'],
                 'study test binary digest differs')
         if result['schema'] == 'stewart.acceptance-driver/1':
-            dynamic_checks = [('build-glibc', 0), ('static-stewart-glibc', 1)]
             expected_host_failures += 2  # Driver container and expected self-test failure.
         else:
-            dynamic_checks = [('build-dynamic-control', 0), ('static-dynamic-control', 1)]
             require(read_file(root/f'driver-{arch}/driver-complete.exit') == b'1\n',
                     'study acceptance did not record its declared case failure')
             expected_host_failures += 3  # Also records the failed complete-case check.
-        for name, code in [('build-release', 0), ('build-test', 0), ('static-stewart', 0),
-                           ('static-stewart-test', 0), ('cmp-release-test', 1), ('run-release', 0),
-                           *dynamic_checks]:
+        for name, code, _control in checks:
             require(read_file(root/f'build-{arch}/{name}.exit') == (str(code)+'\n').encode(),
                     'study binary build/static controls differ')
         for name in ['evidence-copy', 'retention-archive', 'retention-list', 'retention-sha256']:

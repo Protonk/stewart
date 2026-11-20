@@ -20,8 +20,9 @@ import threading
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import (CONTINUED, catalog, credential_bytes, digest, file_hash, inventory, question_file,
-    read_file, require, scan_tree, source_hash, strict_json, validate_packet, write_json)
+from common import (CONTINUED, LIMITS, MIN_REQUEST_OUTPUT, catalog, credential_bytes, digest, file_hash,
+    inventory, limit_exhausted, question_file, read_file, require, scan_tree, source_hash, strict_json,
+    validate_packet, write_json)
 from session import LogPoint, Session, export_evidence_state, failure_details, placement_folder
 from control import safe_state
 from fake import Auditor
@@ -85,12 +86,11 @@ def allowance_facts(allowances, interruption=None):
     the remaining output allowance. Output reported before the point lowers what
     remains further, so these figures are the most favourable case.
     """
-    left = {name: max(0, allowances[name]['limit'] - allowances[name]['used'])
-            for name in ['turns', 'input_tokens', 'output_tokens']}
-    facts = {'used': {name: allowances[name]['used'] for name in left},
-             'limit': {name: allowances[name]['limit'] for name in left}, 'remaining': left,
-             'this_placement_ends_limit_reached_before_any_request':
-                 left['turns'] == 0 or left['input_tokens'] == 0 or left['output_tokens'] < 1024,
+    used = {name: allowances[name]['used'] for name in LIMITS}
+    limit = {name: allowances[name]['limit'] for name in LIMITS}
+    left = {name: max(0, limit[name] - used[name]) for name in LIMITS}
+    facts = {'used': used, 'limit': limit, 'remaining': left,
+             'this_placement_ends_limit_reached_before_any_request': limit_exhausted(limit, used),
              'planned_interruption': None}
     if interruption is not None:
         estimate = min(16000, left['output_tokens'])
@@ -98,8 +98,8 @@ def allowance_facts(allowances, interruption=None):
         facts['planned_interruption'] = {'point': interruption['after'],
             'output_charge_if_one_request_is_aborted_in_flight': estimate,
             'output_remaining_after_that_charge': after,
-            'next_placement_ends_limit_reached_before_any_request': after < 1024,
-            'reported_output_before_the_point_that_still_leaves_1024': max(0, after - 1024),
+            'next_placement_ends_limit_reached_before_any_request': after < MIN_REQUEST_OUTPUT,
+            'reported_output_before_the_point_that_still_leaves_1024': max(0, after - MIN_REQUEST_OUTPUT),
             'also_charged': 'one estimated turn and ceil(request body bytes / 3) input tokens'}
     return facts
 

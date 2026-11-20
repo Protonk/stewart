@@ -96,6 +96,20 @@ def runner_selftest():
             result = json.load(open(os.path.join(drv.evidence, "RESULT.json"), encoding="utf-8"))
             check("interrupted.selected", result["counts"]["cases"]["selected"], 2)
             check("interrupted.skipped", result["counts"]["cases"]["skipped"], 2)
+
+            def sets_fault(t):
+                t.env(fault="point.one=kill")
+            core.CASES[:] = [core.CaseSpec("declared", [], "declared", sets_fault, "driver", set(), [], False, set(),
+                                           None, faults=("point.one=kill",)),
+                             core.CaseSpec("undeclared", [], "undeclared", sets_fault, "driver", set(), [], False,
+                                           set(), None)]
+            drv = driver("faults", ["*"])
+            with contextlib.redirect_stderr(io.StringIO()):
+                drv.run()
+            result = json.load(open(os.path.join(drv.evidence, "RESULT.json"), encoding="utf-8"))
+            check("fault-declared.outcomes", [r["outcome"] for r in result["cases"]], ["pass", "fail"])
+            check("fault-declared.named", result["cases"][1]["variants"][0]["failed_names"],
+                  ["driver.fault-declared"])
         finally:
             core.CASES[:] = original
     # Run the real self-test command accounting in fresh interpreters. Importing

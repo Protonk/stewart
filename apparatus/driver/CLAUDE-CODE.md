@@ -38,12 +38,13 @@ directory or any fixtures: `run` refuses a launch directory with such ancestry.
 Keep the selected
 binaries in a separate directory from the work tree and unchanged during the run.
 `--release-binary` is optional; omitting it reports the featureless-build
-case as skipped. `--variant-binary` is optional too: it names a second build
-with `claude-code,fault-injection` and a different digest. It exercises both
-writer invariance and the documented `log.publish:seal=pause` control. Omitting
-it skips those cases; a variant without fault injection skips the publication
-case. The
-driver never substitutes a skipped check for a pass.
+case as skipped. `--variant-binary` is optional too: it names a second
+release-profile build with `claude-code,fault-injection`, so its digest differs.
+It is the second writer for the writer-invariance case and the only binary with
+fault points, which seven cases use to hold a run, close, seal, delivery, notice
+or call at a documented point. Omitting it skips those eight cases; a variant
+without fault injection skips the seven fault cases. The driver never
+substitutes a skipped check for a pass.
 Use repeatable `--case NAME` options to diagnose selected cases; `RESULT.json`
 names the unselected cases separately. The default runs every case.
 
@@ -58,14 +59,18 @@ synthetic attestations for offline input validation; they establish no signature
 verification, installation check or authority for a real session.
 
 The direct `runtime-relay-forwarding` case invokes only the hidden
-`__stewart-cc-relay m` helper against an independently owned Unix socket. It
-requires exact arbitrary bytes, including NUL, invalid UTF-8 and a final segment
-without LF, in each direction while both inputs remain open. The same bytes sent
-whole and in three segments must arrive before EOF; each segment is observed
-before the next is sent. Separate cases half-close the socket immediately after
-sending a reply, before observing stdout, and close empty inputs. A raw pipe
-control exercises the same observer with an idle writer, bytes while the writer
-remains open, and EOF.
+`__stewart-cc-relay m` and `__stewart-cc-hook h` helpers against independently
+owned Unix sockets. The relay must carry exact arbitrary bytes, including NUL,
+invalid UTF-8 and a final segment without LF, in each direction while both
+inputs remain open. The same bytes sent whole and in three segments must arrive
+before EOF; each segment is observed before the next is sent. Separate arms
+half-close the socket immediately after sending a reply, before observing
+stdout, and close empty inputs. The hook helper must forward its arbitrary
+input bytes through EOF and copy an arbitrary reply and a reply of exactly
+64 KiB unchanged, exiting zero. An empty reply and one byte more than 64 KiB
+must each produce a diagnostic, exit 2 and no stdout. A raw pipe control
+exercises the same observer with an idle writer, bytes while the writer remains
+open, and EOF.
 
 Each direct helper runs in a worker's process group. A separate owner bounds the
 whole worker, including setup, process creation, reads and cleanup: eight seconds
@@ -244,8 +249,9 @@ placement deadline to pass before releasing the pause. Release is recorded once,
 including during cleanup, preserving the original marker and witness chronology.
 The signal and deadline controls require the retained submit refusal, no seal
 and the actual global ending: interrupted by signal or deadline, or `limit_reached`
-on the last allowed placement. A specification-only MCP peer exercises the
-fake harness's cancellation/re-entry/retry sequence in the self-test.
+on the last allowed placement. The cancellation control also requires the
+harness journal to show its cancellation, ping, refused reply, re-entry and
+confirmed retry in that order.
 
 Five further runtime cases use the same synthetic executable:
 
@@ -255,9 +261,8 @@ Five further runtime cases use the same synthetic executable:
   the exact denial object of the launch surface. A question that selects an
   effort must reach the launch as the surface's effort arguments.
 - **Cancellation and queuing.** A cancellation arriving after completion and
-  one naming no request change nothing. A reused request identifier is answered
-  and has no effect. Two uncancelled calls written together must both complete,
-  with their replies and entries in arrival order. A separate pair puts a small
+  one naming no request change nothing. Two uncancelled calls written together
+  must both complete, with their replies and entries in arrival order. A separate pair puts a small
   call behind a large predecessor, followed in the same write by cancellation
   of the second call: the predecessor completes, and the cancelled call must
   receive `placement_stopped` with no entry. Independent traffic and effects
@@ -284,11 +289,11 @@ Five further runtime cases use the same synthetic executable:
   first notice still works. The retained `stdout` and `input` streams equal
   what the harness wrote and read.
 
-The self-test uses a small specification-only peer to rehearse selected harness
-sequences, including cancellation, publication, relay loss and a fresh session
-ending after interruption. The runtime cases check tool names, captured
-accounting, the two-result ordinary ending and repeated compaction against the
-gated binary using the harness journal.
+Each runtime case first requires the harness journal to show the traffic it
+interprets, such as cancellation targets, reported checkpoints or hook order.
+The self-test runs the harness against a small specification-only peer only
+where no case can: the optional UTF-8 artifact used by the service procedure
+and a second relay attempt, which Stewart's stop usually forestalls.
 
 Relay supervision checks begin with a normal raw-pipe exchange, then stall a
 worker on a blocking pipe read and check its timeout, group stop and partial
@@ -477,8 +482,8 @@ draws no conclusions; every expectation is in the outer case.
   - the question read whole, and `list`.
 - **Request identity.** `runtime-identity-across-placements` reuses one request
   ID in a fresh placement, which must record a new entry. Reused again inside
-  that placement, the ID must be answered with no effect, and a fresh ID with the
-  same arguments records another entry.
+  that placement, with the same or different arguments, the ID must be answered
+  with no effect, and a fresh ID with the same arguments records another entry.
 - **Drain unknowns.** `runtime-fidelity-drain-unknown` makes the TERM-time echo
   missing or duplicated. The fidelity record must stay unknown with no mismatch
   or diagnostic, while the seal, delivery and close are unchanged.
@@ -609,17 +614,17 @@ calls. The contract's
 [demonstrated scope](../../docs/claude-code/CONTRACT.md) distinguishes this
 synthetic runtime evidence from other checks and remaining qualification work.
 
-`RESULT.json` reports per-case outcomes, check counts, explicit skipped cases,
-firing controls, timings and notes. A note records an observation that decides
-no outcome, such as which side won a race. `commands/` retains exact argv, stdout and stderr;
+`RESULT.json` reports per-case outcomes, check counts and elapsed seconds,
+explicit skipped cases, firing controls, the total time and notes. A note
+records an observation that decides no outcome, such as which side won a race. `commands/` retains exact argv, stdout and stderr;
 `witness/` retains independent question, material, profile and tool inputs outside
 the archive. `driver-snapshot/` preserves the executable synthetic harness and
 its specification-derived helpers used by that run. Keep the work directory
 through review, then apply the repository's
 [evidence retention rules](../../development/DEVELOPMENT.md#evidence-and-retention).
 Native results are development evidence only. The runtime acceptance suite runs
-this driver on both supported Linux architectures with distinct release-profile
-and debug-profile development writers and a featureless release binary. It
+this driver on both supported Linux architectures with the two release-profile
+development writers described above and a featureless release binary. It
 requires every case and control and records the failure count in `host/DONE`.
 Each architecture's `runtime-evidence/` contains `RESULT.json`,
 `environment.json`, `commands/`, `witness/` and `driver-snapshot/`. The suite

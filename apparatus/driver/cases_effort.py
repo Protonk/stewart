@@ -267,31 +267,43 @@ def c_provider_rejections(t):
     run_ended give status, error_type, error_message (cut as the attempt record cuts it) and
     request_id exactly as the fake sent them, or null where it sent none, with request 1 and
     attempt 1; the attempt record says http_error, then end, charged none; the raw response
-    capture holds the body sent; run 2 reports the same status, type and message; status says
-    interrupted with the last run provider_rejected. Every request carries the effort exactly
-    (4.5). Invariance: with the fake moved back to the pinned API version's model, run 3 of the
-    same commission is accepted and ends ordinarily."""
+    capture holds the body sent; status says interrupted with the last run provider_rejected.
+    Every request carries the effort exactly (4.5). The renamed, removed and withdrawn drifts
+    reach Stewart as the same kind of input (a 400 with an error object), so only the withdrawn
+    level, the HTML page and the long message also show that run 2 reports the same status,
+    type and message, and that, with the fake moved back to the pinned API version's model
+    (invariance), run 3 of the same commission is accepted and ends ordinarily. The controls run
+    the withdrawn level."""
     for label, why, model in drifts():
+        if t.sabotage and label != "level-withdrawn":
+            continue
+        again = label not in ("renamed", "removed")
         pre = "c9.rejections.%s" % label
         sub = effort_submission(t, LEVEL)
         t.accept(sub, prefix=pre + ".")
         p = Procedure(browse, model=sub.model, forbidden=forbidden_for(sub))
         fx = rs.provider(t, p, label=label, accepts=model)
         facts = []
-        for i in (1, 2):
+        for i in ((1, 2) if again else (1,)):
             name = "%s.run-%d" % (pre, i)
             rep = rs.run(t, sub, fx, name=name)
             facts.append(rs.check_rejection(t, sub, fx, rep, name, run_number=i))
             exs = fx.exchanges_of(name)
             t.check(name + ".refused-by-model", bool(exs) and all(e.verdict and not e.verdict["accepted"] for e in exs),
                     {"moved": why, "verdicts": [e.verdict for e in exs][:2]})
-        same = lambda f: [f.get(k) for k in ("status", "error_type", "error_message")] if isinstance(f, dict) else f
-        t.eq(pre + ".same-refusal", same(facts[1]), same(facts[0]))
         st = t.status(sub, name=pre + ".status")
         t.eq(pre + ".status.condition", st.data.get("condition"), "interrupted")
         last = (st.data.get("runs") or {}).get("last") or {}
         t.eq(pre + ".status.last", {k: last.get(k) for k in ("number", "ending", "cause", "recorded_by")},
-             {"number": 2, "ending": "interrupted", "cause": "provider_rejected", "recorded_by": "run"})
+             {"number": len(facts), "ending": "interrupted", "cause": "provider_rejected", "recorded_by": "run"})
+        if not again:
+            # Every request was refused at the gate, so the procedure never ran.
+            rs.check_fake(t, fx, pre)
+            rs.check_requests(t, fx, sub, pre)
+            rs.check_run_ended_usage(t, sub, fx, [pre + ".run-1"], pre)
+            continue
+        same = lambda f: [f.get(k) for k in ("status", "error_type", "error_message")] if isinstance(f, dict) else f
+        t.eq(pre + ".same-refusal", same(facts[1]), same(facts[0]))
         fx.gate.accepts = fp.MESSAGES_API
         name = pre + ".run-3"
         rep = rs.run(t, sub, fx, name=name)

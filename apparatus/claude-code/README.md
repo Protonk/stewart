@@ -3,7 +3,10 @@
 This apparatus prepares installation evidence and reviewed runtime profiles.
 Profile preparation and assembly launch no Claude process. It remains separate
 from Stewart's service and independent acceptance driver. Python uses only its
-standard library.
+standard library. The pinned installation is the darwin-arm64 release checked
+with Apple's code signature, and the service procedure runs its commands in
+`/private/tmp`, so the live commands and synthetic rehearsals here run on the
+development Mac.
 
 ## Preparing a profile
 

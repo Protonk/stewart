@@ -868,11 +868,16 @@ pub(crate) mod tests {
                 s.write_all(OK).unwrap();
             },
         );
+        // The head's bytes are pinned by `http::request_head_is_exact`; here
+        // the far end receives that head for this client, then the body.
         let sent = rx.recv().unwrap();
-        assert_eq!(
-            sent,
-            b"POST /v1/messages HTTP/1.1\r\nhost: 127.0.0.1:8080\r\nx-api-key: sk-test-key\r\nanthropic-version: 2026-10-21\r\nanthropic-beta: compact-2026-09-04\r\ncontent-type: application/json\r\ncontent-length: 7\r\nconnection: close\r\n\r\n{\"x\":1}"
+        let head = http::request_head(
+            &Endpoint::parse("http://127.0.0.1:8080").unwrap(),
+            "sk-test-key",
+            "2026-10-21",
+            7,
         );
+        assert_eq!(sent, [head.as_slice(), b"{\"x\":1}"].concat());
         assert_eq!(a.written, Written::Complete);
         assert_eq!(a.failure, None);
         let r = a.reply.as_ref().unwrap();
@@ -1299,21 +1304,21 @@ pub(crate) mod tests {
         assert!(!debug.contains("debug-canary-credential"));
     }
 
-    /// A required listener must bind; unavailable transport is a failed test.
-    pub fn listener(test: &str) -> Option<std::net::TcpListener> {
-        match std::net::TcpListener::bind("127.0.0.1:0") {
-            Ok(l) => Some(l),
-            Err(e) => panic!(
-                "{test}: binding a required loopback listener failed: {e}; rerun where loopback binding is permitted"
-            ),
-        }
+    /// A loopback listener on an ephemeral port. Binding is required: where
+    /// it is not permitted the test fails, naming itself, rather than
+    /// passing without having run.
+    pub fn listener() -> std::net::TcpListener {
+        std::net::TcpListener::bind("127.0.0.1:0").unwrap_or_else(|e| {
+            panic!(
+                "{}: binding a required loopback listener failed: {e}; rerun where loopback binding is permitted",
+                thread::current().name().unwrap_or("this test")
+            )
+        })
     }
 
     #[test]
     fn real_connection_to_a_loopback_listener() {
-        let Some(l) = listener("real_connection_to_a_loopback_listener") else {
-            return;
-        };
+        let l = listener();
         let port = l.local_addr().unwrap().port();
         let far = thread::spawn(move || {
             for _ in 0..2 {
@@ -1340,9 +1345,7 @@ pub(crate) mod tests {
 
     #[test]
     fn real_tls_through_a_real_proxy() {
-        let Some(l) = listener("real_tls_through_a_real_proxy") else {
-            return;
-        };
+        let l = listener();
         let port = l.local_addr().unwrap().port();
         let (tx, rx) = mpsc::channel();
         let far = thread::spawn(move || {
@@ -1423,9 +1426,7 @@ pub(crate) mod tests {
 
     #[test]
     fn an_aborted_handle_never_connects() {
-        let Some(l) = listener("an_aborted_handle_never_connects") else {
-            return;
-        };
+        let l = listener();
         let port = l.local_addr().unwrap().port();
         let abort = AbortHandle::new();
         abort.abort(StopCause::Signal);

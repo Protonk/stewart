@@ -99,7 +99,6 @@ WRAPPER_ENVIRONMENT = {"PWD", "OLDPWD", "SHLVL", "_", "__CF_USER_TEXT_ENCODING"}
 KEPT = "A pipelined note whose call was not cancelled.\n"
 QUEUED = "The second pipelined note must follow the first.\n"
 CANCELLED = "A pipelined note whose call was cancelled before it could be published.\n"
-DUPLICATE = "A note sent under a request identifier this placement already used.\n"
 SECOND_RELAY = "A note attempted through a second relay after the first was lost.\n"
 # A fresh session's series; lower than the first session's on purpose.
 SECOND_SESSION = {"num_turns": 1, "usage": {"input_tokens": 5, "cache_creation_input_tokens": 0,
@@ -156,7 +155,8 @@ CASES = (
     ("help-and-presentation", "Runtime help topic and notice; human output shows the profile by path and digest"),
     ("source-invariance", "Receipt stays captured after source/profile edits and CWD/HOME changes"),
     ("release-gate", "Optional featureless binary: runtime fields unknown, no topic or notice, same scaffold"),
-    ("runtime-relay-forwarding", "Direct relay: arbitrary whole and segmented bytes before EOF, pipe observer control and bounded stopping"),
+    ("runtime-relay-forwarding", "Direct relay and hook helpers: arbitrary bytes before EOF, the 64 KiB hook reply bound, "
+                                 "pipe observer control and bounded stopping"),
     ("runtime-submit", "Actual MCP record/prepare/submit, faithful delivery and fresh-session invariance"),
     ("runtime-captured-authoring", "C4 field recovery and C5 full refusal, exact-version replacement and submit stop"),
     ("runtime-reply-fidelity", "Grounded pages, substitutions, error flattening and unknown echoes; explicit continuation"),
@@ -1304,6 +1304,13 @@ class RelayObserver:
 
 RELAY_REQUEST = b"\x00\xffinput without a final LF\nsecond line\r\x01tail"
 RELAY_REPLY = b"\xfe\x00reply without a final LF\r\nsecond line\x7ftail"
+# The hook helper forwards and copies bytes without interpreting them; replies
+# are bounded at 64 KiB (CONTRACT, private helper transport).
+HOOK_REQUEST = b"\x00\xffhook input the helper must not interpret\nsecond line\r\x01tail"
+HOOK_REPLY = b"\xfe\x00hook reply copied unchanged\r\nsecond line\x7ftail"
+HOOK_REPLY_LIMIT = 64 * 1024
+HOOK_REPLIES = {"hook-exact": HOOK_REPLY, "hook-limit": bytes(range(256)) * (HOOK_REPLY_LIMIT // 256),
+                "hook-empty": b"", "hook-oversized": bytes(range(256)) * (HOOK_REPLY_LIMIT // 256) + b"\n"}
 
 
 def relay_pipe_control(witness):
@@ -1385,6 +1392,85 @@ def relay_traffic(binary, variant, env, workspace, witness):
         checks["relay-exit"] = process.poll() == 0
         checks["stdout-eof"] = observer.read(out, "stdout") == (b"", True)
         observer.read(process.stderr.fileno(), "stderr", seconds=0.03)
+        return {"checks": checks, "error": None}
+    except BaseException:
+        return {"checks": checks, "error": traceback.format_exc(), "stopping_uncertain": stopping_uncertain}
+    finally:
+        witness.event("before-worker-cleanup")
+        if connection is not None:
+            connection.close()
+        if listener is not None:
+            listener.close()
+        if process:
+            for stream in (process.stdin, process.stdout, process.stderr):
+                if stream and not stream.closed:
+                    stream.close()
+        witness.event("after-worker-cleanup")
+
+
+def hook_traffic(binary, variant, env, workspace, witness):
+    """The hook helper's specified conduit: input to EOF, one bounded reply."""
+    observer, checks = RelayObserver(witness), {}
+    listener = connection = process = None
+    stopping_uncertain = False
+    reply = HOOK_REPLIES[variant]
+    refused = variant in ("hook-empty", "hook-oversized")
+    try:
+        witness.event("before-workspace")
+        workspace.mkdir(mode=0o700)
+        os.chdir(workspace)
+        listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        listener.settimeout(2)
+        witness.event("before-listener-bind")
+        listener.bind("h")
+        listener.listen(1)
+        witness.event("before-popen", argv=[str(binary), "__stewart-cc-hook", "h"])
+        process = subprocess.Popen([str(binary), "__stewart-cc-hook", "h"], env=env,
+                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        witness.event("after-popen", hook_pid=process.pid)
+        if os.getpgid(process.pid) != os.getpgrp():
+            stopping_uncertain = True
+            process.kill()
+            raise RuntimeError("hook helper escaped the owned worker group")
+        for stream in (process.stdin, process.stdout, process.stderr):
+            os.set_blocking(stream.fileno(), False)
+        out = process.stdout.fileno()
+        # The request fits the pipe whole, so this order holds whether the
+        # helper connects before or after reading its input.
+        observer.send(process.stdin.fileno(), "stdin", HOOK_REQUEST)
+        witness.event("before-stdin-close")
+        process.stdin.close()
+        witness.event("before-accept")
+        connection, _ = listener.accept()
+        connection.setblocking(False)
+        peer = connection.fileno()
+        received, eof = observer.read(peer, "socket", seconds=2)
+        checks["request-forwarded-to-eof"] = (received, eof) == (HOOK_REQUEST, True)
+        checks["no-reply-before-owner"] = observer.read(out, "stdout", seconds=0.03) == (b"", False)
+        sent = 0
+        try:
+            # Small writes keep each byte checkpoint within the channel bound.
+            for start in range(0, len(reply), 1024):
+                observer.send(peer, "socket", reply[start:start + 1024])
+                sent = start + len(reply[start:start + 1024])
+        except (BrokenPipeError, ConnectionResetError) as error:
+            # The helper may stop reading an oversized reply once it exceeds the bound.
+            witness.event("reply-write-ended", sent=sent, error=type(error).__name__)
+            if variant != "hook-oversized" or sent <= HOOK_REPLY_LIMIT:
+                raise
+        witness.event("before-owner-close", variant=variant, sent=sent)
+        connection.close()
+        connection = None
+        stdout, stdout_eof = observer.read(out, "stdout", seconds=2)
+        checks["stdout-eof"] = stdout_eof
+        checks["exact-stdout"] = stdout == (b"" if refused else reply)
+        end = time.monotonic() + 2
+        while process.poll() is None and time.monotonic() < end:
+            time.sleep(0.01)
+        checks["helper-exit"] = process.poll() == (2 if refused else 0)
+        stderr, _ = observer.read(process.stderr.fileno(), "stderr", seconds=0.3)
+        if refused:
+            checks["diagnostic"] = bool(stderr.strip())
         return {"checks": checks, "error": None}
     except BaseException:
         return {"checks": checks, "error": traceback.format_exc(), "stopping_uncertain": stopping_uncertain}
@@ -1526,6 +1612,14 @@ class Driver:
                 self.binary, variant, self.env, workspaces / variant, witness))
             inspect(variant, record)
             self.control("relay-" + variant, relay_success(record), "relay forwarding comparison did not pass")
+        # Exact and 64 KiB replies are copied; an empty or one-byte-larger reply exits 2 with no stdout.
+        for variant in HOOK_REPLIES:
+            record = observe(variant, lambda witness: hook_traffic(
+                self.binary, variant, self.env, workspaces / variant, witness))
+            inspect(variant, record)
+            if variant in ("hook-empty", "hook-oversized"):
+                self.control(variant + "-reply-refused", relay_success(record),
+                             "the hook helper did not refuse the reply with exit 2 and no stdout")
         self.note("relay-observer-scope", "Each direct helper worker owns an 8-second deadline plus "
                   "1.5 seconds for observed group stopping. Pipe readiness and nonblocking mode alone "
                   "do not bound a stalled read; the owner never reads helper stdout. Byte and progress "
@@ -1633,7 +1727,7 @@ class Driver:
                        "marker": str(executable) + ".started", "config": str(launch_dir / "config"),
                        "version": "synthetic-offline-1", "model": MODEL, "family": family,
                        "session": label + "-session-1", "account": ACCOUNT,
-                       "kept": KEPT, "queued": QUEUED, "cancelled": CANCELLED, "duplicate": DUPLICATE,
+                       "kept": KEPT, "queued": QUEUED, "cancelled": CANCELLED,
                        "second_relay": SECOND_RELAY,
                        "auth_private": "synthetic-auth-private-output-" + label}) + b"\n")
             (witness / "scenario-initial.json").write_bytes(scenario_path.read_bytes())
@@ -2890,6 +2984,9 @@ class Driver:
         deny = surface_document()["hook_replies"]["deny"]
         hooks = [e for e in events if e["event"] == "hook"]
         self.eq(label + ".hook-calls", [h["when"] for h in hooks], ["before-startup"] + ["after-startup"] * 6)
+        order = [e["event"] for e in events if e["event"] == "hook"
+                 or (e["event"] == "output" and e["value"].get("subtype") == "init")]
+        self.require(label + ".harness-hook-before-init", order[:2] == ["hook", "output"], order)
         verdicts = []
         for index, call in enumerate(hooks):
             name = "%s.hook-%d" % (label, index + 1)
@@ -2936,7 +3033,21 @@ class Driver:
         seen = {e["name"]: e["response"] for e in events if e["event"] == "observation"}
         races = ["race-%d" % number for number in range(1, RACES + 1)]
         self.eq(label + ".observations", list(seen),
-                ["first", "ping", "duplicate", "kept", "queued", "predecessor", "cancelled"] + races + ["reentry"])
+                ["first", "ping", "kept", "queued", "predecessor", "cancelled"] + races + ["reentry"])
+        # The harness sent what this case interprets: a late and an unknown cancellation,
+        # the cancelled call behind its predecessor in one write, and one per race.
+        sent = [e["value"] for e in events if e["event"] == "rpc-send"]
+        recorded = {v["params"]["arguments"].get("text"): v["id"] for v in sent
+                    if v.get("method") == "tools/call" and v["params"].get("name") == "record_account"}
+        targets = [recorded.get(ACCOUNT), 424242, recorded.get(CANCELLED)] + [
+            recorded.get(race_text(number)) for number in range(1, RACES + 1)]
+        cancelled_ids = [v["params"]["requestId"] for v in sent if v.get("method") == "notifications/cancelled"]
+        self.require(label + ".harness-cancellation-targets", cancelled_ids == targets and None not in targets,
+                     {"got": cancelled_ids, "expected": targets})
+        self.require(label + ".harness-cancellation-behind-predecessor",
+                     any(e["event"] == "rpc-transmitted"
+                         and e["methods"] == ["tools/call", "tools/call", "notifications/cancelled"] for e in events),
+                     "the predecessor, its sibling and the cancellation were not sent in one write")
 
         def completed(name):
             return (self.core_reply(seen.get(name)) or {}).get("outcome") == "completed"
@@ -2953,16 +3064,13 @@ class Driver:
             self.check("%s.pair-%d.reply-order" % (label, index),
                        first in replies and second in replies and replies.index(first) < replies.index(second), replies)
         self.eq(label + ".ping", (seen.get("ping") or {}).get("result"), {})
-        self.check(label + ".duplicate-answered", seen.get("duplicate") is not None, "no reply to a reused request ID")
         delivery = status_reply["data"].get("headline", {}).get("delivered", {})
         self.require(label + ".verified-delivery", delivery.get("verified") is True, delivery)
         answer = strict_loads((Path(delivery["location"]) / "answer.json").read_bytes())
         texts = [entry.get("text") for entry in answer.get("entries", [])]
         # An effect exists exactly when its call got a completed reply.
-        for name, text, control in (("duplicate", DUPLICATE, "reused-request-id-refused"),
-                                    ("cancelled", CANCELLED, "cancelled-pipelined-call-has-no-effect")):
-            self.eq(label + "." + name + ".effect-iff-completed", text in texts, completed(name))
-            self.control(control, text not in texts and not completed(name))
+        self.eq(label + ".cancelled.effect-iff-completed", CANCELLED in texts, completed("cancelled"))
+        self.control("cancelled-pipelined-call-has-no-effect", CANCELLED not in texts and not completed("cancelled"))
         cancelled = self.core_reply(seen.get("cancelled")) or {}
         self.eq(label + ".cancelled-reason", cancelled.get("reason"), "placement_stopped")
         self.note(label + ".cancellation-observer-scope",
@@ -3222,6 +3330,13 @@ class Driver:
                 self.eq(label + ".close-refusal-data-order", list(core.get("data", {})),
                         ["ended_by", "close_requested_at", "seal"])
         if action == "cancel":
+            self.eq(label + ".harness-cancellation-steps",
+                    [e["event"] for e in self.harness_events(f) if e["event"].startswith("submit-")],
+                    ["submit-publication", "submit-cancellation-ping", "submit-cancelled-reply",
+                     "submit-cancelled-reentry", "submit-retried"])
+            self.eq(label + ".harness-confirmed-submits",
+                    sum(e["event"] == "rpc-send" and e["value"].get("params", {}).get("name") == "submit"
+                        for e in self.harness_events(f)), 2)
             reentry = observed("submit-cancelled-reentry")[0]["response"]
             self.eq(label + ".later-call-completed", reentry.get("outcome"), "completed")
             self.eq(label + ".one-placement", status["data"].get("runs", {}).get("count"), 1)
@@ -3344,6 +3459,15 @@ class Driver:
         second = self.cmd(label + ".run-2", ["run", f["reference"]])
         self.groups_absent(f, run=2)
         events = self.harness_clean(f)
+        sessions = [e["pid"] for e in events if e["event"] == "launch" and e["role"] == "model"]
+        reported = [[(e["value"].get("num_turns"), e["value"].get("usage")) for e in events
+                     if e["event"] == "output" and e["pid"] == pid and e["value"].get("type") == "result"]
+                    for pid in sessions]
+        self.require(label + ".harness-results", reported == [
+            [(CHECKPOINTS[1]["num_turns"], CHECKPOINTS[1]["usage"])],
+            [(SECOND_SESSION["num_turns"], SECOND_SESSION["usage"])]], reported)
+        self.eq(label + ".harness-interrupted-first-session",
+                [e["pid"] for e in events if e["event"] == "deliberate-interruption"], sessions[:1])
         ending = (second.get("data") or {}).get("ending")
         self.eq(label + ".second-ending", ending, "ended_unsubmitted")
         total = {key: one[key] + SECOND_SESSION["usage"][key] for key in SECOND_SESSION["usage"]}
@@ -4342,8 +4466,10 @@ class Driver:
         one = ((steps.get("first") or [{}])[0].get("core") or {})
         self.eq(label + ".first", (one.get("outcome"), (one.get("data") or {}).get("id")), ("completed", "e1"))
         self.eq(label + ".first-ending", (reply.get("data") or {}).get("ending"), "interrupted")
+        other = {"text": "Different words under the reused identifier.", "label": "other"}
         second = [script_step("again", "record_account", note, id="identity-same"),
                   script_step("duplicate", "record_account", note, id="identity-same"),
+                  script_step("reused-other-arguments", "record_account", other, id="identity-same"),
                   script_step("fresh-id", "record_account", note, id="identity-fresh"),
                   script_step("reused-ping", None, method="ping", id="identity-fresh"),
                   script_step("prepare", "prepare"),
@@ -4358,6 +4484,7 @@ class Driver:
 
         again, _ = step("again")
         duplicate, answered = step("duplicate")
+        changed, changed_answer = step("reused-other-arguments")
         fresh, _ = step("fresh-id")
         # CONTRACT: request IDs are unique within a placement, so placement 2 may use the ID
         # again for a new invocation; inside it a repeated ID is refused with no effect.
@@ -4372,6 +4499,8 @@ class Driver:
         # nothing, takes no call number and writes no call-C.json. The identical repeat is not
         # a replay of the earlier reply.
         self.reused_id_error(label + ".duplicate", answered, "identity-same")
+        self.reused_id_error(label + ".reused-other-arguments", changed_answer, "identity-same")
+        self.check(label + ".reused-other-arguments-not-completed", changed.get("outcome") != "completed", changed)
         self.reused_id_error(label + ".reused-ping", step("reused-ping")[1], "identity-fresh")
         rundir = self.audit_path(f) / "runs" / "2"
         def numbered(prefix):
@@ -4388,6 +4517,7 @@ class Driver:
         entries = [aw.Entry(e, 1, "record_account", "same", note["text"].encode()) for e in ("e1", "e2", "e3")]
         package = self.check_package_bytes(f, self.inspect_runtime(f, placements=2), entries, 3)
         self.control("reused-id-in-placement-has-no-effect", duplicate.get("outcome") != "completed"
+                     and changed.get("outcome") != "completed"
                      and (package / "answer.json").read_bytes() == aw.answer_json(3, entries))
 
     def reused_id_error(self, label, response, identity):
@@ -5631,6 +5761,7 @@ class Driver:
                 continue
             self.current = name
             start = len(self.checks)
+            began = time.monotonic()
             reason = None
             try:
                 if self.launch_blocked:
@@ -5643,9 +5774,10 @@ class Driver:
                 self.check(name + ".unexpected-error", False, traceback.format_exc())
             failures = sum(not row["passed"] for row in self.checks[start:])
             state = "failed" if failures else "skipped" if reason else "passed"
+            elapsed = round(time.monotonic() - began, 3)
             self.cases.append({"name": name, "outcome": state, "checks": len(self.checks) - start,
-                               "failures": failures, "skip_reason": reason})
-            print("%s %s (%d checks)" % (state.upper(), name, len(self.checks) - start), flush=True)
+                               "failures": failures, "skip_reason": reason, "elapsed_seconds": elapsed})
+            print("%s %s (%d checks, %.1f s)" % (state.upper(), name, len(self.checks) - start, elapsed), flush=True)
         report = {"schema": "stewart.claude-code.offline-driver/2", "qualification": False,
                   "scope": "offline preparation and synthetic MCP runtime; no Claude or provider invocation",
                   "elapsed_seconds": time.monotonic() - self.started,
@@ -6457,13 +6589,6 @@ def synthetic_harness(scenario_path, environment_path, argv):
             send("notifications/cancelled", {"requestId": first["id"], "reason": "late"}, notification=True)
             send("notifications/cancelled", {"requestId": 424242, "reason": "unknown"}, notification=True)
             event("observation", name="ping", response=rpc("ping"))
-            # A reused identifier is refused, whatever its arguments.
-            send_frames([frame("tools/call", {"name": "record_account", "arguments": {"text": scenario["duplicate"]}},
-                               identity=first["id"])])
-            try:
-                event("observation", name="duplicate", response=receive(first["id"], timeout=3))
-            except TimeoutError:
-                event("observation", name="duplicate", response=None)
             # Both calls are sent before either reply. The second must complete
             # after the first, with their effects in the same order.
             kept = frame("tools/call", {"name": "record_account", "arguments": {"text": scenario["kept"]}})
@@ -7273,20 +7398,14 @@ def self_test():
         result = subprocess.run([str(canary)], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 env={"PATH": "/usr/bin:/bin"}, timeout=5)
         check("canary.firing-control", result.returncode == 97 and marker.read_bytes() == b"unexpected local launch\n")
-    # Rehearse these harness sequences against a specification-only peer.
+    check("race-text.size", len(race_text(1)) == 262144 and race_text(1) != race_text(2))
+    # Two harness behaviors no runtime case can establish deterministically: the
+    # optional UTF-8 artifact used by the service procedure's rehearsal, and a second
+    # relay attempt, which Stewart's stop usually forestalls. Cases check the rest
+    # of the harness's sequencing in its journal.
     mode_peer = '''import json,sys
-pending_submit=None
-cancelled_submit=False
 for raw in sys.stdin.buffer:
     q=json.loads(raw)
-    if q["method"]=="notifications/cancelled" and pending_submit is not None:
-        result={"content":[{"type":"text","text":json.dumps({"outcome":"refused","reason":"placement_stopped","effects":{"seal":"none","raw_capture":"recorded"}})}]}
-        print(json.dumps({"jsonrpc":"2.0","id":pending_submit,"result":result}),flush=True)
-        pending_submit=None
-        cancelled_submit=True
-    if publication and q.get("params",{}).get("name")=="submit" and not cancelled_submit:
-        pending_submit=q["id"]
-        continue
     if "id" not in q: continue
     method=q["method"]
     result={}
@@ -7300,64 +7419,20 @@ for raw in sys.stdin.buffer:
                         "message": {"role": "user", "content": text}}) + b"\n"
     submitted = lambda e: e["event"] == "rpc-send" and e["value"].get("params", {}).get("name") == "submit"
     modes = (
-        ("submit", 1, submitted),
-        ("record-then-exit", 1, None),
-        ("cancel", 1, submitted),
-        ("submit-publication", 1, lambda e: e["event"] == "submit-retried"),
-        ("near-limit", 2, submitted),
-        ("near-limit-interrupt", 2, None),
-        ("hooks", 1, submitted),
-        ("relay-loss", 1, lambda e: e["event"] == "second-relay"),
-        ("checkpoint-then-crash", 2, None),
-        ("resume-no-submit", 1, lambda e: e["event"] == "output" and e["value"].get("type") == "result"),
-        ("scripted", 1, lambda e: e["event"] == "script-final"),
-        ("scripted-exit", 1, None),
-        ("sequence", 3, submitted),
-        ("sequence-controls", 1, None),
+        ("submit", submitted),
+        ("relay-loss", lambda e: e["event"] == "second-relay"),
     )
-    for mode, inputs, finished in modes:
+    for mode, finished in modes:
         with tempfile.TemporaryDirectory(prefix="stewart-synthetic-mode-") as directory:
             root = Path(directory)
             scenario = {"mode": mode, "witness": str(root), "marker": str(root / "started"),
                         "config": str(root), "version": "synthetic-offline-1", "model": MODEL,
                         "family": "open-inquiry", "session": "synthetic-" + mode, "account": ACCOUNT,
-                        "kept": KEPT, "queued": QUEUED, "cancelled": CANCELLED, "duplicate": DUPLICATE,
                         "second_relay": SECOND_RELAY, "auth_private": "synthetic-private-auth-field"}
-            if mode in ("submit", "record-then-exit"):
+            if mode == "submit":
                 scenario["utf8_artifact"] = {"label": "synthetic UTF-8 artifact", "text": "Exact café trace.\r\n界\n"}
-            if mode == "submit-publication":
-                scenario["publication_action"] = "cancel"
-                for marker in ("cancel-submit", "retry-submit"):
-                    (root / marker).write_bytes(b"")
-            if mode.startswith("near-limit"):
-                scenario["mode"] = "near-limit"
-                scenario["observe_seconds"] = 1
-                scenario["captured_partial"] = True
-                scenario["interrupt_after_notice"] = mode == "near-limit-interrupt"
-            if mode.startswith("scripted"):
-                scenario["mode"] = "scripted"
-                scenario["script"] = [script_step("record", "record_account", {"text": "x", "label": "same"},
-                                                  id="identity-41")]
-                if mode == "scripted":
-                    scenario["script"] += [script_step("prepare", "prepare"), script_step(
-                        "submit", "submit", {"prepared": {"$ref": ["prepare", "data", "prepared"]}, "confirm": True},
-                        final=True)]
-                scenario["script_end"] = "exit" if mode == "scripted-exit" else None
-            if mode == "sequence":
-                scenario["steps"] = [{"op": "record"}, {"op": "result", "is_error": False, "checkpoint": 0},
-                                     {"op": "await_input", "expect": "reminder"}, {"op": "compact", "serial": 1},
-                                     {"op": "await_input", "expect": "compacted"},
-                                     {"op": "marker", "name": "sequence-marker"}, {"op": "submit"}]
-            if mode == "sequence-controls":
-                scenario["mode"] = "sequence"
-                scenario["reached"] = time.time_ns()
-                scenario["steps"] = [{"op": "wait_until", "key": "reached"}, {"op": "resist_term"},
-                                     {"op": "assistant_tool", "name": "record_account"}, {"op": "stop_reading"},
-                                     {"op": "compact", "serial": 1, "count": 3},
-                                     {"op": "fill_input", "frame_bytes": 30000, "next_bytes": 4096, "beyond": 1},
-                                     {"op": "marker", "name": "stopped-reading"}, {"op": "exit", "code": 7}]
             (root / "scenario.json").write_bytes(compact(scenario))
-            (root / "peer.py").write_text("publication=%r\n" % (mode == "submit-publication") + mode_peer)
+            (root / "peer.py").write_text(mode_peer)
             (root / "settings.json").write_bytes(compact({"hooks": {"PreToolUse": [{"matcher": "*", "hooks": [
                 {"type": "command", "command": "cat >/dev/null; printf '{}\\n'", "timeout": 5}]}]}}))
             (root / "prompt").write_text("synthetic self-test prompt")
@@ -7371,168 +7446,40 @@ for raw in sys.stdin.buffer:
                  "--mcp-config", str(root / "mcp.json"), "--system-prompt-file", str(root / "prompt")],
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 env={"PATH": "/usr/bin:/bin"}, cwd=root)
-            supplied_inputs = [user("synthetic input %d" % n) for n in range(inputs)]
-            if mode.startswith("near-limit"):
-                supplied_inputs[1] = user(NEAR_LIMIT.format(seconds=12, placements=2))
-            if mode == "sequence":
-                supplied_inputs[1:] = [user(REMINDER), user(COMPACTED)]
-            process.stdin.write(b"".join(supplied_inputs))
+            process.stdin.write(user("synthetic input 0"))
             process.stdin.flush()
             deadline = time.monotonic() + 20
             events = []
             while time.monotonic() < deadline:
                 log = root / "harness.jsonl"
                 events = [json.loads(line) for line in log.read_bytes().splitlines()] if log.exists() else []
-                if mode == "resume-no-submit":
-                    # Wait until the result's write completes before stopping the harness.
-                    sent = [e for e in events if finished(e)]
-                    done = [e for e in events if e["event"] == "output-transmitted"]
-                    if len(sent) == 1 and done and done[-1]["sha256"] == sha(bytes.fromhex(sent[0]["raw_hex"])):
-                        break
-                elif finished is None:
-                    if process.poll() is not None:
-                        break
-                elif any(finished(e) for e in events) or any(e["event"] == "fatal" for e in events):
+                if any(finished(e) for e in events) or any(e["event"] == "fatal" for e in events):
                     break
                 time.sleep(0.02)
-            if finished is None:
-                code = process.wait(timeout=5)
-            else:
-                process.terminate()
-                code = process.wait(timeout=5)
+            process.terminate()
+            code = process.wait(timeout=5)
             process.stdin.close()
             process.stdout.close()
             process.stderr.close()
-            if mode.startswith("sequence"):
-                # The loop's last read can precede a quick exit; take the complete record.
-                log = root / "harness.jsonl"
-                events = [json.loads(line) for line in log.read_bytes().splitlines()] if log.exists() else []
             fatal = [e.get("error") for e in events if e["event"] == "fatal"]
             check("mode." + mode + ".no-fatal", not fatal)
             if fatal:
                 print(fatal[0])
-            names = [e["name"] for e in events if e["event"] == "observation"]
-            outputs = [e["value"] for e in events if e["event"] == "output"]
-            kinds = [(o.get("type"), o.get("subtype")) for o in outputs]
-            consumed = sum(e["event"] == "input" for e in events)
-            if mode in ("submit", "record-then-exit"):
+            if mode == "submit":
                 calls = [e["value"]["params"] for e in events if e["event"] == "rpc-send"
                          and e["value"].get("method") == "tools/call"]
                 recorded = [call for call in calls if call["name"] == "record_artifact"]
-                check("mode." + mode + ".optional-artifact", recorded == ([{"name": "record_artifact",
-                      "arguments": {"label": "synthetic UTF-8 artifact", "text": "Exact café trace.\r\n界\n"}}]
-                      if mode == "submit" else []))
+                check("mode.submit.optional-artifact", recorded == [{"name": "record_artifact",
+                      "arguments": {"label": "synthetic UTF-8 artifact", "text": "Exact café trace.\r\n界\n"}}])
                 authoring = [call["name"] for call in calls if call["name"] in
                              {"record_account", "record_artifact", "prepare", "submit"}]
-                check("mode." + mode + ".authoring-order", authoring ==
-                      (["record_account", "record_artifact", "prepare", "submit"] if mode == "submit" else ["record_account"]))
-            elif mode == "cancel":
-                check("mode.cancel.observations", names == ["first", "ping", "duplicate", "kept", "queued", "predecessor", "cancelled"]
-                      + ["race-%d" % number for number in range(1, RACES + 1)] + ["reentry"])
-                check("mode.cancel.pipelined", any(e["event"] == "rpc-transmitted" and e["methods"] ==
-                      ["tools/call", "tools/call", "notifications/cancelled"] for e in events))
-                check("mode.cancel.uncancelled-pipeline", any(e["event"] == "rpc-transmitted" and e["methods"] ==
-                      ["tools/call", "tools/call"] for e in events))
-                sent = [e["value"] for e in events if e["event"] == "rpc-send"]
-                ids = [v["id"] for v in sent if v["method"] == "tools/call" and v["params"]["name"] == "record_account"]
-                check("mode.cancel.reused-id", len(ids) == 6 + RACES and ids[0] == ids[1] and len(set(ids)) == 5 + RACES)
-                cancels = [v["params"]["requestId"] for v in sent if v["method"] == "notifications/cancelled"]
-                check("mode.cancel.cancel-targets", cancels == [ids[0], 424242] + ids[5:])
-                check("mode.cancel.race-size", len(race_text(1)) == 262144 and race_text(1) != race_text(2))
-                check("mode.cancel.submits", any(submitted(e) for e in events))
-            elif mode == "submit-publication":
-                transitions = [e["event"] for e in events if e["event"].startswith("submit-")]
-                check("mode.submit-publication.order", transitions == ["submit-publication", "submit-cancellation-ping",
-                      "submit-cancelled-reply", "submit-cancelled-reentry", "submit-retried"])
-                refused = next((e["response"] for e in events if e["event"] == "submit-cancelled-reply"), {})
-                check("mode.submit-publication.named-refusal", (Driver.core_reply(None, refused) or {}).get("reason") == "placement_stopped")
-                check("mode.submit-publication.later-call", any(e["event"] == "submit-cancelled-reentry"
-                      and e["response"].get("outcome") == "completed" for e in events))
-                check("mode.submit-publication.confirmed-retry", sum(submitted(e) for e in events) == 2)
-            elif mode.startswith("near-limit"):
-                accounts = [e["value"]["params"]["arguments"] for e in events if e["event"] == "rpc-send"
-                            and e["value"].get("params", {}).get("name") == "record_account"]
-                check("mode." + mode + ".captured-partial", accounts == [authoring_arguments("c4-partial-account")])
-                windows = [e.get("phase") for e in events if e["event"] == "near-limit-window"]
-                check("mode." + mode + ".window", windows == ["start", "end"])
-                check("mode." + mode + ".observed-input", consumed == 2)
-                ended_at = next((i for i, e in enumerate(events)
-                                 if e["event"] == "near-limit-window" and e["phase"] == "end"), None)
-                submitted_at = next((i for i, e in enumerate(events) if submitted(e)), None)
-                if mode == "near-limit-interrupt":
-                    check("mode." + mode + ".exit-on-notice", code == 7 and ended_at is not None
-                          and events[ended_at].get("ended_by") == "notice" and submitted_at is None)
-                    check("mode." + mode + ".interruption-witness",
-                          sum(e["event"] == "deliberate-interruption" for e in events) == 1)
-                else:
-                    check("mode." + mode + ".submits-after-window",
-                          ended_at is not None and submitted_at is not None and ended_at < submitted_at)
-            elif mode == "hooks":
-                hooks = [e for e in events if e["event"] == "hook"]
-                check("mode.hooks.count", [h["when"] for h in hooks] == ["before-startup"] + ["after-startup"] * 6)
-                check("mode.hooks.replies", all(h.get("output_hex") == b"{}\n".hex() and h.get("exit") == 0 for h in hooks))
-                order = [e["event"] for e in events if e["event"] == "hook"
-                         or (e["event"] == "output" and e["value"].get("subtype") == "init")]
-                check("mode.hooks.before-startup-precedes-init", order[:2] == ["hook", "output"])
-                check("mode.hooks.submits", any(submitted(e) for e in events))
-            elif mode == "relay-loss":
+                check("mode.submit.authoring-order", authoring == ["record_account", "record_artifact", "prepare", "submit"])
+            else:
                 check("mode.relay-loss.sequence", [e["event"] for e in events
                       if e["event"] in ("relay-killed", "second-relay")] == ["relay-killed", "second-relay"])
                 check("mode.relay-loss.model-stays", code == -signal.SIGTERM)
                 second = next((e for e in events if e["event"] == "second-relay"), {})
                 check("mode.relay-loss.second-attempt-witnessed", bool(second.get("received_hex")))
-            elif mode == "checkpoint-then-crash":
-                check("mode.checkpoint-then-crash.exit", code == 7 and consumed == 2)
-                check("mode.checkpoint-then-crash.result", [o["usage"] for o in outputs if o.get("type") == "result"]
-                      == [CHECKPOINTS[1]["usage"]])
-            elif mode == "resume-no-submit":
-                check("mode.resume-no-submit.result", [o["usage"] for o in outputs if o.get("type") == "result"]
-                      == [SECOND_SESSION["usage"]])
-            elif mode.startswith("scripted"):
-                labels = [e["label"] for e in events if e["event"] == "script-step"]
-                requests = [e["request"] for e in events if e["event"] == "script-step"]
-                final = [e for e in events if e["event"] == "script-final"]
-                check("mode." + mode + ".steps", labels == (["record", "prepare"] if mode == "scripted" else ["record"]))
-                check("mode." + mode + ".fixed-id", requests and requests[0]["id"] == "identity-41")
-                if mode == "scripted":
-                    check("mode.scripted.resolved-final", len(final) == 1 and final[0]["arguments"]
-                          == {"prepared": "ap1.selftest", "confirm": True} and any(submitted(e) for e in events))
-                else:
-                    check("mode.scripted-exit.exit", code == 7 and not final
-                          and sum(e["event"] == "deliberate-interruption" for e in events) == 1)
-            elif mode == "sequence":
-                check("mode.sequence.outputs", kinds == [("system", "init"), ("result", "success"),
-                                                         ("system", "compact_boundary")])
-                check("mode.sequence.result", [(o["is_error"], o["num_turns"], o["usage"]) for o in outputs
-                      if o.get("type") == "result"] == [(False, 2, CHECKPOINTS[0]["usage"])])
-                check("mode.sequence.inputs", [(e["expect"], e["classified"]) for e in events if e["event"] == "seq-input"]
-                      == [("reminder", "reminder"), ("compacted", "compacted")])
-                check("mode.sequence.marker", (root / "sequence-marker").exists())
-                check("mode.sequence.order", [e["op"] for e in events if e["event"] == "seq-step"] ==
-                      ["record", "result", "await_input", "compact", "await_input", "marker", "submit"])
-                check("mode.sequence.submits", sum(submitted(e) for e in events) == 1
-                      and any(e["event"] == "seq-submit" for e in events))
-            elif mode == "sequence-controls":
-                stopped = [e for e in events if e["event"] == "seq-stopped-reading"]
-                check("mode.sequence-controls.exit", code == 7)
-                check("mode.sequence-controls.time-reached", any(e["event"] == "seq-time-reached" for e in events))
-                check("mode.sequence-controls.resisting", any(e["event"] == "seq-resisting-term" for e in events))
-                check("mode.sequence-controls.violation", [o["message"]["content"][0]["name"] for o in outputs
-                      if o.get("type") == "assistant"] == ["record_account"])
-                check("mode.sequence-controls.stopped-reading", len(stopped) == 1 and not stopped[0]["reader_alive"]
-                      and stopped[0]["readers"] in (None, []) and (root / "stopped-reading").exists())
-                filled = [e for e in events if e["event"] == "seq-filled"]
-                fill = filled[0] if len(filled) == 1 else {}
-                facts = fill.get("facts") or {}
-                check("mode.sequence-controls.fill", bool(fill) and facts.get("capacity", 0) >= 4096
-                      and fill["count"] == pipe_frames_fit(30000, facts) and fill["exposed"] == fill["count"] + 1)
-                # The harness's probes agree with the packing rule; 4,096 more bytes fit after them.
-                check("mode.sequence-controls.fill-probe", bool(fill)
-                      and fill["probe"]["frames"]["accepted"] == fill["count"]
-                      and fill["probe"]["next"]["accepted"] == pipe_accepts([30000] * fill["count"] + [4096], facts)
-                      == fill["count"] + 1)
-                check("mode.sequence-controls.compaction-count", kinds.count(("system", "compact_boundary"))
-                      == 3 + fill.get("exposed", 0))
     with tempfile.TemporaryDirectory(prefix="stewart-synthetic-protocol-") as directory:
         root = Path(directory)
         scenario = {"mode": "record-then-exit", "witness": str(root), "marker": str(root / "started"),

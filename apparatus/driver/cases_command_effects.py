@@ -102,6 +102,9 @@ def access_observation_selftest():
       "observe archive opens/reads on Linux, inherited descriptor consumption and connections to a designated local peer",
       needs=("loopback",))
 def c_effect_access(t):
+    """Observed against independent watchers: archive opens and reads (Linux), inherited key
+    descriptor consumption, and connections to a designated local peer, each compared with
+    the command's forecast; altered forecasts are the controls."""
     sub = t.submission([F("timetable.txt", REPORT)], body=BODY)
     t.accept(sub)
     peer = rs.provider(t, fp.Script([fp.HttpError(413)]), label="access-observer")
@@ -166,6 +169,8 @@ def wrapper(t):
 @case("c21.command-effects", ["C21", "C20"],
       "inspect every command with empty environment and a shell wrapper; reject malformed requests without a reference")
 def c_command_effects(t):
+    """Inspect every command's prospective effects with an empty environment and through a shell
+    wrapper; malformed requests are rejected without a reference."""
     wrapped = wrapper(t)
     empty = {"PATH": None, "HOME": None, "TMPDIR": None}
     invalid_archive = Path(t.root) / "unused archive"
@@ -222,6 +227,8 @@ def file_submission(t, label, binary):
       "complete direct and wrapped file-only audits, conditional key refusal, readback, empty manager seal and repeat close",
       needs=("loopback",))
 def c_file_only(t):
+    """Complete direct and wrapped file-only audits: conditional key refusal, readback, an empty
+    manager seal and a repeated close, compared against independent inputs and observations."""
     direct_members = None
     for route, binary in (("direct", t.bin["path"]), ("wrapped", wrapper(t))):
         label = "files." + route
@@ -288,8 +295,11 @@ def c_file_only(t):
 
 
 @case("c21.file-only-lost-reply", ["C21", "C17", "C20"],
-      "reconcile partial intake and lost successful commission replies through the direct CLI and a wrapper", mode="test")
+      "reconcile partial intake and lost successful commission replies through the direct CLI and a wrapper", mode="test",
+      faults=("commission.after_accepted_link=kill",))
 def c_lost_reply(t):
+    """Reconcile partial intake and lost successful commission replies
+    (commission.after_accepted_link=kill) through the direct CLI and a wrapper."""
     for route, binary in (("direct", t.bin["path"]), ("wrapped", wrapper(t))):
         label = "recovery." + route
         sub = file_submission(t, label, binary)

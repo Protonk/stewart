@@ -1,8 +1,15 @@
-//! The answer protocol at its fault points (INTERFACE Appendix C.1),
-//! including trace T6 with the pause point. Fault configuration is read once
-//! per process, so each case is an ignored test that the runner below
-//! executes in its own process with its own `STEWART_TEST_FAULT`; a case
-//! passes only if the fault fired and the protocol answered it as specified.
+//! The answer protocol at its fault points (INTERFACE Appendix C.1), driven
+//! in process against a commissioned audit with a live placement.
+//!
+//! The independent release driver owns the answer protocol, including most
+//! fault points. A case belongs here only when the driver cannot give it to
+//! the development loop: no driver case reaches its fault point through the
+//! auditor's tools, or its driver case runs only on Linux.
+//!
+//! Fault configuration is read once per process, so each case is an ignored
+//! test that the runner below executes in its own process with its own
+//! `STEWART_TEST_FAULT`; a case passes only if the fault fired and the
+//! protocol answered it as specified.
 #![cfg(feature = "fault-injection")]
 // Publication closures return the crate's `Fail` by value, as the crate does.
 #![allow(clippy::result_large_err)]
@@ -14,27 +21,20 @@ use answer_support::*;
 use common::*;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
-use stewart::answer::{self, End, Preparer, Sealer};
+use stewart::answer::End;
 use stewart::json::J;
 
-const CASES: [(&str, &str); 9] = [
-    ("case_seal_uncertain", "log.dirsync:seal=eio"),
+const CASES: &[(&str, &str)] = &[
     ("case_entry_uncertain", "log.dirsync:entry=eio"),
     ("case_payload_write", "entry.payload_write=enospc"),
-    ("case_payload_corrupt", "entry.payload_corrupt=corrupt"),
     ("case_manifest_write", "seal.manifest_write=eio"),
     ("case_prepared_write", "prepared.write=eio"),
     ("case_entry_after_link", "entry.after_link=pause"),
-    ("case_seal_after_link", "seal.after_link=pause"),
-    (
-        "case_t6_submit_paused_before_its_link",
-        "log.publish:seal=pause",
-    ),
 ];
 
 #[test]
 fn each_fault_case_in_its_own_process() {
-    for (name, fault) in CASES {
+    for &(name, fault) in CASES {
         let dir = std::env::temp_dir().join(format!(
             "stewart-fault-{}",
             stewart::ids::random_token().unwrap()
@@ -99,30 +99,9 @@ fn submit(ap: &str) -> String {
     J::obj().with("prepared", ap).with("confirm", true).string()
 }
 
-#[test]
-#[ignore]
-fn case_seal_uncertain() {
-    let mut l = Live::new();
-    l.add("record_account", "a", "");
-    let ap = l.call("prepare", "{}").str(&["prepared"]).to_string();
-    let r = l.call("submit", &submit(&ap));
-    assert_eq!((r.outcome(), r.reason()), ("failed", "seal_uncertain"));
-    assert_eq!(r.effect("seal"), "unknown");
-    assert_eq!(r.effect("diagnostic"), "durable");
-    assert_eq!(r.next_tools(), ["submit"]);
-    assert_eq!(r.next_input(0), submit(&ap));
-    assert!(!r.ex.sealed && r.ex.end.is_none());
-    assert!(l.state().seal().is_some(), "the seal was linked");
-    // The same submit returns the recorded seal, which the run then delivers.
-    let again = l.call("submit", &submit(&ap));
-    again.ok();
-    assert_eq!(
-        again.data(&["already_sealed"]).v,
-        stewart::json::V::Bool(true)
-    );
-    assert!(again.ex.sealed);
-}
-
+/// An entry linked without a confirmed directory sync: the call fails
+/// `record_failed` with the answer `unknown`, the linked entry counts in the
+/// revision, and the placement ends.
 #[test]
 #[ignore]
 fn case_entry_uncertain() {
@@ -135,6 +114,8 @@ fn case_entry_uncertain() {
     assert_eq!(s(&r.env, &["causes", "0", "error"]), "EIO");
 }
 
+/// A payload that cannot be written: the call fails `record_failed` with a
+/// durable diagnostic, the answer is unchanged and the placement ends.
 #[test]
 #[ignore]
 fn case_payload_write() {
@@ -142,21 +123,15 @@ fn case_payload_write() {
     let r = l.call("record_account", r#"{"text":"lost"}"#);
     assert_eq!((r.outcome(), r.reason()), ("failed", "record_failed"));
     assert_eq!(r.effect("answer"), "unchanged");
+    assert_eq!(r.effect("diagnostic"), "durable");
     assert_eq!(s(&r.env, &["causes", "0", "error"]), "ENOSPC");
+    assert!(!has(&r.env, "retained"));
     assert_eq!(r.ex.end, Some(End::ArchiveWriteFailed));
     assert_eq!(l.state().revision(), 0);
 }
 
-#[test]
-#[ignore]
-fn case_payload_corrupt() {
-    let mut l = Live::new();
-    let e1 = l.add("record_account", "intended", "");
-    let r = l.call("read", &J::obj().with("source", e1.as_str()).string());
-    assert_eq!(r.reason(), "answer_damaged");
-    assert_eq!(r.ex.end, Some(End::AnswerDamaged));
-}
-
+/// A seal manifest that cannot be written: the auditor's submit fails
+/// `record_failed`, no seal is recorded and the placement ends.
 #[test]
 #[ignore]
 fn case_manifest_write() {
@@ -169,6 +144,8 @@ fn case_manifest_write() {
     assert!(l.state().seal().is_none());
 }
 
+/// A preparation that cannot be written: the auditor's prepare fails
+/// `record_failed` and the placement ends.
 #[test]
 #[ignore]
 fn case_prepared_write() {
@@ -178,6 +155,8 @@ fn case_prepared_write() {
     assert_eq!(r.ex.end, Some(End::ArchiveWriteFailed));
 }
 
+/// The `entry.after_link` point lies after the entry's link and before the
+/// call's result record.
 #[test]
 #[ignore]
 fn case_entry_after_link() {
@@ -198,77 +177,4 @@ fn case_entry_after_link() {
         "paused after the entry was linked"
     );
     assert!(call && !result, "and before the call's result record");
-}
-
-#[test]
-#[ignore]
-fn case_seal_after_link() {
-    let mut l = Live::new();
-    let ap = l.call("prepare", "{}").str(&["prepared"]).to_string();
-    let dir = l.audit_dir();
-    let seen = on_pause("seal.after_link", move || kinds(&dir).last().cloned());
-    let r = l.call("submit", &submit(&ap));
-    r.ok();
-    assert_eq!(seen.join().unwrap().as_deref(), Some("seal"));
-}
-
-#[test]
-#[ignore]
-fn case_t6_submit_paused_before_its_link() {
-    let mut l = Live::new();
-    for i in 0..7 {
-        l.add("record_observation", &format!("o{i}"), "");
-    }
-    let ap = l.call("prepare", "{}").str(&["prepared"]).to_string();
-    // While the submit is paused just before its seal linkat, close records
-    // its request in another writer.
-    let r_ref = l.r.clone();
-    let dir = l.audit_dir();
-    // The submit runs under a placement gate, which a stop closes while it
-    // waits, after close was recorded: the durable close still decides.
-    let gate = stewart::gate::Gate::without_deadline();
-    let stop_gate = gate.clone();
-    let closer = on_pause("log.publish:seal", move || {
-        let mut audit = stewart::archive::Audit::open(&r_ref).unwrap();
-        audit.exe = Some(stewart::platform::Exe {
-            path: audit.refile.writer_path.clone(),
-            sha256: audit.refile.writer_sha256.clone(),
-        });
-        let body = stewart::bodies::CloseRequested {
-            flags: Default::default(),
-        };
-        let n = stewart::log::publish(&audit, "close_requested", |_| Ok(body.to_j()))
-            .ok()
-            .unwrap()
-            .n;
-        stop_gate.stop();
-        n
-    });
-    let r = l.call_by(
-        Some("submit"),
-        Some(submit(&ap).as_bytes()),
-        |audit, world, placement, call| answer::execute(audit, world, placement, call, Some(&gate)),
-    );
-    let close = closer.join().unwrap();
-    assert_eq!(r.reason(), "authoring_ended");
-    assert_eq!(r.str(&["ended_by"]), "close");
-    assert!(r.data(&["close_requested_at"]).as_str().is_some());
-    assert!(r.str(&["seal", "state"]) == "absent" && r.data(&["seal", "actor"]).is_null());
-    assert_eq!(r.outcome(), "refused");
-    assert_eq!(r.effect("seal"), "none");
-    assert_eq!(
-        r.ex.end, None,
-        "a lost publication is not an archive-write failure"
-    );
-    assert!(!r.ex.sealed);
-    assert_eq!(
-        kinds(&dir).last().map(String::as_str),
-        Some("close_requested")
-    );
-    // Close then seals revision 7 as manager, and that seal names its actor.
-    let state = l.state();
-    let family = l.world.arrangement.family().unwrap();
-    let p = answer::prepare(&l.audit, family, &state, close, Preparer::Manager).unwrap();
-    let s = answer::seal(&l.audit, &family.versioned_id(), &p, Sealer::Manager, None).unwrap();
-    assert_eq!((s.actor, s.revision), (stewart::bodies::Actor::Manager, 7));
 }

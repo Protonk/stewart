@@ -99,6 +99,9 @@ def wire_connect_selftest():
       "local HTTP and CONNECT replies preserve body bytes and distinguish 503 retry from 407 tunnel refusal",
       mode="test", needs=("loopback",))
 def c_captured_wire(t):
+    """Replays local HTTP and CONNECT transcripts. A 503 retries. A 200 preserves the same body
+    across length, chunked and close-delimited framing. A 407 ends each tunnel attempt before
+    any provider request."""
     body = BODY.read_bytes()
     reported = {"basis": "reported", "turns": 1, "input_tokens": 6660, "output_tokens": 248}
     request = wire("connect-accepted-request").hex()

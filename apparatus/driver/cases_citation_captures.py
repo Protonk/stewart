@@ -58,7 +58,6 @@ def send_captured(p, raw):
       "M1/C2/C3 citation refusals and corrections retain exact calls and independently derived selections",
       needs=("loopback",), controls=[
           Control("drop_refused_capture", [r"^captured\.citation\.m1\.original\.refused-capture$"]),
-          Control("omit_effects_on_refusal", [r"^captured\.citation\.m1\.original\.probe-effects$"]),
           Control("grade_support", [r"^captured\.citation\.m1\.original\.corrected-citations$"])])
 def c_captured_citations(t):
     origins = ("m1",) if t.sabotage else ("m1", "c2", "c3")

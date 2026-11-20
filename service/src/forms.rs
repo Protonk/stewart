@@ -1027,6 +1027,43 @@ mod tests {
         );
     }
 
+    /// The readable view states the effort setting: a level travels only as
+    /// the provider parameter, and without one nothing is sent.
+    #[test]
+    fn the_readable_view_states_the_effort_setting() {
+        let question = "---\nstewart: question/2\nfamily: open-inquiry\nmodel: claude-opus-5-5\ndestination: /d\nlimit-turns: 200\nlimit-input-tokens: 20000000\nlimit-output-tokens: 400000\n---\nQ\n";
+        let readable = |effort: Option<&str>| {
+            let mut q = crate::frontmatter::parse(question.as_bytes()).unwrap();
+            q.settings.effort = effort.map(str::to_string);
+            arrangement(&ArrangementInput {
+                material_roles: &Default::default(),
+                guidance: None,
+                settings: &q.settings,
+                question_body_sha256: &"1".repeat(64),
+                material_index_sha256: &"2".repeat(64),
+            })
+            .readable
+        };
+        let effort_line = |text: &str| {
+            text.lines()
+                .filter(|l| l.starts_with("- Effort:"))
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            effort_line(&readable(None)),
+            [
+                "- Effort: not set. No effort is sent, so the provider's default for the model applies."
+            ]
+        );
+        assert_eq!(
+            effort_line(&readable(Some("high"))),
+            [
+                "- Effort: high, sent with every request as the provider parameter output_config.effort. The auditor does not receive it as text."
+            ]
+        );
+    }
+
     #[test]
     fn citation_schema_is_exact() {
         let expected = r#"{"type":"object","properties":{"source":{"type":"string","description":"question or materials/<name>."},"start":{"type":"integer","minimum":0,"description":"Byte offset where the cited span begins."},"end":{"type":"integer","minimum":1,"description":"Byte offset just after the cited span."},"quote":{"type":"string","description":"Exact text of the cited span."}},"required":["source"],"additionalProperties":false}"#;
@@ -1136,29 +1173,6 @@ mod tests {
                 CONTINUATION
             ]
         );
-        // Tool and property descriptions appear verbatim in its tables.
-        for f in &FAMILIES {
-            let t = tools(f).string();
-            let parsed = crate::json::parse(t.as_bytes()).unwrap();
-            for tool in parsed.as_arr().unwrap() {
-                let o = tool.obj("").unwrap();
-                assert!(
-                    doc.contains(o.str("description").unwrap()),
-                    "{}",
-                    o.str("name").unwrap()
-                );
-                for (_, p) in o
-                    .obj("input_schema")
-                    .unwrap()
-                    .obj("properties")
-                    .unwrap()
-                    .members
-                {
-                    let d = p.obj("").unwrap().str("description").unwrap();
-                    assert!(doc.contains(d), "{d}");
-                }
-            }
-        }
     }
 
     #[test]

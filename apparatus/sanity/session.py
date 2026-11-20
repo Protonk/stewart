@@ -21,7 +21,7 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from exercise import Fake, verify_package
-from session_support import credential_bytes, digest, scan_tree, strict_json, write_json
+from session_support import credential_bytes, digest, scan_tree, signal_timing, strict_json, write_json
 
 SCENARIOS = ['submitted', 'unsubmitted', 'provider-rejected', 'interrupted',
              'reflected-body', 'export-contamination', 'export-failure']
@@ -118,17 +118,6 @@ def process_identity(pid):
     except (OSError, ValueError, IndexError):
         pass
     return result
-
-
-def signal_timing(captured, attempts):
-    """Where a stop found one request, in the terms INTERFACE 6.4 charges and reports it."""
-    if not captured:
-        return 'not_captured'
-    if any(row['outcome'] == 'response' for row in attempts):
-        return 'answered'
-    if any(row['request_written'] != 'none' for row in attempts):
-        return 'written_unanswered'
-    return 'captured_not_written'
 
 
 LOG_POINTS = {'reminder_notice': lambda record: record.get('kind') == 'notice'

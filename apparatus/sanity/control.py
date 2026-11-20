@@ -14,9 +14,9 @@ import time
 import re
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from session_support import write_json
+from session_support import digest, write_json
 from session import safe_choice, safe_usage
-from exercise import verify_package, digest
+from exercise import verify_package
 
 
 def safe_allowances(value):

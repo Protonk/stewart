@@ -198,15 +198,11 @@ def c_identity(t):
 
 @case("apparatus.driver-controls", [], "the driver's own checks fail on deliberately broken inputs", mode="driver")
 def c_driver_controls(t):
-    """Firing controls for the driver's inventory and envelope checks,
-    independent of the test build."""
+    """Firing controls for the driver's inventory and envelope checks that its self-test does
+    not already cover (the self-test owns an in-place rewrite and duplicate JSON keys):
+    a file replaced by rename, a removed file and a refusal without effects must each fail."""
     d = t.mkdir("inventory control")
     build_entries(d, [F("a.json", b"{}\n"), F("b.json", b"[]\n")])
-    s1 = snapshot(d, t.cache)
-    with open(os.path.join(d, "a.json"), "r+b") as f:
-        f.write(b"{}\n")
-    v, _ = compare_snapshots(s1, snapshot(d, t.cache), True)
-    t.driver_control("inventory_rewrite_in_place", any(x[0] == "rewritten" for x in v), v)
     s2 = snapshot(d, t.cache)
     tmp = os.path.join(d, "a.tmp")
     with open(tmp, "wb") as f:
@@ -218,28 +214,21 @@ def c_driver_controls(t):
     os.unlink(os.path.join(d, "b.json"))
     v, _ = compare_snapshots(s3, snapshot(d, t.cache), True)
     t.driver_control("inventory_removal", any(x[0] == "removed" for x in v), v)
-    # Envelope: a refusal without effects, and one with unordered keys, must fail.
+    # Envelope: a refusal without effects must fail.
     saved = t.checks
-    for label, raw in (("envelope_missing_effects",
-                        b'{"schema":"stewart.reply/3","operation":"status","outcome":"refused","reason":"x",'
-                        b'"message":"m","retained":[],"next":[]}'),
-                       ("envelope_duplicate_key",
-                        b'{"schema":"stewart.reply/3","schema":"stewart.reply/3","operation":"status",'
-                        b'"outcome":"completed","effects":{},"next":[],"data":{}}'),
-                       ("envelope_escaped_duplicate_key",
-                        b'{"schema":"stewart.reply/3","operation":"status","outcome":"completed",'
-                        b'"effects":{},"\\u006eext":[],"next":[],"data":{}}')):
-        t.checks = []
-        fake = Reply("status", {"rc": 3 if b"refused" in raw else 0, "stdout": raw, "stdout_len": len(raw),
-                                "stdout_sha256": sha256_hex(raw), "stderr": b"", "wall_ms": 0,
-                                "timed_out": False}, label)
-        t.check_envelope("status", fake, None, label)
-        failed = [c["name"] for c in t.checks if not c["ok"]]
-        t.checks = saved
-        t.driver_control(label, bool(failed), failed)
+    raw = (b'{"schema":"stewart.reply/3","operation":"status","outcome":"refused","reason":"x",'
+           b'"message":"m","retained":[],"next":[]}')
+    t.checks = []
+    fake = Reply("status", {"rc": 3, "stdout": raw, "stdout_len": len(raw), "stdout_sha256": sha256_hex(raw),
+                            "stderr": b"", "wall_ms": 0, "timed_out": False}, "envelope_missing_effects")
+    t.check_envelope("status", fake, None, "envelope_missing_effects")
+    failed = [c["name"] for c in t.checks if not c["ok"]]
+    t.checks = saved
+    t.driver_control("envelope_missing_effects", bool(failed), failed)
 
 
-@case("apparatus.release-ignores-test-env", ["C17"], "the release binary has no fault or sabotage behaviour")
+@case("apparatus.release-ignores-test-env", ["C17"], "the release binary has no fault or sabotage behaviour",
+      faults=("prepare.before_prepared_link=kill", "commission.after_accepted_link=kill"))
 def c_release_ignores(t):
     """With STEWART_TEST_FAULT and STEWART_TEST_SABOTAGE set, the release binary behaves
     exactly as without them: no kill, and commission still needs the affirmation."""
@@ -378,7 +367,7 @@ def c_commission_without_diagnostic(t):
 # ---------------------------------------------------------------------------
 
 @case("c11.affirmation", ["C11", "C20"], "commission without --i-am-finished accepts nothing",
-      controls=[Control("accept_without_affirmation", [r"^affirmation\."])])
+      controls=[Control("accept_without_affirmation", [r"^affirmation\.(outcome|reason|no-intake|still-no-intake)$"])])
 def c_affirmation(t):
     """Without the affirmation commission refuses affirmation_missing with acceptance
     absent and attempt none, publishes no log record and captures nothing; misspellings
@@ -405,7 +394,7 @@ def c_affirmation(t):
 
 @case("c11.changed-selection", ["C11", "C17", "C2"],
       "T2: a changed selection refuses; fresh preparation commissions the revision",
-      controls=[Control("accept_changed_source", [r"^changed\."])])
+      controls=[Control("accept_changed_source", [r"^changed\.content\.(outcome|reason)$"])])
 def c_changed(t):
     """After prepare, a content edit, a same-size edit with mtime restored (visible only to
     the digest comparison), an added file, a removed file and an added directory each
@@ -545,7 +534,7 @@ def c_readback(t):
 
 
 @case("c15.damage", ["C15", "C18"], "damaged, missing, unreadable and planted captures are diagnosed separately",
-      controls=[Control("whole_from_one_member", [r"^verify\."])])
+      controls=[Control("whole_from_one_member", [r"^verify\.[a-z]+\.own-state$"])])
 def c_damage(t):
     """One flipped bit makes that item item_damaged with no bytes written, while another
     material still verifies. receipt --verify reports each item's own state and never
@@ -609,7 +598,8 @@ def c_damage(t):
 
 
 @case("c15.arrangement-damage", ["C15", "C19"], "readback returns pinned arrangement bytes or diagnoses damage",
-      controls=[Control("regenerate_arrangement", [r"^arrangement-damage\."])])
+      controls=[Control("regenerate_arrangement", [r"^arrangement-damage\.(intact|readable-intact)\.bytes$",
+                                                   r"^arrangement-damage\.read\.no-bytes$"])])
 def c_arrangement_damage(t):
     """The arrangement items read back exactly the bytes pinned at prepare. After one bit
     of arrangement.json is flipped, readback of `arrangement` writes no bytes and reports
@@ -631,7 +621,7 @@ def c_arrangement_damage(t):
 
 
 @case("c15.live-source", ["C15", "C2"], "readback never consults the live folder",
-      controls=[Control("readback_live_source", [r"^live-source\."])])
+      controls=[Control("readback_live_source", [r"^live-source\.bytes$"])])
 def c_live_source(t):
     """After acceptance a material is rewritten and another removed in the folder;
     readback still returns the accepted bytes for both."""
@@ -679,9 +669,9 @@ def c_not_accepted(t):
 @case("c16.prelaunch", ["C16", "C11"], "status names each pre-launch condition with evidence and next calls")
 def c_prelaunch(t):
     """preparing (with and without a preparation), intake_failed and not_started, each
-    with its headline, evidence list and next calls. Status is read-only, and a later
-    status after time passes reports the same facts. The human presentation exits as
-    the JSON one does."""
+    with its headline, evidence list and next calls. The human presentation exits as the
+    JSON one does. (A repeat of status after a pause is judged after launch, in
+    c16.status-after-launch.)"""
     sub = t.submission(basic_entries())
     t.new_ref(sub)
     st = t.status(sub, name="prelaunch.new")
@@ -700,9 +690,6 @@ def c_prelaunch(t):
     t.commission(sub, sub.handles[-1], name="prelaunch.commission")
     st = t.status(sub, name="prelaunch.accepted")
     t.check_status(st, sub, "prelaunch.accepted", condition="not_started", accepted="yes", next_cmds=("run", "close"))
-    time.sleep(1.2)
-    st2 = t.status(sub, name="prelaunch.accepted-later")
-    t.eq("prelaunch.elapsed-time-invariant", st2.data, st.data)
     hum = t.cmd(["status", sub.ref], json_reply=False, envelope=False, name="prelaunch.human")
     t.eq("prelaunch.human.exit", hum.rc, 0)
     t.check("prelaunch.human.text", hum.stdout.strip() and not hum.stdout.lstrip().startswith(b"{"), hum.stdout[:200])
@@ -710,7 +697,8 @@ def c_prelaunch(t):
 
 
 @case("c16.intake-in-progress", ["C16", "C17"], "a live intake holds the lock: status and a second commission see it",
-      mode="test", needs=("lock",), linux_reason="OFD lock behaviour (F_OFD_SETLK/GETLK) is a Linux-only expectation")
+      mode="test", needs=("lock",), linux_reason="OFD lock behaviour (F_OFD_SETLK/GETLK) is a Linux-only expectation",
+      faults=("commission.after_capture:1=pause",))
 def c_intake_in_progress(t):
     """With commission paused after its first capture, status reports intake_in_progress
     (next status/close) and a second commission refuses intake_in_progress with no
@@ -783,7 +771,8 @@ def c_log_damaged(t):
 # ---------------------------------------------------------------------------
 
 @case("c17.t1-lost-commission-reply", ["C17", "C20", "C15"],
-      "T1: commission killed after acceptance; the repeat returns the recorded receipt", mode="test")
+      "T1: commission killed after acceptance; the repeat returns the recorded receipt", mode="test",
+      faults=("commission.after_accepted_link=kill",))
 def c_t1(t):
     """commission.after_accepted_link=kill leaves no reply after accepted is linked. After
     the manager edits materials/a.txt, commission with the same handle returns
@@ -811,7 +800,8 @@ def c_t1(t):
 
 
 @case("c17.reply-write-failure", ["C17", "C20"], "a commission reply that cannot be written; the repeat recovers it",
-      mode="test")
+      mode="test",
+      faults=("reply.write=epipe",))
 def c_reply_write(t):
     """reply.write=epipe on a successful commission: no usable reply, acceptance stands;
     status reports it and the repeat returns the recorded acceptance without a new
@@ -837,7 +827,8 @@ def c_reply_write(t):
 
 
 @case("c17.t3-intake-killed", ["C17", "C6", "C16"], "T3: intake killed mid-copy; status and the next commission reconcile",
-      mode="test", controls=[Control("remove_partial_on_retry", [r"^inventory\.", r"^t3\.attempt1"])])
+      mode="test", controls=[Control("remove_partial_on_retry", [r"^inventory\.[a-z-]*removed", r"^t3\.attempt1-kept$"])],
+      faults=("commission.after_capture:2=kill",))
 def c_t3(t):
     """commission.after_capture:2=kill. Status reports intake_failed with the exact T3
     evidence. The next commission publishes intake_ended process_gone, plans attempt 2
@@ -872,7 +863,8 @@ def c_t3(t):
 
 
 @case("c17.t4-uncertain-acceptance", ["C17", "C16", "C20"],
-      "T4: a failed log sync after linking accepted is reported as uncertain, then reconciled", mode="test")
+      "T4: a failed log sync after linking accepted is reported as uncertain, then reconciled", mode="test",
+      faults=("commission.accepted_dirsync=eio",))
 def c_t4(t):
     """commission.accepted_dirsync=eio: failed acceptance_record_uncertain, acceptance
     unknown, attempt recorded, diagnostic durable, retained intake and diagnostic, an
@@ -901,7 +893,7 @@ def c_t4(t):
 
 @case("c17.acceptance-uncertain", ["C17", "C16", "C20", "C8"],
       "T4: a log damaged before any readable accepted is acceptance_uncertain, never absent",
-      controls=[Control("unknown_as_absent", [r"^uncertain\."])])
+      controls=[Control("unknown_as_absent", [r"^uncertain\.(commission\.acceptance|status\.headline\.accepted)$"])])
 def c_acceptance_uncertain(t):
     """The accepted record is torn. Status reports acceptance_uncertain with accepted
     unknown, naming the bad record; commission refuses log_damaged with acceptance
@@ -940,7 +932,8 @@ def c_acceptance_uncertain(t):
 
 
 @case("c17.t11-diagnostic-write", ["C17", "C20"], "T11: a failed diagnostic write keeps the original cause first",
-      mode="test")
+      mode="test",
+      faults=("diag.write=eio",))
 def c_t11(t):
     """diag.write=eio with a selection_changed refusal: the reason stays
     selection_changed, effects.diagnostic is reported_only, causes are [original,
@@ -986,7 +979,8 @@ def c_t11_chmod(t):
 
 
 @case("c17.source-unreadable", ["C17", "C6"], "a source read failure refuses with context; retry keeps attempt 1",
-      mode="test", controls=[Control("remove_partial_on_retry", [r"^inventory\.", r"^unreadable\.attempt1"])])
+      mode="test", controls=[Control("remove_partial_on_retry", [r"^inventory\.[a-z-]*removed", r"^unreadable\.attempt1-kept$"])],
+      faults=("commission.source_read:b.txt=eio", "commission.source_read:materials/b.txt=eio"))
 def c_source_unreadable(t):
     """commission.source_read:<name>=eio refuses source_unreadable naming the file and the
     error, publishes intake_ended source_unreadable and retains the attempt. Without the
@@ -1040,7 +1034,8 @@ def c_source_permission(t):
 
 
 @case("c17.capture-failures", ["C17", "C6"], "capture, verification and receipt failures each keep their own account",
-      mode="test")
+      mode="test",
+      faults=("commission.capture_write=eio", "commission.capture_write=enospc", "commission.capture_corrupt=corrupt", "commission.receipt_write=eio"))
 def c_capture_failures(t):
     """capture_write eio/enospc fail capture_failed, capture_corrupt fails
     capture_unverified, receipt_write fails receipt_record_failed. Each: acceptance
@@ -1080,7 +1075,8 @@ def c_capture_failures(t):
 
 
 @case("c17.before-accepted-kill", ["C17", "C6"], "killed before accepted is linked: no acceptance; the next attempt accepts",
-      mode="test")
+      mode="test",
+      faults=("commission.before_accepted_link=kill",))
 def c_before_accepted_kill(t):
     """commission.before_accepted_link=kill: status intake_failed with the T3 evidence
     shape; the unpublished receipt stays; the next commission accepts as attempt 2."""
@@ -1102,7 +1098,8 @@ def c_before_accepted_kill(t):
 
 
 @case("c17.prepare-killed", ["C17", "C6"], "prepare killed before its record: an unpublished candidate, never a handle",
-      mode="test")
+      mode="test",
+      faults=("prepare.before_prepared_link=kill", "log.publish:prepared=kill"))
 def c_prepare_killed(t):
     """prepare.before_prepared_link=kill: no prepared record; status stays preparing
     without offering a commission; the written preparation files stay; the next prepare
@@ -1305,7 +1302,8 @@ def c_published_preparation_unreadable(t):
 
 
 @case("c17.prepare-reply-lost", ["C17", "C16", "C20"], "a lost prepare reply: status supplies the recorded handle",
-      mode="test")
+      mode="test",
+      faults=("reply.write=epipe",))
 def c_prepare_reply_lost(t):
     """reply.write=epipe on prepare: the preparation is recorded but the reply is lost.
     Status offers the commission argv with the recorded handle (its check binds the
@@ -1341,7 +1339,8 @@ def c_human(t):
     t.check("human.bad-ref.reason", "reference_invalid" in r.text(), r.text()[:400])
 
 
-@case("c17.human-failure", ["C17"], "human presentation of a failure", mode="test")
+@case("c17.human-failure", ["C17"], "human presentation of a failure", mode="test",
+      faults=("commission.capture_write=eio",))
 def c_human_failure(t):
     """A capture failure without --json exits 4 and names capture_failed."""
     sub = t.submission(basic_entries())
@@ -1358,7 +1357,8 @@ def c_human_failure(t):
 # ---------------------------------------------------------------------------
 
 @case("c6.log-race", ["C6", "C20"], "two prepares race for one log number; EEXIST advances, nothing is overwritten",
-      mode="test", controls=[Control("rewrite_record_in_place", [r"^inventory\.", r"^race\.", r"^log\."])])
+      mode="test", controls=[Control("rewrite_record_in_place", [r"^inventory\.[a-z-]*(rewritten|replaced)", r"^race\.log$"])],
+      faults=("log.publish:prepared=pause",))
 def c_log_race(t):
     """Prepare A pauses at log.publish:prepared with its number chosen; prepare B
     publishes that number; A is released and must take the next number. Both handles
@@ -1382,15 +1382,19 @@ def c_log_race(t):
 # Close before launch (C8 pre-launch, C16).
 # ---------------------------------------------------------------------------
 
-@case("close.before-launch", ["C8", "C16", "C18", "C15"], "close before launch: closed, no answer, folder intact",
-      tags=("close",))
+@case("close.before-launch", ["C8", "C16", "C18", "C15", "C3"], "close before launch: closed, no answer, folder intact",
+      tags=("close",),
+      controls=[Control("empty_return_before_launch",
+                        [r"^close\.accepted\.(no-seal|no-delivery|no-seal-or-delivery|destination-empty)$"])])
 def c_close_before_launch(t):
     """Close after new, after prepare and after acceptance: completed with closure
-    complete, close_requested then closed (before_launch), no seal or answer files,
-    status closed_before_launch with no next calls, a repeat returns already_closed and
-    publishes nothing, prepare/commission refuse reference_closed. After acceptance the
-    receipt still reads the witness."""
-    for label, stage in (("new", 0), ("prepared", 1), ("accepted", 2)):
+    complete, close_requested then closed (before_launch), no seal, delivery or answer files
+    and nothing at the destination (no empty return is owed before launch), status
+    closed_before_launch with no next calls, a repeat returns already_closed and publishes
+    nothing, prepare/commission refuse reference_closed. After acceptance the receipt still
+    reads the witness. The empty_return_before_launch control runs the accepted stage."""
+    stages = (("accepted", 2),) if t.sabotage else (("new", 0), ("prepared", 1), ("accepted", 2))
+    for label, stage in stages:
         sub = t.submission(basic_entries())
         t.new_ref(sub, name="close.%s.new" % label)
         if stage >= 1:
@@ -1428,6 +1432,8 @@ def c_close_before_launch(t):
         t.eq(p + ".next", rep.next, [])
         kinds = t.log_kinds(sub)
         t.eq(p + ".log", kinds[-2:], ["close_requested", "closed"])
+        t.check(p + ".no-seal-or-delivery", not ({"seal", "delivery_planned", "delivery_ended"} & set(kinds)), kinds)
+        t.eq(p + ".destination-empty", os.listdir(sub.dest) if os.path.isdir(sub.dest) else [], [])
         closed = t.log_bodies(sub, "closed")
         t.check(p + ".before_launch", closed and closed[-1].get("before_launch") is True, closed)
         if closed and isinstance(closed[-1], dict):
@@ -1471,7 +1477,8 @@ def c_close_before_launch(t):
 
 
 @case("close.killed-before-closed", ["C8", "C16", "C17"], "close killed before closed: unfinished, then completed by close",
-      mode="test", tags=("close",))
+      mode="test", tags=("close",),
+      faults=("close.before_closed_link=kill",))
 def c_close_killed(t):
     """close.before_closed_link=kill leaves close_requested without closed. Status
     reports close_unfinished (closed: unfinished) with next close; prepare refuses
@@ -1536,8 +1543,16 @@ def waiting_message_selftest():
 
 @case("close.recorded-ending-held-lock", ["C8", "C16", "C17"],
       "after recorded endings a held active lock has no established owner; status is immediate and close waits",
-      mode="test", tags=("close",))
+      mode="test", tags=("close",), heavy=True,
+      faults=("run.after_started=kill", "close.after_seal=pause"))
 def c_close_recorded_ending_held_lock(t):
+    """A run killed before its first request leaves every placement ending recorded once a
+    first close reconciles it; that close is held at close.after_seal with the lock. Status
+    replies at once: close_in_progress with no established holder. A second close waits out
+    the 30 s bound (5.8 Stop), names the lock and the bound on stderr, and replies unfinished
+    close_in_progress with the existing seal and no delivery. Released, the first close
+    delivers and awaits confirmation; status agrees; confirming closes. This case owns the
+    bound's measured length; close.recorded-ending-lock-released is its differing case."""
     sub = _close_after_recorded_start(t, "close-recorded")
     held = t.start(["close", sub.ref], name="close-recorded.first", fault="close.after_seal=pause", timeout=90)
     stem = t.wait_paused("close.after_seal", held)
@@ -1573,7 +1588,8 @@ def c_close_recorded_ending_held_lock(t):
 
 @case("close.recorded-ending-lock-released", ["C8", "C16", "C17"],
       "a held active lock released within close's bounded wait lets that close continue",
-      mode="test", tags=("close",))
+      mode="test", tags=("close",),
+      faults=("run.after_started=kill", "close.after_seal=pause"))
 def c_close_recorded_ending_lock_released(t):
     """5.8 Stop: with the lock held, close waits up to 30 seconds for its release. Here every
     placement ending is recorded and a first close holds the lock at close.after_seal. A second
@@ -1626,7 +1642,8 @@ def c_close_recorded_ending_lock_released(t):
 
 @case("close.gone-delivery-members", ["C8", "C6", "C16"],
       "a killed delivery retains its copy but reconciliation claims no established membership",
-      mode="test", tags=("close",))
+      mode="test", tags=("close",),
+      faults=("run.after_started=kill", "delivery.after_member:1=kill"))
 def c_close_gone_delivery_members(t):
     sub = _close_after_recorded_start(t, "close-gone")
     killed = t.cmd(["close", sub.ref], name="close-gone.killed", envelope=False,
@@ -1657,7 +1674,8 @@ def c_close_gone_delivery_members(t):
 
 @case("close.during-intake", ["C8", "C17"], "close races a live intake; their recorded outcomes agree",
       mode="test", needs=("lock",), tags=("close",),
-      linux_reason="close waits on the OFD lock held by the intake; OFD locks are a Linux-only expectation")
+      linux_reason="close waits on the OFD lock held by the intake; OFD locks are a Linux-only expectation",
+      faults=("commission.after_capture:1=pause",))
 def c_close_during_intake(t):
     """Commission pauses after its first capture; close publishes close_requested and
     waits; the intake is released within the wait. The commission refuses
@@ -1692,7 +1710,7 @@ def c_close_during_intake(t):
 
 
 @case("close.intake-still-running", ["C8", "C16"], "close gives up after its 10 s intake wait, then completes later",
-      mode="test", needs=("lock",), tags=("close",),
+      mode="test", needs=("lock",), tags=("close",), heavy=True, faults=("commission.after_capture:1=pause",),
       linux_reason="close waits on the OFD lock held by the intake; OFD locks are a Linux-only expectation")
 def c_close_intake_running(t):
     """With the intake paused throughout, close replies completed with closure unfinished
@@ -1855,7 +1873,7 @@ def c_missing_archive(t):
 
 
 @case("c18.replaced-archive", ["C18", "C20"], "a different store at the reference's path is archive_replaced",
-      controls=[Control("select_newer_store", [r"^replaced\."])])
+      controls=[Control("select_newer_store", [r"^replaced\.[a-z]+\.reason$"])])
 def c_replaced_archive(t):
     """The archive is moved away and a new store created at the same path. The old
     reference refuses archive_replaced for status, receipt, prepare, commission and
@@ -2057,8 +2075,8 @@ def c_status_archive(t):
 # ---------------------------------------------------------------------------
 
 @case("c19.population", ["C19", "C2", "C11", "C15"], "the literal population is prepared, captured and read back exactly",
-      controls=[Control("skip_hidden_entries", [r"^population\.prepare\."]),
-                Control("normalize_newlines", [r"^population\.commission", r"^population\.readback\."])])
+      controls=[Control("skip_hidden_entries", [r"^population\.prepare\.(files|count)$"]),
+                Control("normalize_newlines", [r"^population\.(commission\.capture-(materials|question)|readback\.bytes)$"])])
 def c_population(t):
     """Hidden names, empty files and directories, BOM, CRLF, lone CR, multibyte text and
     names, NFD names, missing final newlines, hard links, nominal documents and a long
@@ -2146,7 +2164,7 @@ def c_content_invalid(t):
 
 
 @case("c19.unsupported-entries", ["C19", "C2", "C11"], "links and special files refuse intake unread",
-      controls=[Control("follow_symlinks", [r"^unsupported\."])])
+      controls=[Control("follow_symlinks", [r"^unsupported\.link-[a-z]+\.(outcome|reason|secret-not-captured)$"])])
 def c_unsupported(t):
     """A symlink to an outside file holding a secret, an inside alias, a directory link,
     a dangling link, a FIFO and a socket under materials/ each refuse unsupported_entry
@@ -2499,7 +2517,7 @@ def c_settings(t):
 
 
 @case("c20.front-matter", ["C20", "C19", "C11"], "front matter is parsed strictly, naming the line",
-      controls=[Control("accept_unknown_field", [r"^frontmatter\.unknown"])])
+      controls=[Control("accept_unknown_field", [r"^frontmatter\.unknown[a-z-]*\.(outcome|reason)$"])])
 def c_front_matter(t):
     """Unknown, misspelled, uppercase and duplicate keys, missing or malformed delimiters,
     mixed line endings, a second BOM, an indented comment and malformed field lines all
@@ -2666,7 +2684,7 @@ def c_cli_usage(t):
 
 
 @case("c20.records-strict", ["C20", "C17", "C6"], "archive records are decoded strictly; whitespace alone is not damage",
-      controls=[Control("unknown_as_absent", [r"^records\."])])
+      controls=[Control("unknown_as_absent", [r"^records\.[a-z0-9-]+\.(acceptance|accepted)$"])])
 def c_records_strict(t):
     """The accepted record is replaced by variants: duplicate key, escape-equivalent
     duplicate, unknown header key, BOM, trailing data, invalid UTF-8, NUL escape and
@@ -2712,7 +2730,7 @@ def c_records_strict(t):
 
 
 @case("c20.envelope-refusals", ["C20", "C9"], "every refusal carries reason, message, effects and next",
-      controls=[Control("omit_effects_on_refusal", [r"^envelope\.effects"])])
+      controls=[Control("omit_effects_on_refusal", [r"^envelope\.effects$"])])
 def c_envelope_refusals(t):
     """A set of refusals from every pre-launch command, each checked against the
     envelope rules (effects present with the operation's keys, retained, next)."""

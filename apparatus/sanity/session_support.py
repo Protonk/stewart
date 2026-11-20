@@ -182,3 +182,19 @@ def submission_identity(repo):
     if not files:
         raise ValueError('sanity specimen is absent or empty')
     return digest(json.dumps(files, separators=(',', ':'), ensure_ascii=True).encode())
+
+
+def signal_timing(captured, attempts):
+    """Where a stop found one request, in the terms INTERFACE 6.4 charges and reports it.
+
+    `captured` says whether the request's capture exists; `attempts` are its
+    attempt records' outcome and `request_written` facts. The launcher's witness
+    and the procedural reviewer both classify a signalled placement with this.
+    """
+    if not captured:
+        return 'not_captured'
+    if any(row['outcome'] == 'response' for row in attempts):
+        return 'answered'
+    if any(row['request_written'] != 'none' for row in attempts):
+        return 'written_unanswered'
+    return 'captured_not_written'

@@ -73,6 +73,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import textwrap
 import threading
 import time
 import traceback
@@ -1435,10 +1436,11 @@ class Control:
 
 
 class CaseSpec:
-    def __init__(self, cid, claims, title, fn, mode, needs, controls, heavy, tags, linux_reason):
+    def __init__(self, cid, claims, title, fn, mode, needs, controls, heavy, tags, linux_reason, faults=()):
         self.id, self.claims, self.title, self.fn = cid, claims, title, fn
         self.mode, self.needs, self.controls, self.heavy, self.tags = mode, needs, controls, heavy, tags
         self.linux_reason = linux_reason
+        self.faults = tuple(faults)
         self.doc = " ".join((fn.__doc__ or "").split())
 
 
@@ -1446,12 +1448,15 @@ CASES = []
 
 
 def case(cid, claims, title, *, mode="release", needs=(), controls=(), heavy=False, tags=(),
-         linux_reason=None):
+         linux_reason=None, faults=()):
     """Register a case. mode: release (release binary, plus test baseline when it has
-    controls), test (test binary only: fault cases), both (release and test baseline)."""
+    controls), test (test binary only: fault cases), both (release and test baseline).
+    heavy: long by design (bound-sized inputs or close's bounded waits); --skip-heavy skips it.
+    faults: every Appendix C.1 `point=action` item the case sets; --list prints them, and
+    setting an undeclared one fails the check driver.fault-declared."""
     def deco(fn):
         CASES.append(CaseSpec(cid, list(claims), title, fn, mode, set(needs), list(controls),
-                              heavy, set(tags), linux_reason))
+                              heavy, set(tags), linux_reason, faults))
         return fn
     return deco
 
@@ -1750,6 +1755,9 @@ class T:
         if self.sabotage:
             env["STEWART_TEST_SABOTAGE"] = self.sabotage
         if fault:
+            undeclared = [x for x in fault.split(",") if x not in self.spec.faults]
+            self.check("driver.fault-declared", not undeclared,
+                       {"undeclared": undeclared, "declared": list(self.spec.faults)})
             env["STEWART_TEST_FAULT"] = fault
             env["STEWART_TEST_FAULT_DIR"] = self.fault_dir()
         for k, v in (extra or {}).items():
@@ -3408,7 +3416,8 @@ def parse_args(argv):
                         "must preserve exact names and permit the 256-byte multibyte name. Archives and ordinary "
                         "work stay under --work. Fresh source folders are retained here; default: ordinary work, "
                         "with an explicit skip if that filesystem cannot create the specimen.")
-    p.add_argument("--skip-heavy", action="store_true", help="skip the 16 MiB and 128 MiB bound cases")
+    p.add_argument("--skip-heavy", action="store_true",
+                   help="skip the cases marked heavy in --list: bound-sized inputs and close's bounded waits")
     p.add_argument("--require-all-controls", action="store_true",
                    help="fail unless every sabotage control of INTERFACE Appendix C.2 is assigned to a selected "
                         "case and fired (the full suite sets this)")
@@ -3422,6 +3431,8 @@ def parse_args(argv):
                    help="'failed' (default) removes the work directory of each passing variant after recording it "
                         "and copies small failing ones into the evidence; 'all' keeps every work directory")
     p.add_argument("--list", action="store_true", help="print the case inventory and exit")
+    p.add_argument("--describe", action="store_true",
+                   help="with --list, print each case's description (its docstring) under its line")
     p.add_argument("--self-test", action="store_true", help="check the driver's own helpers and exit")
     args = p.parse_args(argv)
     if not (args.list or args.self_test):
@@ -3445,7 +3456,10 @@ def parse_args(argv):
     return args
 
 
-def list_cases():
+def list_cases(describe=False):
+    """One line per case: ID, claims, title and [mode; needs; heavy; controls; faults]. With
+    describe, each case's docstring, where it has more to say than its title, follows: its
+    passing, differing and invariance cases."""
     for spec in CASES:
         extra = []
         if spec.mode != "release":
@@ -3456,8 +3470,13 @@ def list_cases():
             extra.append("heavy")
         if spec.controls:
             extra.append("controls=%s" % ",".join(c.sabotage for c in spec.controls))
+        if spec.faults:
+            extra.append("faults=%s" % ",".join(spec.faults))
         sys.stdout.write("%-34s %-22s %s%s\n" % (spec.id, ",".join(spec.claims) or "-", spec.title,
                                                  (" [" + "; ".join(extra) + "]") if extra else ""))
+        if describe:
+            for line in textwrap.wrap(spec.doc, 96):
+                sys.stdout.write("    %s\n" % line)
     sys.stdout.write("%d cases\n" % len(CASES))
 
 
@@ -3465,7 +3484,7 @@ def main(argv=None):
     args = parse_args(sys.argv[1:] if argv is None else argv)
     EMULATOR_HOME_ARTIFACTS[:] = [a.strip('/') for a in args.emulator_home_artifact]
     if args.list:
-        list_cases()
+        list_cases(describe=args.describe)
         return 0
     if args.self_test:
         return self_test()

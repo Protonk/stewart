@@ -7,8 +7,9 @@ from pathlib import Path
 import re
 import tarfile
 
-from common import (MAX_FILE, LIMITS, compact, digest, file_hash, inventory,
+from common import (MAX_FILE, LIMITS, compact, digest, file_hash, inventory, limit_exhausted,
                     question_file, read_file, relative, require, strict_json)
+from session_support import signal_timing
 import answer_witness as answer
 import driver_core as spec
 import rawjson
@@ -205,12 +206,6 @@ def ordinary_body(arrnode, max_tokens, active, compaction=False):
         + b',"system":' + arrnode.get('system').raw + b',"tools":' + arrnode.get('tools').raw
         + suffix + (b',"compaction":' + arrnode.get('compaction').get('request').raw if compaction else b'')
         + b',"messages":[' + b','.join(active) + b']}')
-
-
-def limit_exhausted(limits, used):
-    """INTERFACE 6.4: no turn remains, the input allowance is used up, or under 1,024 output tokens remain."""
-    return (used['turns'] >= limits['turns'] or used['input_tokens'] >= limits['input_tokens']
-            or limits['output_tokens'] - used['output_tokens'] < 1024)
 
 
 def near_limit(limits, used):
@@ -901,15 +896,6 @@ def serial_commands(names, pattern):
     """The launcher's numbered command records of one kind, in the order issued."""
     return sorted((name for name in names if re.fullmatch(pattern, name)),
                   key=lambda name: int(name[len('evidence/'):].split('-', 1)[0]))
-
-
-def signal_timing(captured, attempts):
-    """Where the stop found one request, in the terms INTERFACE 6.4 charges and reports it."""
-    if not captured:
-        return 'not_captured'
-    if any(row['outcome'] == 'response' for row in attempts):
-        return 'answered'
-    return 'written_unanswered' if any(row['request_written'] != 'none' for row in attempts) else 'captured_not_written'
 
 
 def interruption_witness(e, check, folder, planned, placement, base, by_name, index, bounds, started, ended, command,

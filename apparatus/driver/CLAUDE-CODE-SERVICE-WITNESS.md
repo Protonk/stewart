@@ -1,29 +1,21 @@
 # Independent service return witness
 
 `claude_code_service_witness.py` reviews complete delivered packages against
-an immutable outside witness. Its native rehearsal uses the actual gated Stewart
-binary with the existing [synthetic runtime driver](CLAUDE-CODE.md). It never
-accepts an installed profile, installation receipt, authentication session or real
-harness. Synthetic attestations belong only to the existing offline fixtures.
-No output is an eligible profile check or a grant of invocation authority.
+an immutable outside witness. It launches nothing and never accepts an
+installed profile, installation receipt, authentication session or real
+harness. No output is an eligible profile check or a grant of invocation
+authority. The [service comparison procedure](../claude-code/README.md#native-service-comparison-procedure)
+uses it for every submitted package, including in its synthetic rehearsal
+against the actual gated binary.
 
 ```sh
 python3 -I -B apparatus/driver/claude_code_service_witness.py --self-test
-python3 -I -B apparatus/driver/claude_code_service_witness.py \
-  --rehearse --binary /absolute/gated-stewart \
-  --work /private/tmp/fresh-service-witness
 ```
 
 The self-test creates synthetic packages and exercises the reviewer without
 launching a subprocess. Its valid selection includes binary and UTF-8 artifacts;
 an independently corrupted witness using `text` as an encoding is refused, and
-the original valid package remains unchanged and reviewable. The rehearsal needs
-native Unix sockets and process
-observation. Its work path must be fresh, physical and absolute, outside the
-repository; the binary must be outside the work directory. Keep the binary
-unchanged during the run. A host watchdog should bound the whole command.
-Neither that watchdog nor this adapter claims it can stop a process group that
-escaped its ownership. An unknown stop blocks further starts.
+the original valid package remains unchanged and reviewable.
 
 ## Review API
 
@@ -87,58 +79,3 @@ Each fresh review directory retains:
 
 Review is a byte/provenance comparison. It grades no substantive finding, answer
 quality, completeness of understanding or hidden provider activity.
-
-## Synthetic service rehearsal
-
-A narrow subclass runs the existing `runtime-submit` and `runtime-interruption`
-cases. This creates three audits: baseline submission, fresh-session/workspace
-invariance, and a harness exit after a completed record followed by a fresh
-placement, re-entry and submission without adding the entry again. The last is
-not an externally triggered interruption.
-
-The adapter preserves the existing preparation, receipt readback, launch and
-traffic comparisons. It additionally binds the synthetic peer's single
-completed account call and UTF-8 artifact call to the outside expectations, reviews the whole package,
-closes every audit, repeats close and verifies refusal of a later run without a
-new launch. Two-placement continuation uses its actual placement count. Exact
-package snapshots are retained before close, after close and after repeated
-close/refused run. The artifact is supplied through the fake harness's optional
-`utf8_artifact` scenario field (`label` and `text`), whose literal value is
-exported as `UTF8_ARTIFACT`. During the interrupted case it is recorded only after
-the second placement re-enters; the earlier account is not duplicated.
-Each synthetic fixture permits at most two placements with a 15-second deadline
-per placement. These are offline rehearsal limits, not a real-harness cap study.
-
-Before another start, owned groups must be independently observed absent.
-Missing process records, unknown/present groups, or an exception leaving command
-termination uncertain block every later `run`, including the next iteration
-inside an existing case. The inherited command timeout is an offline test bound,
-not a live commissioning mechanism. No automatic replacement run is attempted.
-An unexpected success when a post-close run should refuse also blocks subsequent
-mutations. Before close, `witness/<audit>/stopping-run-NNNN.json` preserves exact
-service-owned process and stop records, separately attributed read-only group
-probes and their monotonic timing. Copying service metadata does not turn it into
-an independent launch observation.
-
-The original driver reports two selected cases in `RESULT.json`
-(`stewart.claude-code.offline-driver/2`), with its actual checks and failures.
-`REHEARSAL.json` (`stewart.claude-code.service-rehearsal/1`) repeats those counts,
-records the nine required package reviews and any launch block, and states the
-remaining unexercised work. A failed or skipped selected case, missing review or
-failed package comparison makes the rehearsal exit nonzero.
-
-The work directory retains exact manager commands/results in `commands/`, raw
-synthetic peer and input witnesses in `witness/`, and the new module,
-`answer_witness.py` and existing driver/helper sources in `driver-snapshot/`.
-Each `witness/<audit>/` contains `complete-return-witness.json` and three review
-directories: `package-before-close`, `package-after-close` and
-`package-after-repeat`. The top-level `EVIDENCE.json` binds the regular command,
-witness, source and report files. Original runtime work and service-owned archive
-captures remain in place with that provenance; they are not relabeled independent
-peer witnesses or automatically exported.
-
-Native rehearsal is development evidence. An eligible real-harness profile,
-bounded live commission, full-service live launcher/comparison, external
-interruption barrier, actual compaction observations, turn/output enforcement and
-Linux qualification remain separate work. Retain original evidence through review
-under the [development evidence rules](../../development/DEVELOPMENT.md#evidence-and-retention).

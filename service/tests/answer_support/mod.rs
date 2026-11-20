@@ -9,11 +9,10 @@
 use crate::common::*;
 use stewart::answer::{self, Call, Executed, NoticesUsed, Placement};
 use stewart::archive::Audit;
-use stewart::bodies::{ProviderUse, RunEnded, RunObservations, RunStarted};
+use stewart::bodies::{ProviderUse, RunObservations, RunStarted};
 use stewart::json::{self, J, Json};
 use stewart::log::{self, LogState};
 use stewart::runs::{self, RunDir, ToolResult};
-use stewart::usage::Usage;
 use stewart::util;
 use stewart::world::World;
 
@@ -81,21 +80,17 @@ impl Res {
     }
 }
 
-pub fn question_with(e: &Env, family: &str, body: &str) {
-    std::fs::write(
-        format!("{}/question.md", e.folder),
-        e.question(family, body),
-    )
-    .unwrap();
-}
-
 impl Live {
     /// A commissioned audit of `family` with these materials, launched.
     pub fn open(family: &str, body: &str, materials: &[(&str, &[u8])]) -> Live {
         let e = Env::new();
         let r = e.new_ref();
         e.fill(body, materials);
-        question_with(&e, family, body);
+        std::fs::write(
+            format!("{}/question.md", e.folder),
+            e.question(family, body),
+        )
+        .unwrap();
         let o = e.run(&["prepare", &r, "--json"]);
         assert_eq!(o.code, Some(0), "{}", o.text());
         let h = s(&o.json(), &["data", "prepared"]).to_string();
@@ -219,37 +214,6 @@ impl Live {
 
     pub fn call(&mut self, tool: &str, input: &str) -> Res {
         self.call_raw(Some(tool), Some(input.as_bytes()))
-    }
-
-    /// End this placement (interrupted) and start the next one.
-    pub fn continue_run(&mut self) {
-        self.continue_run_with(Usage::default());
-    }
-
-    /// As `continue_run`, recording `usage` as the ended placement's charge.
-    pub fn continue_run_with(&mut self, usage: Usage) {
-        let run = self.placement.run;
-        let body = RunEnded {
-            run,
-            ending: "interrupted".into(),
-            cause: Some("signal".into()),
-            recorded_by: "run".into(),
-            provider: None,
-            requests: 0,
-            attempts: 0,
-            usage,
-            notices: vec![],
-            seal: None,
-            message: "test".into(),
-        };
-        log::publish(&self.audit, "run_ended", |_| Ok(body.to_j()))
-            .ok()
-            .unwrap();
-        let state = self.state();
-        let (placement, rd) = launch(&self.audit, &state, &self.world);
-        self.placement = placement;
-        self.rd = rd;
-        self.calls = 0;
     }
 
     /// Publish `close_requested` as close's step 4 does.

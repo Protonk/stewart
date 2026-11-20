@@ -255,7 +255,8 @@ def c_guidance_intake(t):
       "guidance capture survives source edits, lost replies and continuation; damaged or missing capture stops readback and run",
       controls=[
           Control("accept_changed_source", [r"^guidance\.capture\.changed\.(outcome|reason)$"]),
-          Control("readback_live_source", [r"^guidance\.capture\.edited-readback\.bytes$"])])
+          Control("readback_live_source", [r"^guidance\.capture\.edited-readback\.bytes$"])],
+      faults=("commission.after_accepted_link=kill",))
 def c_guidance_capture(t):
     """A same-size edit with restored mtime refuses the old handle. Fresh preparation accepts
     B; on the test binary its reply is killed after the accepted link. Repeating the handle

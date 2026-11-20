@@ -1958,8 +1958,8 @@ mod tests {
     /// and by a reply mismatch first observed in the drain. Two rows of the
     /// earlier derivation flipped with this rule: a signal received after an
     /// ordinary ending, and the deadline passing after an unexplained stop,
-    /// no longer reach the ending at all, so `Later` has no field for them;
-    /// `tests/claude_code.rs` shows both at the binary.
+    /// no longer reach the ending at all, so `Later` has no field for them.
+    /// The independent runtime driver checks both through the binary.
     #[test]
     fn a_decided_ending_changes_only_for_its_seal_or_a_drained_mismatch() {
         use Cause::{ArchiveWriteFailed, PlacementDeadline, ProtocolAnomaly, Signal};
@@ -2059,6 +2059,8 @@ mod tests {
     /// full after a complete capture is `sent`; captured completely but not
     /// written in full is `unknown`; never captured completely is
     /// `not_sent`, whether the deadline came first or the capture failed.
+    /// Every write to the harness captures its bytes first, so a capture
+    /// that fails writes nothing and marks the placement's records failed.
     #[test]
     fn a_notice_is_sent_only_when_captured_and_written_in_full() {
         struct Broken;
@@ -2107,6 +2109,10 @@ mod tests {
         let (mut out, mut seen) = (Vec::new(), None);
         assert!(transmit(&mut cap, &mut out, frame, &mut seen).is_ok());
         assert_eq!(out, frame);
+        assert_eq!(
+            dir.dir.read_regular("runtime-1-input.bin", 100).unwrap().0,
+            frame
+        );
         assert_eq!(sent_as(seen), "sent");
         // Captured completely, but the write did not complete.
         let mut seen = None;
@@ -2138,6 +2144,17 @@ mod tests {
         assert!(out.is_empty());
         assert!(failed.load(Ordering::SeqCst));
         assert_eq!(sent_as(seen), "not_sent");
+        // Any other write follows the same order.
+        dir.dir
+            .write_excl("runtime-4-input.bin", b"independent obstruction")
+            .unwrap();
+        let mut out = Vec::new();
+        assert!(cap.send("input", &mut out, frame).is_err());
+        assert!(out.is_empty(), "capture failure must precede transmission");
+        assert_eq!(
+            dir.dir.read_regular("runtime-4-input.bin", 100).unwrap().0,
+            b"independent obstruction"
+        );
         // A write blocked until the supervisor's deadline stop, then found
         // failed: the deadline is the condition observed, not a harness
         // error, and the captured frame stays unknown. The unexplained
@@ -2276,54 +2293,5 @@ mod tests {
                 }
             });
         }
-    }
-
-    #[test]
-    fn transmission_requires_a_durable_capture_with_failure_and_invariance_controls() {
-        let (path, audit) = log::tests::scratch_audit();
-        audit.dir.mkdir("runs").unwrap();
-        let dir = runs::RunDir::create(&audit, 1).unwrap();
-        let failure = AtomicBool::new(false);
-        let mut cap = Capture {
-            dir: &dir,
-            sequence: 0,
-            bytes: 0,
-            record_failed: &failure,
-            deadline: Instant::now() + Duration::from_secs(60),
-        };
-        let bytes = b"exact outgoing bytes\n";
-        let mut sent = Vec::new();
-        cap.send("input", &mut sent, bytes).unwrap();
-        assert_eq!(sent, bytes);
-        assert_eq!(
-            dir.dir.read_regular("runtime-1-input.bin", 100).unwrap().0,
-            bytes
-        );
-        dir.dir
-            .write_excl("runtime-2-input.bin", b"independent obstruction")
-            .unwrap();
-        let mut denied = Vec::new();
-        assert!(cap.send("input", &mut denied, bytes).is_err());
-        assert!(
-            denied.is_empty(),
-            "capture failure must precede transmission"
-        );
-        assert!(failure.load(Ordering::SeqCst));
-        assert_eq!(
-            dir.dir.read_regular("runtime-2-input.bin", 100).unwrap().0,
-            b"independent obstruction"
-        );
-        let fresh = runs::RunDir::create(&audit, 2).unwrap();
-        let mut cap = Capture {
-            dir: &fresh,
-            sequence: 0,
-            bytes: 0,
-            record_failed: &AtomicBool::new(false),
-            deadline: Instant::now() + Duration::from_secs(60),
-        };
-        let mut sent = Vec::new();
-        cap.send("input", &mut sent, bytes).unwrap();
-        assert_eq!(sent, bytes);
-        std::fs::remove_dir_all(path).unwrap();
     }
 }

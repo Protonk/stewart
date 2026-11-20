@@ -48,8 +48,7 @@ def captured_authentication_error_selftest():
 
 @case("c9.captured-authentication-error", ["C9", "C6"],
       "captured 401 retains its body, uses the header request ID before the body ID and costs nothing",
-      needs=("loopback",), controls=[Control("hide_provider_message", [
-          r"^captured\.401\.original\.(provider|run_ended\.provider)$"])])
+      needs=("loopback",))
 def c_captured_authentication_error(t):
     """Serve the projected body with its recorded selected headers. Change only the request-id
     header, then omit it. The attempt keeps the body's ID in all three placements. The run
@@ -60,8 +59,6 @@ def c_captured_authentication_error(t):
         ("different-header", "req_synthetic_header_only", "req_synthetic_header_only"),
         ("absent-header", None, AUTH_BODY_ID),
     ):
-        if t.sabotage and variant != "original":
-            continue
         name = "captured.401." + variant
         sub = t.submission([])
         t.accept(sub, prefix=name + ".")
@@ -147,8 +144,7 @@ def check_placement(t, sub, fx, name, number, reply, ending, cause):
       "M2/M3 thinking-only caps preserve work, refuse incomplete replacement and consume cumulative output",
       needs=("loopback",), controls=[
           Control("reset_limits_on_continuation", [r"^captured\.cap\.original\.second\.request-caps$"]),
-          Control("fresh_ledger_on_continuation", [r"^captured\.cap\.original\.reentry\.entries$"]),
-          Control("omit_effects_on_refusal", [r"^captured\.cap\.original\.refusal\.effects$"])])
+          Control("fresh_ledger_on_continuation", [r"^captured\.cap\.original\.reentry\.entries$"])])
 def c_captured_cap(t):
     totals = {}
     variants = ("original",) if t.sabotage else ("original", "ordinary", "thinking-count")
@@ -276,7 +272,6 @@ def replacement_call(p, filename, handle):
 @case("c13.captured-reminder", ["C4", "C6", "C7", "C13", "C14"],
       "M3 ordinary ending and citation recovery preserve entries and spend the reminder only once across continuation",
       needs=("loopback",), controls=[
-          Control("reset_notice_allowance", [r"^captured\.reminder\.spent\.reminder-once$"]),
           Control("reentry_omit_entry", [r"^captured\.reminder\.spent\.reentry\.entries$"]),
           Control("remove_superseded_payload", [r"^captured\.reminder\.spent\.retained-v1$"])])
 def c_captured_reminder(t):

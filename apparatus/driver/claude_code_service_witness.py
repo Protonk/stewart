@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
-"""Review complete return packages; rehearse ONLY with the existing synthetic harness.
+"""Review complete return packages against an immutable outside witness.
 
-review_package launches nothing. --rehearse runs an actual gated Stewart binary
-with synthetic Driver fixtures, never an installed profile, login or real model.
+review_package launches nothing. Its self-test uses synthetic packages only.
 Run with python3 -I -B; see CLAUDE-CODE-SERVICE-WITNESS.md.
 """
 from __future__ import annotations
 
 import argparse
 import copy
-import json
 import os
 from pathlib import Path
 import re
 import stat
 import sys
 import tempfile
-import time
-from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -31,9 +27,6 @@ MAX_FILE = 64 * 1024 * 1024
 MAX_PACKAGE = 256 * 1024 * 1024
 UTF8_ARTIFACT = {"label": "UTF-8 trace", "text": "A supplied trace: café, 界.\r\nNo execution is claimed.\n"}
 SOURCE_NAMES = (Path(__file__).name, "answer_witness.py", "claude_code.py", "driver_core.py", "rawjson.py")
-PENDING = ["real-harness profile eligibility and bounded commission", "live full-service comparison",
-           "externally triggered interruption", "real compaction and post-compaction observations",
-           "turn-cap and output-request enforcement", "Linux qualification"]
 
 
 def _save(path, value):
@@ -405,249 +398,6 @@ def review_package(package, witness_file, evidence_dir, *, witness_sha256, archi
     return result
 
 
-class RehearsalDriver(runtime.Driver):
-    """ONLY existing synthetic fixtures; no supplied profile or harness path."""
-    def __init__(self, binary, work):
-        super().__init__(binary, work, selected=("runtime-submit", "runtime-interruption"))
-        self.pending_stop = False
-        self.package_reviews = []
-        for name in SOURCE_NAMES:
-            path = self.work / "driver-snapshot" / name
-            if not path.exists():
-                path.write_bytes((HERE / name).read_bytes())
-
-    def fixture(self, label, **kwargs):
-        kwargs.update(timeout=15, placements=2)
-        fixture = super().fixture(label, **kwargs)
-        self.change_scenario(fixture, utf8_artifact=dict(UTF8_ARTIFACT))
-        _save(fixture["witness"] / "utf8-artifact.json", UTF8_ARTIFACT)
-        return fixture
-
-    def cmd(self, label, args, outcome="completed", **kwargs):
-        starts = args[0] == "run"
-        if self.launch_blocked and args[0] not in {"status", "receipt"}:
-            self.require(label + ".mutation-blocked", False, self.launch_blocked)
-        if starts and (self.launch_blocked or self.pending_stop):
-            self.launch_blocked = self.launch_blocked or "prior run stopping was not independently observed"
-            self.require(label + ".later-start-blocked", False, self.launch_blocked)
-        if starts and outcome != "refused":
-            self.pending_stop = True
-        try:
-            reply = super().cmd(label, args, outcome=outcome, **kwargs)
-            if starts and outcome == "refused" and reply.get("outcome") != "refused":
-                self.pending_stop = True
-                self.launch_blocked = "expected no-launch refusal was not observed: " + label
-                raise runtime.CaseStopped(self.launch_blocked)
-            return reply
-        except BaseException:
-            self.launch_blocked = "command termination or its result is uncertain: " + label
-            raise
-
-    def _capture_stopping(self, f, run, stop_record):
-        root = self.audit_path(f) / "runs" / str(run)
-        record = {"run": run, "service_records": {}, "groups": [], "diagnostics": [],
-                  "service_record_provenance": "exact copied service-owned process/stop records; not an independent launch witness",
-                  "probe_provenance": "independent read-only group probes after run return; no signals sent"}
-        for name in ("process-auth.json", "process-model.json") + (("runtime-stop.json",) if stop_record else ()):
-            try:
-                raw = _read_file(root / name)
-                record["service_records"][name] = {"path": str(root / name), **_blob(raw)}
-                value = runtime.transport_loads(raw)
-                if name.startswith("process-"):
-                    role = name[len("process-"):-len(".json")]
-                    if (set(value) != {"schema", "group", "role"} or value["schema"] != "stewart.claude-code.process/1"
-                            or value["role"] != role or type(value["group"]) is not int or value["group"] <= 1):
-                        raise ValueError("invalid process record")
-                    record["groups"].append({"role": role, "group": value["group"]})
-                elif value.get("groups_gone") is not True:
-                    raise ValueError("service stop record does not report groups gone")
-            except (OSError, ValueError, KeyError, TypeError) as error:
-                record["diagnostics"].append({"member": name, "detail": str(error)})
-        return record
-
-    def _retain_stopping(self, f, run, record):
-        record["observations"] = []
-        for group in record["groups"]:
-            started = time.monotonic_ns()
-            try:
-                observed = runtime.group_observation(group["group"])
-            except OSError as error:
-                observed = "unknown"
-                record["diagnostics"].append({"stage": "group-probe", "group": group["group"], "detail": str(error)})
-            record["observations"].append({**group, "observation": observed,
-                "started_monotonic_ns": started, "finished_monotonic_ns": time.monotonic_ns()})
-        safe = (not record["diagnostics"] and len(record["observations"]) == 2
-                and all(row["observation"] == "absent" for row in record["observations"]))
-        record["stopping_observed"] = safe
-        _save(f["witness"] / ("stopping-run-%04d.json" % run), record)
-        return safe
-
-    def groups_absent(self, f, run=1, stop_record=True):
-        try:
-            record = self._capture_stopping(f, run, stop_record)
-            try:
-                live = super().groups_absent(f, run, stop_record)
-            except BaseException as error:
-                record["diagnostics"].append({"stage": "inherited-stop-comparison", "detail": str(error)})
-                raise
-            finally:
-                safe = self._retain_stopping(f, run, record)
-        except BaseException:
-            self.launch_blocked = "independent stop observation failed: " + f["label"]
-            raise
-        if live or not safe:
-            self.launch_blocked = "owned groups are present or stopping is unknown: " + f["label"]
-            raise runtime.CaseStopped(self.launch_blocked)
-        self.pending_stop = False
-        return live
-
-    def check_delivery(self, f, status_reply, actor="auditor"):
-        # The account and UTF-8 artifact are independently supplied synthetic
-        # inputs. Compare their full return without using delivered bytes as an oracle.
-        self.eq(f["label"] + "." + actor + "-seal", status_reply["data"].get("seal", {}).get("actor"), actor)
-        delivery = status_reply["data"].get("headline", {}).get("delivered", {})
-        self.require(f["label"] + ".verified-delivery", delivery.get("verified") is True, delivery)
-        package = Path(delivery["location"])
-        events = self.harness_clean(f)
-        calls = [event for event in events if event["event"] == "rpc-send"
-                 and event["value"].get("method") == "tools/call"
-                 and event["value"].get("params", {}).get("name") == "record_account"]
-        self.require(f["label"] + ".one-witnessed-account-call", len(calls) == 1, calls)
-        call = calls[0]
-        self.eq(f["label"] + ".witnessed-account-input", call["value"]["params"]["arguments"], {"text": runtime.ACCOUNT})
-        replies = [self.core_reply(event["value"]) for event in events if event["event"] == "rpc-receive"
-                   and event["pid"] == call["pid"] and event["value"].get("id") == call["value"]["id"]]
-        self.require(f["label"] + ".account-completed-at-peer", len(replies) == 1 and replies[0]
-                     and replies[0].get("outcome") == "completed", replies)
-        artifacts = [event for event in events if event["event"] == "rpc-send"
-                     and event["value"].get("method") == "tools/call"
-                     and event["value"].get("params", {}).get("name") == "record_artifact"]
-        self.require(f["label"] + ".one-witnessed-artifact-call", len(artifacts) == 1, artifacts)
-        artifact = artifacts[0]
-        self.eq(f["label"] + ".witnessed-artifact-input", artifact["value"]["params"]["arguments"], UTF8_ARTIFACT)
-        artifact_replies = [self.core_reply(event["value"]) for event in events if event["event"] == "rpc-receive"
-                            and event["pid"] == artifact["pid"] and event["value"].get("id") == artifact["value"]["id"]]
-        self.require(f["label"] + ".artifact-completed-at-peer", len(artifact_replies) == 1 and artifact_replies[0]
-                     and artifact_replies[0].get("outcome") == "completed", artifact_replies)
-        self.eq(f["label"] + ".artifact-encoding-at-peer", artifact_replies[0].get("data", {}).get("encoding"), "utf-8")
-        if f["label"] == "runtime-interruption":
-            launches = [event for event in events if event["event"] == "launch" and event["role"] == "model"]
-            self.require(f["label"] + ".two-model-placements", len(launches) == 2, launches)
-            second = launches[1]["pid"]
-            requests = {event["value"]["id"] for event in events if event["event"] == "rpc-send"
-                        and event["pid"] == second and event["value"].get("method") == "tools/call"
-                        and event["value"].get("params", {}).get("name") == "what_am_i_working_with"}
-            reentries = [self.core_reply(event["value"]) for event in events if event["event"] == "rpc-receive"
-                         and event["pid"] == second and event["value"].get("id") in requests]
-            completed = [reply for reply in reentries if reply and reply.get("outcome") == "completed"]
-            self.require(f["label"] + ".continuing-reentry-at-peer", len(completed) == 1, reentries)
-            data = completed[0]["data"]
-            self.eq(f["label"] + ".reentry-run", data.get("run"), {"number": 2, "continuing": True})
-            self.eq(f["label"] + ".reentry-revision", data.get("revision"), 1)
-            self.eq(f["label"] + ".reentry-prior-selection",
-                    [(entry.get("id"), entry.get("kind"), entry.get("size")) for entry in data.get("entries", [])],
-                    [("e1", "record_account", len(runtime.ACCOUNT.encode()))])
-            self.check(f["label"] + ".reentry-prior-receipt", any(
-                receipt.get("run") == 1 and receipt.get("tool") == "record_account"
-                for receipt in data.get("receipts", [])), data.get("receipts"))
-        entries = [answer.Entry("e1", 1, "record_account", "", runtime.ACCOUNT.encode()),
-                   answer.Entry("e2", 1, "record_artifact", UTF8_ARTIFACT["label"],
-                                UTF8_ARTIFACT["text"].encode("utf-8"), encoding="utf-8")]
-        expected_answer = answer.answer_json(2, entries)
-        (f["witness"] / "expected-answer.json").write_bytes(expected_answer)
-        self.eq(f["label"] + ".faithful-answer", (package / "answer.json").read_bytes(), expected_answer)
-        witness = f["witness"] / "complete-return-witness.json"
-        inputs = {name: (f["witness"] / name).read_bytes() for name in
-                  ("question-file", "question-body", "report.txt", "profile.json", "tools.json", "mcp-tools.json",
-                   "scenario-initial.json", "utf8-artifact.json", "harness.jsonl")}
-        digest = write_witness(witness, entries, 2, family=f["family"] + "/1", writer=runtime.sha(self.binary.read_bytes()),
-            actor=actor, reference=f["reference"], status_raw=self.last_stdout, inputs=inputs,
-            provenance={"kind": "synthetic-peer-input", "description": "fixed account and UTF-8 artifact bytes independently supplied and witnessed at the synthetic MCP peer; no real model output",
-                        "interruption": "harness exit after a completed record" if f["label"] == "runtime-interruption" else "none"})
-        f["complete_witness"], f["complete_witness_sha256"] = witness, digest
-        self._review(f, package, "before-close")
-        # The original cases close only the first positive. Closing here also
-        # covers the fresh-session invariance and the two-placement continuation.
-        self.close_after_delivery(f, package)
-        return package
-
-    def _review(self, f, package, stage):
-        output = f["witness"] / ("package-" + stage)
-        result = review_package(package, f["complete_witness"], output,
-                                witness_sha256=f["complete_witness_sha256"], archive_root=f["archive"])
-        self.package_reviews.append({"case": f["label"], "stage": stage, "path": str(output), "outcome": result["outcome"]})
-        self.require(f["label"] + ".complete-package." + stage, result["outcome"] == "observed", result)
-        return result
-
-    def close_after_delivery(self, f, package):
-        if f.get("complete_closed"):
-            return  # runtime_submit also calls this method after check_delivery.
-        label = f["label"]
-        launches = self.launch_count(f)
-        placements = sum(event["event"] == "launch" and event["role"] == "model" for event in self.harness_events(f))
-        reply = self.cmd(label + ".complete-close", ["close", f["reference"]])
-        self.eq(label + ".complete-close-effects", reply.get("effects"),
-                {"run": "ended", "seal": "existing", "delivery": "verified", "closure": "complete"})
-        data = reply.get("data") or {}
-        for key, value in (("closure", "complete"), ("already_closed", False), ("before_launch", False),
-                           ("placement", "delivered_before_close"), ("surrendered", [])):
-            self.eq(label + ".complete-close-" + key, data.get(key), value)
-        self.eq(label + ".complete-close-runs", data.get("runs"), {"count": placements, "held": False, "last_ending": "sealed"})
-        self.runtime_allowances(label + ".complete-close", data, placements, f)
-        self._review(f, package, "after-close")
-        status_reply = self.cmd(label + ".complete-status-closed", ["status", f["reference"]])
-        self.eq(label + ".complete-closed-condition", status_reply["data"].get("condition"), "closed")
-        self.eq(label + ".complete-delivery-confirmed", status_reply["data"].get("headline", {}).get("delivered", {}).get("confirmed"), True)
-        repeat = self.cmd(label + ".complete-close-again", ["close", f["reference"]])
-        self.eq(label + ".complete-close-idempotent", repeat.get("data", {}).get("already_closed"), True)
-        refused = self.cmd(label + ".complete-run-after-close", ["run", f["reference"]], outcome="refused")
-        self.check(label + ".complete-run-after-close-reason", refused.get("reason") in {"reference_closed", "authoring_ended"}, refused)
-        self.eq(label + ".complete-no-later-launch", self.launch_count(f), launches)
-        self.eq(label + ".complete-one-package", sorted(path.name for path in package.parent.iterdir()), [package.name])
-        self._review(f, package, "after-repeat")
-        f["complete_closed"] = True
-
-
-def rehearse(binary, work):
-    binary, work = map(_absolute, (binary, work))
-    if work.is_relative_to(HERE.parent.parent) or _overlap(binary, work):
-        raise ValueError("rehearsal work must be outside the repository and binary")
-    _read_file(binary)
-    if not os.access(binary, os.X_OK):
-        raise ValueError("Stewart binary must be executable")
-    descriptor = _open_directory(work.parent)
-    os.close(descriptor)
-    driver = RehearsalDriver(binary, work)
-    code = driver.run()
-    report = runtime.transport_loads((work / "RESULT.json").read_bytes())
-    result = {"schema": "stewart.claude-code.service-rehearsal/1", "mode": "synthetic-only",
-              "qualification": False, "profile_eligible": False, "counts": report["counts"],
-              "package_reviews": driver.package_reviews, "launch_blocked": driver.launch_blocked,
-              "package_review_counts": {"reviews": len(driver.package_reviews),
-                  "observed": sum(item["outcome"] == "observed" for item in driver.package_reviews),
-                  "failed": sum(item["outcome"] != "observed" for item in driver.package_reviews)},
-              "interruption": "synthetic harness exits after recording; no external interruption was exercised",
-              "rehearsal_limits": {"max_placements": 2, "placement_timeout_seconds": 15,
-                                    "scope": "offline fixtures only; no real-harness cap study"},
-              "unexercised": PENDING}
-    failed = bool(code or report["counts"]["skipped"] or len(driver.package_reviews) != 9
-                  or any(item["outcome"] != "observed" for item in driver.package_reviews))
-    result["outcome"] = "failed" if failed else "observed"
-    _save(work / "REHEARSAL.json", result)
-    # Retain raw runtime work in place, but bind only the regular independent
-    # evidence trees here; archive and socket trees keep their actual provenance.
-    members = []
-    for name in ("driver-snapshot", "commands", "witness"):
-        for member in _manifest(work / name)["members"]:
-            members.append(dict(member, path=name + "/" + member["path"]))
-    for name in ("environment.json", "RESULT.json", "REHEARSAL.json"):
-        raw = _read_file(work / name)
-        members.append({"path": name, "bytes": len(raw), "sha256": runtime.sha(raw)})
-    _save(work / "EVIDENCE.json", {"schema": "stewart.claude-code.service-evidence/1", "members": members,
-                                  "scope": "commands, independent witnesses, source snapshots and reports; original archive/work remains separately retained"})
-    return int(failed)
-
-
 def self_test():
     root = Path(tempfile.mkdtemp(prefix="stewart-service-witness-")).resolve()
     archive = root / "archive"
@@ -782,83 +532,6 @@ def self_test():
             check("case-distinct-directory-invariance-" + name, result["outcome"] == "observed")
     check("originals-unchanged", witness.read_bytes() == original and
           {p.name: p.read_bytes() for p in baseline.iterdir()} == expected)
-    for state in ("unknown", "present"):
-        driver = object.__new__(RehearsalDriver)
-        driver.launch_blocked, driver.pending_stop = None, True
-        driver.checks, driver.current = [], "self-test"
-        with patch.object(runtime.Driver, "groups_absent", return_value=[{"group": 123, "observation": state}]), \
-                patch.object(driver, "_capture_stopping", return_value={}), patch.object(driver, "_retain_stopping", return_value=False):
-            try:
-                driver.groups_absent({"label": state})
-            except runtime.CaseStopped:
-                stopped = True
-            else:
-                stopped = False
-        with patch.object(runtime.Driver, "cmd") as launch, patch.object(driver, "require", side_effect=runtime.CaseStopped("expected refusal")):
-            try:
-                driver.cmd("forbidden-later-start", ["run", "synthetic"])
-            except runtime.CaseStopped:
-                pass
-        check("unresolved-stop-blocks-next-start-" + state, stopped and bool(driver.launch_blocked) and not launch.called)
-    driver = object.__new__(RehearsalDriver)
-    driver.launch_blocked, driver.pending_stop = None, False
-    driver.checks, driver.current = [], "self-test"
-    with patch.object(runtime.Driver, "cmd", side_effect=TimeoutError("synthetic lost command result")):
-        try:
-            driver.cmd("timeout", ["run", "synthetic"])
-        except TimeoutError:
-            pass
-    with patch.object(runtime.Driver, "cmd") as launch, patch.object(driver, "require", side_effect=runtime.CaseStopped("expected refusal")):
-        try:
-            driver.cmd("forbidden-after-timeout", ["run", "synthetic"])
-        except runtime.CaseStopped:
-            pass
-    check("uncertain-command-blocks-next-start", bool(driver.launch_blocked) and not launch.called)
-    driver = object.__new__(RehearsalDriver)
-    driver.launch_blocked, driver.pending_stop = None, False
-    driver.checks, driver.current = [], "self-test"
-    with patch.object(runtime.Driver, "cmd", return_value={"outcome": "completed"}):
-        try:
-            driver.cmd("unexpected-after-close", ["run", "synthetic"], outcome="refused")
-        except runtime.CaseStopped:
-            pass
-    with patch.object(runtime.Driver, "cmd") as launch, patch.object(driver, "require", side_effect=runtime.CaseStopped("expected refusal")):
-        try:
-            driver.cmd("forbidden-close-after-uncertain-start", ["close", "synthetic"])
-        except runtime.CaseStopped:
-            pass
-    check("unexpected-post-close-start-blocks-mutations", driver.pending_stop and bool(driver.launch_blocked) and not launch.called)
-    driver = object.__new__(RehearsalDriver)
-    driver.launch_blocked, driver.pending_stop = None, True
-    with patch.object(runtime.Driver, "groups_absent", return_value=[]), \
-            patch.object(driver, "_capture_stopping", return_value={}), patch.object(driver, "_retain_stopping", return_value=True):
-        driver.groups_absent({"label": "stopped"})
-    with patch.object(runtime.Driver, "cmd", return_value={"outcome": "refused"}) as launch:
-        driver.cmd("ordinary-refusal-after-stopping", ["run", "synthetic"], outcome="refused")
-    check("observed-stopping-preserves-next-command", not driver.pending_stop and not driver.launch_blocked and launch.call_count == 1)
-    driver = object.__new__(RehearsalDriver)
-    copied = {"run": 1, "service_records": {"process-auth.json": _blob(b"original service metadata\n")},
-              "groups": [{"role": "auth", "group": 123}, {"role": "model", "group": 456}], "diagnostics": []}
-    with patch.object(runtime, "group_observation", return_value="absent") as probe:
-        safe = driver._retain_stopping({"witness": root}, 1, copied)
-    retained = runtime.transport_loads((root / "stopping-run-0001.json").read_bytes())
-    check("stopping-witness-retains-metadata-and-separate-probes", safe and probe.call_count == 2
-          and _unblob(retained["service_records"]["process-auth.json"]) == b"original service metadata\n"
-          and all(row["observation"] == "absent" and row["finished_monotonic_ns"] >= row["started_monotonic_ns"]
-                  for row in retained["observations"]))
-    driver = object.__new__(RehearsalDriver)
-    driver.launch_blocked, driver.pending_stop = None, True
-    fixture = {"label": "missing-process-records", "archive": archive,
-               "reference": "stw1:missing-audit:synthetic-store:" + str(archive), "witness": root}
-    with patch.object(runtime.Driver, "groups_absent", side_effect=runtime.CaseStopped("missing process record")), \
-            patch.object(runtime, "group_observation") as probe:
-        try:
-            driver.groups_absent(fixture, run=2)
-        except runtime.CaseStopped:
-            pass
-    missing = runtime.transport_loads((root / "stopping-run-0002.json").read_bytes())
-    check("missing-stop-record-blocks-and-retains", bool(driver.launch_blocked) and not probe.called
-          and missing["stopping_observed"] is False and len(missing["diagnostics"]) == 4)
     counts = {"passed": sum(row["passed"] for row in checks), "failed": sum(not row["passed"] for row in checks), "skipped": 0}
     _save(root / "SELFTEST.json", {"checks": checks, "counts": counts, "scope": "synthetic byte and filesystem controls; no subprocess"})
     source = root / "sources"
@@ -867,7 +540,7 @@ def self_test():
         (source / name).write_bytes((HERE / name).read_bytes())
     # Source packages include intentionally unsafe input fixtures. The evidence
     # manifest names only safe review outputs, the original witness and sources.
-    files = [root / "SELFTEST.json", witness, root / "stopping-run-0001.json", root / "stopping-run-0002.json"] + list(source.iterdir())
+    files = [root / "SELFTEST.json", witness] + list(source.iterdir())
     for directory in sorted(review_outputs):
         files.extend(path for path in directory.rglob("*") if path.is_file())
     _save(root / "SELFTEST-EVIDENCE.json", {"members": [{"path": str(path.relative_to(root)),
@@ -882,19 +555,10 @@ def self_test():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    mode = parser.add_mutually_exclusive_group(required=True)
-    mode.add_argument("--self-test", action="store_true", help="bounded byte/filesystem controls; no subprocess")
-    mode.add_argument("--rehearse", action="store_true", help="SYNTHETIC ONLY: actual Stewart with the existing fake harness")
-    parser.add_argument("--binary", type=Path, help="absolute gated Stewart binary; never a Claude executable")
-    parser.add_argument("--work", type=Path, help="fresh physical absolute directory outside the repository")
-    args = parser.parse_args()
-    if args.self_test:
-        if args.binary is not None or args.work is not None:
-            parser.error("--self-test accepts no binary or work directory")
-        return self_test()
-    if args.binary is None or args.work is None:
-        parser.error("--rehearse requires --binary and --work")
-    return rehearse(args.binary, args.work)
+    parser.add_argument("--self-test", action="store_true", required=True,
+                        help="bounded byte/filesystem controls; no subprocess")
+    parser.parse_args()
+    return self_test()
 
 
 if __name__ == "__main__":

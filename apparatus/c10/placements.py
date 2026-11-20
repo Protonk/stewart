@@ -24,8 +24,8 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import (CONTINUED, MAX_PLACEMENTS, credential_bytes, digest, file_hash, identifier,
-    read_file, require, scan_tree, source_hash, strict_json, validate_continuation, write_json)
+from common import (CONTINUED, MAX_PLACEMENTS, AttemptsUnsettled, credential_bytes, digest, file_hash, identifier,
+    read_file, require, scan_tree, settled_attempts, source_hash, strict_json, validate_continuation, write_json)
 from batch import (Audit, allowance_facts, check_credential, continued_match, event, locked_export,
     next_snapshot, rehearsal_script, stop_reason)
 from session import failure_details, numbered_records, placement_folder
@@ -48,8 +48,8 @@ class Refused(ValueError):
 def claim(out, packet):
     """This attempt's record folder, made exclusively before anything else.
 
-    Attempts are numbered from 1. A new one is admitted only when every earlier
-    attempt at the placement holds a result saying the run command was never
+    Admission follows common.settled_attempts, the rule the host applied before
+    it started this process: every earlier attempt must be recorded as never
     spawned. Anything else is left for a person to inspect.
     """
     audit, placement = packet.get('audit'), packet.get('placement')
@@ -57,22 +57,13 @@ def claim(out, packet):
         raise Refused('the packet names no valid audit placement')
     folder = out/'continuations'/f'{audit}-p{placement}'
     folder.mkdir(mode=0o700, parents=True, exist_ok=True)
-    names = [path.name for path in folder.iterdir()]
-    earlier = [f'attempt-{k}' for k in range(1, len(names) + 1)]
-    # Compared as a set of numbered names: attempt-10 follows attempt-9.
-    if sorted(names) != sorted(earlier):
-        raise Refused('unknown members beside the attempts of this placement')
-    for name in earlier:
-        try:
-            record = strict_json(read_file(folder/name/'RESULT.json'))
-            settled = (record['schema'] == 'stewart.c10-continuation-session/1' and record['audit'] == audit
-                       and record['placement'] == placement and record['placement_state'] == 'not_started')
-        except (OSError, ValueError, KeyError, TypeError):
-            settled = False
-        if not settled:
-            raise Refused(f'{name} of this placement may have started it or left no readable result; '
-                          'inspect its retained records and the audit status')
-    attempt = len(earlier) + 1
+    try:
+        attempt = settled_attempts(folder, audit, placement) + 1
+    except AttemptsUnsettled as error:
+        if error.unnumbered:
+            raise Refused('unknown members beside the attempts of this placement') from None
+        raise Refused(f'{error.attempt} of this placement may have started it or left no readable result; '
+                      'inspect its retained records and the audit status') from None
     (folder/f'attempt-{attempt}').mkdir(mode=0o700)
     return folder/f'attempt-{attempt}', attempt
 

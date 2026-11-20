@@ -116,6 +116,10 @@ class Turn:
 
 
 class Procedure:
+    # It compares each request's tool_result IDs with the tool_use IDs it sent (anomaly
+    # tool-results.order), so run_support.check_history leaves that comparison to it.
+    OWNS_TOOL_RESULT_ORDER = True
+
     def __init__(self, body, *, model="claude-opus-5-5", forbidden=(), thinking=False, name="procedure"):
         self.body, self.model, self.name = body, model, name
         self.forbidden = [f for f in forbidden if f]
@@ -340,7 +344,7 @@ class Procedure:
                 continue
             for problem in tool_envelope_problems(r.env, call["tool"], r.raw_text, self.forbidden,
                                                   own_input_strings(call.get("input"), call.get("raw_input"))):
-                self.anomaly("reply.envelope.%s" % call["tool"], problem)
+                self.anomaly("reply.%s.%s" % (envelope_rule(problem), call["tool"]), problem)
             if r.is_error is not (r.outcome != "completed"):
                 self.anomaly("reply.is_error.%s" % call["tool"], {"outcome": r.outcome, "is_error": r.is_error})
         self.texts += texts
@@ -389,6 +393,17 @@ def find_hits(data):
                                              for x in v):
             best = v if len(v) > len(best) else best
     return best
+
+
+def envelope_rule(problem):
+    """Which envelope rule a problem from tool_envelope_problems breaks, for the anomaly's name:
+    `discloses` (a host or custody string in a reply, 7.1), `effects` (missing, wrong keys or
+    values, 1.3), otherwise `envelope`."""
+    if problem.startswith("discloses"):
+        return "discloses"
+    if problem.startswith("effect"):
+        return "effects"
+    return "envelope"
 
 
 def first_message_bytes(question_body, continuing):
@@ -491,8 +506,26 @@ def _selftest_procedure():
     return out
 
 
+def _selftest_envelope_rule():
+    """Envelope problems are named by the rule they break, so a control can target one rule."""
+    from driver_core import REPLY_SCHEMA
+    base = {"schema": REPLY_SCHEMA, "operation": "read", "outcome": "refused", "reason": "source_unknown",
+            "message": "No such source.", "effects": {"raw_capture": "recorded"}, "next": []}
+    out = []
+    for label, env, forbidden, want in (
+            ("clean", base, (), []),
+            ("effects-missing", {k: v for k, v in base.items() if k != "effects"}, (), ["effects"]),
+            ("discloses", dict(base, message="No such source under /home/ana/archive."), ("/home/ana/archive",),
+             ["discloses"]),
+            ("other", dict(base, reason=None), (), ["envelope"])):
+        got = sorted({envelope_rule(p) for p in tool_envelope_problems(env, "read", None, forbidden)})
+        out.append(("procedure.envelope-rule." + label, got == want, {"got": got, "want": want}))
+    return out
+
+
 try:
     from driver_core import selftest as _selftest
     _selftest(_selftest_procedure)
+    _selftest(_selftest_envelope_rule)
 except ImportError:  # pragma: no cover
     pass

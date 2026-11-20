@@ -124,6 +124,15 @@ def check_common(t, sub, fx, pre, rep, ending, cause=None, run_number=1):
       "two signed provider summaries replace active context, retain reconstructable captures and preserve the sealed answer",
       needs=("loopback",))
 def c_provider_compaction(t):
+    """Two top-level usage totals reach exactly 150,000 with input, cache and output all
+    contributing; iteration totals deliberately differ. Summary requests carry the pinned beta,
+    model, effort, system, tools and every pending tool result. Signed content arrays, including
+    unknown fields, whitespace and escapes, replace the active context exactly; the next request
+    has the post-compaction notice. Re-entry still sees both existing entries. Every original
+    request reconstructs from retained captures and reset markers, and responses, charges and
+    call captures match the external witness. One placement, three answer entries and one seal.
+    Differing: 149,999 top-level tokens with larger iteration sums sends no summary.
+    Invariance: identical sealed answer."""
     answers = {}
     for label, below in (("repeat", False), ("below", True)):
         pre = "compact." + label
@@ -172,6 +181,11 @@ def c_provider_compaction(t):
           Control("ignore_compaction_usage", [r"^captured\.compaction\.original\.(usage|run-ended-usage)$",
                                               r"^captured\.compaction\.original\.capture\..*\.(charged|usage)$"])])
 def c_captured_compaction(t):
+    """M4's captured signed summary, whose top-level usage is zero: the summary is charged its
+    iteration counts, the recorded account survives it and is revised after it, and the sealed
+    answer is exact. Differing: one iteration output count changed by one changes only the
+    output charge. Invariance: a changed top-level count changes no charge and no answer. The
+    controls run the captured original."""
     usages, answers = {}, {}
     before = b"The supplied source permits duplicate delivery."
     after = b"Delivery precedes marking; the supplied source does not establish recovery."
@@ -285,6 +299,12 @@ def malformed_summaries():
       "invalid summaries and iteration usage interrupt visibly, preserve captures and never execute summary tools",
       needs=("loopback",))
 def c_compaction_failures(t):
+    """Missing, unsigned, empty, mistyped, repeated-type and multiple signed blocks; tools alone
+    or beside a summary; ordinary stop, output cutoff, refusal and exhausted context; absent,
+    null, empty, repeated and malformed usage iterations, unknown types, missing, negative,
+    non-integer and repeated counts and count or sum overflow. Each keeps the raw response,
+    interrupts with the specified cause and charge, executes no summary tools and consumes no
+    reminder."""
     for label, step, cause, outcome in malformed_summaries():
         pre = "compact.bad." + label
         sub = run_submission(t, body=b"Check the source.\n")
@@ -308,6 +328,9 @@ def c_compaction_failures(t):
       "turn, input and output limits stop before a summary or after its billed iterations without another request",
       needs=("loopback",))
 def c_compaction_budgets(t):
+    """Turn, input and output allowances each stop before the summary when exhausted, or after
+    accounted summary iterations without sending another request. The output cap shrinks to
+    1,200 on the summary; an ended audit cannot resume."""
     variants = (
         ("turn-before", {"turns": 1}, 1, summary_usage()),
         ("turn-after", {"turns": 2}, 2, summary_usage()),
@@ -333,6 +356,9 @@ def c_compaction_budgets(t):
       "summary reset carries the pending near-limit notice and leaves the ordinary reminder available",
       needs=("loopback",))
 def c_compaction_notices(t):
+    """A near-limit notice triggered by summary usage follows the signed block beside the
+    post-compaction notice, with exact remaining allowances. A second specimen shows that a
+    successful summary leaves the ordinary-stop reminder available."""
     pre = "compact.notices"
     sub = run_submission(t, body=b"Check the source.\n", q={"turns": 5})
     # At four charged responses one turn remains. The fourth is a summary, so the pending
@@ -367,6 +393,9 @@ def c_compaction_notices(t):
       "provider refusal of compaction parameters or beta stays visible without fallback",
       needs=("loopback",))
 def c_compaction_rejection(t):
+    """A provider schema that rejects the summary parameter, and a provider refusing the beta
+    header, each interrupt with the provider's own facts, retain captures and make no fallback
+    request. Status remains interrupted."""
     for label in ("parameter", "beta"):
         pre = "compact.reject." + label
         sub = run_submission(t, body=b"Check the source.\n", effort="high")
@@ -391,10 +420,33 @@ def c_compaction_rejection(t):
         t.check(pre + ".status-interrupted", mentions(st.data, "interrupted"), st.data)
 
 
+def ordinary_bad_usage():
+    """Ordinary responses (end_turn with text, tool_use with a call) whose usage carries small,
+    valid top-level counts beside malformed iterations, one of each kind INTERFACE 6.2 names
+    undecodable: an empty array, an unrecognized type and a sum past 2^48. Falling back to the
+    top-level counts would decode them."""
+    text = b'[{"type":"text","text":"Done."}]'
+    call = b'[{"type":"tool_use","id":"toolu_must_not_run","name":"list","input":{}}]'
+    top = b'"input_tokens":1,"output_tokens":2'
+    valid = b'{"type":"message","input_tokens":1,"output_tokens":2}'
+    return [
+        ("empty", text, "end_turn", b"[]"),
+        ("unknown-type", call, "tool_use", b'[{"type":"future","input_tokens":1,"output_tokens":2}]'),
+        ("sum-over-bound", text, "end_turn",
+         b'[{"type":"message","input_tokens":281474976710656,"output_tokens":2},' + valid + b']'),
+    ], top
+
+
 @case("c4.compaction-usage-fallback", ["C4", "C13"],
       "ordinary absent/null iterations use top-level counts while malformed iteration usage interrupts",
       needs=("loopback",))
 def c_compaction_usage_fallback(t):
+    """INTERFACE 6.2 usage. Ordinary responses with absent or null usage.iterations are charged
+    their top-level counts; valid message and compaction iterations replace those counts (their
+    sums are charged, never added to the top-level totals). Ordinary end_turn and tool_use
+    responses whose iterations are empty, of an unrecognized type or sum past 2^48 are
+    undecodable (response_undecodable, protocol_anomaly, exit 5): no fallback to the small
+    top-level counts, no second request and no executed call."""
     for label, its in (("absent", fp.ABSENT), ("null", None),
                        ("summed", [iteration("message", 12, 7), iteration("compaction", 31, 8, 3, 4)])):
         pre = "compact.usage." + label
@@ -404,26 +456,28 @@ def c_compaction_usage_fallback(t):
         rep = rs.run(t, sub, fx, name=pre)
         check_common(t, sub, fx, pre, rep, "ended_unsubmitted")
         t.eq(pre + ".ordinary-only", [rs.is_compaction_request(e) for e in fx.exchanges], [False, False])
-    # Ordinary messages must not hide malformed iteration data behind small top-level totals.
-    for label, step, _, outcome in malformed_summaries():
-        if outcome != "response_undecodable" or label in (
-                "iterations-absent", "iterations-null", "iterations-missing-compaction"):
-            continue
+    specimens, top = ordinary_bad_usage()
+    for label, content, stop, its in specimens:
         pre = "compact.ordinary-bad." + label
         sub = run_submission(t, body=b"Check the source.\n")
+        step = raw_message(content, b"{" + top + b',"iterations":' + its + b"}", stop=stop)
         fx = rs.provider(t, fp.Script([step]), label="ordinary-" + label)
         rep = rs.run(t, sub, fx, name=pre)
         check_common(t, sub, fx, pre, rep, "interrupted", "protocol_anomaly")
+        t.eq(pre + ".exit", rep.rc, 5)
         t.eq(pre + ".no-fallback", len(fx.exchanges), 1)
         rd = rs.run_dirs(sub).get(1)
         rec = ((rd.attempts.get((1, 1)) or {}).get("body") or {}) if rd else {}
         t.eq(pre + ".outcome", rec.get("outcome"), "response_undecodable")
+        t.eq(pre + ".no-call-executed", [c for c in rs.calls_and_results(sub) if c[3] is not None], [])
 
 
 @case("c4.compaction-retries", ["C4", "C13"],
       "summary retries resend identical bytes and charge each response once before the ordinary reset",
       mode="test", needs=("loopback",))
 def c_compaction_retries(t):
+    """A 529 on the summary request retries identical bytes, counts no usage for the HTTP error,
+    accounts the summary response once, then resets to an ordinary request."""
     pre = "compact.retry"
     sub = run_submission(t, body=b"Check the source.\n")
     fx = rs.provider(t, fp.Script([trigger_step(), fp.HttpError(529, retry_after="0"),
@@ -441,6 +495,8 @@ def c_compaction_retries(t):
       mode="test", needs=("loopback", "lock"),
       linux_reason="close reaches a held summary through the Linux OFD lock")
 def c_compaction_stopping(t):
+    """SIGTERM, SIGINT, SIGHUP and close during an in-flight summary abort it through the normal
+    stopping path with estimated usage, retained request capture and no reminder."""
     for label, sig in (("sigterm", signal.SIGTERM), ("sigint", signal.SIGINT),
                        ("sighup", signal.SIGHUP), ("close", None)):
         pre = "compact.stop." + label

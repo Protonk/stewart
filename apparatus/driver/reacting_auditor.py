@@ -103,6 +103,12 @@ class Memory:
 
 
 class ReactingAuditor:
+    # It compares each request's tool_result IDs with the tool_use IDs it sent and the first
+    # message of each conversation with the question (anomalies tool-results.order and
+    # first-message.*), so run_support.check_history leaves the ID comparison to it, and cases
+    # that serve it do not repeat the first-message comparison.
+    OWNS_TOOL_RESULT_ORDER = True
+
     def __init__(self, goals, *, question, materials, family="open-inquiry", limits=None, provider=None,
                  compact_after=(), calls_per_turn=1, read_materials=True, read_question=True, finish="submit",
                  after_reminder="submit", thinking_blocks=True, forbidden=(), max_turns=400, model="claude-opus-5-5"):

@@ -269,40 +269,55 @@ class StudyBuildTests(unittest.TestCase):
         with self.assertRaises(ValueError):c10.check_rehearsal_inputs(packet,changed)
         with self.assertRaises(ValueError):c10.check_rehearsal_inputs(rehearsal_packet(),packet)
 
-    def test_live_draft_refuses_before_credential_or_container(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory)
-            packet=study_build.attach(proposal('example-model'),study_build.draft(self.interface))
-            packet['bindings']={k:'filled' for k in packet['bindings']}
-            packet['account']={k:'approved' for k in packet['account']}
-            packet['spending_authority']='Fixture only.'
-            path=root/'packet.json';write_json(path,packet)
-            args=argparse.Namespace(mode='live',evidence=c10.REPO/'.scratch/study-never-launched',
-                commission=path,approved_commission=digest(read_file(path)),rehearsal=root,
-                qualification='unused',connection=None)
-            with mock.patch.object(c10,'bindings') as bind,mock.patch.object(c10,'hidden_credential') as key:
-                with self.assertRaises(ValueError):c10.launch_batch(args)
-                bind.assert_not_called();key.assert_not_called()
+    # Build checks as each layout's acceptance.sh declares them; the historical one is what the captured
+    # readiness-02 exit records answer, the current one adds the dynamic-ELF control and drops the cmp step.
+    LAYOUTS={
+        'historical':('stewart.acceptance-driver/1',
+            [('build-release',0,''),('build-test',0,''),('static-stewart',0,''),('static-stewart-test',0,''),
+             ('build-glibc',0,''),('static-stewart-glibc',1,'control fired: '),('cmp-release-test',1,'control fired: '),
+             ('run-release',0,'')]),
+        'current':(study_build.spec.DRIVER_SCHEMA,
+            [('build-release',0,''),('build-test',0,''),('static-stewart',0,''),('static-stewart-test',0,''),
+             ('build-dynamic-control',0,''),('static-dynamic-control',1,'control fired: '),('run-release',0,''),
+             ('run-test',0,'')]),
+    }
+
+    def source_archive(self,checks):
+        script=''.join(f'    expect "$OUT/$b/{name}.exit" {code} "$p: {label}fixture"\n' for name,code,label in checks)
+        stream=io.BytesIO()
+        with tarfile.open(fileobj=stream,mode='w') as archive:
+            member=tarfile.TarInfo('apparatus/acceptance.sh');member.size=len(script.encode())
+            archive.addfile(member,io.BytesIO(script.encode()))
+        return stream.getvalue()
 
     def test_build_binding_checks_source_binary_and_evidence(self):
+        for layout,(schema,checks) in self.LAYOUTS.items():
+            with self.subTest(layout=layout):
+                self.check_build_binding(schema,checks)
+
+    def check_build_binding(self,schema,checks):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);acceptance=root/'study';base=root/'base'
             def put(path,data):
                 path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+            archive=self.source_archive(checks)
+            current=schema!='stewart.acceptance-driver/1'
             qualification={'source_commit':'1'*40,'evidence':{'path':'base'}}
             put(acceptance/'host/commit.stdout',('2'*40+'\n').encode())
             put(acceptance/'host/worktree.stdout',b'')
-            put(acceptance/'host/DONE',b'done fixture failures=4\n')
-            put(acceptance/'staging/source.tar',b'archive fixture')
+            put(acceptance/'host/DONE',b'done fixture failures=%d\n'%(6 if current else 4))
+            put(acceptance/'staging/source.tar',archive)
             for arch in ('arm64','amd64'):
                 r=captured_acceptance.study_result(arch)
+                r['schema']=schema
                 r['binaries']={'release':{'sha256':digest(b'release fixture')},
                                'test':{'sha256':digest(b'test fixture')}}
                 put(acceptance/f'bin-{arch}/stewart',b'release fixture')
                 put(acceptance/f'bin-{arch}/stewart-test',b'test fixture')
                 put(acceptance/f'driver-{arch}/evidence/RESULT.json',compact(r))
-                put(base/f'driver-{arch}/evidence/RESULT.json',captured_acceptance.captured(
-                    f'readiness-02/driver-{arch}/evidence/RESULT.json'))
+                baseline=captured_acceptance.result(arch)
+                baseline['schema']=schema
+                put(base/f'driver-{arch}/evidence/RESULT.json',compact(baseline))
                 put(acceptance/f'driver-{arch}/evidence-copy.exit',captured_acceptance.captured(
                     f'readiness-02/driver-{arch}/evidence-copy.exit'))
                 # The observed successful run did not retain a release work
@@ -311,10 +326,14 @@ class StudyBuildTests(unittest.TestCase):
                     put(acceptance/f'driver-{arch}/{name}.exit',b'0\n')
                 put(acceptance/f'driver-{arch}/selftest.exit',b'1\n')
                 put(acceptance/f'driver-{arch}/selftest.stdout',captured_acceptance.study_selftest(arch))
-                for name in ('build-release','build-test','static-stewart',
-                    'static-stewart-test','build-glibc','static-stewart-glibc','cmp-release-test','run-release'):
-                    put(acceptance/f'build-{arch}/{name}.exit',captured_acceptance.captured(
-                        f'readiness-02/build-{arch}/{name}.exit'))
+                if current:
+                    put(acceptance/f'driver-{arch}/driver-complete.exit',b'1\n')
+                for name,code,_label in checks:
+                    exit_record=(acceptance/f'build-{arch}/{name}.exit')
+                    if current:
+                        put(exit_record,b'%d\n'%code)
+                    else:
+                        put(exit_record,captured_acceptance.captured(f'readiness-02/build-{arch}/{name}.exit'))
             def git(argv,**kwargs):
                 if argv[1]=='rev-parse':return ('2'*40+'\n').encode()
                 if argv[1]=='merge-base':return ('1'*40+'\n').encode()
@@ -323,8 +342,9 @@ class StudyBuildTests(unittest.TestCase):
                     if argv[-1]=='apparatus/driver':
                         self.assertEqual(argv[3],'HEAD')
                     return b'service/src/forms.rs\n' if argv[-1]=='service' else b''
-                if argv[1]=='archive':return b'archive fixture'
+                if argv[1]=='archive':return archive
                 raise AssertionError(argv)
+            fired=next(name for name,_code,label in checks if label)
             with mock.patch.object(study_build.subprocess,'check_output',side_effect=git):
                 value=study_build.make(root,qualification,self.interface,acceptance,self.expected)
                 self.assertEqual(study_build.select(root,qualification,value),acceptance/'bin-arm64')
@@ -333,13 +353,21 @@ class StudyBuildTests(unittest.TestCase):
                              ('driver-arm64/evidence/RESULT.json','study result digest changed'),
                              ('staging/source.tar','study acceptance source binding differs'),
                              ('build-arm64/static-stewart.exit','study binary build/static controls differ'),
+                             (f'build-amd64/{fired}.exit','study binary build/static controls differ'),
                              ('driver-arm64/evidence-copy.exit','study acceptance evidence incomplete'),
                              ('driver-arm64/selftest.exit','study self-test exit differs'),
-                             ('driver-arm64/selftest.stdout','study self-test differs from declared failures')]:
+                             ('driver-arm64/selftest.stdout','study self-test differs from declared failures'),
+                             *([('driver-amd64/driver-complete.exit','study acceptance did not record its declared case failure')]
+                               if current else [])]:
                     path=acceptance/name;old=path.read_bytes();path.write_bytes(old+b'changed')
                     with self.subTest(path=name),self.assertRaisesRegex(ValueError,reason):
                         study_build.select(root,qualification,value)
                     path.write_bytes(old)
+                # Each layout is held to its own script: the other layout's checks are absent here.
+                (acceptance/'build-arm64'/f'{checks[-1][0]}.exit').unlink()
+                with self.assertRaises((ValueError,OSError)):
+                    study_build.select(root,qualification,value)
+                put(acceptance/'build-arm64'/f'{checks[-1][0]}.exit',b'%d\n'%checks[-1][1])
                 changed=copy.deepcopy(value);changed['qualified_base_commit']='3'*40
                 with self.assertRaisesRegex(ValueError,'study qualified base differs'):
                     study_build.select(root,qualification,changed)
@@ -350,6 +378,8 @@ class StudyBuildTests(unittest.TestCase):
                 with mock.patch.object(study_build.subprocess,'check_output',side_effect=changed_driver):
                     with self.assertRaisesRegex(ValueError,'independent driver'):
                         study_build.select(root,qualification,value)
+            self.assertEqual([control for *_rest,control in study_build.build_checks(acceptance/'staging/source.tar')],
+                             [bool(label) for *_rest,label in checks])
 
 
 class ConnectionTests(unittest.TestCase):
@@ -433,9 +463,9 @@ class ConnectionTests(unittest.TestCase):
         with self.assertRaises(connections.ConnectionError) as caught:connections.lookup('synthetic',timeout=.05)
         self.assertEqual(caught.exception.code,'deadline')
 
-    def test_rehearsal_and_credential_bounds(self):
-        for value,code in [('functional-looking-value','not_synthetic'),('', 'invalid_credential'),
-                           ('x'*4097,'invalid_credential'),('has space','invalid_credential')]:
+    def test_rehearsal_refuses_a_functional_value_and_maps_invalid_bytes(self):
+        # The byte bounds themselves are credential_bytes's (sanity test_launch); one shows the mapping here.
+        for value,code in [('functional-looking-value','not_synthetic'),('has space','invalid_credential')]:
             self.configure(stdout=value)
             with self.subTest(code=code),self.assertRaises(connections.ConnectionError) as caught:
                 connections.lookup('synthetic',rehearsal=True)
@@ -449,19 +479,6 @@ class ConnectionTests(unittest.TestCase):
         for name in ['', '-flag', '../escape', 'line\nbreak']:
             with self.subTest(name=name),self.assertRaises(connections.ConnectionError):connections.lookup(name)
         self.assertFalse((self.bin/'calls.jsonl').exists())
-
-    def test_live_mismatched_connection_refuses_before_launch(self):
-        packet=proposal('example-model')
-        packet['bindings']={key:'filled' for key in packet['bindings']}
-        packet['account']={key:'approved' for key in packet['account']}
-        packet['spending_authority']='Synthetic validation fixture; no provider calls.'
-        path=self.root/'packet.json';write_json(path,packet)
-        args=argparse.Namespace(mode='live',evidence=c10.REPO/'.scratch/c10-authority-never-created',
-            commission=path,approved_commission=digest(read_file(path)),rehearsal=self.root,
-            qualification='unused',connection='different')
-        with mock.patch.object(c10,'bindings') as bind,mock.patch.object(c10,'connection_key') as lookup:
-            with self.assertRaises(connections.ConnectionError):c10.launch_batch(args)
-            bind.assert_not_called();lookup.assert_not_called()
 
     def test_saved_collection_uses_bound_label_and_only_pipe_input(self):
         root=self.root/'run';(root/'host').mkdir(parents=True);(root/'staging').mkdir()
@@ -817,15 +834,6 @@ class PacketTests(unittest.TestCase):
             p=proposal('example-model');p['runs'][0]['id']=value
             with self.subTest(value=value),self.assertRaises(ValueError):validate_packet(p)
 
-    def test_live_missing_authority_refuses_before_container_or_prompt(self):
-        with tempfile.TemporaryDirectory() as temp:
-            packet=Path(temp)/'packet.json';write_json(packet,proposal('example-model'))
-            args=argparse.Namespace(mode='live',evidence=c10.REPO/'.scratch/c10-authority-never-created',
-                commission=packet,approved_commission=digest(read_file(packet)),rehearsal=Path(temp),qualification='unused')
-            with mock.patch.object(c10,'bindings') as bind,mock.patch.object(c10,'hidden_credential') as prompt:
-                with self.assertRaises(ValueError):c10.launch_batch(args)
-                bind.assert_not_called();prompt.assert_not_called()
-
     def test_rehearsal_folder_name_must_carry_its_continuation_records(self):
         # Each continued control keeps host records in `<rehearsal>-<audit>-p2`, itself an identifier of at most 80 characters.
         def args(name):
@@ -840,24 +848,47 @@ class PacketTests(unittest.TestCase):
                 c10.launch_batch(args('c10-name-gate-never-created'))
         self.assertFalse((c10.REPO/'.scratch/c10-name-gate-never-created').exists())
 
-    def test_changed_approved_digest_refuses_before_bindings(self):
-        with tempfile.TemporaryDirectory() as temp:
-            value = proposal('example-model')
+    def test_live_packet_refusals_name_their_reason_before_bindings_or_credential(self):
+        """Each refusal differs from an approved packet in one respect and stops before any binding check,
+        Keychain lookup or prompt; the approved packet itself passes to the binding check."""
+        def approved(value):
             value['spending_authority'] = 'synthetic gate control; no launch'
             value['account'] = {key:'synthetic-label' for key in value['account']}
             value['bindings'] = {key:'synthetic-binding' for key in value['bindings']}
-            validate_packet(value, approved=True)
-            packet=Path(temp)/'packet.json';write_json(packet,value)
-            args=argparse.Namespace(mode='live',evidence=c10.REPO/'.scratch/c10-authority-never-created',
-                commission=packet,approved_commission='0'*64,rehearsal=Path(temp),qualification='unused')
-            with mock.patch.object(c10,'bindings') as bind:
-                with self.assertRaisesRegex(ValueError, 'commission differs from approved digest'):c10.launch_batch(args)
-                bind.assert_not_called()
-            args.approved_commission = digest(read_file(packet))
-            with mock.patch.object(c10,'bindings',side_effect=RuntimeError('digest gate passed')) as bind:
+            return value
+        interface = {'schema':'stewart.c10-interface/1','id':'guidance-test','family':'open-inquiry','version':2,
+                     'instructions':'Compose an account.'}
+        evidence = c10.REPO/'.scratch/c10-authority-never-created'
+        cases = [
+            ('unpaid proposal', proposal('example-model'), None, None,
+             ValueError, 'approved packet has unfilled authority or bindings'),
+            ('changed digest', approved(proposal('example-model')), '0'*64, None,
+             ValueError, 'commission differs from approved digest'),
+            ('draft study build', approved(study_build.attach(proposal('example-model'), study_build.draft(interface))),
+             None, None, ValueError, 'invalid study source identity'),
+            ('another saved connection', approved(proposal('example-model')), None, 'different',
+             connections.ConnectionError, 'differs from the packet credential_label'),
+        ]
+        with tempfile.TemporaryDirectory() as temp:
+            for name, value, approval, connection, error, reason in cases:
+                packet = Path(temp)/(name.replace(' ','-')+'.json');write_json(packet,value)
+                args = argparse.Namespace(mode='live',evidence=evidence,commission=packet,
+                    approved_commission=approval or digest(read_file(packet)),rehearsal=Path(temp),
+                    qualification='unused',connection=connection)
+                with self.subTest(refusal=name), mock.patch.object(c10,'bindings') as bind, \
+                        mock.patch.object(c10,'hidden_credential') as prompt, mock.patch.object(c10,'connection_key') as lookup:
+                    with self.assertRaisesRegex(error, reason):
+                        c10.launch_batch(args)
+                    bind.assert_not_called();prompt.assert_not_called();lookup.assert_not_called()
+            packet = Path(temp)/'approved.json';write_json(packet,approved(proposal('example-model')))
+            args = argparse.Namespace(mode='live',evidence=evidence,commission=packet,
+                approved_commission=digest(read_file(packet)),rehearsal=Path(temp),qualification='unused',connection=None)
+            with mock.patch.object(c10,'bindings',side_effect=RuntimeError('digest gate passed')) as bind, \
+                    mock.patch.object(c10,'hidden_credential') as prompt:
                 with self.assertRaisesRegex(RuntimeError, '^digest gate passed$'):
                     c10.launch_batch(args)
-                bind.assert_called_once()
+                bind.assert_called_once();prompt.assert_not_called()
+        self.assertFalse(evidence.exists())
 
 
 class EvidenceTests(unittest.TestCase):
@@ -992,7 +1023,7 @@ class EvidenceTests(unittest.TestCase):
             self.assertEqual((root/'original').read_bytes(),b'untouched')
             self.assertFalse((Path(temp)/'out/work.tar').exists())
             import test_launch
-            test_launch.LaunchTests().complete_evidence(root)
+            test_launch.complete_evidence(root)
             complete = export_snapshot(root, Path(temp)/'complete-out', b'synthetic')
             self.assertEqual(complete['outcome'], 'exported')
             self.assertEqual(complete['reasons'], [])
@@ -1976,47 +2007,23 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(self.calls(),before)
         self.assertEqual(self.calls('starts.jsonl'),[{'audit':'control-continue-cap','placement':2,'attempt':1}])
 
-    def test_only_attempts_recorded_as_not_started_permit_another(self):
+    def test_host_applies_the_shared_admission_rule_before_any_container_or_credential_use(self):
+        # The admission table itself is test_placements.AttemptAdmissionTests (common.settled_attempts).
         self.retain()
         packet=self.packet()
         earlier=self.published(self.first)
         earlier.mkdir(parents=True)
         result={'schema':'stewart.c10-continuation-session/1','mode':'rehearse','audit':self.first,'placement':2,
                 'placement_state':'not_started','failed':True}
-        reason='an earlier attempt of this placement started or may have started'
-        # No result at all, a failure record alone, or a result that cannot be read.
-        self.assert_refused_untouched(reason,self.args(packet))
-        (earlier/'FAILURE.json').write_text(json.dumps({'phase':'preflight.status','error_type':'ValueError'}))
-        self.assert_refused_untouched(reason,self.args(packet))
-        (earlier/'RESULT.json').write_text('{"placement_state":')
-        self.assert_refused_untouched(reason,self.args(packet))
-        for state in ['unknown','observed','started',None]:
-            (earlier/'RESULT.json').write_text(json.dumps({**result,'placement_state':state}))
-            with self.subTest(state=state):
-                self.assert_refused_untouched(reason,self.args(packet))
-        # A result for something else, or of another form, settles nothing about this placement.
-        for change in [{'audit':'control-continue-entries'},{'placement':3},{'schema':'stewart.c10-session/2'}]:
-            (earlier/'RESULT.json').write_text(json.dumps({**result,**change}))
-            with self.subTest(change=change):
-                self.assert_refused_untouched(reason,self.args(packet))
-        (earlier/'RESULT.json').write_text(json.dumps({key:value for key,value in result.items() if key!='placement_state'}))
-        self.assert_refused_untouched(reason,self.args(packet))
-        (earlier/'RESULT.json').write_text(json.dumps(result))
-        # Every earlier attempt must say so, not only the latest.
-        second=self.published(self.first,2);second.mkdir()
-        self.assert_refused_untouched(reason,self.args(packet))
-        (second/'RESULT.json').write_text(json.dumps(result))
         (earlier/'RESULT.json').write_text(json.dumps({**result,'placement_state':'unknown'}))
-        self.assert_refused_untouched(reason,self.args(packet))
+        self.assert_refused_untouched('an earlier attempt of this placement started or may have started',self.args(packet))
         (earlier/'RESULT.json').write_text(json.dumps(result))
         stray=earlier.parent/'READY.json';stray.write_text('{}')
         self.assert_refused_untouched('the placement holds records that are not numbered attempts',self.args(packet))
         stray.unlink()
-        gap=self.published(self.first,4);gap.mkdir()
-        (gap/'RESULT.json').write_text(json.dumps(result))
-        self.assert_refused_untouched('the placement holds records that are not numbered attempts',self.args(packet))
-        shutil.rmtree(gap)
         # Two attempts that started nothing: the third proceeds, and is the only start.
+        second=self.published(self.first,2);second.mkdir()
+        (second/'RESULT.json').write_text(json.dumps(result))
         failed,report=self.run_continuation(self.args(packet))
         self.assertEqual((failed,report['outcome'],report['attempt']),(False,'completed',3))
         self.assertEqual(report['session']['path'],str(self.published(self.first,3)/'RESULT.json'))
@@ -2327,29 +2334,17 @@ class ContinuationTests(unittest.TestCase):
             c10.bind_continuation(value,'fixture-qualification')
         self.assertEqual(self.calls(),[])
 
-    def test_allowance_outlook_follows_the_estimate_and_minimum_rules(self):
+    def test_allowance_outlook_states_the_shared_allowance_facts(self):
+        # The arithmetic is batch.allowance_facts and common.limit_exhausted (test_placements.ArithmeticTests);
+        # the outlook only maps a packet's limits and observed usage onto it.
         limits={'turns':12,'input_tokens':160000,'output_tokens':12000}
-        none=dict.fromkeys(limits,0)
-        def estimate(output,used=0):
-            outlook=c10.allowance_outlook({**limits,'output_tokens':output},{**none,'output_tokens':used},'reminder_notice')
-            item=outlook['planned_interruption']
-            return (item['output_charge_if_one_request_is_aborted_in_flight'],item['output_remaining_after_that_charge'],
-                    item['next_placement_ends_limit_reached_before_any_request'])
-        # INTERFACE 6.4: the estimate is the request's max_tokens, the lesser of 16,000 and what
-        # remains; fewer than 1,024 remaining output tokens exhaust the allowance.
-        self.assertEqual(estimate(12000),(12000,0,True))
-        self.assertEqual(estimate(30000),(16000,14000,False))
-        self.assertEqual(estimate(17023),(16000,1023,True))
-        self.assertEqual(estimate(17024),(16000,1024,False))
-        self.assertEqual(estimate(30000,13000),(16000,1000,True))
-        plain=c10.allowance_outlook(limits,{'turns':3,'input_tokens':110,'output_tokens':55},None)
+        usage={'turns':3,'input_tokens':110,'output_tokens':55}
+        allowances={key:{'limit':limits[key],'used':usage[key]} for key in limits}
+        self.assertEqual(c10.allowance_outlook(limits,usage,'reminder_notice'),
+                         c10.allowance_facts(allowances,{'after':'reminder_notice','signal':'SIGTERM'}))
+        plain=c10.allowance_outlook(limits,usage,None)
         self.assertEqual((plain['remaining'],plain['planned_interruption']),
                          ({'turns':9,'input_tokens':159890,'output_tokens':11945},None))
-        for used,exhausted in [(none,False),({**none,'output_tokens':10976},False),({**none,'output_tokens':10977},True),
-                               ({**none,'turns':12},True),({**none,'input_tokens':160000},True)]:
-            with self.subTest(used=used):
-                self.assertIs(c10.allowance_outlook(limits,used,None)['this_placement_ends_limit_reached_before_any_request'],
-                              exhausted)
 
     # --- the rehearsal's continuation controls
 

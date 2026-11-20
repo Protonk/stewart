@@ -595,4 +595,69 @@ mod tests {
         assert_eq!(known(Some(NO_TOOL)), None);
         assert_eq!(known(None), None);
     }
+
+    /// The envelope text of an executed call's first content block.
+    fn envelope(ex: &Executed) -> String {
+        let content = crate::json::parse(&ex.content).unwrap();
+        let first = &content.as_arr().unwrap()[0];
+        assert_eq!(first.obj("").unwrap().str("type").unwrap(), "text");
+        first.obj("").unwrap().str("text").unwrap().to_string()
+    }
+
+    /// The run answers a block it does not execute with a tool envelope as
+    /// well: a `tool_use` ID reused with another name or input is refused
+    /// `invocation_id_reused` (pinned byte for byte), and a call that could
+    /// not be captured fails `record_failed` and ends the placement. A name
+    /// no tool has is shown as the block gave it.
+    #[test]
+    fn the_run_side_refusals_are_envelopes_too() {
+        let call = Call {
+            call: 2,
+            tool_use_id: "toolu_1",
+            name: Some("list"),
+            input: Some(b"{\"page\":2}"),
+        };
+        let ex = reused(&call, 1, 0);
+        assert_eq!(
+            envelope(&ex),
+            r#"{"schema":"stewart.reply/3","operation":"list","outcome":"refused","reason":"invocation_id_reused","message":"The tool_use ID \"toolu_1\" was already executed in this placement (call 1) with a different name or input; it was not executed again. A new call needs a new ID.","effects":{"raw_capture":"recorded"},"next":[],"data":{"tool_use_id":"toolu_1","original_call":1}}"#
+        );
+        assert!(ex.is_error);
+        assert_eq!(
+            (ex.reason.as_deref(), ex.revision, ex.end, ex.sealed),
+            (Some("invocation_id_reused"), 0, None, false)
+        );
+
+        let recording = Call {
+            name: Some("record_account"),
+            ..call
+        };
+        let env = crate::json::parse(envelope(&reused(&recording, 3, 5)).as_bytes()).unwrap();
+        let effects = env.obj("").unwrap().obj("effects").unwrap();
+        assert_eq!(effects.str("answer").unwrap(), "unchanged");
+        assert_eq!(effects.str("raw_capture").unwrap(), "recorded");
+
+        let unknown = Call {
+            name: Some("shell"),
+            ..call
+        };
+        let env = crate::json::parse(envelope(&reused(&unknown, 3, 5)).as_bytes()).unwrap();
+        assert_eq!(env.obj("").unwrap().str("operation").unwrap(), "shell");
+
+        let cause = Cause::new("write call capture", "ENOSPC");
+        let ex = capture_failed(&recording, &cause, 5);
+        let env = crate::json::parse(envelope(&ex).as_bytes()).unwrap();
+        let o = env.obj("").unwrap();
+        assert_eq!(
+            (o.str("outcome").unwrap(), o.str("reason").unwrap()),
+            ("failed", "record_failed")
+        );
+        assert_eq!(
+            o.obj("effects").unwrap().str("raw_capture").unwrap(),
+            "failed"
+        );
+        let causes = o.arr("causes").unwrap();
+        assert_eq!(causes[0].obj("").unwrap().str("error").unwrap(), "ENOSPC");
+        assert_eq!((ex.revision, ex.end), (5, Some(End::ArchiveWriteFailed)));
+    }
 }

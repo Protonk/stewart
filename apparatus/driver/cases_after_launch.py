@@ -812,8 +812,10 @@ def check_human_agrees(t, name, json_rc, data, human_rc, human_out):
 
 
 def status_point(t, a, name, *, human=True, again=False, cwd=None, **exp):
-    """status REF (JSON, then human) at one lifecycle point; with again, a second status after
-    time has passed must report the same facts (C16: elapsed time establishes nothing)."""
+    """status REF (JSON, then human) at one lifecycle point. With again, a second status a
+    little over a second later must return the same data (C16 invariance: status is read-only
+    and derives nothing from the clock). A gap this short shows only that no fact depends on
+    the clock at that granularity; it is skipped under a sabotage control, which never targets it."""
     rep = t.status(a.sub, name=name, cwd=cwd)
     check_status_obj(t, a, name, rep.obj, **exp)
     last = (rep.data.get("runs") or {}).get("last")
@@ -833,10 +835,10 @@ def status_point(t, a, name, *, human=True, again=False, cwd=None, **exp):
             t.check(name + "." + view + ".empty-next-wording", "nothing further is needed" not in text.lower(), text[:1500])
         t.check(name + ".details.expanded", len(details.stdout) > len(hum.stdout),
                 {"default_bytes": len(hum.stdout), "detail_bytes": len(details.stdout)})
-    if again:
+    if again and not t.sabotage:
         time.sleep(1.2)
         rep2 = t.status(a.sub, name=name + ".later")
-        t.eq(name + ".elapsed-time-invariant", rep2.data, rep.data)
+        t.eq(name + ".unchanged-after-pause", rep2.data, rep.data)
     return rep
 
 
@@ -862,7 +864,8 @@ def run_ordinary(t, a, name, *, run_number=1):
     t.eq(name + ".delivery", rep.data.get("delivery"), None)
     if a.aud is not None:
         rs.check_auditor(t, a.aud, name)
-        t.eq(name + ".reminder-once", a.aud.reminders_seen, 1)
+        # More than one reminder is the auditor's own anomaly (notice.reminder-repeated).
+        t.check(name + ".reminder-received", a.aud.reminders_seen >= 1, a.aud.reminders_seen)
     rs.check_fake(t, a.fx, name)
     return rep
 
@@ -937,7 +940,8 @@ def ended_record_name(t, sub):
 @case("c5.package", ["C5", "C6", "C12", "C20"],
       "the delivered return equals the witness; differing answers differ only there; paths change nothing",
       needs=("loopback",),
-      controls=[Control("drop_last_entry", [r"^c5\.pass\.package\.", r"^auditor\.view\."]),
+      controls=[Control("drop_last_entry", [r"^c5\.pass\.package\.member-bytes\.answer\.json$",
+                                            r"^auditor\.view\.(goal-count|selection)$"]),
                 Control("deliver_conversation", [r"^c5\.pass\.package\.package-members",
                                                  r"^c5\.pass\.manifest-verify\.exactly-listed"]),
                 Control("regenerate_rendering", [r"^c5\.pass\.package\.member-bytes\.answer\.md",
@@ -1017,6 +1021,9 @@ def deliver_and_close(t, a, name, cwd=None, env=None):
                     runs={"count": 1, "held": False, "last_ending": "sealed"})
     t.eq(name + ".close.no-provider-request", len(a.fx.exchanges), n_ex)
     t.eq(name + ".close.no-second-copy", sorted(os.listdir(a.sub.dest)), [pkg_name(a.sub, 1)])
+    closed = log_record(t, a.sub, "closed", last=True)
+    t.eq(name + ".closed-record", [(closed[2] if closed else {}).get(k) for k in ("placement", "confirmation")],
+         ["delivered_before_close", None])
     status_point(t, a, name + ".status-closed", condition="closed", sealed="auditor",
                  delivered={"verified": True, "confirmed": True, "location": loc}, closed="yes",
                  last={"ending": "sealed", "cause": None, "recorded_by": "run"}, seal="auditor",
@@ -1031,6 +1038,11 @@ def deliver_and_close(t, a, name, cwd=None, env=None):
       "return binds the accepted body; damaged front matter causes a named delivery loss, damaged binding prevents a seal",
       needs=("loopback",))
 def c_question_capture(t):
+    """The return binds the accepted question body (a BOM, CRLF and no final newline). With the
+    accepted question capture damaged, close seals as manager and delivers
+    verified_with_losses naming question.md as a damaged source; confirming requires
+    surrendering that loss. With the accepted receipt damaged, close fails to bind the
+    commission, names the binding and seals and delivers nothing."""
     body = b"\xef\xbb\xbfRead the two files.\r\nWhich claim follows?"
     for defect in ("capture", "receipt"):
         name = "question." + defect
@@ -1084,7 +1096,8 @@ def c_question_capture(t):
       "a partial delivery keeps its package and names its missing member; close copies afresh; verification catches "
       "a corrupted member", mode="test", needs=("loopback",),
       controls=[Control("skip_delivery_verification", [r"^c5\.partial\.corrupt\."]),
-                Control("remove_partial_package", [r"^c5\.partial\.kept\.", r"^inventory\."])])
+                Control("remove_partial_package", [r"^c5\.partial\.kept\.", r"^inventory\.[a-z-]*removed"])],
+      faults=("delivery.member_write:answer.md=eio", "delivery.member_corrupt:answer.json=corrupt"))
 def c_partial(t):
     """The run seals as the auditor; delivery.member_write:answer.md=eio makes attempt 1
     partial: manifest.json, question.md and answer.json written and verified (the witness bytes), answer.md
@@ -1273,7 +1286,8 @@ def _conflict(t, a):
 
 @case("c5.lost-run-reply", ["C5", "C8", "C16", "C17"],
       "a run killed after its verified delivery: status shows it; close confirms it without a second copy",
-      mode="test", needs=("loopback",))
+      mode="test", needs=("loopback",),
+      faults=("delivery.after_ended=kill",))
 def c_lost_run_reply(t):
     """delivery.after_ended=kill kills the run after its delivery_ended (verified) and before
     run_ended and its reply. Status, from the records alone: delivered_open with the delivered
@@ -1296,7 +1310,7 @@ def _lost_run_reply(t, a):
                  delivered={"verified": True, "confirmed": False, "location": loc}, last=None, seal="auditor",
                  answer={"revision": rev, "entries": witness_entry_count(a.aud)},
                  deliveries=[dict(attempt=1, outcome="verified", by="run", source="commissioned", replaces=None)],
-                 next_cmds=("close",), again=True)
+                 next_cmds=("close",))
     rep = close_cmd(t, a, "c5.lost.close", cwd=t.fresh_dir("lost close cwd"),
                     env={"HOME": t.fresh_dir("lost close home")})
     check_close_obj(t, a, "c5.lost.close", rep.obj, closure="complete", outcome="closed_delivered",
@@ -1317,15 +1331,17 @@ def _lost_run_reply(t, a):
       needs=("loopback",))
 def c_t10(t):
     """T10. The auditor records five goals and ends ordinarily; the driver flips one bit of the
-    observation's payload in the archive. close seals as manager: answer.json writes that entry
-    unproduced {sha256, size, failure: damaged} with the recorded digest and size, no answer.md
-    is produced and the manifest lists the entry and answer.md as unproduced; the delivery is
-    verified_with_losses with token cf1 and loss IDs loss.<id>... and loss.answer-md...; the
-    package equals the witness. --destination is refused delivery_already_verified (a new place
-    repairs no missing bytes); --confirm alone, or naming one loss, is surrender_required; an
-    unknown loss ID is handle_invalid; --surrender without --confirm is a usage error. Naming
-    both closes with closed_with_surrendered_losses. Status then shows delivered.verified false
-    with the loss IDs: never a complete delivery."""
+    observation's payload and one of the binary artifact's in the archive. close seals as
+    manager: answer.json writes both entries unproduced {sha256, size, failure: damaged} with
+    the recorded digest and size, the artifact member is not delivered, no answer.md is
+    produced and the manifest lists both entries and answer.md as unproduced; the delivery is
+    verified_with_losses with token cf1 and a loss ID for each; the package equals the
+    witness. --destination is refused delivery_already_verified (a new place repairs no
+    missing bytes); --confirm alone, or naming one loss, is surrender_required; an unknown loss
+    ID is handle_invalid; --surrender without --confirm is a usage error. Naming every loss
+    closes with closed_with_surrendered_losses. Status, for people and as JSON, shows
+    delivered.verified false with the loss IDs both while awaiting confirmation and once
+    closed: never a complete delivery."""
     scenario(t, "t10", _t10, audit(t, "c5.t10"))
 
 
@@ -1334,13 +1350,18 @@ def _t10(t, a):
     run_ordinary(t, a, "c5.t10.run")
     entries = a.aud.expected_selection(None)
     rev = witness_revision(a.aud)
-    target = next((e for e in entries if e.label == "ordering"), None)
-    t.require("c5.t10.target", target is not None, [e.label for e in entries])
-    path = payload_path(a.sub, target)
-    t.require("c5.t10.payload-recorded", rs.read_package_member(os.path.dirname(path), os.path.basename(path))
-              == target.data, path)
-    t.flip_bit(path, 0)
-    close_damaged(t, a, "c5.t10", entries, rev, [target.id])
+    targets = [e for e in entries if e.label == "ordering"
+               or (e.kind == "record_artifact" and e.encoding == "binary")]
+    t.require("c5.t10.targets", len(targets) == 2, [e.label for e in entries])
+    for target in targets:
+        path = payload_path(a.sub, target)
+        t.require("c5.t10.payload-recorded.%s" % target.id,
+                  rs.read_package_member(os.path.dirname(path), os.path.basename(path)) == target.data, path)
+        t.flip_bit(path, 0)
+    close_damaged(t, a, "c5.t10", entries, rev, [e.id for e in targets])
+    artifact = next(e for e in targets if e.kind == "record_artifact")
+    t.check("c5.t10.artifact-not-delivered", not os.path.lexists(os.path.join(pkg_path(a.sub, 1), artifact.member)),
+            pkg_path(a.sub, 1))
 
 
 def close_damaged(t, a, name, entries, rev, bad_ids, confirm_status=True):
@@ -1420,7 +1441,8 @@ def runs_count(t, sub):
 
 @case("c5.payload-corrupt-fault", ["C5", "C14"],
       "entry.payload_corrupt: payloads damaged as they were written are unproduced members, never good ones",
-      mode="test", needs=("loopback",))
+      mode="test", needs=("loopback",),
+      faults=("entry.payload_corrupt=corrupt",))
 def c_payload_fault(t):
     """With entry.payload_corrupt=corrupt the run's payload files differ from the bytes the
     entries record. The auditor ends ordinarily (it never reads its entries). close seals as
@@ -1449,7 +1471,9 @@ def _payload_fault(t, a):
 @case("c5.unknown-membership", ["C5", "C8", "C16", "C20"],
       "a seal manifest that cannot be verified: membership unknown, delivery failed, never an empty return",
       mode="test", needs=("loopback",),
-      controls=[Control("unknown_membership_empty", [r"^c5\.unknown\."])])
+      controls=[Control("unknown_membership_empty", [r"^c5\.unknown\.(close|replace)\.delivery\.outcome$",
+                                                     r"^c5\.unknown\.(no-package|no-verified-attempt)$"])],
+      faults=("close.after_seal=kill",))
 def c_unknown(t):
     """The auditor ends ordinarily; close is killed after its manager seal (close.after_seal),
     before delivery. Status: close_unfinished, sealed by the manager, no delivery,
@@ -1513,7 +1537,8 @@ def _unknown(t, a):
 
 @case("c17.close-failures", ["C17", "C6", "C8", "C20"],
       "close's write failures and a lost close reply keep their causes, effects and retained partials",
-      mode="test", needs=("loopback",))
+      mode="test", needs=("loopback",),
+      faults=("prepared.write=eio", "seal.manifest_write=eio", "diag.write=eio", "reply.write=epipe"))
 def c_close_failures(t):
     """After an ordinary ending: close with prepared.write=eio fails (record_failed) with the
     original cause first, effects closure requested and no seal, retained archive locations, a
@@ -1690,56 +1715,30 @@ def check_population(t, name, sub):
 # C8: close from every state.
 # ---------------------------------------------------------------------------
 
-@case("c8.close-every-state", ["C8", "C3", "C5", "C16", "C20"],
-      "close before launch, after an ordinary ending (T8), after delivery, an interruption, an empty answer and "
-      "a damaged log", needs=("loopback",),
-      controls=[Control("skip_confirmation", [r"^c8\.t8\.close\."]),
-                Control("empty_return_before_launch", [r"^c8\.before-launch\."])])
+@case("c8.close-every-state", ["C8", "C5", "C16", "C20"],
+      "close after a failed intake, an ordinary ending (T8), an interruption and a damaged log",
+      needs=("loopback",),
+      controls=[Control("skip_confirmation", [r"^c8\.t8\.close\.(closure|not-closed)$"])])
 def c_close_every_state(t):
-    """Before launch (accepted, never run): closed_before_launch, no seal, no delivery, nothing
-    at the destination. Failed intake: closed without acceptance. T8: an ordinary ending, the
-    reminder once, run refused authoring_ended (ordinary_ending, naming the run_ended record);
-    before any copy, --destination is destination_not_replaceable and --confirm is refused; close
-    seals as manager, delivers, and stays unfinished awaiting_confirmation with cf1 (a copy made
-    by close needs confirmation); a repeat re-presents the same attempt and token publishing
-    nothing; --destination is then delivery_already_verified and a wrong token refused;
-    --confirm closes (placement confirmed); a repeat is already_closed; run is reference_closed.
-    Differing: a copy delivered before the close request is confirmed by an ordinary close
-    (delivered_before_close). An interruption (retry-after 61) is sealed by the manager with the
-    entry it recorded. An empty answer gives an honest empty return. A damaged log after launch:
-    status log_damaged, close unfinished log_damaged publishing nothing, run refused."""
-    if t.sabotage in (None, "empty_return_before_launch"):
-        scenario(t, "before-launch", _before_launch)
+    """Failed intake: closed without acceptance, nothing at the destination. T8: an ordinary
+    ending, the reminder once, run refused authoring_ended (ordinary_ending, naming the run_ended
+    record) with effects stating what is recorded; before any copy, --destination is
+    destination_not_replaceable and --confirm is refused; close seals as manager, delivers, and
+    stays unfinished awaiting_confirmation with cf1 (a copy made by close needs confirmation); a
+    repeat re-presents the same attempt and token publishing nothing; --destination is then
+    delivery_already_verified and a wrong token refused; --confirm closes (placement confirmed);
+    a repeat is already_closed; run is reference_closed. An interruption (retry-after 61) is
+    sealed by the manager with the entry it recorded. A damaged log after launch: status
+    log_damaged, close unfinished log_damaged publishing nothing, run refused. Close before
+    launch is close.before-launch; a copy delivered before the close request is confirmed by an
+    ordinary close in c5.package (the differing case); an empty answer's honest return is in
+    c8.close-faults; status at each point after launch is c16.status-after-launch."""
     if not t.sabotage:
         scenario(t, "failed-intake", _failed_intake)
-    if t.sabotage in (None, "skip_confirmation"):
-        scenario(t, "t8", _t8, audit(t, "c8.t8"))
+    scenario(t, "t8", _t8, audit(t, "c8.t8"))
     if not t.sabotage:
-        scenario(t, "delivered", _delivered_before_close, audit(t, "c8.delivered"))
         scenario(t, "interrupted", _interrupted_close, audit(t, "c8.interrupted"))
-        scenario(t, "empty", _empty_answer, audit(t, "c8.empty"))
         scenario(t, "damaged-log", _damaged_log, audit(t, "c8.damaged-log"))
-
-
-def _before_launch(t):
-    a = audit(t, "c8.before-launch", dest_watch="frozen")
-    rep = close_cmd(t, a, "c8.before-launch.close")
-    t.eq("c8.before-launch.effects", no_diag(rep.effects),
-         {"run": "not_started", "seal": "none", "delivery": "none", "closure": "complete"})
-    t.eq("c8.before-launch.data", [rep.data.get("closure"), rep.data.get("before_launch"), rep.data.get("accepted")],
-         ["complete", True, True])
-    kinds = t.log_kinds(a.sub)
-    t.eq("c8.before-launch.log-tail", kinds[-2:], ["close_requested", "closed"])
-    t.check("c8.before-launch.no-seal-or-delivery", not ({"seal", "delivery_planned", "delivery_ended"} & set(kinds)),
-            kinds)
-    t.eq("c8.before-launch.destination-empty", os.listdir(a.sub.dest), [])
-    for d in ("seal", "prepared", "delivery", "payload", "runs"):
-        p = os.path.join(a.sub.audit_dir, d)
-        t.check("c8.before-launch.no-%s" % d, not os.path.exists(p) or not os.listdir(p), d)
-    st = t.status(a.sub, name="c8.before-launch.status")
-    t.check_status(st, a.sub, "c8.before-launch.status", condition="closed_before_launch", accepted="yes",
-                   closed="yes")
-    t.eq("c8.before-launch.status.next", st.next, [])
 
 
 def _failed_intake(t):
@@ -1775,9 +1774,6 @@ def _t8(t, a):
     t.eq("c8.t8.run-again.effects", no_diag(rep.effects),
          {"run": "ended", "answer": "unchanged", "seal": "none", "delivery": "none"})
     t.check("c8.t8.run-again.next-close", [a.sub.writer, "close", a.sub.ref] in rep.next_argvs(), rep.next)
-    status_point(t, a, "c8.t8.status", condition="ended_unsubmitted",
-                 last={"ending": "ended_unsubmitted", "cause": None, "recorded_by": "run"},
-                 answer={"revision": rev, "entries": len(entries)}, seal=None, next_cmds=("close",), again=True)
     n_log = log_len(t, a.sub)
     other = t.dest_path()
     t.watch(other, "frozen", "unused destination")
@@ -1820,21 +1816,8 @@ def _t8(t, a):
     close_cmd(t, a, "c8.t8.other-attempt-token", ["--confirm", "cf2" + (tok or "cf1.aaaaaa")[3:]], expect="refused",
               reason=("confirmation_mismatch", "handle_invalid"))
     t.eq("c8.t8.refusals-published-nothing", log_len(t, a.sub), n_log)
-    status_point(t, a, "c8.t8.status-awaiting", condition="awaiting_confirmation", sealed="manager",
-                 delivered={"verified": True, "confirmed": False, "location": loc}, closed="unfinished",
-                 last={"ending": "ended_unsubmitted", "cause": None, "recorded_by": "run"}, seal="manager",
-                 deliveries=[dict(attempt=1, outcome="verified", by="close", source="commissioned", replaces=None,
-                                  token=tok)],
-                 closure={"unfinished_reason": "awaiting_confirmation"}, next_cmds=("close", "status"),
-                 confirm=(tok, []))
     confirm_and_close(t, a, "c8.t8.confirm", tok, actor="manager")
     t.eq("c8.t8.no-provider-request", len(a.fx.exchanges), n_ex)
-    status_point(t, a, "c8.t8.status-closed", condition="closed", sealed="manager",
-                 delivered={"verified": True, "confirmed": True, "location": loc}, closed="yes",
-                 last={"ending": "ended_unsubmitted", "cause": None, "recorded_by": "run"}, seal="manager",
-                 deliveries=[dict(attempt=1, outcome="verified", by="close", source="commissioned", replaces=None)],
-                 closure={"unfinished_reason": None, "outcome": "closed_delivered", "placement": "confirmed",
-                          "surrendered": [], "closed": True})
     n_log = log_len(t, a.sub)
     rep = close_cmd(t, a, "c8.t8.again", ["--destination", other])
     check_close_obj(t, a, "c8.t8.again", rep.obj, closure="complete", already=True, outcome="closed_delivered",
@@ -1842,21 +1825,6 @@ def _t8(t, a):
     t.eq("c8.t8.again.published-nothing", log_len(t, a.sub), n_log)
     rep = run_cmd(t, a, "c8.t8.run-closed", expect="refused", reason="reference_closed", mark=False)
     t.check("c8.t8.run-closed.next", "close" in commands_of(rep.obj), rep.next)
-
-
-def _delivered_before_close(t, a):
-    with_auditor(t, a, goals(a.sub, artifacts=False))
-    rep = run_sealed(t, a, "c8.delivered.run")
-    check_delivery_view(t, "c8.delivered.run.delivery", rep.data.get("delivery"), a, attempt=1, outcome="verified")
-    check_package_at(t, a, "c8.delivered.copy-1", 1)
-    rep = close_cmd(t, a, "c8.delivered.close")
-    check_close_obj(t, a, "c8.delivered.close", rep.obj, closure="complete", outcome="closed_delivered",
-                    placement="delivered_before_close", attempt=1, delivery="verified", actor="auditor",
-                    effects={"run": "ended", "seal": "existing", "delivery": "verified", "closure": "complete"})
-    closed = log_record(t, a.sub, "closed", last=True)
-    t.eq("c8.delivered.closed-record", [(closed[2] if closed else {}).get(k) for k in ("placement", "confirmation")],
-         ["delivered_before_close", None])
-    t.eq("c8.delivered.one-package", sorted(os.listdir(a.sub.dest)), [pkg_name(a.sub, 1)])
 
 
 def _interrupted_close(t, a):
@@ -1880,22 +1848,6 @@ def _interrupted_close(t, a):
     check_package_at(t, a, "c8.interrupted.copy-1", 1)
     confirm_and_close(t, a, "c8.interrupted.confirm", tok, actor="manager")
     run_cmd(t, a, "c8.interrupted.run-closed", expect="refused", reason="reference_closed", mark=False)
-
-
-def _empty_answer(t, a):
-    with_script(t, a, [end_step("Nothing to record yet."), end_step("Stopping.")])
-    run_scripted_ending(t, a, "c8.empty.run")
-    rep = close_cmd(t, a, "c8.empty.close")
-    manager_sealed(t, a, rep.data.get("seal"), "c8.empty.close.seal", [], 0)
-    tok = cf_token(t, a, 1)
-    check_close_obj(t, a, "c8.empty.close", rep.obj, closure="unfinished", reason="awaiting_confirmation",
-                    effects={"run": "ended", "seal": "recorded", "delivery": "verified", "closure": "unfinished"},
-                    token=tok, actor="manager", attempt=1, delivery="verified")
-    loc = check_package_at(t, a, "c8.empty.copy-1", 1)
-    t.eq("c8.empty.answer", rs.read_package_member(loc, "answer.json"),
-         b'{"schema":"stewart.answer/1","revision":0,"entries":[]}\n')
-    t.eq("c8.empty.rendering", rs.read_package_member(loc, "answer.md"), b"No answer entries recorded.\n")
-    confirm_and_close(t, a, "c8.empty.confirm", tok, actor="manager")
 
 
 def _damaged_log(t, a):
@@ -1940,46 +1892,24 @@ def _damaged_log(t, a):
 
 
 @case("c8.close-faults", ["C8", "C16", "C17", "C3"],
-      "close killed after its request, after its seal, after delivery (T14) and after closed; a run killed after "
-      "its seal or before its first request", mode="test", needs=("loopback",))
+      "close killed after its seal, after delivery (T14) and after closed; a run killed before its first request "
+      "is closed with an honest empty return", mode="test", needs=("loopback",),
+      faults=("close.after_seal=kill", "delivery.after_ended=kill", "close.after_closed_link=kill",
+              "run.after_started=kill"))
 def c_close_faults(t):
-    """close.after_requested: status close_unfinished with no reason (the last close stopped
-    before recording more); run refuses reference_closed; close continues to a manager seal and
-    a copy for confirmation. close.after_seal: status shows the manager seal and
-    delivery_incomplete; close delivers without sealing again. T14: delivery.after_ended kills
-    close after its verified delivery; status shows awaiting_confirmation and cf1; close from
-    another directory and HOME re-presents the same attempt and token without another attempt;
-    --confirm with close.after_closed_link kills after closed; status says closed; close returns
-    already_closed with the recorded outcome. seal.after_link kills the run after the auditor's
-    seal: status sealed_undelivered; run refuses authoring_ended (seal); close reconciles the run,
-    keeps the auditor's seal and delivers for confirmation. run.after_started kills before the
-    first request: still launched, and close seals an empty selection as manager: an honest
-    empty return."""
-    scenario(t, "after-requested", _after_requested, audit(t, "c8.after-requested"))
+    """close.after_seal: status shows the manager seal and delivery_incomplete; close delivers
+    without sealing again. T14: delivery.after_ended kills close after its verified delivery;
+    status shows awaiting_confirmation and cf1; close from another directory and HOME
+    re-presents the same attempt and token without another attempt; --confirm with
+    close.after_closed_link kills after closed; status says closed; close returns already_closed
+    with the recorded outcome. run.after_started kills before the first request: still launched,
+    and close seals an empty selection as manager: an honest empty return (answer.json with no
+    entries, the rendering "No answer entries recorded."). A close killed after its request, and
+    a run killed after its seal, are c16.status-after-launch's ordinary and sealed-undelivered
+    points."""
     scenario(t, "after-seal", _after_seal, audit(t, "c8.after-seal"))
     scenario(t, "t14", _t14, audit(t, "c8.t14"))
-    scenario(t, "sealed-killed", _sealed_killed, audit(t, "c8.sealed-killed"))
     scenario(t, "after-started", _after_started, audit(t, "c8.after-started"))
-
-
-def _after_requested(t, a):
-    with_script(t, a, [end_step("Nothing yet."), end_step("Stopping.")])
-    run_scripted_ending(t, a, "c8.after-requested.run")
-    close_cmd(t, a, "c8.after-requested.close", fault="close.after_requested=kill", killed=True)
-    t.eq("c8.after-requested.log-tail", t.log_kinds(a.sub)[-1:], ["close_requested"])
-    status_point(t, a, "c8.after-requested.status", condition="close_unfinished", closed="unfinished",
-                 last={"ending": "ended_unsubmitted", "cause": None, "recorded_by": "run"}, seal=None,
-                 closure={"unfinished_reason": None}, next_cmds=("close", "status"))
-    run_cmd(t, a, "c8.after-requested.run-again", expect="refused", reason="reference_closed", mark=False)
-    rep = close_cmd(t, a, "c8.after-requested.continue")
-    manager_sealed(t, a, rep.data.get("seal"), "c8.after-requested.continue.seal", [], 0)
-    tok = cf_token(t, a, 1)
-    check_close_obj(t, a, "c8.after-requested.continue", rep.obj, closure="unfinished",
-                    reason="awaiting_confirmation", token=tok, actor="manager", attempt=1, delivery="verified",
-                    effects={"run": "ended", "seal": "recorded", "delivery": "verified", "closure": "unfinished"})
-    t.eq("c8.after-requested.one-request", t.log_kinds(a.sub).count("close_requested"), 1)
-    check_package_at(t, a, "c8.after-requested.copy-1", 1)
-    confirm_and_close(t, a, "c8.after-requested.confirm", tok)
 
 
 def _after_seal(t, a):
@@ -2024,7 +1954,7 @@ def _t14(t, a):
                  deliveries=[dict(attempt=1, outcome="verified", by="close", source="commissioned", replaces=None,
                                   token=tok)],
                  closure={"unfinished_reason": "awaiting_confirmation"}, next_cmds=("close", "status"),
-                 confirm=(tok, []), again=True)
+                 confirm=(tok, []))
     n_log = log_len(t, a.sub)
     rep = close_cmd(t, a, "c8.t14.repeat", cwd=t.fresh_dir("t14 cwd"), env={"HOME": t.fresh_dir("t14 home")})
     check_close_obj(t, a, "c8.t14.repeat", rep.obj, closure="unfinished", reason="awaiting_confirmation",
@@ -2049,34 +1979,6 @@ def _t14(t, a):
     t.eq("c8.t14.after.published-nothing", log_len(t, a.sub), n_log)
 
 
-def _sealed_killed(t, a):
-    with_auditor(t, a, goals(a.sub, artifacts=False))
-    run_cmd(t, a, "c8.sealed-killed.run", fault="seal.after_link=kill", killed=True)
-    rs.check_auditor(t, a.aud, "c8.sealed-killed.run")
-    sv = status_seal(t, a, "c8.sealed-killed.seal")
-    rev = witness_revision(a.aud)
-    set_expected(t, a, a.aud.expected_selection(rev), rev, "auditor", sv.get("sealed_at"), "c8.sealed-killed.seal")
-    status_point(t, a, "c8.sealed-killed.status", condition="sealed_undelivered", sealed="auditor", last=None,
-                 seal="auditor", next_cmds=("close",))
-    seal_rec = log_record(t, a.sub, "seal")
-    rep = run_cmd(t, a, "c8.sealed-killed.run-again", expect="refused", reason="authoring_ended", mark=False)
-    t.eq("c8.sealed-killed.run-again.ended_by", [rep.data.get("ended_by"), rep.data.get("record")],
-         ["seal", seal_rec[0] if seal_rec else None])
-    n_ex = len(a.fx.exchanges)
-    rep = close_cmd(t, a, "c8.sealed-killed.close")
-    tok = cf_token(t, a, 1)
-    check_close_obj(t, a, "c8.sealed-killed.close", rep.obj, closure="unfinished", reason="awaiting_confirmation",
-                    effects={"run": "ended", "seal": "existing", "delivery": "verified", "closure": "unfinished"},
-                    token=tok, actor="auditor", attempt=1, delivery="verified",
-                    runs={"count": 1, "held": False, "last_ending": "interrupted"})
-    t.eq("c8.sealed-killed.no-provider-request", len(a.fx.exchanges), n_ex)
-    ended = log_record(t, a.sub, "run_ended", last=True)
-    t.eq("c8.sealed-killed.reconciled", [(ended[2] if ended else {}).get(k) for k in ("ending", "cause", "recorded_by")],
-         ["interrupted", "process_gone", "close"])
-    check_package_at(t, a, "c8.sealed-killed.copy-1", 1)
-    confirm_and_close(t, a, "c8.sealed-killed.confirm", tok, actor="auditor")
-
-
 def _after_started(t, a):
     with_script(t, a, [])
     run_cmd(t, a, "c8.after-started.run", fault="run.after_started=kill", killed=True)
@@ -2095,30 +1997,39 @@ def _after_started(t, a):
          ["interrupted", "process_gone", "close"])
     zero = {k: {"reported": 0, "estimated": 0} for k in ("turns", "input_tokens", "output_tokens")}
     t.eq("c8.after-started.reconciled-usage", body.get("usage"), zero)
-    check_package_at(t, a, "c8.after-started.copy-1", 1)
+    loc = check_package_at(t, a, "c8.after-started.copy-1", 1)
+    t.eq("c8.after-started.empty-answer", rs.read_package_member(loc, "answer.json") if loc else None,
+         b'{"schema":"stewart.answer/1","revision":0,"entries":[]}\n')
+    t.eq("c8.after-started.empty-rendering", rs.read_package_member(loc, "answer.md") if loc else None,
+         b"No answer entries recorded.\n")
     confirm_and_close(t, a, "c8.after-started.confirm", tok)
 
 
 @case("c8.close-running", ["C8", "C12", "C16", "C3"],
       "T13: close stops a held run; a stopped holder leaves close run_still_held; a seal alone is not a stop",
-      mode="test", needs=("loopback", "lock"),
+      mode="test", needs=("loopback", "lock"), heavy=True,
       linux_reason="a live run is observed through its OFD lock and close waits on it, a Linux-only expectation",
-      controls=[Control("seal_as_stopped", [r"^c8\.held-sealed\.close\."])])
+      controls=[Control("seal_as_stopped", [r"^c8\.held-sealed\.close\.(closure|effects\.run)$"])],
+      faults=("delivery.after_member:1=pause",))
 def c_close_running(t):
     """T13. Run A records an entry and stalls in its second provider request. Status: run_active
     with the holder's run_started observations; a second run refuses run_held naming the holder.
     close publishes close_requested; run A observes it, aborts the request (aborted_by_close,
     charged an estimate), ends stopped_by_close and exits 0; close then seals the recorded entry
-    as manager, delivers and awaits confirmation. With run A SIGSTOPped in a stalled request,
+    as manager, delivers and awaits confirmation. With run B SIGSTOPped in a stalled request,
     close waits about 30 s and replies unfinished run_still_held with the holder; status shows the
     held run and that reason; after SIGCONT the run stops by close and a later close resumes. A
-    run that has sealed and is paused in delivery still holds the lock: close waits and replies
+    run C that has sealed and is paused in delivery still holds the lock: close waits and replies
     run_still_held (effects.run still_held, the auditor's seal existing), never treating the seal
     as stopped execution; released, the run delivers and ends sealed, and close presents that
-    copy for confirmation because it was made after the close request."""
+    copy for confirmation because it was made after the close request. B's and C's closes each
+    wait out the bound on their own audit; they are started together so the two waits overlap.
+    The seal_as_stopped control needs only C."""
+    if t.sabotage:
+        scenario(t, "held-closes", _held_closes, None, audit(t, "c8.held-sealed"))
+        return
     scenario(t, "t13", _t13, audit(t, "c8.t13"))
-    scenario(t, "t13-stopped", _t13_stopped, audit(t, "c8.t13-stopped"))
-    scenario(t, "held-sealed", _held_sealed, audit(t, "c8.held-sealed"))
+    scenario(t, "held-closes", _held_closes, audit(t, "c8.t13-stopped"), audit(t, "c8.held-sealed"))
 
 
 def _started_observations(t, sub):
@@ -2180,32 +2091,74 @@ def _t13(t, a):
     confirm_and_close(t, a, "c8.t13.confirm", tok)
 
 
-def _t13_stopped(t, a):
-    with_script(t, a, [fp.Stall(180)])
-    h = rs.start_run(t, a.sub, a.fx, name="c8.t13-stopped.run", timeout=400)
-    stalled = rs.wait_for(lambda: len(a.fx.exchanges) >= 1 and a.fx.exchanges[0].outcome == "stalled", 60)
-    t.require("c8.t13-stopped.stalled", stalled, [e.outcome for e in a.fx.exchanges])
-    t.require("c8.t13-stopped.sigstop", t.signal(h, signal.SIGSTOP), "SIGSTOP")
+def check_held_sealed_status(t, name, data):
+    """INTERFACE 5.6: a seal ends authoring while delivery can still hold the run."""
+    headline = data.get("headline") if isinstance(data.get("headline"), dict) else {}
+    t.eq(name + ".facts", [data.get("condition"), headline.get("seal"),
+                           (data.get("runs") or {}).get("held")],
+         ["run_active", {"state": "present", "actor": "auditor"}, True])
+    t.eq(name + ".authoring", headline.get("authoring"), {"state": "ended", "ended_by": "seal"})
+
+
+def _held_closes(t, stopped, sealed):
+    """Two closes that must each wait out close's 30 s bound (5.8 Stop) on their own audit:
+    `stopped` (may be None) holds a SIGSTOPped run in a stalled request, `sealed` a run paused in
+    delivery after its seal. Both holders are set up, both closes start together and each reply
+    is judged as if it had run alone; then each run is resumed and its audit closed."""
+    s_run = h_run = stem = None
     try:
-        rep = close_cmd(t, a, "c8.t13-stopped.close", timeout=180)
-        check_close_obj(t, a, "c8.t13-stopped.close", rep.obj, closure="unfinished", reason="run_still_held",
-                        effects={"run": "still_held", "seal": "none", "delivery": "none", "closure": "unfinished"},
-                        holder=True, runs={"count": 1, "held": True, "last_ending": None})
-        t.check("c8.t13-stopped.close.waited", 25000 <= rep.wall_ms <= 120000, rep.wall_ms)
-        st = status_point(t, a, "c8.t13-stopped.status", condition="close_unfinished", held=True, closed="unfinished",
-                          last=None, seal=None, closure={"unfinished_reason": "run_still_held"},
-                          allowances=fp.allowances(a.fx.totals(upto=0), rs.limits_of(a.sub)),
-                          next_cmds=("close", "status"))
-        t.eq("c8.t13-stopped.status.holder", (st.data.get("runs") or {}).get("holder"),
-             _started_observations(t, a.sub))
-        # The stopped run still holds the lock (status: held, run_still_held), so its placement is
-        # live and its in-flight request has no attempt record yet (5.6, 6.4 as amended in a1515e7):
-        # the expected allowances are zero. The aborted_by_close estimate is charged only when the
-        # attempt ends, after SIGCONT. Witness the missing record at the time of the status.
-        t.check("c8.t13-stopped.status.in-flight-unrecorded", attempt_unrecorded(a.sub, 1, 1), sorted(
-            os.listdir(os.path.join(a.sub.audit_dir, "runs", "1"))))
+        if stopped is not None:
+            with_script(t, stopped, [fp.Stall(180)])
+            s_run = rs.start_run(t, stopped.sub, stopped.fx, name="c8.t13-stopped.run", timeout=400)
+            stalled = rs.wait_for(lambda: len(stopped.fx.exchanges) >= 1
+                                  and stopped.fx.exchanges[0].outcome == "stalled", 60)
+            t.require("c8.t13-stopped.stalled", stalled, [e.outcome for e in stopped.fx.exchanges])
+            t.require("c8.t13-stopped.sigstop", t.signal(s_run, signal.SIGSTOP), "SIGSTOP")
+        with_auditor(t, sealed, goals(sealed.sub, artifacts=False))
+        h_run = rs.start_run(t, sealed.sub, sealed.fx, name="c8.held-sealed.run",
+                             fault="delivery.after_member:1=pause", timeout=300)
+        stem = t.wait_paused("delivery.after_member", h_run, timeout=120)
+        t.require("c8.held-sealed.paused", stem is not None, "the run did not pause in delivery")
+        st = t.status(sealed.sub, name="c8.held-sealed.status")
+        check_held_sealed_status(t, "c8.held-sealed.status", st.data)
+        s_close = t.start(["close", stopped.sub.ref], name="c8.t13-stopped.close", timeout=180) \
+            if stopped is not None else None
+        h_close = t.start(["close", sealed.sub.ref], name="c8.held-sealed.close", timeout=180)
+        if s_close is not None:
+            _stopped_close_reply(t, stopped, t.finish(s_close, expect="completed", writer=stopped.sub.writer))
+        _sealed_close_reply(t, t.finish(h_close, expect="completed", writer=sealed.sub.writer))
     finally:
-        t.signal(h, signal.SIGCONT)
+        if s_run is not None:
+            t.signal(s_run, signal.SIGCONT)
+        if stem:
+            t.release(stem)
+    if stopped is not None:
+        _stopped_resumed(t, stopped, s_run)
+    _sealed_released(t, sealed, h_run)
+
+
+def _stopped_close_reply(t, a, rep):
+    """Close against a SIGSTOPped holder: unfinished run_still_held after the bound; status,
+    taken while the holder is still stopped, shows the held run and that reason."""
+    check_close_obj(t, a, "c8.t13-stopped.close", rep.obj, closure="unfinished", reason="run_still_held",
+                    effects={"run": "still_held", "seal": "none", "delivery": "none", "closure": "unfinished"},
+                    holder=True, runs={"count": 1, "held": True, "last_ending": None})
+    t.check("c8.t13-stopped.close.waited", 25000 <= rep.wall_ms <= 120000, rep.wall_ms)
+    st = status_point(t, a, "c8.t13-stopped.status", condition="close_unfinished", held=True, closed="unfinished",
+                      last=None, seal=None, closure={"unfinished_reason": "run_still_held"},
+                      allowances=fp.allowances(a.fx.totals(upto=0), rs.limits_of(a.sub)),
+                      next_cmds=("close", "status"))
+    t.eq("c8.t13-stopped.status.holder", (st.data.get("runs") or {}).get("holder"),
+         _started_observations(t, a.sub))
+    # The stopped run still holds the lock (status: held, run_still_held), so its placement is
+    # live and its in-flight request has no attempt record yet (5.6, 6.4 as amended in a1515e7):
+    # the expected allowances are zero. The aborted_by_close estimate is charged only when the
+    # attempt ends, after SIGCONT. Witness the missing record at the time of the status.
+    t.check("c8.t13-stopped.status.in-flight-unrecorded", attempt_unrecorded(a.sub, 1, 1), sorted(
+        os.listdir(os.path.join(a.sub.audit_dir, "runs", "1"))))
+
+
+def _stopped_resumed(t, a, h):
     rr = rs.finish_run(t, h, expect="completed")
     rs.check_run_reply(t, rr, a.sub, "c8.t13-stopped.run", ending="stopped_by_close", run_number=1, fx=a.fx,
                        limits=rs.limits_of(a.sub))
@@ -2219,37 +2172,22 @@ def _t13_stopped(t, a):
     confirm_and_close(t, a, "c8.t13-stopped.confirm", tok)
 
 
-def check_held_sealed_status(t, name, data):
-    """INTERFACE 5.6: a seal ends authoring while delivery can still hold the run."""
-    headline = data.get("headline") if isinstance(data.get("headline"), dict) else {}
-    t.eq(name + ".facts", [data.get("condition"), headline.get("seal"),
-                           (data.get("runs") or {}).get("held")],
-         ["run_active", {"state": "present", "actor": "auditor"}, True])
-    t.eq(name + ".authoring", headline.get("authoring"), {"state": "ended", "ended_by": "seal"})
+def _sealed_close_reply(t, rep):
+    """Close against a run that sealed and is paused in delivery: still run_still_held."""
+    d = rep.data
+    eff = no_diag(rep.effects)
+    t.eq("c8.held-sealed.close.closure", [d.get("closure"), d.get("unfinished_reason")],
+         ["unfinished", "run_still_held"])
+    t.eq("c8.held-sealed.close.effects.run", eff.get("run"), "still_held")
+    t.eq("c8.held-sealed.close.effects.seal", eff.get("seal"), "existing")
+    # 5.8 table, run_still_held: "newest attempt's outcome, or none"; the attempt is still open.
+    t.check("c8.held-sealed.close.effects.delivery", eff.get("delivery") in ("none", "unknown"), eff)
+    t.check("c8.held-sealed.close.holder", isinstance(d.get("holder"), dict), d.get("holder"))
+    t.check("c8.held-sealed.close.waited", 25000 <= rep.wall_ms <= 120000, rep.wall_ms)
+    t.eq("c8.held-sealed.close.seal-actor", (d.get("seal") or {}).get("actor"), "auditor")
 
 
-def _held_sealed(t, a):
-    with_auditor(t, a, goals(a.sub, artifacts=False))
-    h = rs.start_run(t, a.sub, a.fx, name="c8.held-sealed.run", fault="delivery.after_member:1=pause", timeout=300)
-    stem = t.wait_paused("delivery.after_member", h, timeout=120)
-    t.require("c8.held-sealed.paused", stem is not None, "the run did not pause in delivery")
-    try:
-        st = t.status(a.sub, name="c8.held-sealed.status")
-        check_held_sealed_status(t, "c8.held-sealed.status", st.data)
-        rep = close_cmd(t, a, "c8.held-sealed.close", timeout=180)
-        d = rep.data
-        eff = no_diag(rep.effects)
-        t.eq("c8.held-sealed.close.closure", [d.get("closure"), d.get("unfinished_reason")],
-             ["unfinished", "run_still_held"])
-        t.eq("c8.held-sealed.close.effects.run", eff.get("run"), "still_held")
-        t.eq("c8.held-sealed.close.effects.seal", eff.get("seal"), "existing")
-        # 5.8 table, run_still_held: "newest attempt's outcome, or none"; the attempt is still open.
-        t.check("c8.held-sealed.close.effects.delivery", eff.get("delivery") in ("none", "unknown"), eff)
-        t.check("c8.held-sealed.close.holder", isinstance(d.get("holder"), dict), d.get("holder"))
-        t.check("c8.held-sealed.close.waited", 25000 <= rep.wall_ms <= 120000, rep.wall_ms)
-        t.eq("c8.held-sealed.close.seal-actor", (d.get("seal") or {}).get("actor"), "auditor")
-    finally:
-        t.release(stem)
+def _sealed_released(t, a, h):
     rr = rs.finish_run(t, h, expect="completed")
     t.require("c8.held-sealed.run.completed", rr.outcome == "completed", rr.obj)
     rs.check_run_reply(t, rr, a.sub, "c8.held-sealed.run", ending="sealed", run_number=1, fx=a.fx,
@@ -2270,22 +2208,27 @@ def _held_sealed(t, a):
 # C16: status after launch.
 # ---------------------------------------------------------------------------
 
-@case("c16.status-after-launch", ["C16", "C8", "C13", "C20"],
-      "status at every lifecycle point after launch: distinct facts, human and JSON agree, time changes nothing",
-      mode="test", needs=("loopback",),
-      controls=[Control("ended_as_submitted", [r"^c16\.ordinary\.status\.", r"^c16\.limit\.status\."]),
-                Control("seal_as_delivered", [r"^c16\.sealed-undelivered\.status\.", r"^c16\.partial\.status\."])])
+@case("c16.status-after-launch", ["C16", "C8", "C13", "C20", "C3"],
+      "status at every lifecycle point after launch: distinct facts, human and JSON agree, a repeat after a "
+      "short pause is unchanged", mode="test", needs=("loopback",),
+      controls=[Control("ended_as_submitted", [r"^c16\.(ordinary|limit)\.status\.headline\.sealed$"]),
+                Control("seal_as_delivered", [r"^c16\.sealed-undelivered\.status\.headline\.delivered$"])],
+      faults=("run.between_turns:7=kill", "close.after_requested=kill", "seal.after_link=kill"))
 def c_status_after_launch(t):
     """Interrupted (killed between turns): runs 1, no ending recorded, nothing sealed, next run
-    and close, allowances from the attempt records; run continues to an auditor seal and a
-    verified delivery (delivered_open, location); a later status and a changed delivered copy
-    change nothing status reports; close, then closed. Ordinary unsubmitted stop: sealed none,
-    next close; close killed after its request: close_unfinished with no reason; continued:
-    awaiting_confirmation with the token; confirmed: closed. Limit stop: limit_reached, sealed
-    none. Differing, kill after sealing: sealed_undelivered by the auditor, not delivered; run
-    refuses; close delivers without a provider request. Partial delivery: sealed_undelivered,
-    not delivered. Close with a surrendered loss: closed, delivered.verified false with the loss
-    IDs. Each status in JSON and for people, carrying the same facts."""
+    and close, allowances from the attempt records, the same data on a repeat a second later;
+    run continues to an auditor seal and a verified delivery (delivered_open, location); a
+    changed delivered copy changes nothing status reports and causes no copy; close, then
+    closed. Ordinary unsubmitted stop: sealed none, next close; close killed after its request:
+    close_unfinished with no reason, run refused reference_closed; continued with no second
+    close_requested: awaiting_confirmation with the token, the same on a repeat a second later;
+    confirmed: closed. Limit stop: limit_reached, sealed none, run refused (limit). Differing,
+    killed after the auditor's seal link: sealed_undelivered by the auditor, not delivered; run
+    refuses authoring_ended naming the seal record and publishes nothing; close reconciles the
+    run (process_gone), keeps the auditor's seal, delivers without a provider request and awaits
+    confirmation; confirming closes. Each status in JSON and for people, carrying the same facts.
+    A partial delivery's status is c5.partial-delivery's; a close with surrendered losses is
+    c5.t10-damaged-payload's."""
     if not t.sabotage:
         scenario(t, "interrupted", _st_interrupted, audit(t, "c16.interrupted"))
     if t.sabotage in (None, "ended_as_submitted"):
@@ -2293,9 +2236,6 @@ def c_status_after_launch(t):
         scenario(t, "limit", _st_limit, audit(t, "c16.limit", q={"turns": "6"}))
     if t.sabotage in (None, "seal_as_delivered"):
         scenario(t, "sealed-undelivered", _st_sealed_undelivered, audit(t, "c16.sealed-undelivered"))
-        scenario(t, "partial", _st_partial, audit(t, "c16.partial"))
-    if not t.sabotage:
-        scenario(t, "surrendered", _st_surrendered, audit(t, "c16.surrendered"))
 
 
 def _st_interrupted(t, a):
@@ -2319,7 +2259,7 @@ def _st_interrupted(t, a):
                       delivered={"verified": True, "confirmed": False, "location": loc}, runs_count=2,
                       last={"ending": "sealed", "cause": None, "recorded_by": "run"}, seal="auditor",
                       answer={"revision": a.revision, "entries": len(a.entries or [])}, deliveries=deliveries,
-                      next_cmds=("close",), again=True)
+                      next_cmds=("close",))
 
     def tamper():
         with open(os.path.join(loc, "answer.md"), "ab") as f:
@@ -2343,11 +2283,14 @@ def _st_ordinary(t, a):
     rev = witness_revision(a.aud)
     last = {"ending": "ended_unsubmitted", "cause": None, "recorded_by": "run"}
     status_point(t, a, "c16.ordinary.status", condition="ended_unsubmitted", last=last,
-                 answer={"revision": rev, "entries": len(entries)}, seal=None, next_cmds=("close",), again=True)
+                 answer={"revision": rev, "entries": len(entries)}, seal=None, next_cmds=("close",))
     close_cmd(t, a, "c16.ordinary.close-killed", fault="close.after_requested=kill", killed=True)
+    t.eq("c16.ordinary.close-killed.log-tail", t.log_kinds(a.sub)[-1:], ["close_requested"])
     status_point(t, a, "c16.ordinary.status-requested", condition="close_unfinished", closed="unfinished", last=last,
                  seal=None, closure={"unfinished_reason": None}, next_cmds=("close", "status"))
+    run_cmd(t, a, "c16.ordinary.run-after-request", expect="refused", reason="reference_closed", mark=False)
     rep = close_cmd(t, a, "c16.ordinary.close")
+    t.eq("c16.ordinary.close.one-request", t.log_kinds(a.sub).count("close_requested"), 1)
     manager_sealed(t, a, rep.data.get("seal"), "c16.ordinary.close.seal", entries, rev)
     tok = cf_token(t, a, 1)
     loc = pkg_path(a.sub, 1)
@@ -2378,7 +2321,7 @@ def _st_limit(t, a):
     status_point(t, a, "c16.limit.status", condition="limit_reached",
                  last={"ending": "limit_reached", "cause": None, "recorded_by": "run"}, seal=None,
                  answer={"revision": witness_revision(a.aud), "entries": witness_entry_count(a.aud)},
-                 next_cmds=("close",), again=True)
+                 next_cmds=("close",))
     rep = run_cmd(t, a, "c16.limit.run-again", expect="refused", reason="authoring_ended", mark=False)
     t.eq("c16.limit.run-again.ended_by", rep.data.get("ended_by"), "limit")
 
@@ -2386,19 +2329,36 @@ def _st_limit(t, a):
 def _st_sealed_undelivered(t, a):
     with_auditor(t, a, goals(a.sub, artifacts=False))
     run_cmd(t, a, "c16.sealed-undelivered.run", fault="seal.after_link=kill", killed=True)
+    rs.check_auditor(t, a.aud, "c16.sealed-undelivered.run")
     sv = status_seal(t, a, "c16.sealed-undelivered.seal")
     rev = witness_revision(a.aud)
     set_expected(t, a, a.aud.expected_selection(rev), rev, "auditor", sv.get("sealed_at"),
                  "c16.sealed-undelivered.seal")
     status_point(t, a, "c16.sealed-undelivered.status", condition="sealed_undelivered", sealed="auditor", last=None,
-                 seal="auditor", answer={"revision": rev, "entries": len(a.entries or [])}, next_cmds=("close",),
-                 again=True)
-    run_cmd(t, a, "c16.sealed-undelivered.run-again", expect="refused", reason="authoring_ended", mark=False)
-    n_ex = len(a.fx.exchanges)
+                 seal="auditor", answer={"revision": rev, "entries": len(a.entries or [])}, next_cmds=("close",))
+    if t.sabotage:
+        return
+    seal_rec = log_record(t, a.sub, "seal")
+    n_ex, n_log = len(a.fx.exchanges), log_len(t, a.sub)
+    rep = run_cmd(t, a, "c16.sealed-undelivered.run-again", expect="refused", reason="authoring_ended", mark=False)
+    t.eq("c16.sealed-undelivered.run-again.ended_by", [rep.data.get("ended_by"), rep.data.get("record")],
+         ["seal", seal_rec[0] if seal_rec else None])
+    t.eq("c16.sealed-undelivered.run-again.effects", no_diag(rep.effects),
+         {"run": "ended", "answer": "unchanged", "seal": "existing", "delivery": "none"})
+    t.eq("c16.sealed-undelivered.run-again.published-nothing", log_len(t, a.sub), n_log)
+    t.eq("c16.sealed-undelivered.run-again.no-request", len(a.fx.exchanges), n_ex)
     rep = close_cmd(t, a, "c16.sealed-undelivered.close")
-    t.eq("c16.sealed-undelivered.close.delivery", (rep.data.get("delivery") or {}).get("outcome"), "verified")
-    t.eq("c16.sealed-undelivered.no-provider-request", len(a.fx.exchanges), n_ex)
     tok = cf_token(t, a, 1)
+    check_close_obj(t, a, "c16.sealed-undelivered.close", rep.obj, closure="unfinished",
+                    reason="awaiting_confirmation",
+                    effects={"run": "ended", "seal": "existing", "delivery": "verified", "closure": "unfinished"},
+                    token=tok, actor="auditor", attempt=1, delivery="verified",
+                    runs={"count": 1, "held": False, "last_ending": "interrupted"})
+    t.eq("c16.sealed-undelivered.no-provider-request", len(a.fx.exchanges), n_ex)
+    ended = log_record(t, a.sub, "run_ended", last=True)
+    t.eq("c16.sealed-undelivered.reconciled", [(ended[2] if ended else {}).get(k)
+                                               for k in ("ending", "cause", "recorded_by")],
+         ["interrupted", "process_gone", "close"])
     status_point(t, a, "c16.sealed-undelivered.status-awaiting", condition="awaiting_confirmation", sealed="auditor",
                  delivered={"verified": True, "confirmed": False, "location": pkg_path(a.sub, 1)},
                  closed="unfinished", last={"ending": "interrupted", "cause": "process_gone", "recorded_by": "close"},
@@ -2407,40 +2367,8 @@ def _st_sealed_undelivered(t, a):
                                   token=tok)],
                  closure={"unfinished_reason": "awaiting_confirmation"}, next_cmds=("close", "status"),
                  confirm=(tok, []))
-
-
-def _st_partial(t, a):
-    with_auditor(t, a, goals(a.sub, artifacts=False))
-    run_sealed(t, a, "c16.partial.run", delivery="partial", fault="delivery.member_write:answer.md=eio")
-    status_point(t, a, "c16.partial.status", condition="sealed_undelivered", sealed="auditor",
-                 last={"ending": "sealed", "cause": None, "recorded_by": "run"}, seal="auditor",
-                 deliveries=[dict(attempt=1, outcome="partial", by="run", source="commissioned", replaces=None,
-                                  verified=["manifest.json", "question.md", "answer.json"],
-                                  unverified=[{"name": "answer.md", "failure": "write_failed"}])],
-                 next_cmds=("close",), destination_offered=True, again=True)
-
-
-def _st_surrendered(t, a):
-    with_auditor(t, a, goals(a.sub), finish="ordinary", after_reminder="end")
-    run_ordinary(t, a, "c16.surrendered.run")
-    entries = a.aud.expected_selection(None)
-    rev = witness_revision(a.aud)
-    target = next((e for e in entries if e.kind == "record_artifact" and e.encoding == "binary"), None)
-    t.require("c16.surrendered.target", target is not None, [e.label for e in entries])
-    path = payload_path(a.sub, target)
-    t.require("c16.surrendered.payload-recorded", rs.read_package_member(os.path.dirname(path),
-                                                                        os.path.basename(path)) == target.data, path)
-    t.flip_bit(path, 0)
-    ids = close_damaged(t, a, "c16.surrendered", entries, rev, [target.id])
-    loc = pkg_path(a.sub, 1)
-    hum = t.cmd(["status", a.sub.ref], json_reply=False, envelope=False, name="c16.surrendered.status-human")
-    st = t.status(a.sub, name="c16.surrendered.status-json")
-    check_human_agrees(t, "c16.surrendered.status", st.rc, st.data, hum.rc, hum.stdout)
-    t.check("c16.surrendered.not-a-complete-delivery",
-            ((st.data.get("headline") or {}).get("delivered") or {}).get("verified") is False
-            and ((st.data.get("headline") or {}).get("delivered") or {}).get("losses") == ids,
-            st.data.get("headline"))
-    t.check("c16.surrendered.artifact-not-delivered", not os.path.lexists(os.path.join(loc, target.member)), loc)
+    check_package_at(t, a, "c16.sealed-undelivered.copy-1", 1)
+    confirm_and_close(t, a, "c16.sealed-undelivered.confirm", tok, actor="auditor")
 
 
 # ---------------------------------------------------------------------------
