@@ -1,8 +1,9 @@
 //! Manager commands through the real binary, for what the independent
 //! release driver does not cover: the worked example packets, behavior whose
-//! driver case runs only on Linux, state read in process, and presentation
-//! wording the specification leaves to the implementation. Release behavior:
-//! no fault or sabotage controls are set.
+//! driver case runs only on Linux, host name rules its Linux runs cannot
+//! observe, state read in process, and presentation wording the
+//! specification leaves to the implementation. Release behavior: no fault or
+//! sabotage controls are set.
 
 mod common;
 use common::*;
@@ -362,4 +363,100 @@ fn preparation_reports_a_missing_role_source_alongside_a_bad_destination_setting
     );
     assert_eq!(s(&reply, &["reason"]), "role_source_unknown");
     assert_eq!(s(&reply, &["effects", "preparation"]), "none");
+}
+
+/// One `manager-mcp` session: initialize, then each `tools/call` of `calls`
+/// as `(tool, arguments)`; returns each call's structured result in order.
+fn manager_mcp(e: &Env, launch: &[&str], calls: &[(&str, String)]) -> Vec<stewart::json::Json> {
+    use std::io::Write;
+    let mut input = String::from(
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{}},\"clientInfo\":{\"name\":\"test\",\"version\":\"1\"}}}\n{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}\n",
+    );
+    for (i, (tool, arguments)) in calls.iter().enumerate() {
+        input.push_str(&format!(
+            "{{\"jsonrpc\":\"2.0\",\"id\":{},\"method\":\"tools/call\",\"params\":{{\"name\":\"{tool}\",\"arguments\":{arguments}}}}}\n",
+            i + 10
+        ));
+    }
+    let mut child = std::process::Command::new(bin())
+        .arg("manager-mcp")
+        .args(launch)
+        .current_dir(&e.cwd)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(input.as_bytes())
+        .unwrap();
+    let out = child.wait_with_output().unwrap();
+    assert!(out.status.success(), "{out:?}");
+    let replies: Vec<_> = String::from_utf8(out.stdout)
+        .unwrap()
+        .lines()
+        .skip(1)
+        .map(|l| stewart::json::parse(l.as_bytes()).unwrap())
+        .collect();
+    assert_eq!(replies.len(), calls.len());
+    replies
+        .iter()
+        .map(|r| at(r, &["result", "structuredContent"]).clone())
+        .collect()
+}
+
+/// On a filesystem that folds case (the macOS default), a source named in
+/// another case is absent, and a candidate named in another case collides
+/// with the existing one in a dry run and at creation instead of opening it.
+/// The release driver qualifies on case-sensitive Linux filesystems, where
+/// this host rule cannot be observed.
+#[test]
+fn a_case_alias_is_absent_and_cannot_claim_an_existing_candidate() {
+    let e = Env::new();
+    let ws = e.path("workspace");
+    std::fs::create_dir_all(format!("{ws}/sources")).unwrap();
+    std::fs::write(format!("{ws}/sources/a.txt"), b"alpha\n").unwrap();
+    if !std::path::Path::new(&format!("{ws}/sources/A.TXT")).exists() {
+        println!("SKIPPED: the scratch filesystem distinguishes case");
+        return;
+    }
+    std::fs::create_dir(format!("{ws}/first")).unwrap();
+    let call = |from: &str, destination: &str, create: bool| {
+        (
+            "assemble",
+            format!(
+                "{{\"fields\":{{\"family\":\"open-inquiry\",\"model\":\"m\",\"destination\":\"{}\",\"limit-turns\":\"4\",\"limit-input-tokens\":\"32000\",\"limit-output-tokens\":\"8000\"}},\"body\":\"Q?\",\"guidance\":null,\"directories\":[\"materials\"],\"files\":[{{\"name\":\"materials/a.txt\",\"from\":\"{from}\"}}],\"destination\":\"{destination}\",\"create\":{create}}}",
+                e.dest
+            ),
+        )
+    };
+    let results = manager_mcp(
+        &e,
+        &["--workspace", &ws],
+        &[
+            call("A.TXT", "fresh", false),
+            call("a.txt", "FIRST", false),
+            call("a.txt", "FIRST", true),
+        ],
+    );
+    assert_eq!(
+        s(&results[0], &["problem", "reason"]),
+        "candidate_source_failed"
+    );
+    assert_eq!(s(&results[0], &["problem", "pointer"]), "/files/0/from");
+    for r in &results[1..] {
+        assert_eq!(s(r, &["problem", "reason"]), "destination_exists");
+        assert_eq!(s(r, &["problem", "pointer"]), "/destination");
+        assert_eq!(s(r, &["writes", "state"]), "none");
+    }
+    assert!(
+        std::fs::read_dir(format!("{ws}/first"))
+            .unwrap()
+            .next()
+            .is_none(),
+        "the existing candidate was not opened or written"
+    );
+    assert!(!std::path::Path::new(&format!("{ws}/fresh")).exists());
 }

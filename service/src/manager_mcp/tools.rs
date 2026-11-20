@@ -1,5 +1,7 @@
 //! Manager tool inventory and replies (INTERFACE 5.11, QUESTION-FORMS registry).
+use super::assembly;
 use super::assessment;
+use super::workspace::Workspace;
 use crate::forms::{self, FAMILIES, Family};
 use crate::json::{self, J, JsonError, Obj, strs};
 use crate::roles::REGISTRY;
@@ -9,9 +11,10 @@ pub(super) enum Tool {
     Discover,
     Explain,
     Assess,
+    Assemble,
 }
 
-const TOOLS: [Tool; 3] = [Tool::Discover, Tool::Explain, Tool::Assess];
+const TOOLS: [Tool; 4] = [Tool::Discover, Tool::Explain, Tool::Assess, Tool::Assemble];
 
 fn object(properties: J, required: &[&str]) -> J {
     J::obj()
@@ -35,6 +38,7 @@ impl Tool {
             Self::Discover => "discover",
             Self::Explain => "explain",
             Self::Assess => "assess",
+            Self::Assemble => "assemble",
         }
     }
 
@@ -47,6 +51,9 @@ impl Tool {
             Self::Assess => {
                 "Check a prospective question and declared inventory. Reports errors and advice without reading files or commissioning an audit."
             }
+            Self::Assemble => {
+                "Propose a candidate submission folder from front matter fields, the question body, guidance, directories and source files under the workspace's sources/. A dry run writes nothing; create:true creates one new folder, named by destination, in the workspace. Commissions nothing."
+            }
         }
     }
 
@@ -55,6 +62,21 @@ impl Tool {
             Self::Discover => &[],
             Self::Explain => &["family"],
             Self::Assess => &["question_file", "guidance", "directories", "files"],
+            Self::Assemble => &[
+                "fields",
+                "body",
+                "guidance",
+                "directories",
+                "files",
+                "destination",
+            ],
+        }
+    }
+
+    fn optional(self) -> &'static [&'static str] {
+        match self {
+            Self::Assemble => &["create"],
+            _ => &[],
         }
     }
 
@@ -80,6 +102,32 @@ impl Tool {
                     .with("directories", array(string()))
                     .with("files", array(file))
             }
+            Self::Assemble => {
+                let mut fields = J::obj();
+                for key in assembly::field_keys() {
+                    let schema = if key == "material-roles" {
+                        array(J::obj())
+                    } else {
+                        string()
+                    };
+                    fields.push(key, schema);
+                }
+                let file = object(
+                    J::obj().with("name", string()).with("from", string()),
+                    &["name", "from"],
+                );
+                J::obj()
+                    .with("fields", object(fields, &[]))
+                    .with("body", string())
+                    .with("guidance", J::obj().with("type", strs(&["string", "null"])))
+                    .with("directories", array(string()))
+                    .with("files", array(file))
+                    .with("destination", string())
+                    .with(
+                        "create",
+                        J::obj().with("type", "boolean").with("default", false),
+                    )
+            }
         };
         object(
             properties.with(
@@ -92,11 +140,12 @@ impl Tool {
         )
     }
 
-    pub(super) fn call(self, bytes: &[u8]) -> J {
+    pub(super) fn call(self, bytes: &[u8], workspace: Option<&Workspace>) -> J {
         let checked = || {
             let value = json::parse(bytes)?;
             let args = value.obj("")?;
             let mut allowed = self.required().to_vec();
+            allowed.extend(self.optional());
             allowed.push("detail");
             args.only(&allowed)?;
             let full = match args.opt_str("detail")? {
@@ -104,12 +153,12 @@ impl Tool {
                 Some("full") => true,
                 Some(_) => return Err(args.invalid("detail", "Use brief or full.")),
             };
-            self.evaluate(&args, full)
+            self.evaluate(&args, full, workspace)
         };
         let evaluation = checked().unwrap_or_else(|e: JsonError| {
             ToolResult::refusal(
                 "input_invalid",
-                &e.pointer,
+                Some(&e.pointer),
                 &e.to_string(),
                 "Correct the indicated argument using this tool's input schema.",
             )
@@ -117,7 +166,12 @@ impl Tool {
         evaluation.reply(self.name())
     }
 
-    fn evaluate(self, args: &Obj, full: bool) -> Result<ToolResult, JsonError> {
+    fn evaluate(
+        self,
+        args: &Obj,
+        full: bool,
+        workspace: Option<&Workspace>,
+    ) -> Result<ToolResult, JsonError> {
         match self {
             Self::Discover => {
                 let families = FAMILIES
@@ -145,7 +199,7 @@ impl Tool {
                         .join(", ");
                     return Ok(ToolResult::refusal(
                         "family_unknown",
-                        "/family",
+                        Some("/family"),
                         &format!("Unknown or unavailable question family {id:?}."),
                         &format!("Choose an available family: {available}."),
                     ));
@@ -170,6 +224,7 @@ impl Tool {
                 };
                 Ok(ToolResult::completed(data, full, explanation))
             }
+            Self::Assemble => assembly::assemble(args, workspace, full),
         }
     }
 }
@@ -214,56 +269,104 @@ fn worked_example(family: &Family) -> (J, &'static str) {
     }
 }
 
-struct ToolResult {
+/// One tool result (MANAGER-PREPARATION "Transport"): its outcome, problem,
+/// data, filesystem writes and per-call explanation.
+pub(super) struct ToolResult {
+    outcome: &'static str,
     data: J,
     problem: J,
+    writes: J,
     explanation: J,
 }
 
+fn no_writes() -> J {
+    J::obj()
+        .with("state", "none")
+        .with("created", J::Arr(vec![]))
+        .with("incomplete", J::Arr(vec![]))
+}
+
+fn explained(full: bool, explanation: &str) -> J {
+    if full {
+        strs(&[explanation])
+    } else {
+        J::Arr(vec![])
+    }
+}
+
+fn problem(reason: &str, pointer: Option<&str>, message: &str, remedy: &str) -> J {
+    J::obj()
+        .with("reason", reason)
+        .with("pointer", pointer)
+        .with("message", message)
+        .with("remedy", remedy)
+}
+
 impl ToolResult {
-    fn completed(data: J, full: bool, explanation: &str) -> Self {
+    pub(super) fn completed(data: J, full: bool, explanation: &str) -> Self {
         Self {
+            outcome: "completed",
             data,
             problem: J::Null,
-            explanation: if full {
-                strs(&[explanation])
-            } else {
-                J::Arr(vec![])
-            },
+            writes: no_writes(),
+            explanation: explained(full, explanation),
         }
     }
-    fn refusal(reason: &str, pointer: &str, message: &str, remedy: &str) -> Self {
+    pub(super) fn refusal(
+        reason: &str,
+        pointer: Option<&str>,
+        message: &str,
+        remedy: &str,
+    ) -> Self {
         Self {
+            outcome: "refused",
             data: J::Null,
-            problem: J::obj()
-                .with("reason", reason)
-                .with("pointer", pointer)
-                .with("message", message)
-                .with("remedy", remedy),
+            problem: problem(reason, pointer, message, remedy),
+            writes: no_writes(),
             explanation: J::Arr(vec![]),
         }
     }
+    /// A failure after effects began: the data of a success and what was
+    /// written.
+    pub(super) fn failed(
+        reason: &str,
+        message: &str,
+        remedy: &str,
+        data: J,
+        writes: J,
+        full: bool,
+    ) -> Self {
+        Self {
+            outcome: "failed",
+            data,
+            problem: problem(reason, None, message, remedy),
+            writes,
+            explanation: explained(full, remedy),
+        }
+    }
+    pub(super) fn with_data(mut self, data: J) -> Self {
+        self.data = data;
+        self
+    }
+    pub(super) fn with_writes(mut self, writes: J) -> Self {
+        self.writes = writes;
+        self
+    }
     fn reply(self, name: &str) -> J {
-        let refused = self.problem != J::Null;
+        let is_error = self.outcome != "completed";
         let body = J::obj()
             .with("schema", "stewart.manager-preparation/1")
             .with("registry", REGISTRY)
             .with("question_schema", "question/2")
             .with("tool", name)
-            .with("outcome", if refused { "refused" } else { "completed" })
+            .with("outcome", self.outcome)
             .with("problem", self.problem)
             .with("data", self.data)
-            .with(
-                "writes",
-                J::obj()
-                    .with("state", "none")
-                    .with("created", J::Arr(vec![]))
-                    .with("incomplete", J::Arr(vec![])),
-            )
+            .with("writes", self.writes)
             .with("explanation", self.explanation);
         let content = J::obj().with("type", "text").with("text", body.string());
         J::obj()
-            .with("isError", refused)
+            .with("isError", is_error)
             .with("structuredContent", body)
             .with("content", J::Arr(vec![content]))
     }

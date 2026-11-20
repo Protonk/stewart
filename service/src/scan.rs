@@ -352,7 +352,7 @@ pub fn scan(folder: &Dir, exclude: &Exclude, selected_guidance: bool) -> Result<
 
 /// The directory entry checked before open and the opened file can have
 /// different sizes. Bound the read itself by both remaining allowances.
-fn read_material(
+pub(crate) fn read_material(
     file: File,
     held: &Stat,
     entry: &str,

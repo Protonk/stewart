@@ -3,10 +3,11 @@
 **Current status:** The file-only commissioning and custody path exists. The
 manager contracts are specified. Both runtimes bind the manager's `question/2` role declarations
 and family descriptor in the arrangement. CLI preparation reports reference
-errors and family-specific advice. The read-only preparation MCP supports
-discovery, explanation and prospective assessment. The standalone CLI exposes
-command effects and delivers the accepted question with the answer. MCP candidate
-assembly remains open.
+errors and family-specific advice. The preparation MCP supports discovery,
+explanation, prospective assessment and candidate assembly in a workspace the
+launcher designates. The standalone CLI exposes command effects and delivers the
+accepted question with the answer. The manager walkthroughs and the
+fake-provider integration demonstration remain open.
 Live trials require a separate bounded commission.
 
 This plan owns the manager CLI, optional preparation MCP server, question-type
@@ -25,10 +26,10 @@ This inventory distinguishes existing behavior from work still owed.
 | Area | Existing commitment or evidence | Selected work |
 | --- | --- | --- |
 | Commission and authority | Ordinary submission files; CLI `prepare` binds a proposal, `commission` explicitly accepts it, and `run` launches only an accepted commission. | Keep these distinct operations. MCP supplies no required token, manifest, registration, certification or privileged handoff. |
-| MCP boundary | The stdio server discovers families, explains them and assesses a supplied question and inventory. | Add dry-run and explicit creation of candidate files. |
-| Shared rules | The CLI and MCP use the same parser, material bounds, role assessment and family descriptors. | Use these rules for candidate assembly and retain independent acceptance checks. |
+| MCP boundary | The stdio server discovers families, explains them, assesses a supplied question and inventory, and proposes or explicitly creates a candidate folder in the launcher's workspace ([preparation protocol](../docs/MANAGER-PREPARATION.md)). | Keep assembly within that workspace; no lifecycle access. |
+| Shared rules | The CLI and MCP, including candidate assembly, use the same parser, material bounds, role assessment and family descriptors. | Retain independent acceptance checks. |
 | Material roles | Families have different purposes, instructions and recording tools. Empty materials and intellectual insufficiency remain admissible. | Validate declared role structure and references; give type-specific warnings for missing evidence roles and suggestions for improvements. Do not introduce an evidence-completeness gate. |
-| Documentary output | Help and `describe` expose the same compiled command effects. The preparation MCP has versioned schemas and per-call detail. | Describe candidate assembly when the MCP gains workspace access. |
+| Documentary output | Help and `describe` expose the same compiled command effects, including assembly's conditional writes. The preparation MCP has versioned schemas and per-call detail. | Publish the manager walkthroughs. |
 | Return context | The [returned-question contract](../CONTRACTS.md#returned-question-and-answer) binds the accepted question body separately from the auditor’s answer. | Apply the same package checks to MCP-assisted commissions. |
 | Lifecycle | Custody, interruption, continuation, delivery and close use one operation core. | Demonstrate that optional preparation preserves CLI authority, custody and recovery. |
 | Runtime evidence | [Current demonstrations](../README.md#status) and [retained evidence](../apparatus/qualified.md) identify the reviewed native service use and synthetic acceptance coverage. | Reuse the apparatus for bounded question-family trials. Fake-provider evidence establishes the manager-interface boundary; live trials establish only the additional mechanisms actually witnessed. |
@@ -119,49 +120,15 @@ missing receipt, partial intake, lost replies, and substituted package members.
   with the pinned `one-owner-release-02` writer, now covers its comparison.
   The `acceptance-question2-01` writer pin follows those audits.
 
-### 4. Implement the bounded manager MCP surface
-
-| Capability | Function | Required limits |
-| --- | --- | --- |
-| Discover | List supported types, purposes and availability. | Built-in documentary data only; no audit discovery. |
-| Explain | Show a selected type's role structure, enforced constraints, conventions and examples. | Distinguish requirements from advice; `detail` expands rationale per call. |
-| Assess | Apply the shared rules to an explicitly supplied prospective question and material inventory. | Bounded reads within the declared candidate workspace; report errors/warnings/suggestions and unestablished CLI conditions. |
-| Assemble | Propose a candidate layout and question, or explicitly create them. | Ordinary files only; explicit destination, default dry-run and no overwrite. No acceptance or privileged CLI handoff. |
-
-- [ ] Extend the read-only dispatcher with assembly using the same prospective
-  rules. Keep each call independent of earlier proposals.
-- [ ] Define and enforce candidate access before opening content. Reject audit
-  references, archive/delivery paths and path escapes; cover symlinks, hard-link
-  aliases and case aliases as applicable to the declared workspace policy. Do not
-  scan archives to discover execution progress or use audit contents to construct
-  advice. State the actual access boundary and its limits, without claiming OS
-  confinement merely because a tool checks paths.
-- [ ] Keep all documented functionality available with lifecycle dispatch,
-  auditor launches, provider access and credential access unavailable. No remote
-  material gathering, model calls, prose sufficiency judgments, audit monitors,
-  resume/close tools or automatic family selection.
-- [ ] Make dry-run produce the proposed files/effects and predictable validation
-  results with no writes, including no directories, locks or temporary files.
-  Distinguish those forecasts from permissions, races, source stability and
-  acceptance that a later CLI operation alone can establish.
-- [ ] Initially create only a fresh, explicit candidate destination. Refuse an
-  existing destination instead of overwriting, merging or silently renaming it;
-  never mutate an established audit. Specify partial creation/interruption
-  reports, bounded supplied source reads and what a safe retry does. Generation
-  stays deterministic from explicit inputs and documented templates.
-
-**Complete when:** all four capabilities satisfy their schemas and access rules,
-candidate creation has predictable effects, and no call exposes lifecycle
-information. Human and agent managers can use the same ordinary file handoff.
-
-### 5. Finish the documentary interface
+### 4. Finish the documentary interface
 
 - [ ] Publish one file-only walkthrough and an equivalent optional-MCP walkthrough,
   with required fields, advisory roles, diagnostics, creation effects, failure
   remedies and the CLI acceptance boundary. Update scaffold/help/examples and
-  status descriptions to agree with the implemented behavior. Print each
-  `run_needs` entry legibly in commission and receipt. A run refused after
-  completed close must give a next action appropriate to the closed state.
+  status descriptions to agree with the implemented behavior. A run refused
+  after a completed close must describe the closed state and offer a next
+  action that fits it; today a reference closed before acceptance refuses
+  `not_accepted` with "Prepare and commission it first".
 - [ ] Test terse and detailed response examples, effect descriptions and generated
   candidates against the declared schemas and actual rules. Extend the CLI
   checks of the ordinary and inadequate-evidence worked packets to their
@@ -177,7 +144,7 @@ information. Human and agent managers can use the same ordinary file handoff.
 command's effects without executing it, and guidance never represents a candidate
 assessment as acceptance, sufficient evidence or an assured answer.
 
-### 6. Demonstrate integration without a real model
+### 5. Demonstrate integration without a real model
 
 Use the [manager acceptance criteria](../ACCEPTANCE.md#c21--manager-preparation-and-command-inspection)
 to compare an MCP-created candidate with an equivalent file-only commission.

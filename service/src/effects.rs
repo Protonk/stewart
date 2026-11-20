@@ -368,9 +368,10 @@ const DESCRIBE: &[Variant] = &[common(
         "Inspect compiled descriptions in this binary. Reading them has no filesystem, network, credential or audit effects.",
     )],
 )];
+const MCP_FORM: &str = "stewart manager-mcp [--workspace DIR]";
 const MCP: &[Variant] = &[
     common(
-        "stewart manager-mcp",
+        MCP_FORM,
         &[(
             "on a discover call",
             "read",
@@ -378,7 +379,7 @@ const MCP: &[Variant] = &[
         )],
     ),
     common(
-        "stewart manager-mcp",
+        MCP_FORM,
         &[(
             "on an explain call",
             "read",
@@ -386,7 +387,7 @@ const MCP: &[Variant] = &[
         )],
     ),
     common(
-        "stewart manager-mcp",
+        MCP_FORM,
         &[
             (
                 "on an assess call",
@@ -397,6 +398,36 @@ const MCP: &[Variant] = &[
                 "on repeat",
                 "repeat",
                 "Each assessment uses only that call's inputs. It creates no files, preparation, handle or commission.",
+            ),
+        ],
+    ),
+    common(
+        MCP_FORM,
+        &[
+            (
+                "at launch with --workspace DIR",
+                "read",
+                "Check that DIR is an existing absolute directory outside any Stewart store or delivery package, by metadata only. Otherwise exit 2 before reading stdin.",
+            ),
+            (
+                "on an assemble call",
+                "read",
+                "Generate the question file from the supplied fields and body, and read only the named source files under DIR/sources/, checking intake rules, links, hard links and mounts. A dry run writes nothing. Without a workspace only a dry run without source files works.",
+            ),
+            (
+                "on an assemble call with create:true",
+                "write",
+                "Create one new candidate folder in DIR, named by destination: the folder, its directories, then each file exclusively (0700 directories, 0600 files), each verified by rereading. An existing name is refused, never reused or overwritten.",
+            ),
+            (
+                "on a failed creation or interruption",
+                "interruption",
+                "Created entries are left in place for inspection and the reply names them and any incomplete file. After a lost reply, inspect the folder with ordinary tools; its presence alone does not establish completion.",
+            ),
+            (
+                "on repeat",
+                "repeat",
+                "Each call uses only its own inputs. Retry a creation with a fresh destination. The CLI prepares and commissions a candidate; assembly accepts nothing.",
             ),
         ],
     ),

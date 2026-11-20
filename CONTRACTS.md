@@ -173,9 +173,9 @@ never changed or that the source had this complete state at one instant. The
 receipt identifies what Stewart captured and which checks matched, without
 turning the declaration or repeated hashes into an atomic snapshot claim.
 
-**Optional preparation assistance.** The read-only discovery, explanation
-and assessment tools are implemented. Candidate assembly and prospective
-command-effect inspection are specified.
+**Optional preparation assistance.** Discovery, explanation, assessment,
+candidate assembly in a designated workspace and prospective command-effect
+inspection are implemented.
 A manager may discover the implemented families, ask for an explanation,
 assess a proposed question and inventory, or request creation of ordinary
 candidate files. These calls convey no audit authority. File-only preparation

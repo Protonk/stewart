@@ -53,8 +53,11 @@ The manager's path:
        Ends the reference from any state. Before launch it creates no answer.
 
 Optional preparation before commissioning:
-  stewart manager-mcp                stdio tools to discover, explain and assess
-                                     a supplied candidate without reading files
+  stewart manager-mcp [--workspace DIR]
+                                     stdio tools to discover, explain, assess and
+                                     assemble a candidate; only assemble reads
+                                     files, under DIR/sources/, and only with
+                                     create:true does it create a folder in DIR
 
 Read-only at any time:
   stewart receipt REF [--verify]     the fixed commission and its readback items
@@ -131,10 +134,16 @@ The submission folder
   a selection that changed meanwhile. Prepare again after any change.
 
 Commands
-  stewart manager-mcp
-      Serve discover, explain and assess over MCP stdio. Supply the question
-      text and inventory to assess. You can edit and assess again, or prepare
-      ordinary files with the CLI. Only commission accepts a prepared selection.
+  stewart manager-mcp [--workspace DIR]
+      Serve discover, explain, assess and assemble over MCP stdio. Supply the
+      question text and inventory to assess; edit and assess again as often as
+      you like. Assemble generates the question file from front matter fields
+      and your exact body, reads source files you put under DIR/sources/, and
+      reports the proposed folder. With create:true it creates that folder as
+      one new entry of DIR; it never overwrites or reuses an existing one. DIR
+      must be an existing absolute directory outside any archive or return
+      package. Prepare the folder with the CLI: only commission accepts a
+      prepared selection.
   stewart new FOLDER [--archive ROOT] [--json]
       Create a reference. ROOT may also come from STEWART_ARCHIVE (for new only).
       An absent ROOT is created with a store marker; an existing empty directory

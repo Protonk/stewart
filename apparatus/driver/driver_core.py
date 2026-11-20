@@ -341,7 +341,9 @@ SABOTAGES = ("accept_without_affirmation", "accept_changed_source", "skip_hidden
              "reset_limits_on_continuation", "fresh_ledger_on_continuation", "drop_refused_capture",
              "manifest_verdict", "ended_as_submitted", "seal_as_delivered", "unknown_membership_empty",
              "stale_preparation_retargets", "prepare_claims_seal", "leak_custody_path",
-             "accept_unknown_tool_field", "seal_uncertain_as_none", "submit_claims_delivery")
+             "accept_unknown_tool_field", "seal_uncertain_as_none", "submit_claims_delivery",
+             "candidate_dry_run_writes", "candidate_forecast_as_written", "candidate_unreported_partial",
+             "candidate_overwrites_existing")
 # Appendix C: the release binary contains none of these names; the test build all of them.
 TEST_ENV_NAMES = (b"STEWART_TEST_FAULT", b"STEWART_TEST_SABOTAGE", b"STEWART_TEST_FAULT_DIR",
                   b"STEWART_TEST_TLS_ROOT", b"STEWART_TEST_PROVIDER_TIMEOUT", b"STEWART_TEST_RETRY_DELAYS")

@@ -1,9 +1,15 @@
-//! Read-only manager preparation over MCP stdio (INTERFACE 5.11).
-//! The session keeps only the initialization handshake. Tools receive input
-//! values, never a workspace, an audit or a provider capability.
+//! Manager preparation over MCP stdio (INTERFACE 5.11).
+//! The session keeps only the initialization handshake and the workspace the
+//! launcher designated. Tools receive input values and that workspace, never
+//! an audit, a credential or a provider capability; only `assemble` touches
+//! the workspace.
 
+mod assembly;
 mod assessment;
 mod tools;
+mod workspace;
+
+pub(crate) use workspace::Workspace;
 
 use crate::json::J;
 use crate::rpc::{self, Value};
@@ -12,11 +18,16 @@ use std::io::{self, BufRead, Write};
 const LINE_LIMIT: usize = 4 * 1024 * 1024;
 
 #[derive(Default, PartialEq)]
-enum Session {
+enum Stage {
     #[default]
     New,
     Initialized,
     Ready,
+}
+
+struct Session {
+    stage: Stage,
+    workspace: Option<Workspace>,
 }
 
 impl Session {
@@ -56,19 +67,21 @@ impl Session {
         };
         let Some(id) = id else {
             if method == "notifications/initialized"
-                && *self == Self::Initialized
+                && self.stage == Stage::Initialized
                 && request
                     .field("params")
                     .is_ok_and(|p| p.is_none_or(|v| v.field("_meta").is_ok()))
             {
-                *self = Self::Ready;
+                self.stage = Stage::Ready;
             }
             return None;
         };
         let id = id.bytes();
         Some(match method.as_str() {
-            "initialize" if *self != Self::New => rpc::error(id, -32600, "Already initialized."),
-            "tools/call" | "tools/list" if *self != Self::Ready => rpc::error(
+            "initialize" if self.stage != Stage::New => {
+                rpc::error(id, -32600, "Already initialized.")
+            }
+            "tools/call" | "tools/list" if self.stage != Stage::Ready => rpc::error(
                 id,
                 -32600,
                 "Initialize and send notifications/initialized first.",
@@ -96,7 +109,7 @@ impl Session {
                 let client = p.req("clientInfo")?;
                 client.text("name")?;
                 client.text("version")?;
-                *self = Self::Initialized;
+                self.stage = Stage::Initialized;
                 Ok(rpc::initialize_result("stewart-manager"))
             }
             "tools/list" => {
@@ -112,7 +125,10 @@ impl Session {
                 let name = p.text("name")?;
                 let args = p.field("arguments")?;
                 let tool = tools::Tool::named(&name).ok_or("Unknown manager preparation tool.")?;
-                Ok(tool.call(args.map_or(b"{}".as_slice(), Value::bytes)))
+                Ok(tool.call(
+                    args.map_or(b"{}".as_slice(), Value::bytes),
+                    self.workspace.as_ref(),
+                ))
             }
             _ => unreachable!(),
         }
@@ -121,8 +137,15 @@ impl Session {
 
 /// Consume a frame without ever retaining more than its limit. A discarded
 /// frame gets one error, even when its delimiter arrives in a later buffer.
-pub(crate) fn serve(mut input: impl BufRead, mut output: impl Write) -> io::Result<()> {
-    let mut session = Session::default();
+pub(crate) fn serve(
+    mut input: impl BufRead,
+    mut output: impl Write,
+    workspace: Option<Workspace>,
+) -> io::Result<()> {
+    let mut session = Session {
+        stage: Stage::default(),
+        workspace,
+    };
     let mut frame = Vec::new();
     let mut overlong = false;
     loop {

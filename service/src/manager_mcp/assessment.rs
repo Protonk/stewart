@@ -160,18 +160,61 @@ pub(super) fn assess(args: &Obj) -> Result<J, JsonError> {
         })
         .collect::<Result<Vec<_>, JsonError>>()?;
 
-    let mut unchecked = vec!["material_bytes", "filesystem", "source_stability"];
-    let outcome = check_snapshot(question, guidance, &dirs, &files, &mut unchecked);
+    Ok(snapshot(question, guidance, &dirs, &files, false).data)
+}
+
+/// An assessment of one snapshot: its data, and whether a runtime profile
+/// is selected (which adds `runtime_profile` to what remains unchecked).
+pub(super) struct Snapshot {
+    pub(super) valid: bool,
+    pub(super) data: J,
+    pub(super) profile: bool,
+}
+
+/// Assess a question, guidance and inventory. `bytes_checked` says every
+/// supplied material byte was actually read and checked, so
+/// `material_bytes` is no longer unchecked.
+pub(super) fn snapshot(
+    question: &str,
+    guidance: Option<&str>,
+    dirs: &[&str],
+    files: &[(&str, u64)],
+    bytes_checked: bool,
+) -> Snapshot {
+    let mut unchecked = vec!["filesystem", "source_stability"];
+    let outcome = check_snapshot(question, guidance, dirs, files, &mut unchecked);
+    let profile = unchecked.len() > 2;
+    Snapshot {
+        valid: outcome.is_ok(),
+        data: data(outcome, bytes_checked, profile),
+        profile,
+    }
+}
+
+/// Assessment data from an outcome: errors, or the advice of a valid snapshot.
+pub(super) fn data(
+    outcome: Result<Vec<Defect>, Vec<Defect>>,
+    bytes_checked: bool,
+    profile: bool,
+) -> J {
+    let mut unchecked = Vec::new();
+    if !bytes_checked {
+        unchecked.push("material_bytes");
+    }
+    unchecked.extend(["filesystem", "source_stability"]);
+    if profile {
+        unchecked.push("runtime_profile");
+    }
     unchecked.push("acceptance");
     let valid = outcome.is_ok();
     let defects = outcome.unwrap_or_else(|e| e);
-    Ok(J::obj()
+    J::obj()
         .with("valid", valid)
         .with(
             "defects",
             J::Arr(defects.iter().map(Defect::to_j).collect()),
         )
-        .with("unchecked", strs(&unchecked)))
+        .with("unchecked", strs(&unchecked))
 }
 
 fn check_snapshot(

@@ -178,7 +178,8 @@ def c_transport(t):
     t.eq("transport.metadata-invariant", first, last)
 
 
-@case("c21.manager-mcp-families", ["C21", "C7"], "discover, explain and validate each worked family's descriptor and declared roles")
+@case("c21.manager-mcp-families", ["C21", "C7"],
+      "the four advertised tools and their schemas; discover, explain and validate each worked family's descriptor")
 def c_families(t):
     methods = [request("list", "tools/list"), call("families", "discover", {})]
     for family in FAMILY_ROLES:
@@ -190,8 +191,9 @@ def c_families(t):
     pages = replies[0].get("result", {})
     advertised = pages.get("tools", [])
     t.eq("families.one-page", pages.get("nextCursor"), None)
-    t.eq("families.advertised", [tool.get("name") for tool in advertised], ["discover", "explain", "assess"])
-    for tool, fields in zip(advertised, ([], ["family"], ["question_file", "guidance", "directories", "files"])):
+    t.eq("families.advertised", [tool.get("name") for tool in advertised], ["discover", "explain", "assess", "assemble"])
+    for tool, fields in zip(advertised, ([], ["family"], ["question_file", "guidance", "directories", "files"],
+                                         ["fields", "body", "guidance", "directories", "files", "destination"])):
         name = "families.schema." + tool["name"]
         schema = tool.get("inputSchema", {})
         t.check(name + ".description", isinstance(tool.get("description"), str) and tool["description"].strip(), tool)
@@ -199,7 +201,8 @@ def c_families(t):
         t.check(name + ".closed", schema.get("additionalProperties") is False, schema)
         t.eq(name + ".required", sorted(schema.get("required", [])), sorted(fields))
         properties = schema.get("properties", {})
-        t.eq(name + ".properties", sorted(properties), sorted(["detail"] + fields))
+        optional = ["create"] if tool["name"] == "assemble" else []
+        t.eq(name + ".properties", sorted(properties), sorted(["detail"] + fields + optional))
         t.eq(name + ".detail-type", field_types(properties.get("detail", {})), {"string"})
         t.eq(name + ".detail-values", sorted(properties.get("detail", {}).get("enum", [])), ["brief", "full"])
         if tool["name"] == "explain":
@@ -218,6 +221,24 @@ def c_families(t):
             t.eq(name + ".file-name", field_types(file_fields.get("name", {})), {"string"})
             t.eq(name + ".file-size", field_types(file_fields.get("size", {})), {"integer"})
             t.eq(name + ".unsigned-size", file_fields.get("size", {}).get("minimum"), 0)
+        if tool["name"] == "assemble":
+            # MANAGER-PREPARATION "Assemble": a closed fields object, the manager's body, assess's
+            # guidance and directories, {name,from} files, one destination name and create.
+            for key, types in (("fields", {"object"}), ("body", {"string"}), ("guidance", {"string", "null"}),
+                               ("directories", {"array"}), ("files", {"array"}), ("destination", {"string"}),
+                               ("create", {"boolean"})):
+                t.eq(name + "." + key, field_types(properties.get(key, {})), types)
+            t.check(name + ".fields-closed", properties.get("fields", {}).get("additionalProperties") is False,
+                    properties.get("fields"))
+            t.eq(name + ".directory-name", field_types(properties.get("directories", {}).get("items", {})), {"string"})
+            file_schema = properties.get("files", {}).get("items", {})
+            t.eq(name + ".file-type", field_types(file_schema), {"object"})
+            t.check(name + ".file-closed", file_schema.get("additionalProperties") is False, file_schema)
+            t.eq(name + ".required-file-members", sorted(file_schema.get("required", [])), ["from", "name"])
+            file_fields = file_schema.get("properties", {})
+            t.eq(name + ".file-members", sorted(file_fields), ["from", "name"])
+            for key in ("name", "from"):
+                t.eq(name + ".file-" + key, field_types(file_fields.get(key, {})), {"string"})
     families = tool_result(t, "families.discover", replies[1], "discover")["data"]["families"]
     t.eq("families.discovery-order", [f.get("family") for f in families], [f + "/1" for f in FAMILY_ROLES])
     roles = {"open-inquiry": [("subject", "a.py"), ("context", "requirements.txt"), ("report", "supplied-report.txt")],

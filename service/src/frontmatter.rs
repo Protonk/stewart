@@ -299,6 +299,30 @@ pub fn first_non_text(bytes: &[u8]) -> Option<usize> {
     }
 }
 
+/// Why a `destination` value is not a valid absolute path (INTERFACE 3.2),
+/// in the order the parser reports it. Existence is checked by prepare.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Destination {
+    Placeholder,
+    NotAbsolute,
+    TooLong,
+    Control,
+}
+
+pub(crate) fn destination_problem(v: &str) -> Option<Destination> {
+    if v == DESTINATION_PLACEHOLDER {
+        Some(Destination::Placeholder)
+    } else if !v.starts_with('/') {
+        Some(Destination::NotAbsolute)
+    } else if v.len() > 1024 {
+        Some(Destination::TooLong)
+    } else if v.chars().any(is_control) {
+        Some(Destination::Control)
+    } else {
+        None
+    }
+}
+
 fn is_control(c: char) -> bool {
     let u = c as u32;
     u <= 0x1F || (0x7F..=0x9F).contains(&u)
@@ -565,34 +589,30 @@ pub(crate) fn candidate(bytes: &[u8]) -> Result<(Question, Vec<Defect>), Vec<Def
         }
     }
     if let Some((v, l)) = get("destination") {
-        if v == DESTINATION_PLACEHOLDER {
-            invalid(
+        match destination_problem(v) {
+            Some(Destination::Placeholder) => invalid(
                 "destination",
                 l,
                 format!(
                     "line {l}: replace {DESTINATION_PLACEHOLDER} with the absolute path of an existing directory for the return package."
                 ),
-            );
-        } else if !v.starts_with('/') {
-            invalid(
+            ),
+            Some(Destination::NotAbsolute) => invalid(
                 "destination",
                 l,
                 format!("line {l}: destination must be an absolute path."),
-            );
-        } else if v.len() > 1024 {
-            invalid(
+            ),
+            Some(Destination::TooLong) => invalid(
                 "destination",
                 l,
                 format!("line {l}: destination must be at most 1,024 bytes."),
-            );
-        } else if v.chars().any(is_control) {
-            invalid(
+            ),
+            Some(Destination::Control) => invalid(
                 "destination",
                 l,
                 format!("line {l}: destination must not contain control characters."),
-            );
-        } else {
-            destination = v.to_string();
+            ),
+            None => destination = v.to_string(),
         }
     }
     for (key, max, slot) in [

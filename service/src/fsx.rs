@@ -102,6 +102,19 @@ pub fn fstat(f: &File) -> io::Result<Stat> {
     Ok(Stat::from(&st))
 }
 
+/// The hard-link count of an open file. It is not part of `Stat`, whose
+/// equality is the CLI's change-during-read rule; the manager MCP admits
+/// only singly linked sources.
+// The nlink field type differs between platforms; the cast is kept.
+#[allow(clippy::unnecessary_cast)]
+pub fn link_count(f: &File) -> io::Result<u64> {
+    let mut st: libc::stat = unsafe { std::mem::zeroed() };
+    if unsafe { libc::fstat(f.as_raw_fd(), &mut st) } != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(st.st_nlink as u64)
+}
+
 /// An open directory descriptor with the absolute path it was opened as
 /// (for messages and retained-location lists only; never re-resolved).
 pub struct Dir {
@@ -510,6 +523,25 @@ impl Dir {
                 }
             }
         }
+    }
+
+    /// Open a file for writing, creating it or truncating an existing one
+    /// (the `candidate_overwrites_existing` sabotage control only).
+    #[cfg(feature = "sabotage")]
+    pub fn sabotage_open_truncate(&self, name: &str) -> io::Result<File> {
+        let c = cstr(name)?;
+        let fd = unsafe {
+            libc::openat(
+                self.file.as_raw_fd(),
+                c.as_ptr(),
+                libc::O_WRONLY | libc::O_CREAT | libc::O_TRUNC | libc::O_NOFOLLOW | libc::O_CLOEXEC,
+                0o600 as libc::c_uint,
+            )
+        };
+        if fd < 0 {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(unsafe { File::from_raw_fd(fd) })
     }
 
     /// `renameat` over an existing name (the `rewrite_record_in_place`

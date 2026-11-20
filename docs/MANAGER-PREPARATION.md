@@ -1,14 +1,13 @@
 # Manager preparation protocol
 
 Run `stewart manager-mcp` as an MCP stdio server to discover question
-families, explain their roles, and assess a prospective submission. These
-three tools take all their inputs in the call. An assessment can be repeated
-after any edit. CLI `prepare` checks the actual submission directory, and
-`commission` accepts an exact prepared selection.
-
-The fourth tool, `assemble`, and its `--workspace DIR` launcher option are
-specified below for a later implementation. The current server advertises
-`discover`, `explain` and `assess` in that order.
+families, explain their roles, assess a prospective submission and assemble a
+candidate submission folder. Discovery, explanation and assessment take all
+their inputs in the call; an assessment can be repeated after any edit.
+Assembly proposes a candidate's exact files and, on request, creates them in
+the workspace the launcher designates with `--workspace DIR`. CLI `prepare`
+checks the actual submission directory, and `commission` accepts an exact
+prepared selection. Nothing here prepares, accepts or runs an audit.
 
 ## Transport
 
@@ -102,13 +101,15 @@ string in question text is never opened by a tool.
 **Assemble** requires `fields`, `body`, `guidance`, `directories`, `files`
 and `destination`. The optional boolean `create` defaults to false.
 
-- `fields` is an object with the selected build's question keys other than
-  `stewart`. Values are strings as written in the front matter except
-  `material-roles`, which is its JSON array. Require the same fields and
-  validate the same values as CLI intake. Reject CR/LF in field strings to
-  prevent a value from inserting a line or ending front matter. `body` is the
-  manager's exact question string. `guidance` and `directories` have their
-  assess forms.
+- `fields` is a closed object of the selected build's question keys other
+  than `stewart`; another key refuses `input_invalid` at `/fields/<key>`.
+  Values are strings as written in the front matter except `material-roles`,
+  which is its JSON array. A missing required field is not an argument error:
+  the assessment reports it as CLI intake does, and validates the same values.
+  A field string containing CR or LF refuses `input_invalid` at that field's
+  pointer, for example `/fields/model`, so that no value can insert a line or
+  end the front matter. `body` is the manager's exact question string.
+  `guidance` and `directories` have their assess forms.
 - Each file is `{name,from}`: `name` is its public material name and `from`
   names a regular source relative to the workspace's `sources/` directory.
   Sources are supplied by the caller ahead of time. Copy exact text bytes.
@@ -118,20 +119,42 @@ and `destination`. The optional boolean `create` defaults to false.
 - Generate UTF-8 front matter with LF, starting with `---\nstewart: question/2\n`.
   Write present fields in bytewise key order, one `key: value\n` each.
   Encode role arrays compactly in declaration order and object-key order from
-  INTERFACE 3.2. Append `---\n` and the exact body bytes. Do not insert
+  INTERFACE 3.2: each entry as given, with `role`, `source` and `label` first
+  in that order and any other members after them in supplied order, so the
+  shared parser reports a malformed declaration in the assessment. Strings
+  escape only `"`, `\` and U+0001–U+001F: `\b`, `\f`, `\n`, `\r` and `\t`
+  where they apply, otherwise `\u` with four lowercase hex digits; every other
+  character is literal UTF-8. Append `---\n` and the exact body bytes. Do not insert
   examples, instructions, a missing criterion, question wording or a body
   newline. Keep selected guidance bytes separate.
 - On success data is `{question_file,directories,files,assessment}`.
   `directories` lists all proposed directories relative to the candidate,
   including `materials`. The `files` array lists `{name,size,sha256}` for every proposed
   file including the question and selected guidance. Both arrays sort by
-  UTF-8 name bytes. `assessment` is assess data for the generated snapshot,
-  omitting `material_bytes` from `unchecked` once all supplied bytes have
-  actually been checked. No output includes supplied material bodies. Dry-run
+  UTF-8 name bytes. `assessment` is the data `assess` gives for the generated
+  question, the guidance and the actual sizes, with the same pointers (the
+  index in `files` names a file). It omits `material_bytes` from `unchecked`
+  once all supplied bytes, possibly none, have actually been checked. No output includes supplied material bodies. Dry-run
   returns the exact proposed question and inventory with `writes.state:"none"`.
-  With candidate errors return `candidate_invalid`, the assessment in
-  `data.assessment` and no writes. Preflight need not acquire further sources
-  once a refusal is established.
+  With candidate errors return `candidate_invalid`, data `{assessment}` and no
+  writes. A source whose bytes break an intake text rule or bound is such an
+  error, reported with the CLI diagnostic whose `source` is its public name and
+  whose `pointer`, `line` and `key` are null. Other refusals have null data. A
+  failed creation has outcome `failed` and the data of a successful one.
+- Refusals are checked in this order, and the first established is reported:
+  argument errors (`input_invalid`); the candidate name
+  (`candidate_path_invalid`); a missing workspace (`workspace_required`, at
+  `/create` for a creation, otherwise at `/files`); a front matter destination
+  overlapping the candidate; errors in the generated question, guidance and
+  inventory names (`candidate_invalid`); a workspace that no longer satisfies
+  the launch checks or is no longer the launched directory; an existing
+  candidate (`destination_exists`); each source in `files` order (path policy, then
+  access, then its bytes); the assessment with actual sizes; then creation.
+  Preflight acquires no further sources once a refusal is established. An
+  assessment made before any source is read counts each file's size as zero
+  and keeps `material_bytes` in `unchecked`. A refusal for the candidate name
+  or an existing candidate points at `/destination`, a source refusal at
+  `/files/<i>/from`, and a failed creation has a null pointer.
 
 For example, to propose an empty open inquiry:
 
@@ -145,10 +168,15 @@ mapping is a suggestion. A separate call with the same arguments and
 
 ## Filesystem authority and interruption
 
-The launcher may designate one existing absolute, candidate-only workspace.
-Relative roots and tool-supplied workspace overrides are invalid. Without a
-workspace, discovery, explanation, assessment and a dry-run without source
-files work. A call needing filesystem access refuses `workspace_required`.
+The launcher may designate one existing absolute, candidate-only workspace
+with `stewart manager-mcp --workspace DIR`. DIR follows the CLI's other
+absolute path arguments, and symlinks in it are followed. Tool-supplied
+workspace overrides are invalid. A relative, missing or non-directory DIR, or
+one inside a Stewart store or delivery package (below), is a usage error: the
+process writes the reason to stderr and exits 2 before reading stdin, with
+nothing on stdout. Without a workspace, discovery, explanation, assessment and
+a dry-run without source files work. A call needing filesystem access,
+including every creation, refuses `workspace_required`.
 The launcher chooses a workspace separate from its archives and delivery
 locations. The server opens only named input files under `sources/` and
 creates at most one explicitly named fresh child and its proposed entries per
@@ -157,12 +185,18 @@ enumerates audits, invokes the CLI or starts a provider.
 
 Apply the CLI UTF-8 component/path limits to relative names. Reject absolute
 paths, empty components, `.`, `..` and audit-reference operands. Acquire
-directories through descriptors, verify exact name spelling, exclude symlinks,
+directories through descriptors and verify exact name spelling: a source
+component whose exact name is not an entry of its directory is absent
+(`candidate_source_failed`) whatever the host's name rules. Exclude symlinks,
 special entries, mount crossings below the workspace, and source files with
 more than one hard link. Check opened identities and sizes and stop on changes
 or ambiguity. Check the workspace and input ancestry for a Stewart store marker
 or delivery package before admitting it (metadata only: `STORE.json` or the
-reserved `stewart-return-` directory prefix). Reject reserved candidate
+reserved `stewart-return-` directory prefix). At launch the store check walks
+the workspace's actual parent chain and the package check its path components
+as given. Each `assemble` call with a workspace checks it again: a workspace
+that no longer satisfies these checks, or a DIR that now names another
+directory, refuses `candidate_path_invalid` with a null pointer. Reject reserved candidate
 destination names and collisions under the host's actual name rules. In
 particular, a case alias cannot turn exclusive creation into editing an
 existing candidate. These checks cover the supplied workspace only. The origin
@@ -170,24 +204,50 @@ of detached, renamed copies and the safety of arbitrary host directories remain
 unknown. The ordinary CLI still admits distinct hard-link names in a manager's
 literal submission.
 
+The candidate `destination` is one name under the CLI component rules. An
+empty or otherwise invalid name, `sources`, `STORE.json` or a name beginning
+`stewart-return-` refuses `candidate_path_invalid`, as does a `from` or `destination`
+beginning `stw1:`. With a workspace, a front matter `destination` that names
+the candidate, a path inside it or a directory containing it refuses
+`candidate_path_invalid` at `/fields/destination`. The comparison uses path
+components after dropping empty and `.` ones, without resolving `..`, and
+opens nothing at the answer destination; a destination that is not a valid
+absolute path is left to the assessment.
+
 Read only the listed sources, checking the UTF-8 text and all intake limits
-while acquiring them. Compute the proposed bytes before any creation. Reject
-known overlap between the candidate and the named answer destination.
+while acquiring them. Compute the proposed bytes before any creation.
 Neither dry-run nor assessment probes the answer destination or makes an
 archive, temp file, lock, reference or directory. Dry-run can identify an
 existing candidate by name when a workspace is present. Report
-`destination_exists` on a known collision. Successful preflight makes no
-promise that a later exclusive create will succeed.
+`destination_exists` on a known collision, an existing entry of that name
+under the host's name rules, in a dry run as at creation. Successful preflight
+makes no promise that a later exclusive create will succeed.
 
 On explicit creation claim the new child directory exclusively, create
 directories through retained descriptors, and publish each file exclusively
 with its proposed, verified bytes. Use 0700 directories and 0600 files.
 Independent calls racing for the same destination have at most one winner.
 Refuse an existing destination, including an incomplete earlier candidate.
-A path-policy violation refuses `candidate_path_invalid`. Source access
-failure or change gives `candidate_source_failed`. A failed write or
-verification gives `candidate_write_failed`. Name known partials, stop further
-writes and leave them for inspection. A lost reply leaves the caller uncertain.
-Inspect the named directory using ordinary file tools before repeating. Its
-presence alone cannot establish completion. Preserve it for the caller and
-require a fresh destination on retry.
+A path-policy violation refuses `candidate_path_invalid`. A source that cannot
+be opened or read, or changes identity or size while read, gives
+`candidate_source_failed`. A failed write or verification gives
+`candidate_write_failed`. Name known partials, stop further writes and leave
+them for inspection.
+
+Creation order is the candidate directory, then `data.directories` in order,
+then `data.files` in order, so `question.md` is written last. Paths in
+`writes` are workspace-relative and begin with the candidate name.
+`writes.created` lists, in that order, the directories created and the files
+whose bytes were written and verified. `writes.incomplete` lists a file whose
+exclusive create succeeded, or failed other than because the name existed,
+but whose bytes were not verified; it appears only there. The state is `none`
+when both lists are empty and no effect is uncertain, `complete` when every
+proposed entry was created and verified, `partial` when creation stopped after
+creating some, and `unknown` when a failed operation leaves an entry's
+existence unobservable, for example a failed candidate directory creation after
+which the name exists but cannot be shown to be this call's.
+
+A lost reply leaves the caller uncertain. Inspect the named directory using
+ordinary file tools before repeating. Its presence alone cannot establish
+completion. Preserve it for the caller and require a fresh destination on
+retry.

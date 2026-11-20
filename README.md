@@ -65,8 +65,9 @@ you invoke it. The [CLI interface](docs/INTERFACE.md)
 also defines structured JSON replies for scripts and agent managers.
 
 Before preparing files, a manager can use the optional `stewart manager-mcp`
-stdio server to discover question families, explain their material roles, or
-assess a proposed question and file inventory. An assessment reports errors
+stdio server to discover question families, explain their material roles,
+assess a proposed question and file inventory, or assemble a candidate
+submission folder in a workspace you designate. An assessment reports errors
 and advice. You may edit and assess again, or use the CLI to prepare the
 actual files. See the [preparation protocol](docs/MANAGER-PREPARATION.md).
 

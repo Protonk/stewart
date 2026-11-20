@@ -1042,7 +1042,7 @@ stewart status --archive ROOT [--details | --json]
 stewart run REF [--key-fd FD] [--details | --json]
 stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--details | --json]
 stewart describe COMMAND [--json]
-stewart manager-mcp
+stewart manager-mcp [--workspace DIR]
 stewart help [commands | forms | limits | reader | close]
 ```
 
@@ -1829,16 +1829,17 @@ and tool results, conditional retry, cumulative allowances, the 16,000-token
 per-response cap (including thinking), interruption and delivery. Describe the
 gated runtime's actual process/authentication and accounting separately when
 built. Describe each distinct mode of receipt, status, close and manager MCP,
-including conditional writes and retained partials. The read-only MCP has discovery, explanation and assessment variants. Audience/output flags which change only
+including conditional writes and retained partials. The manager MCP has discovery, explanation, assessment and assembly variants. Assembly reads only named sources under the workspace's `sources/` and, only with `create:true`, creates one fresh candidate folder there, retaining and naming partial entries. Audience/output flags which change only
 presentation can share a variant. No example needs a real credential value.
 
 ### 5.11 Manager preparation MCP
 
-The read-only entry point is `stewart manager-mcp`. In listing order its
-tools are `discover`, `explain` and `assess`. The specified extension adds
-`assemble` and the launcher option `--workspace DIR` for candidate files.
-All tools apply before CLI acceptance. The [manager preparation protocol](MANAGER-PREPARATION.md)
-defines transport, inputs, results, bounds, refusals and filesystem effects.
+The entry point is `stewart manager-mcp [--workspace DIR]`. In listing order
+its tools are `discover`, `explain`, `assess` and `assemble`. Only `assemble`
+touches the filesystem: it reads sources from and creates candidate folders in
+the workspace DIR names. All tools apply before CLI acceptance. The
+[manager preparation protocol](MANAGER-PREPARATION.md) defines transport,
+inputs, results, bounds, refusals and filesystem effects.
 
 ## 6. The run adapter
 
@@ -3055,6 +3056,14 @@ Records, the answer protocol and the run:
 | `seal.manifest_write` | Writing the seal manifest |
 | `seal.after_link` | After a `seal` is published, before the reply or delivery |
 
+Manager preparation (`assemble` with `create:true`; entries count in creation order, 1 being the candidate directory):
+
+| Point | Where |
+| --- | --- |
+| `candidate.after_entry:<k>` | After the k-th entry is created and, for a file, written, synced and verified; with `eio` or `enospc` creation stops there as a failed write |
+| `candidate.entry_write:<name>` | After the exclusive create of the candidate file with that candidate-relative name, such as `question.md`, and before its bytes are written; on failure the empty file remains and is listed as incomplete |
+| `candidate.entry_corrupt:<name>` | After writing that candidate file and before verifying it (use with `corrupt`) |
+
 Delivery and close:
 
 | Point | Where |
@@ -3163,6 +3172,10 @@ the check for that property must fail. The claims are ACCEPTANCE's.
 | `accept_unknown_tool_field` | Auditor tool inputs ignore unknown keys (C20) |
 | `seal_uncertain_as_none` | A seal whose publication is uncertain is reported with `effects.seal: "none"` (C20) |
 | `submit_claims_delivery` | A confirmed `submit` reply adds `"delivered":true` to its data (C20) |
+| `candidate_dry_run_writes` | A dry-run `assemble` with a workspace creates the candidate directory and still reports nothing written (C21) |
+| `candidate_forecast_as_written` | A dry-run `assemble` reports `writes.state: "complete"` with every proposed entry as created (C21) |
+| `candidate_unreported_partial` | A failed creation reports `writes` as state `none` with no created or incomplete entries (C21) |
+| `candidate_overwrites_existing` | Creation into an existing candidate directory opens it and replaces its proposed files instead of refusing `destination_exists` (C21) |
 
 Sabotage items in ACCEPTANCE that are not build flags:
 

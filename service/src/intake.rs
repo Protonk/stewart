@@ -148,47 +148,81 @@ fn not_text(entry: &str, offset: usize) -> Refusal {
     )
 }
 
-/// Append one component to a previously validated material directory.
-/// The initial parent is the index root, `materials`.
-pub(crate) fn material_path(parent: &str, raw: &[u8]) -> Result<String, Refusal> {
+/// Why a raw name is not one permitted path component (INTERFACE 3.3), in
+/// the order the rules are applied.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Component {
+    NotUtf8,
+    Control,
+    /// Longer than `COMPONENT_BYTES`; carries the observed length.
+    TooLong(usize),
+    /// Empty, `.`, `..` or containing `/`.
+    NotOneName,
+}
+
+/// The component rule shared by material names and the manager MCP's
+/// workspace-relative names.
+pub(crate) fn component_problem(raw: &[u8]) -> Option<Component> {
     let Ok(s) = std::str::from_utf8(raw) else {
-        let shown = format!("{parent}/{}", String::from_utf8_lossy(raw));
-        return Err(refusal(
-            "name_invalid",
-            format!(
-                "{shown:?} is not a valid UTF-8 name; names are kept exactly, so rename it with ordinary tools."
-            ),
-            J::obj().with("entry", shown),
-        ));
+        return Some(Component::NotUtf8);
     };
     if s.chars()
         .any(|c| (c as u32) <= 0x1F || (0x7F..=0x9F).contains(&(c as u32)))
     {
-        let shown = format!("{parent}/{s}");
-        return Err(refusal(
-            "name_invalid",
-            format!(
-                "{shown:?} contains a control character; names are kept exactly, so rename it with ordinary tools."
-            ),
-            J::obj().with("entry", shown),
-        ));
+        return Some(Component::Control);
     }
     if raw.len() > COMPONENT_BYTES {
-        return Err(bound(
-            "component_bytes",
-            COMPONENT_BYTES as u64,
-            &format!("{parent}/{s}"),
-            raw.len() as u64,
-        ));
+        return Some(Component::TooLong(raw.len()));
     }
-    let path = format!("{parent}/{s}");
     if s.is_empty() || matches!(s, "." | "..") || s.contains('/') {
-        return Err(refusal(
-            "name_invalid",
-            format!("{s:?} must be one literal material name component."),
-            J::obj().with("entry", path),
-        ));
+        return Some(Component::NotOneName);
     }
+    None
+}
+
+/// Append one component to a previously validated material directory.
+/// The initial parent is the index root, `materials`.
+pub(crate) fn material_path(parent: &str, raw: &[u8]) -> Result<String, Refusal> {
+    let shown = format!("{parent}/{}", String::from_utf8_lossy(raw));
+    match component_problem(raw) {
+        Some(Component::NotUtf8) => {
+            return Err(refusal(
+                "name_invalid",
+                format!(
+                    "{shown:?} is not a valid UTF-8 name; names are kept exactly, so rename it with ordinary tools."
+                ),
+                J::obj().with("entry", shown),
+            ));
+        }
+        Some(Component::Control) => {
+            return Err(refusal(
+                "name_invalid",
+                format!(
+                    "{shown:?} contains a control character; names are kept exactly, so rename it with ordinary tools."
+                ),
+                J::obj().with("entry", shown),
+            ));
+        }
+        Some(Component::TooLong(len)) => {
+            return Err(bound(
+                "component_bytes",
+                COMPONENT_BYTES as u64,
+                &shown,
+                len as u64,
+            ));
+        }
+        Some(Component::NotOneName) => {
+            let s = std::str::from_utf8(raw).expect("checked UTF-8");
+            return Err(refusal(
+                "name_invalid",
+                format!("{s:?} must be one literal material name component."),
+                J::obj().with("entry", shown),
+            ));
+        }
+        None => {}
+    }
+    let s = std::str::from_utf8(raw).expect("checked UTF-8");
+    let path = format!("{parent}/{s}");
     let rel_len = path.len() - "materials/".len();
     if rel_len > PATH_BYTES {
         return Err(bound(

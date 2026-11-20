@@ -39,7 +39,8 @@ FAULT_POINT_NAMES = (b"prepare.before_prepared_link", b"commission.after_capture
                      b"run.between_turns", b"entry.payload_corrupt", b"entry.after_link",
                      b"seal.manifest_write", b"seal.after_link", b"delivery.member_corrupt",
                      b"delivery.after_member", b"delivery.after_ended", b"close.after_requested",
-                     b"close.after_seal", b"close.after_closed_link")
+                     b"close.after_seal", b"close.after_closed_link", b"candidate.after_entry",
+                     b"candidate.entry_write", b"candidate.entry_corrupt")
 
 
 def basic_entries():

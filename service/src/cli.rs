@@ -21,7 +21,7 @@ usage: stewart new FOLDER [--archive ROOT] [--json]
        stewart run REF [--key-fd FD] [--details | --json]
        stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--details | --json]
        stewart describe COMMAND [--json]
-       stewart manager-mcp
+       stewart manager-mcp [--workspace DIR]
        stewart help [commands | forms | limits | reader | close]";
 
 struct Usage(String);
@@ -113,7 +113,7 @@ fn absolute(what: &str, p: &str) -> Result<(), Usage> {
 }
 
 enum Plan {
-    ManagerMcp,
+    ManagerMcp(Option<crate::manager_mcp::Workspace>),
     Reply {
         reply: Reply,
         json: bool,
@@ -158,9 +158,18 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
             })
         }
         "manager-mcp" => {
-            let a = parse(rest, &[], &[], &[])?;
-            a.exactly(0, "no arguments for the read-only manager MCP server")?;
-            Ok(Plan::ManagerMcp)
+            // The workspace is admitted here, before stdin is read: a
+            // refusal is a usage error with nothing on stdout.
+            let a = parse(rest, &[], &["--workspace"], &[])?;
+            a.exactly(0, "no operands for the manager MCP server")?;
+            let workspace = match a.value("--workspace") {
+                None => None,
+                Some(dir) => {
+                    absolute("--workspace DIR", &dir)?;
+                    Some(crate::manager_mcp::Workspace::open(&dir).map_err(usage)?)
+                }
+            };
+            Ok(Plan::ManagerMcp(workspace))
         }
         "help" => {
             let a = parse(rest, &[], &[], &[])?;
@@ -363,8 +372,12 @@ pub fn main() -> i32 {
             );
             2
         }
-        Ok(Plan::ManagerMcp) => {
-            match crate::manager_mcp::serve(std::io::stdin().lock(), std::io::stdout().lock()) {
+        Ok(Plan::ManagerMcp(workspace)) => {
+            match crate::manager_mcp::serve(
+                std::io::stdin().lock(),
+                std::io::stdout().lock(),
+                workspace,
+            ) {
                 Ok(()) => 0,
                 Err(e) => {
                     eprintln!(

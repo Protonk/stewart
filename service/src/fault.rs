@@ -51,6 +51,10 @@ pub const POINTS: &[&str] = &[
     "prepared.write",
     "seal.manifest_write",
     "seal.after_link",
+    // Manager preparation.
+    "candidate.after_entry",
+    "candidate.entry_write",
+    "candidate.entry_corrupt",
     // Delivery and close.
     "delivery.source_read",
     "delivery.member_write",
@@ -138,6 +142,10 @@ pub const SABOTAGE: &[&str] = &[
     "accept_unknown_tool_field",
     "seal_uncertain_as_none",
     "submit_claims_delivery",
+    "candidate_dry_run_writes",
+    "candidate_forecast_as_written",
+    "candidate_unreported_partial",
+    "candidate_overwrites_existing",
 ];
 
 #[cfg(feature = "fault-injection")]

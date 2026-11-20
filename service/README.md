@@ -32,9 +32,13 @@ each tool call, then `delivery/` and `ops/close.rs`.
 - `main.rs`: the binary's entry point; it calls `cli::main`.
 - `cli.rs`: exact argument parsing and presentation (5.1).
 - `effects.rs`: compiled descriptions shared by `describe` and `help commands` (5.10).
-- `manager_mcp/`: the read-only preparation server on stdio (5.11). It
+- `manager_mcp/`: the preparation server on stdio (5.11). `assessment.rs`
   applies commissioning rules to caller-supplied question text and inventory.
-  `rpc.rs` decodes the protocol envelope and leaves metadata opaque.
+  `assembly.rs` generates a candidate's question file and inventory from
+  explicit inputs and applies the refusal order. `workspace.rs` admits the
+  launcher's `--workspace DIR`, reads named sources under `sources/` through
+  descriptors and creates one candidate folder exclusively, reporting its
+  writes. `rpc.rs` decodes the protocol envelope and leaves metadata opaque.
 - `help.rs`: `stewart help` and its topics, printed exactly (5.9). The
   development build adds one topic, `runtime`, whose text is in
   `claude_code.rs`.
@@ -170,7 +174,7 @@ archive state that only the implementation names.
 
 | File | Covers | Built with |
 | --- | --- | --- |
-| `manager.rs` | The manager commands before launch | any |
+| `manager.rs` | The manager commands before launch, and a host name rule of candidate assembly | any |
 | `faults.rs` | Manager-foundation failure points and the fault harness | `fault-injection` |
 | `answer.rs` | The auditor's tools in process | any |
 | `answer_faults.rs` | The answer protocol at its failure points | `fault-injection` |
@@ -188,7 +192,9 @@ and `tests/fixtures/provider/` (test-only TLS certificates).
 A test that binds a loopback listener or Unix socket, or starts a supervised
 process group, fails and names the reason where the host forbids it. The
 runtime placements likewise fail when the scratch directory lies under a
-project or configuration tree, where the runtime refuses to launch.
+project or configuration tree, where the runtime refuses to launch. A test of
+a host-specific name rule prints `SKIPPED` and passes on a host without that
+rule.
 
 ## Building and testing
 
