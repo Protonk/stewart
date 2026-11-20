@@ -60,7 +60,8 @@ Not yet demonstrated with the real harness under the selected launch:
   synthetic suite exercises each against the actual core, which says nothing
   about how the real harness issues calls, reports usage or delivers a notice;
 - how the harness issues several tool calls of one model response (the runtime
-  answers a call that arrives while another is pending with an error);
+  executes them one at a time in arrival order, queueing those that arrive
+  while another is pending);
 - whether `--max-turns` gates a model call before consumption or detects an
   excess afterwards, and whether a crash result's zeroed totals leave lost
   internal-call consumption boundable;
