@@ -193,16 +193,20 @@ def c_e2e(t):
       "T16: 529 four times ends interrupted provider_unavailable; retry-after 61 and 413 end after one attempt",
       needs=("loopback",))
 def c_t16(t):
-    """Run 1: four 529 overloaded_error answers with retry-after 0. Four attempts, three with
-    then retry and one with then end, none charged; run_ended interrupted provider_unavailable
-    with the last attempt's provider facts (status 529, error_type overloaded_error, its
-    error_message and request ID, request 1, attempt 4) in the reply and run_ended; exit 5.
-    Every attempt carries the same request bytes. Run 2 (a continuation): retry-after 61 ends
-    after one attempt, also provider_unavailable. Run 3: 413 request_too_large ends after one
-    attempt, provider_rejected."""
+    """Run 1: four 529 overloaded_error answers with retry-after 0, written bare and with
+    leading and trailing spaces and tabs. Four attempts, three with then retry after a delay of
+    0 (the value honored, 6.6: the test delays are not set, so an ignored value would wait 2, 8
+    and 30 s) and one with then end, none charged; each attempt record holds retry-after as
+    ["0"], trimmed (4.5); run_ended interrupted provider_unavailable with the last attempt's
+    provider facts (status 529, error_type overloaded_error, its error_message and request ID,
+    request 1, attempt 4) in the reply and run_ended; exit 5. Every attempt carries the same
+    request bytes. Run 2 (a continuation): retry-after 61 surrounded by a tab and a space is
+    recorded ["61"] and ends after one attempt, also provider_unavailable. Run 3: 413
+    request_too_large without retry-after ([]) ends after one attempt, provider_rejected."""
     sub = run_submission(t)
-    steps = [fp.HttpError(529, retry_after="0") for _ in range(4)]
-    steps += [fp.HttpError(529, retry_after="61"), fp.HttpError(413)]
+    steps = [fp.HttpError(529, retry_after=v) for v in ("0", " 0", "0\t", " \t0 \t")]
+    steps += [fp.HttpError(529, retry_after="\t61 "), fp.HttpError(413)]
+    recorded = {1: ["0"], 2: ["61"], 3: []}
     fx = rs.provider(t, fp.Script(steps))
     for i, (label, n_attempts, cause, status) in enumerate((("t16.run-1", 4, "provider_unavailable", 529),
                                                             ("t16.run-2", 1, "provider_unavailable", 529),
@@ -224,6 +228,10 @@ def c_t16(t):
         if t.check(label + ".run-dir", rd is not None, sorted(rs.run_dirs(sub))):
             thens = [(rd.attempts.get((1, a)) or {}).get("body", {}).get("then") for a in range(1, n_attempts + 1)]
             t.eq(label + ".then", thens, ["retry"] * (n_attempts - 1) + ["end"])
+            bodies = [(rd.attempts.get((1, a)) or {}).get("body", {}) for a in range(1, n_attempts + 1)]
+            t.eq(label + ".retry-after-recorded", [(b.get("headers") or {}).get("retry-after") for b in bodies],
+                 [recorded[i]] * n_attempts)
+            t.eq(label + ".delays", [b.get("delay_ms") for b in bodies], [0] * (n_attempts - 1) + [None])
             charged = [(rd.attempts.get((1, a)) or {}).get("body", {}).get("charged") for a in range(1, n_attempts + 1)]
             t.check(label + ".charged-none", all(c == {"basis": "none", "turns": 0, "input_tokens": 0,
                                                        "output_tokens": 0} for c in charged), charged)
@@ -1220,14 +1228,20 @@ def citation_controls(p, sub):
       needs=("loopback",),
       controls=[Control("reset_notice_allowance", [r"^c7\.prompts\.reminder-once$", r"^c7\.prompts\.notices$"])])
 def c_prompts(t):
-    """An ordinary stop receives the exact reminder; the run is then interrupted by an
-    unavailable provider and continued; a stop in the continuation ends the run without a second
-    reminder (one reminder per audit, its notice sent). With a 10,000-token output limit and
-    1,200 output tokens per response, each request's max_tokens is the lesser of 16,000 and the
-    remaining output; the near-limit notice (exact text and remaining amounts) rides on the
-    request after the attempt that crossed 20%; the run ends limit_reached after executing the
-    last response's call, with no reminder and no seal, and run then refuses authoring_ended
-    (limit)."""
+    """An ordinary stop receives the exact reminder; its notice record (4.4) names placement 1,
+    request 2 (the request planned to carry it, 6.4) and remaining null; the run is then
+    interrupted by an unavailable provider and continued; a stop in the continuation ends the
+    run without a second reminder (one reminder per audit, its notice sent). With a 10,000-token
+    output limit and 1,200 output tokens per response, each request's max_tokens is the lesser
+    of 16,000 and the remaining output; the near-limit notice (exact text and remaining amounts)
+    rides on the request after the attempt that crossed 20%, and its record names placement 1,
+    request 8, that text and those remaining amounts; the run ends limit_reached after executing
+    the last response's call, with no reminder and no seal, and run then refuses authoring_ended
+    (limit). stop_sequence is treated as end_turn (6.3, 6.4): the first such stop receives the
+    reminder on request 2 and the second ends the run ended_unsubmitted; with no turn left after
+    it, a stop_sequence ends the run limit_reached with no reminder planned (only the near-limit
+    notice its usage triggered, recorded for request 2 and not sent). The control runs the
+    end_turn audit and the limit audit."""
     sub = run_submission(t)
 
     def body(p):
@@ -1248,6 +1262,10 @@ def c_prompts(t):
     t.eq("c7.prompts.reminder-once", p.texts.count(REMINDER), 1)
     notices = [b for b in t.log_bodies(sub, "notice") if isinstance(b, dict)]
     t.eq("c7.prompts.notices", [(b.get("type"), b.get("run"), b.get("text")) for b in notices], [("reminder", 1, REMINDER)])
+    # 4.4: request is the request of placement `run` planned to carry the text; request 1 was
+    # answered by the stop, so request 2 carries the reminder (it then met the 529s).
+    t.eq("c7.prompts.notice-record", [notice_body(b) for b in notices], [
+        [("type", "reminder"), ("run", 1), ("request", 2), ("text", REMINDER), ("remaining", None)]])
     ended = t.log_bodies(sub, "run_ended")
     t.eq("c7.prompts.run-1.notices", [(n.get("type"), n.get("sent")) for n in (ended[0] or {}).get("notices") or []]
          if ended else None, [("reminder", "sent")])
@@ -1272,11 +1290,64 @@ def c_prompts(t):
     last = fx2.exchanges[-1].messages() if fx2.exchanges else None
     t.check("c7.limits.notice-on-request-8", last is not None and want.encode("utf-8") in last[-1].raw, "notice not on the last request")
     t.eq("c7.limits.reply-notices", rep.data.get("notices"), [{"type": "near_limit", "sent": "sent"}])
+    # 4.4: the near-limit record names request 8 of placement 1 and holds the remaining amounts
+    # that are its template values (6.4).
+    t.eq("c7.limits.notice-record", [notice_body(b) for b in t.log_bodies(sub2, "notice") if isinstance(b, dict)], [
+        [("type", "near_limit"), ("run", 1), ("request", 8), ("text", want),
+         ("remaining", {"turns": 200 - 7, "input_tokens": 20000000 - 7000, "output_tokens": 10000 - 7 * 1200})]])
     calls = rs.calls_and_results(sub2)
     t.check("c7.limits.last-call-executed", len(calls) == 8 and all(c[3] is not None for c in calls), len(calls))
     t.eq("c7.limits.no-seal", t.log_bodies(sub2, "seal"), [])
     r3 = rs.run(t, sub2, fx2, name="c7.limits.again", expect="refused", reason="authoring_ended")
     t.eq("c7.limits.ended_by", r3.data.get("ended_by"), "limit")
+    if t.sabotage:
+        return
+    _stop_sequence_specimens(t)
+
+
+def notice_body(b):
+    """A notice record body's members after prev, in order (4.4)."""
+    return [(k, v) for k, v in b.items() if k != "prev"]
+
+
+def _stop_sequence_specimens(t):
+    """6.3: stop_reason stop_sequence takes end_turn's branch: with a limit exhausted the
+    placement ends limit_reached and no reminder is planned (6.4; the near-limit notice that
+    the last attempt triggered is recorded and not sent); otherwise the unused reminder is
+    sent; once it is used, the placement ends ended_unsubmitted (6.5)."""
+    sub = run_submission(t)
+
+    def stops(p):
+        turn = yield p.end("Stopping at a sequence.", stop_reason="stop_sequence", stop_sequence="###")
+        p.eq("reminder", turn.texts, [REMINDER])
+        yield p.end("Stopping at it again.", stop_reason="stop_sequence", stop_sequence="###")
+    p = proc(sub, stops)
+    fx = rs.provider(t, p, label="stop-sequence")
+    rep = rs.run(t, sub, fx, name="c7.stop-sequence.run")
+    rs.check_run_reply(t, rep, sub, "c7.stop-sequence.run", ending="ended_unsubmitted", run_number=1, fx=fx,
+                       limits=rs.limits_of(sub))
+    rs.check_procedure(t, p, "c7.stop-sequence", fx)
+    t.eq("c7.stop-sequence.requests", len(fx.exchanges), 2)
+    t.eq("c7.stop-sequence.notice-record", [notice_body(b) for b in t.log_bodies(sub, "notice") if isinstance(b, dict)],
+         [[("type", "reminder"), ("run", 1), ("request", 2), ("text", REMINDER), ("remaining", None)]])
+    t.eq("c7.stop-sequence.reply-notices", rep.data.get("notices"), [{"type": "reminder", "sent": "sent"}])
+    sub2 = run_submission(t, q={"turns": "1"})
+
+    def one_stop(p):
+        yield p.end("Stopping at a sequence.", stop_reason="stop_sequence", stop_sequence="###")
+    p2 = proc(sub2, one_stop)
+    fx2 = rs.provider(t, p2, label="stop-sequence-limit")
+    rep = rs.run(t, sub2, fx2, name="c7.stop-sequence.limit.run")
+    rs.check_run_reply(t, rep, sub2, "c7.stop-sequence.limit.run", ending="limit_reached", run_number=1, fx=fx2,
+                       limits=rs.limits_of(sub2))
+    rs.check_procedure(t, p2, "c7.stop-sequence.limit", fx2)
+    t.eq("c7.stop-sequence.limit.requests", len(fx2.exchanges), 1)
+    # No reminder is planned. With no turn left the near-limit notice was triggered (6.4) for
+    # request 2, which is never captured: its record stands and it is not sent.
+    t.eq("c7.stop-sequence.limit.notices", [(b.get("type"), b.get("run"), b.get("request"))
+                                            for b in t.log_bodies(sub2, "notice") if isinstance(b, dict)],
+         [("near_limit", 1, 2)])
+    t.eq("c7.stop-sequence.limit.reply-notices", rep.data.get("notices"), [{"type": "near_limit", "sent": "not_sent"}])
 
 
 # ---------------------------------------------------------------------------
