@@ -107,8 +107,6 @@ INTERFACE Appendix C, and the driver gaps found in review have cases. The
 release and runtime suites run every case on both Linux architectures without
 skips; native runs skip only Linux-only expectations.
 
-- [ ] Qualify the review's new cases and controls with the release and runtime
-  suites.
 - [ ] Settle the endpoint evidence the release names through
   [endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md).
 
