@@ -53,7 +53,7 @@ The campaign is finished when:
   disposition;
 - the runtime contract's undemonstrated list, the README's status where
   demonstrated status changed, and the unresolved record are current;
-- the route-disagreement and instrumentation rules, as honed by the campaign,
+- the route-disagreement and perturbation rules, as honed by the campaign,
   are in the live-testing procedure;
 - retention is settled, the exit report is written and this plan is deleted.
 
@@ -183,7 +183,7 @@ Wave 2's composition is adaptive within the remaining bounds. It may:
 - give a slot to another question within scope, such as several tool calls
   from one response, or relay loss or cancellation once their instruments are
   built and rehearsed offline under the
-  [instrumentation rule](#instrumenting-an-elusive-event).
+  [perturbation rule](#perturbing-to-reach-a-situation).
 
 It does not replicate wave 1 for its own sake. Before each wave-2 packet is
 frozen, write its card with the question, the reason it was selected, its
@@ -196,7 +196,7 @@ Complete the in-scope implementation, offline verification and qualification.
 Update the contract, the README's status where demonstrated status changed,
 and the unresolved record. Move the honed
 [route-disagreement rule](#route-disagreements) and
-[instrumentation rule](#instrumenting-an-elusive-event) into
+[perturbation rule](#perturbing-to-reach-a-situation) into
 [live testing](development/LIVE-TESTING.md), with the cases that shaped them
 recorded as examples rather than history. Settle custody and retention, write
 the exit report and delete this plan.
@@ -340,7 +340,7 @@ None of these is a criterion.
   - the wave, trial and question, and for wave 2 the reason for selection;
   - the packet digest, writer, apparatus commit, profile, harness version and
     model;
-  - the conditions, and for an instrumented trial what was altered and which
+  - the conditions, and for a perturbed trial what was perturbed and which
     claims that excludes;
   - the outcome and the review digest;
   - any route disagreement met, with its layer and disposition.
@@ -404,45 +404,116 @@ disagreement in the ledger with its layer and disposition: fix, accommodate,
 isolate, keep identical or record. When a case fits no layer, or a response
 proves wrong, revise this rule and note the case that prompted the revision.
 
-## Instrumenting an elusive event
+## Perturbing to reach a situation
 
-This is a working rule, still under discussion as a general question. The
-campaign applies and hones it. Some events cannot be caught by watching from
-outside, such as a stop while a tool call is in flight, what a harness
-interrupt leaves queued, or relay loss. Making one observable may alter the
-system. What the model can see and where the property under test lives decide
-what the evidence can answer:
+This is a working rule. The campaign hones it, and at the finish it moves to
+the live-testing procedure. Its core: **perturb the occasion, never the
+response.** A test may control when and whether a situation arises. It may not
+change how the part under study responds to it.
 
-| Kind | What changes | What it can answer |
+**Name the object of study first.** Each kind tolerates perturbation
+differently:
+
+| Studying | May perturb | Must leave alone |
 | --- | --- | --- |
-| Realistic encounter | Nothing; the trigger only watches from outside | Everything, including whether the event occurs in ordinary use |
-| Instrumented live experiment | Timing only, invisible to the model, sampling a condition that can occur naturally, such as a slow tool reply or a held request | How the real endpoint reacts to that condition; not how often it occurs, nor anything about the altered timing |
-| Synthetic | The endpoint itself | Stewart's own behavior given a state; nothing about the real endpoint |
+| Stewart: custody, stopping, continuation | Almost anything outside Stewart, since custody must hold whatever the endpoint and model do. If the endpoint and model can be faked freely, though, a live run adds little beyond finding states the synthetic tests did not imagine | Stewart itself |
+| The endpoint: provider or harness behavior | Inputs, the timing of manager actions, and faults that happen in ordinary use | The traffic. A proxy that rewrites or injects responses replaces the real endpoint, which is what a live test buys |
+| The model: what the auditor does | As little as possible of what it sees | Prompts, texts and materials. Each becomes part of what is measured |
 
-Evidence from an instrumented or synthetic run settles a question about
-realistic encounters only when the answer does not depend on what was
-altered. In particular:
+The same lever can serve one question and spoil another. Asking the model to
+make several calls at once is fine for learning how the harness delivers them,
+and fatal for learning whether models batch calls unprompted.
 
-- **Continuation questions tolerate instrumentation.** A continuing placement
-  is a fresh conversation that sees only Stewart's records. If an instrumented
-  stop leaves the archive as a natural stop would, which a comparison of the
-  two archives can show, the continuation is fully realistic.
-- **Prefer instruments outside the binary under test.** A pause point inside
-  a fault-injection build makes the evidence about that test build, and it
-  covers only behavior that does not involve the pause machinery.
-- **Never alter what the model sees.** A pause the model could notice, or a
-  changed text, makes the run evidence about a different route.
+**Levers, best first:**
 
-Escalate in this order:
+1. **The commission:** the question, materials, limits, deadlines, placements
+   and effort. Any value a real manager could choose is realistic. Small
+   materials bring the auditor to `prepare` sooner, and large ones toward
+   compaction.
+2. **Manager actions and their timing:** signal, close, status and
+   continuation. A trigger on a record is just a very attentive manager.
+3. **Faults that happen in ordinary use and that Stewart claims to handle,**
+   induced from outside: process death, a dead relay, a lost caller reply, an
+   unwritable destination.
+4. **A sharper trigger on a record Stewart already writes,** before building
+   anything new. For example, trigger on the record of a call arriving, if
+   Stewart writes it before executing the call.
 
-1. a realistic trigger;
-2. a wider realistic trigger;
-3. an instrument outside Stewart;
-4. a test build;
-5. a synthetic test.
+**Do not perturb:**
 
-Each step gives up claims, and the card names what was altered and which
-claims it excludes. An instrumented result is never relabeled as an encounter.
+- what the studied party perceives, beyond what ordinary use supplies;
+- Stewart's pinned texts or arrangement for the test only, unless that change
+  is the candidate design;
+- the endpoint's traffic;
+- the binary, with hooks such as fault points or pauses. Evidence from a test
+  build is about that build, and covers only behavior that does not involve
+  the hook;
+- the conditions of observation, as a wrapper changing the executable digest,
+  logging that shifts timing or a witness inside the archive would;
+- the credential or route.
+
+**A good perturbation turns bad when:**
+
+- **it touches what the question is about.** Tight limits suit a test of limit
+  endings and spoil a test of unprompted submission.
+- **its size leaves the range of ordinary use.** A two-second deadline tests
+  startup aborts. "Invisible" has a threshold too: a held tool reply becomes
+  visible when the harness times it out and tells the model.
+- **several realistic perturbations add up** to a situation no one would meet.
+- **it selects its own outcome,** by rerunning until the event occurs or by
+  tuning the question after reading answers. That serves design progress, but
+  the result cannot be reported as typical.
+- **it becomes product for the test's sake.** See the next paragraph.
+
+**Changing the product to observe it.** With design authority, a hard-to-see
+event can sometimes be made observable by improving the product, and the test
+environment then moves closer to production. Ask whether we would want the
+change if no test needed it. If it serves custody, the manager or the auditor,
+it is design. If it serves only the test, it is a hook: keep it out of the
+shipped binary and treat its evidence as a test build's. Never design away a
+state that participants need, such as review before submission, to make
+testing easier.
+
+**The environment.** Keep it as close to production as the question requires,
+and declare every difference. The live environment is more watched and more
+bounded than ordinary use, but never more helped:
+
+- no extra guidance to the model;
+- no friendlier texts;
+- no softened endpoint.
+
+**Reading the result:**
+
+- A failure under a realistic perturbation is a finding, because production
+  can reach that state. A pass is a sample of the condition tested.
+- The card and ledger name what was perturbed and which claims that excludes.
+- A perturbed result is never relabeled as an ordinary encounter.
+
+**Ordering across waves: clean first, follow-ups next, play last.**
+
+1. For each surface, the first wave runs the least perturbed test that can meet
+   its objective.
+2. The second wave serves first what the first wave demands. That means
+   reaching an unexercised situation by the smallest added perturbation, and
+   checking a fix whose correctness depends on the real endpoint.
+3. Slots that remain may perturb surfaces whose clean result is recorded. Such
+   runs can add claims and never remove the clean ones.
+4. Perturb in the first wave instead when the perturbation is the only way to
+   reach the situation, or when a surprise it provokes could only be settled
+   live. A Stewart-side defect is settled offline by a scripted test.
+5. A clean run is a reference only for the same writer, harness pin and model.
+   Custody invariants need no reference. A behavioral difference between one
+   clean and one perturbed run is a hypothesis, not a finding.
+
+**In this campaign:**
+
+- P1 and P2 are realistic triggers.
+- R1 and M1 are the clean references.
+- Cancellation and relay loss have no clean version, since the fault is the
+  occasion itself, so rule 4 applies to them. Their instruments are not built,
+  which leaves them wave-2 candidates.
+- If phase 3 changes the continuation text or re-entry, rule 5 governs any
+  wave-2 continuation comparison.
 
 ## Decisions
 
