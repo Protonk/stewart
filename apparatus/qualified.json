@@ -770,16 +770,16 @@
       }
     },
     {
-      "id": "assemble-release-01",
+      "id": "walkthrough-release-01",
       "kind": "suite",
       "suite": "acceptance",
       "script": {
         "path": "apparatus/acceptance.sh",
         "sha256": "8c6babd9b3e52f39f3e9013d623c4c86df899ab9e0faf084ee9ba66f1c837975"
       },
-      "source_commit": "77706cdbc33d6c70865ffcd5b1d551a0acaed920",
-      "source_archive_sha256": "f38390b27a8b51e6bd987648ae12a493eae0d4f2c00c169cc9d4329b9814a74b",
-      "date": "2026-11-20T05:31:00Z",
+      "source_commit": "d218a5cea3688d29207c1a87e66f0b59a7330efe",
+      "source_archive_sha256": "1a4a6c19cd7b7e25936ec522c8d9901f7c99af2146e588f1471ea7d51b93895a",
+      "date": "2026-11-20T06:30:46Z",
       "outcome": "qualified",
       "failures": [],
       "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
@@ -797,28 +797,28 @@
             "controls_total": 1
           },
           "self_test": {
-            "checks": 594,
-            "passed": 594,
+            "checks": 607,
+            "passed": 607,
             "failed": 0,
             "skipped": 0
           },
           "cases": {
-            "selected": 165,
-            "ran": 165,
-            "passed": 165,
+            "selected": 167,
+            "ran": 167,
+            "passed": 167,
             "failed": 0,
             "skipped": 0
           },
           "variants": {
-            "ran": 294,
-            "passed": 204,
+            "ran": 296,
+            "passed": 206,
             "failed": 90,
             "skipped": 0
           },
           "checks": {
-            "passed": 179865,
+            "passed": 181075,
             "failed_outside_controls": 0,
-            "failed_inside_controls": 785
+            "failed_inside_controls": 786
           },
           "controls": {
             "fired": 90,
@@ -829,7 +829,7 @@
             "total": 29
           },
           "timing_samples": {
-            "commands": 3667,
+            "commands": 3721,
             "protocol": 1886
           },
           "e2e": {
@@ -838,9 +838,9 @@
             "checks_passed": 854,
             "checks_failed": 0
           },
-          "release_sha256": "91615d084762a60b531a07ece4d63b016c4b6f543da97a628708d5399412de6f",
-          "test_sha256": "0e71407df4b7673dc4402a238a33366074759700f09b9f9010ee35ac51c3fc91",
-          "result_sha256": "afc7eb23fc3ece713ecf9b3e71106da8e4fba602a6bc724c2507a5b72799d4fc"
+          "release_sha256": "c48f301b273bc84de5278747e25042acd200509a59936399b277fc26896dbc6c",
+          "test_sha256": "64566c52578e355d4760d60198c3049b83147741bd51bedc13c2cde2ce48aca1",
+          "result_sha256": "f9a6eb5a5f0813e75783ed644c40e8c30a8029b3af554962dc6cd7b30416a921"
         },
         "linux-x86_64": {
           "execution": "emulated (Rosetta)",
@@ -855,28 +855,28 @@
             "controls_total": 1
           },
           "self_test": {
-            "checks": 594,
-            "passed": 594,
+            "checks": 607,
+            "passed": 607,
             "failed": 0,
             "skipped": 0
           },
           "cases": {
-            "selected": 165,
-            "ran": 165,
-            "passed": 165,
+            "selected": 167,
+            "ran": 167,
+            "passed": 167,
             "failed": 0,
             "skipped": 0
           },
           "variants": {
-            "ran": 294,
-            "passed": 204,
+            "ran": 296,
+            "passed": 206,
             "failed": 90,
             "skipped": 0
           },
           "checks": {
-            "passed": 179865,
+            "passed": 181075,
             "failed_outside_controls": 0,
-            "failed_inside_controls": 785
+            "failed_inside_controls": 786
           },
           "controls": {
             "fired": 90,
@@ -887,7 +887,7 @@
             "total": 29
           },
           "timing_samples": {
-            "commands": 3667,
+            "commands": 3721,
             "protocol": 1886
           },
           "e2e": {
@@ -896,28 +896,28 @@
             "checks_passed": 854,
             "checks_failed": 0
           },
-          "release_sha256": "b9be08fc7f4e51c5ef172161aece88e128f17e64d23ff6725b67bfeaf0de9b5a",
-          "test_sha256": "aef88365d645f054e5c012f00620231a11774ca6ec36177473cbd764d2c40823",
-          "result_sha256": "a3f8ea2e44f29b10fef23134aa61d45e201b3d1d2d2cba009731d6dc4a630a5c"
+          "release_sha256": "91c935812afebbfe373b9b9b2487d730acbe4f485c7a3c72ddb3dc9f56629016",
+          "test_sha256": "9eb4cb830408a5ddddf1bef384de3e47e6b6c09e433a1fe974c8ae371af654f5",
+          "result_sha256": "32b590ce0d5b02bda0bcf84b482676efe46b4f575de7eb250474c36ddf179eeb"
         }
       },
       "evidence": {
-        "path": ".scratch/assemble-release-01",
+        "path": ".scratch/walkthrough-release-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": null
     },
     {
-      "id": "assemble-runtime-01",
+      "id": "walkthrough-runtime-01",
       "kind": "suite",
       "suite": "runtime",
       "script": {
         "path": "apparatus/runtime-acceptance.sh",
         "sha256": "55677bf16c1c2ee30b44f96d236dc8d25a8d250deafa7c067ba3974d24681524"
       },
-      "source_commit": "77706cdbc33d6c70865ffcd5b1d551a0acaed920",
-      "source_archive_sha256": "f38390b27a8b51e6bd987648ae12a493eae0d4f2c00c169cc9d4329b9814a74b",
-      "date": "2026-11-20T06:18:59Z",
+      "source_commit": "90009b33f5bd68d3c11916839aafd5866c58aa8e",
+      "source_archive_sha256": "0dffb2478f6f137fd08400854dbef00fee6c678dc3cb3329449b1d80394661fe",
+      "date": "2026-11-20T07:14:48Z",
       "outcome": "qualified",
       "failures": [],
       "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
@@ -951,16 +951,16 @@
               "controls": 126,
               "controls_fired": 126
             },
-            "result_sha256": "c9fe115574e13a5b76f6b21aee900ed058f722d2cede8a89cf6860020665ca63",
-            "environment_sha256": "6c50bdf3c18b8734a648a3f1a70c933bf6b16fb779f554560ff93e58a718b423",
-            "work_sha256": "19532482de70d7a22043e45c79f19264fbe3c8574da1c43a0e7d2b857fb118b5",
+            "result_sha256": "72c6541b0df23d329da9a410b4a225287da1cee89ae1f070e2fe0678436f8c4f",
+            "environment_sha256": "987920d2157862f7ee68d4a3a97c43c16a5105c6888d48648d2af61c33caa22d",
+            "work_sha256": "bbf93eb54094db0cf8bea925e84ada9140a97805b7af3aab9985db400cb0d3c5",
             "evidence": {
               "files": 6542,
-              "listing_sha256": "a9a68a9680817a81e4d410f333c83368218e03fb079e152c0f6e3ed16136cbeb"
+              "listing_sha256": "7052ca701ba15d33f2ba76ec704714ee22666de0b0aefaf082caea49196a5a96"
             },
-            "development_sha256": "e7c258b95c34a8b28db85f74df1ee28c3da28b5571ff44562db73d727d9beba9",
-            "release_sha256": "91615d084762a60b531a07ece4d63b016c4b6f543da97a628708d5399412de6f",
-            "variant_sha256": "63f42a50364731404b922c7e9f145ceded3d0bf1464424931fb090e82c411f20",
+            "development_sha256": "b21cddd51b3c7f15e27146f2f3c3d01628c2ae8827a6dbcdbd1b2c179a238cbc",
+            "release_sha256": "c48f301b273bc84de5278747e25042acd200509a59936399b277fc26896dbc6c",
+            "variant_sha256": "7359ed890bcfff8933b55d188c63959ef6aa9aeed140376fae16e1836d3ea77d",
             "driver_sha256": "7fa5cbb11031e89218acc7e15eb8a5baa4cb96017d90b7b618fa5f12380c57bf"
           }
         },
@@ -993,22 +993,22 @@
               "controls": 126,
               "controls_fired": 126
             },
-            "result_sha256": "20e191ecc15cfd09c9fa70683dd60e30ea169756b6d56d935d66e229d4950e31",
-            "environment_sha256": "2102d966821dfd826686e386b1c98fc2cf3b1a7bbdf3fd04bb83e0a86582617b",
-            "work_sha256": "2b775938d1d3561dcf901094101a8bbdca34710de5b48e6578b5c36ff76a9870",
+            "result_sha256": "f3f99e18b69ba5ad3488903c9fa8fff7b4a139388a3e3d5da4a746e09effb00c",
+            "environment_sha256": "62de806d6050b01557dc5123787ad8b3b8393df9578a272a6e6446650c9c2ed0",
+            "work_sha256": "e9d91f74550ed98c0b8883ac0472b996c56bf35988f3e5221d9ac1658ee2b618",
             "evidence": {
               "files": 6542,
-              "listing_sha256": "d792e45b849fdfd4473e40074b7f082218338d4f85f658fe5ce71352a90ce09b"
+              "listing_sha256": "c1cbabffbab5b84c8176e0e5e1cb5c4333d3aac2b8e74792dee7d5ddd5dfb54c"
             },
-            "development_sha256": "18cc4a70d00f57f4b4d28a8d524a3fddca846881e525993b59900dd33f59dd4f",
-            "release_sha256": "b9be08fc7f4e51c5ef172161aece88e128f17e64d23ff6725b67bfeaf0de9b5a",
-            "variant_sha256": "88a84ce3cdcb1074edc0357622b174d5b4c14d34ff24ad5051db77ca9b44b52e",
+            "development_sha256": "6e7acd7a89e609a4e513171461fbb74f24a3af849ea68aeda9e490a633301d3b",
+            "release_sha256": "91c935812afebbfe373b9b9b2487d730acbe4f485c7a3c72ddb3dc9f56629016",
+            "variant_sha256": "b9531ae0b15219cf486ddb8443188d60b06d55866206d861294288f8e7080097",
             "driver_sha256": "7fa5cbb11031e89218acc7e15eb8a5baa4cb96017d90b7b618fa5f12380c57bf"
           }
         }
       },
       "evidence": {
-        "path": ".scratch/assemble-runtime-01",
+        "path": ".scratch/walkthrough-runtime-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": null

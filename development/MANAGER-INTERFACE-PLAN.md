@@ -6,9 +6,12 @@ and family descriptor in the arrangement. CLI preparation reports reference
 errors and family-specific advice. The preparation MCP supports discovery,
 explanation, prospective assessment and candidate assembly in a workspace the
 launcher designates. The standalone CLI exposes command effects and delivers the
-accepted question with the answer. The manager walkthroughs and the
-fake-provider integration comparison are written; their Linux qualification
-remains.
+accepted question with the answer. The
+[manager walkthroughs](../examples/manager/README.md) and the fake-provider
+comparison of the file-only and MCP routes run against the qualified release
+binary, so the manager interface's scripted stages are complete. The separately
+commissioned subscription trials and the offline runtime coverage below
+remain.
 Live trials require a separate bounded commission.
 
 This plan owns the manager CLI, optional preparation MCP server, question-type
@@ -120,17 +123,6 @@ missing receipt, partial intake, lost replies, and substituted package members.
   disposed of. The reviewed `c10-owner-01` rehearsal of the committed apparatus,
   with the pinned `one-owner-release-02` writer, now covers its comparison.
   The `acceptance-question2-01` writer pin follows those audits.
-
-### 4. Qualify the walkthroughs and the integration
-
-The [manager walkthroughs](../examples/manager/README.md) follow one audit with
-files only and through the preparation server. Independent driver cases run
-them against the release binary with a scripted provider, compare the
-MCP-created and file-only routes through delivery and close, and repeat that
-comparison for every worked packet.
-
-- [ ] Qualify them with the release container suite. The manager boundary and
-  lifecycle claims are then demonstrated by the qualified release binary.
 
 ## Additional Claude Code subscription testing
 

@@ -1,7 +1,8 @@
 # Release and work plan
 
-The next step is Linux qualification of the manager walkthroughs and the
-fake-provider integration comparison.
+The manager interface's scripted stages are complete and qualified. The next
+step is the coverage and acceptance-policy review, then the release
+documentation and source package.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
@@ -13,9 +14,9 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Qualify the manager walkthroughs and the fake-provider integration comparison. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
-| Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
-| Separate release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
+| Current | Review driver coverage against every acceptance claim, then prepare the release documentation and source package. | [The requirements below](#coverage-and-acceptance-policy-review) |
+| Separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
+| Separate release work, commissioned | Build endpoint alignment and align the endpoints the release names. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |
 | After the first release | Investigate shortening test and suite wall-clock time. | [Test wall-clock](development/TEST-WALL-CLOCK-PLAN.md) |
 | Unselected | Broader blinded evaluation and family dogfooding. | [Deferred studies](#deferred-studies) |
