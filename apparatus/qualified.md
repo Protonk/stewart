@@ -1019,3 +1019,52 @@ Seven offline question/2 scenarios passed. Four exports verified, two were withh
 
 - Evidence: `.scratch/sanity-q2-01/.` (recorded 2026-11-19T03:25:20Z).
 - Retained purpose: Preserve the launcher comparison, the independent witness and private originals for the retained file-only commissioning rehearsal.; until A reviewed successor covers the launcher comparison and remaining private custody is resolved.
+
+### c10-owner-01
+
+Offline Linux aarch64 C10 rehearsal of the committed apparatus with the one-owner-release-02 writer: 22 first placements, 6 continuations, admission passed.
+
+- Evidence: `.scratch/c10-owner-01/REVIEW.json` (recorded 2026-11-20T04:38:47Z).
+- Retained purpose: Retain the current C10 rehearsal, its retained container and private originals for manager-interface work and any live launch it admits.; until A reviewed successor rehearsal replaces it and its retained audits are closed or disposed of.
+
+### c10-owner-01-control-continue-cap-p2
+
+Verified the original second-placement receipt for control-continue-cap.
+
+- Evidence: `.scratch/c10-owner-01-control-continue-cap-p2/host/RESULT.json` (recorded 2026-11-20T04:39:32Z).
+- Retained purpose: The retained c10-owner-01 rehearsal checks this host receipt against its placement export.; until The c10-owner-01 rehearsal is released.
+
+### c10-owner-01-control-continue-entries-p2
+
+Verified the original second-placement receipt for control-continue-entries.
+
+- Evidence: `.scratch/c10-owner-01-control-continue-entries-p2/host/RESULT.json` (recorded 2026-11-20T04:39:32Z).
+- Retained purpose: The retained c10-owner-01 rehearsal checks this host receipt against its placement export.; until The c10-owner-01 rehearsal is released.
+
+### c10-owner-01-control-reminder-spent-p2
+
+Verified the original second-placement receipt for control-reminder-spent.
+
+- Evidence: `.scratch/c10-owner-01-control-reminder-spent-p2/host/RESULT.json` (recorded 2026-11-20T04:39:32Z).
+- Retained purpose: The retained c10-owner-01 rehearsal checks this host receipt against its placement export.; until The c10-owner-01 rehearsal is released.
+
+### c10-owner-01-control-reminder-spent-submits-p2
+
+Verified the original second-placement receipt for control-reminder-spent-submits.
+
+- Evidence: `.scratch/c10-owner-01-control-reminder-spent-submits-p2/host/RESULT.json` (recorded 2026-11-20T04:39:32Z).
+- Retained purpose: The retained c10-owner-01 rehearsal checks this host receipt against its placement export.; until The c10-owner-01 rehearsal is released.
+
+### c10-owner-01-control-reminder-spent-unheld-p2
+
+Verified the original second-placement receipt for control-reminder-spent-unheld.
+
+- Evidence: `.scratch/c10-owner-01-control-reminder-spent-unheld-p2/host/RESULT.json` (recorded 2026-11-20T04:39:32Z).
+- Retained purpose: The retained c10-owner-01 rehearsal checks this host receipt against its placement export.; until The c10-owner-01 rehearsal is released.
+
+### c10-owner-01-control-reminder-unused-p2
+
+Verified the original second-placement receipt for control-reminder-unused.
+
+- Evidence: `.scratch/c10-owner-01-control-reminder-unused-p2/host/RESULT.json` (recorded 2026-11-20T04:39:32Z).
+- Retained purpose: The retained c10-owner-01 rehearsal checks this host receipt against its placement export.; until The c10-owner-01 rehearsal is released.

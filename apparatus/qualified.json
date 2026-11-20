@@ -3187,6 +3187,139 @@
         "reason": "Preserve the launcher comparison, the independent witness and private originals for the retained file-only commissioning rehearsal.",
         "until": "A reviewed successor covers the launcher comparison and remaining private custody is resolved."
       }
+    },
+    {
+      "id": "c10-owner-01",
+      "kind": "experiment",
+      "date": "2026-11-20T04:38:47Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Offline Linux aarch64 C10 rehearsal of the committed apparatus with the one-owner-release-02 writer: 22 first placements, 6 continuations, admission passed.",
+      "result": {
+        "path": "REVIEW.json",
+        "sha256": "8b9e99edb3c33bccca9456defcea471ef0aad44c13340c6228fa6ad926fa1483"
+      },
+      "evidence": {
+        "path": ".scratch/c10-owner-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the current C10 rehearsal, its retained container and private originals for manager-interface work and any live launch it admits.",
+        "until": "A reviewed successor rehearsal replaces it and its retained audits are closed or disposed of."
+      }
+    },
+    {
+      "id": "c10-owner-01-control-continue-cap-p2",
+      "kind": "experiment",
+      "date": "2026-11-20T04:39:32Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Verified the original second-placement receipt for control-continue-cap.",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "53edd7f5fc8a1cb040050df04c00eb337bf83afdbecb10f1b986455107679416"
+      },
+      "evidence": {
+        "path": ".scratch/c10-owner-01-control-continue-cap-p2",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The retained c10-owner-01 rehearsal checks this host receipt against its placement export.",
+        "until": "The c10-owner-01 rehearsal is released."
+      }
+    },
+    {
+      "id": "c10-owner-01-control-continue-entries-p2",
+      "kind": "experiment",
+      "date": "2026-11-20T04:39:32Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Verified the original second-placement receipt for control-continue-entries.",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "7dd6ccea8b405aa863c8fc6f14810a8356e5161796f5f6585abb3fa972d07eed"
+      },
+      "evidence": {
+        "path": ".scratch/c10-owner-01-control-continue-entries-p2",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The retained c10-owner-01 rehearsal checks this host receipt against its placement export.",
+        "until": "The c10-owner-01 rehearsal is released."
+      }
+    },
+    {
+      "id": "c10-owner-01-control-reminder-spent-p2",
+      "kind": "experiment",
+      "date": "2026-11-20T04:39:32Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Verified the original second-placement receipt for control-reminder-spent.",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "578ab5836544171309de42911af97393bcb832e46aabe7752300b23c68299ee7"
+      },
+      "evidence": {
+        "path": ".scratch/c10-owner-01-control-reminder-spent-p2",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The retained c10-owner-01 rehearsal checks this host receipt against its placement export.",
+        "until": "The c10-owner-01 rehearsal is released."
+      }
+    },
+    {
+      "id": "c10-owner-01-control-reminder-spent-submits-p2",
+      "kind": "experiment",
+      "date": "2026-11-20T04:39:32Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Verified the original second-placement receipt for control-reminder-spent-submits.",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "bc23a71d49963b6f74c1371d95e2839feba76a33a6c5877f8353ff47a61b46ae"
+      },
+      "evidence": {
+        "path": ".scratch/c10-owner-01-control-reminder-spent-submits-p2",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The retained c10-owner-01 rehearsal checks this host receipt against its placement export.",
+        "until": "The c10-owner-01 rehearsal is released."
+      }
+    },
+    {
+      "id": "c10-owner-01-control-reminder-spent-unheld-p2",
+      "kind": "experiment",
+      "date": "2026-11-20T04:39:32Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Verified the original second-placement receipt for control-reminder-spent-unheld.",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "aeb1466706a357ff9b0bbd8ddf42b8e3c2f5e246b9001347e87e9212f22dade2"
+      },
+      "evidence": {
+        "path": ".scratch/c10-owner-01-control-reminder-spent-unheld-p2",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The retained c10-owner-01 rehearsal checks this host receipt against its placement export.",
+        "until": "The c10-owner-01 rehearsal is released."
+      }
+    },
+    {
+      "id": "c10-owner-01-control-reminder-unused-p2",
+      "kind": "experiment",
+      "date": "2026-11-20T04:39:32Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Verified the original second-placement receipt for control-reminder-unused.",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "fd263388db7f8f86aa39ca6b89d391f5569dd6d374ad9e39554282899884de03"
+      },
+      "evidence": {
+        "path": ".scratch/c10-owner-01-control-reminder-unused-p2",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The retained c10-owner-01 rehearsal checks this host receipt against its placement export.",
+        "until": "The c10-owner-01 rehearsal is released."
+      }
     }
   ]
 }
