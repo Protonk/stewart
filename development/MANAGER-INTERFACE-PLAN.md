@@ -119,11 +119,6 @@ separately from the answer. Delivery verifies the entire accepted capture
 before copying the body. Independent comparisons cover a changed header, a
 missing receipt, partial intake, lost replies, and substituted package members.
 
-- [ ] Release the `c10-q2-01` pins once its retained audits are closed or
-  disposed of. The reviewed `c10-owner-01` rehearsal of the committed apparatus,
-  with the pinned `one-owner-release-02` writer, now covers its comparison.
-  The `acceptance-question2-01` writer pin follows those audits.
-
 ## Additional Claude Code subscription testing
 
 This work exercises question families and the manager workflow with the existing

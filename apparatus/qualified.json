@@ -624,8 +624,8 @@
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Preserve the exact aarch64 writer for the retained question/2 C10 and sanity audits.",
-        "until": "The retained audits are disposed of or their exact writer is preserved with them elsewhere."
+        "reason": "Preserve the exact aarch64 writer for the retained question/2 sanity audits (sanity-q2-01).",
+        "until": "The retained sanity-q2-01 audits are disposed of or their exact writer is preserved with them elsewhere."
       }
     },
     {
@@ -3170,140 +3170,6 @@
       "pin": {
         "reason": "The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.",
         "until": "The c10-readiness-04 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-q2-01",
-      "kind": "experiment",
-      "date": "2026-11-19T03:25:20Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Offline question/2 rehearsal passed for 22 first placements and six continuations. Review verified 28 exported snapshots and the three deliberate export controls.",
-      "result": {
-        "path": ".",
-        "files": 826,
-        "sha256": "f02c2cdfb873c9d71a7798db0fb3647027db51ea27aec3be3e2584f6f188af37"
-      },
-      "evidence": {
-        "path": ".scratch/c10-q2-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the file-only commissioning comparison and private evidence for the current manager interface work.",
-        "until": "A reviewed successor covers the comparison and remaining private custody is resolved."
-      }
-    },
-    {
-      "id": "c10-q2-01-control-continue-cap-p2",
-      "kind": "experiment",
-      "date": "2026-11-19T03:25:20Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Verified the original second-placement receipt for control-continue-cap.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "226138c6aeae104d41c292e174ea6fdb9c6bbe259d743059fc38e12c89a1c433"
-      },
-      "evidence": {
-        "path": ".scratch/c10-q2-01-control-continue-cap-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-q2-01 rehearsal checks this host receipt against its placement export.",
-        "until": "The c10-q2-01 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-q2-01-control-continue-entries-p2",
-      "kind": "experiment",
-      "date": "2026-11-19T03:25:20Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Verified the original second-placement receipt for control-continue-entries.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "661884b20ecf2c798ffbaf65195b1959eb2201bd1242154c09b2b401a61b9179"
-      },
-      "evidence": {
-        "path": ".scratch/c10-q2-01-control-continue-entries-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-q2-01 rehearsal checks this host receipt against its placement export.",
-        "until": "The c10-q2-01 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-q2-01-control-reminder-spent-p2",
-      "kind": "experiment",
-      "date": "2026-11-19T03:25:20Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Verified the original second-placement receipt for control-reminder-spent.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "fa59d4ab0b6370647713dc32f4979952452453c5db71068800097bf2e3a2156b"
-      },
-      "evidence": {
-        "path": ".scratch/c10-q2-01-control-reminder-spent-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-q2-01 rehearsal checks this host receipt against its placement export.",
-        "until": "The c10-q2-01 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-q2-01-control-reminder-spent-submits-p2",
-      "kind": "experiment",
-      "date": "2026-11-19T03:25:20Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Verified the original second-placement receipt for control-reminder-spent-submits.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "5623283715c8f755f80b31811bae6e8c20f862dd6c043ea6e783fc596de070fc"
-      },
-      "evidence": {
-        "path": ".scratch/c10-q2-01-control-reminder-spent-submits-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-q2-01 rehearsal checks this host receipt against its placement export.",
-        "until": "The c10-q2-01 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-q2-01-control-reminder-spent-unheld-p2",
-      "kind": "experiment",
-      "date": "2026-11-19T03:25:20Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Verified the original second-placement receipt for control-reminder-spent-unheld.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "94fe78d3408eaf09dbbd7e8ea91148e035bbfd198bec3d79fa477cc5c9191af4"
-      },
-      "evidence": {
-        "path": ".scratch/c10-q2-01-control-reminder-spent-unheld-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-q2-01 rehearsal checks this host receipt against its placement export.",
-        "until": "The c10-q2-01 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-q2-01-control-reminder-unused-p2",
-      "kind": "experiment",
-      "date": "2026-11-19T03:25:20Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Verified the original second-placement receipt for control-reminder-unused.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "0af037fb447a8e0ec2dea9150671c0a349648544178ce81ef5185311ff6f6d81"
-      },
-      "evidence": {
-        "path": ".scratch/c10-q2-01-control-reminder-unused-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-q2-01 rehearsal checks this host receipt against its placement export.",
-        "until": "The c10-q2-01 rehearsal is released."
       }
     },
     {

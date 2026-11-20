@@ -120,7 +120,7 @@ not carry them.
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
 - Evidence: `.scratch/acceptance-question2-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Preserve the exact aarch64 writer for the retained question/2 C10 and sanity audits.; until The retained audits are disposed of or their exact writer is preserved with them elsewhere.
+- Pin: Preserve the exact aarch64 writer for the retained question/2 sanity audits (sanity-q2-01).; until The retained sanity-q2-01 audits are disposed of or their exact writer is preserved with them elsewhere.
 
 | | linux-aarch64 | linux-x86_64 |
 | --- | --- | --- |
@@ -995,55 +995,6 @@ Second placement of control-reminder-unused in the retained offline C10 rehearsa
 
 - Evidence: `.scratch/c10-readiness-04-control-reminder-unused-p2/host/RESULT.json` (recorded 2026-11-18T18:37:09Z).
 - Retained purpose: The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.; until The c10-readiness-04 rehearsal is released.
-
-### c10-q2-01
-
-Offline question/2 rehearsal passed for 22 first placements and six continuations. Review verified 28 exported snapshots and the three deliberate export controls.
-
-- Evidence: `.scratch/c10-q2-01/.` (recorded 2026-11-19T03:25:20Z).
-- Retained purpose: Retain the file-only commissioning comparison and private evidence for the current manager interface work.; until A reviewed successor covers the comparison and remaining private custody is resolved.
-
-### c10-q2-01-control-continue-cap-p2
-
-Verified the original second-placement receipt for control-continue-cap.
-
-- Evidence: `.scratch/c10-q2-01-control-continue-cap-p2/host/RESULT.json` (recorded 2026-11-19T03:25:20Z).
-- Retained purpose: The retained c10-q2-01 rehearsal checks this host receipt against its placement export.; until The c10-q2-01 rehearsal is released.
-
-### c10-q2-01-control-continue-entries-p2
-
-Verified the original second-placement receipt for control-continue-entries.
-
-- Evidence: `.scratch/c10-q2-01-control-continue-entries-p2/host/RESULT.json` (recorded 2026-11-19T03:25:20Z).
-- Retained purpose: The retained c10-q2-01 rehearsal checks this host receipt against its placement export.; until The c10-q2-01 rehearsal is released.
-
-### c10-q2-01-control-reminder-spent-p2
-
-Verified the original second-placement receipt for control-reminder-spent.
-
-- Evidence: `.scratch/c10-q2-01-control-reminder-spent-p2/host/RESULT.json` (recorded 2026-11-19T03:25:20Z).
-- Retained purpose: The retained c10-q2-01 rehearsal checks this host receipt against its placement export.; until The c10-q2-01 rehearsal is released.
-
-### c10-q2-01-control-reminder-spent-submits-p2
-
-Verified the original second-placement receipt for control-reminder-spent-submits.
-
-- Evidence: `.scratch/c10-q2-01-control-reminder-spent-submits-p2/host/RESULT.json` (recorded 2026-11-19T03:25:20Z).
-- Retained purpose: The retained c10-q2-01 rehearsal checks this host receipt against its placement export.; until The c10-q2-01 rehearsal is released.
-
-### c10-q2-01-control-reminder-spent-unheld-p2
-
-Verified the original second-placement receipt for control-reminder-spent-unheld.
-
-- Evidence: `.scratch/c10-q2-01-control-reminder-spent-unheld-p2/host/RESULT.json` (recorded 2026-11-19T03:25:20Z).
-- Retained purpose: The retained c10-q2-01 rehearsal checks this host receipt against its placement export.; until The c10-q2-01 rehearsal is released.
-
-### c10-q2-01-control-reminder-unused-p2
-
-Verified the original second-placement receipt for control-reminder-unused.
-
-- Evidence: `.scratch/c10-q2-01-control-reminder-unused-p2/host/RESULT.json` (recorded 2026-11-19T03:25:20Z).
-- Retained purpose: The retained c10-q2-01 rehearsal checks this host receipt against its placement export.; until The c10-q2-01 rehearsal is released.
 
 ### sanity-q2-01
 
