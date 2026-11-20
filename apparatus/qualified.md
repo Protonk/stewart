@@ -161,7 +161,7 @@ not carry them.
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
 - Evidence: `.scratch/one-owner-release-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: none
+- Pin: The C10 rehearsal of the committed apparatus uses this run's aarch64 release binary as the exact writer for its synthetic audits.; until The rehearsal's audits are closed or disposed of and no live commission or comparison binds this writer.
 
 | | linux-aarch64 | linux-x86_64 |
 | --- | --- | --- |

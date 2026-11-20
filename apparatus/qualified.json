@@ -764,7 +764,10 @@
         "path": ".scratch/one-owner-release-02",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
-      "pin": null
+      "pin": {
+        "reason": "The C10 rehearsal of the committed apparatus uses this run's aarch64 release binary as the exact writer for its synthetic audits.",
+        "until": "The rehearsal's audits are closed or disposed of and no live commission or comparison binds this writer."
+      }
     },
     {
       "id": "one-owner-runtime-01",
