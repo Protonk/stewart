@@ -102,7 +102,10 @@ the same aarch64 guest kernel.
 Endpoint alignment for the models a release will name remains outstanding.
 Bounded Messages continuations preserved recorded work; one audit
 submitted and another exhausted its allowance with a partial account later
-sealed and closed by the manager. A bounded Opus encounter preserved an account
+sealed and closed by the manager. In witnessed Sonnet Messages trials, the
+auditor resumed after preparation and submitted the same selection. A manager
+close at preparation produced a verified return with manager attribution.
+A bounded Opus encounter preserved an account
 through real provider compaction, revised it and submitted a verified return.
 The [qualification record](apparatus/qualified.md)
 identifies those builds and results.

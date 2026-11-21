@@ -182,8 +182,12 @@ for the runtime, in its
   `stopped_by_close`. The runtime's owner orders a close before a signal and a
   signal before the deadline. Close seals the
   selection current at its request. The scripted tier closes from every state.
+  In a [live Sonnet Messages audit](../apparatus/qualified.md#runtime-stages-01),
+  close at preparation stopped a fully written, unanswered request. Stewart
+  estimated its usage, attributed the seal to the manager and verified delivery.
+  The exact writer then accepted ordinary close confirmation.
 - **Unknown:** *behavior:* the real harness's reaction to the stop, and the
-  timing of a real in-flight request relative to the close.
+  timing of requests at other close points.
 - **Elicited by:** close at a witnessed point during a placement.
 - **Next step:** a live test, which is an escalation.
 - **Outcomes:** a manager seal claiming auditor submission, or a mutation
@@ -236,13 +240,18 @@ over the same ledger and limits. The runtime's rules are in
   - re-entry lists entries and recent edits but not preparations;
   - the continuation notice tells the auditor to check before repeating its
     last action.
-- **Unknown:** *decision*, informed by *behavior:* should the notice or
-  re-entry tell a continuing auditor that a still-current preparation exists,
-  or tell it to prepare again before submitting?
+  - in a [live Sonnet Messages continuation](../apparatus/qualified.md#runtime-stages-01),
+    the auditor called `what_am_i_working_with`, `prepare` and `submit` in
+    that order. The three entries, selection revision, and answer and rendering
+    digests matched the interrupted preparation.
+- **Decision:** keep the present notice and re-entry text for the observed
+  Messages case. Whether a continuing auditor using the Claude Code harness
+  needs a preparation hint remains open.
 - **Elicited by:** a signal at the published preparation, followed by a
   continuation. Whether the first auditor received the tool reply is a
   separate observation.
-- **Next step:** a live observation, then a decision; implement and test it.
+- **Next step:** compare a witnessed preparation and continuation on the
+  harness after a reviewed profile becomes available.
 - **Outcomes:**
   - *The auditor prepares again and submits:* the current design suffices,
     perhaps with clearer text.
@@ -259,9 +268,12 @@ over the same ledger and limits. The runtime's rules are in
   corrected a refused edit to one entry, and submitted with the other two
   intact. The reminder had already been spent. See `INDEPENDENT-REVIEW.json`
   in the [reviewed continuation](../apparatus/qualified.md#readiness-m3-02-continue-reminder-p2-01).
-- **Unknown:** *behavior:* on the real harness and for Sonnet, whether the auditor looks up
-  prior work before editing and whether it adds an exact copy of an existing
-  entry. The Haiku observation establishes one recovery under those conditions.
+  In two [Sonnet Messages continuations](../apparatus/qualified.md#runtime-stages-01),
+  the auditor checked its work before editing an empty ledger and consulted
+  re-entry before preparing an existing three-entry selection without edits.
+- **Unknown:** *behavior:* whether a continuing auditor on the real harness
+  consults re-entry or duplicates a prior entry, and how a Sonnet Messages
+  auditor handles a populated ledger when it chooses to edit.
 - **Elicited by:** any continuation; passive.
 - **Next step:** passive observation in continuation runs.
 - **Outcomes:** if repeats appear, consider the procedural texts, or a

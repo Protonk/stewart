@@ -2377,6 +2377,25 @@
         "reason": "Keep the published comparison, independent witness identities and launcher-owned originals for the current file-only commissioning rehearsal.",
         "until": "A reviewed successor covers the comparison and the private audits have a custody disposition."
       }
+    },
+    {
+      "id": "runtime-stages-01",
+      "kind": "experiment",
+      "date": "2026-11-21T20:00:12Z",
+      "date_from": "EXIT-LEDGER.json field at",
+      "summary": "Sonnet Messages preserved the ledger across signals at start and after preparation, then verified manager close after preparation. The Linux Claude Code surface check stopped at an allowance warning before service startup.",
+      "result": {
+        "path": "EXIT-LEDGER.json",
+        "sha256": "e2ec4bf9c7abe2603e89f7f9c5e256dee12a7ebccbfadde5609e039d7ad0b78a"
+      },
+      "evidence": {
+        "path": ".scratch/runtime-stages-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Compare the witnessed preparation and subsequent tool sequence with the outstanding harness re-entry case",
+        "until": "the cross-route preparation decision is resolved or retired and the witnesses have had their review"
+      }
     }
   ]
 }

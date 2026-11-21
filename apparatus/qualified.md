@@ -830,3 +830,10 @@ Standalone offline Linux arm64 sanity rehearsal under rootless Podman with the q
 
 - Evidence: `.scratch/linux-sanity-f68780d-01/.` (recorded 2026-11-21T04:34:35Z).
 - Retained purpose: Keep the published comparison, independent witness identities and launcher-owned originals for the current file-only commissioning rehearsal.; until A reviewed successor covers the comparison and the private audits have a custody disposition.
+
+### runtime-stages-01
+
+Sonnet Messages preserved the ledger across signals at start and after preparation, then verified manager close after preparation. The Linux Claude Code surface check stopped at an allowance warning before service startup.
+
+- Evidence: `.scratch/runtime-stages-01/EXIT-LEDGER.json` (recorded 2026-11-21T20:00:12Z).
+- Retained purpose: Compare the witnessed preparation and subsequent tool sequence with the outstanding harness re-entry case; until the cross-route preparation decision is resolved or retired and the witnesses have had their review
