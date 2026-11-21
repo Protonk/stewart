@@ -1395,6 +1395,103 @@ class HostQueueTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'differs'):
             self.real_card(self.config,self.packet,{**self.request,'sha256':'0'*64},[])
 
+    def test_staged_source_collision_withholds_credential_and_records_only_fixed_roles(self):
+        staging=self.root/'staging'
+        staging.mkdir()
+        secret=b'c10-NONFUNCTIONAL-offline-control'
+        (staging/'source.tar').write_bytes(b'archived fixture: '+secret)
+        inputs=staging/'submissions'
+        inputs.mkdir()
+        escaped=b''.join(b'\\u%04x'%c for c in secret)
+        (inputs/'private-name').write_bytes(escaped)
+        proc=mock.Mock()
+        report={'credential_sent':False}
+        with self.assertRaisesRegex(ValueError,'staged'):
+            c10.handoff(proc,staging,secret,report)
+        proc.stdin.write.assert_not_called()
+        self.assertFalse(report['credential_sent'])
+        self.assertEqual(report['staging_scan']['findings'],[
+            {'artifact':'source archive','producer':'git archive','form':'literal','files':1},
+            {'artifact':'submission','producer':'input staging','form':'ASCII JSON escape','files':1}])
+        self.assertNotIn(secret.decode(),json.dumps(report))
+        self.assertNotIn('private-name',json.dumps(report))
+        (staging/'source.tar').write_bytes(b'ordinary source')
+        (inputs/'private-name').write_bytes(b'ordinary submission')
+        c10.handoff(proc,staging,secret,report)
+        proc.stdin.write.assert_called_once_with(secret)
+        self.assertTrue(report['credential_sent'])
+
+    def test_host_and_current_snapshot_scans_are_both_required(self):
+        tree=Path(self.request['evidence'])
+        (tree/'host').mkdir(parents=True)
+        audit=self.packet['runs'][0]['id']
+        first=tree/'container'/audit/'export-0001'
+        first.mkdir(parents=True)
+        scan={'files':3,'errors':0,'files_with_matches':0}
+        host=tree/'host/RESULT.json'
+        meta=first/'EXPORT.json'
+        queue=self.root/'queue'
+        for case in ('only-host','only-export','malformed','missing-stage','complete'):
+            (queue/'claims'/case).mkdir(parents=True)
+            host.unlink(missing_ok=True)
+            meta.unlink(missing_ok=True)
+            if case!='only-export':
+                doc={'host_scan':scan}
+                if case!='missing-stage': doc['staging_scan']=scan
+                write_json(host,doc)
+            if case!='only-host':
+                write_json(meta,{'scan':scan} if case!='malformed' else {'scan':{}})
+            with self.subTest(case=case):
+                self.assertEqual(self.real_exposure(queue,case,self.request,self.packet),case=='complete')
+
+    def test_continuation_requires_both_host_trees_and_its_own_export(self):
+        original=Path(self.request['evidence'])
+        record=self.root/'.scratch/continuation'
+        request={**self.request,'operation':'continue','record':str(record)}
+        packet={'audit':'example','placement':2}
+        scan={'files':4,'errors':0,'files_with_matches':0}
+        receipt={'scan':scan}
+        folder=original/'container/example'
+        for snapshot in ('export-0001','export-0002'):
+            (folder/snapshot).mkdir(parents=True)
+            write_json(folder/snapshot/'EXPORT.json',receipt)
+        session_path=original/'container/continuations/example-p2/attempt-1/RESULT.json'
+        session_path.parent.mkdir(parents=True)
+        session={'schema':'stewart.c10-continuation-session/1','audit':'example','placement':2,
+                 'attempt':1,'packet_sha256':request['sha256'],'snapshot':'export-0002','export':receipt}
+        (record/'host').mkdir(parents=True)
+        queue=self.root/'queue'
+        for case in ('complete','absent-host-tree','prior-only','different-attempt','missing-current'):
+            with self.subTest(case=case):
+                scans={'record':scan,'evidence':scan}
+                if case=='absent-host-tree': del scans['evidence']
+                (record/'host/RESULT.json').unlink(missing_ok=True)
+                session_path.unlink(missing_ok=True)
+                write_json(record/'host/RESULT.json',{'attempt':1,'staging_scan':scan,'host_scan':scans})
+                current=session.copy()
+                if case=='prior-only': current['snapshot']='export-0001'
+                if case=='different-attempt': current['attempt']=2
+                if case=='missing-current': (folder/'export-0002/EXPORT.json').unlink()
+                write_json(session_path,current)
+                (queue/'claims'/case).mkdir(parents=True)
+                self.assertEqual(self.real_exposure(queue,case,request,packet),case=='complete')
+
+    def test_unsuccessful_scan_publishes_no_archive_even_when_dispatch_exited_zero(self):
+        queue=self.root/'queue'
+        (queue/'requests').mkdir()
+        write_json(queue/'requests/first.json',self.request)
+        config=self.root/'config.json'
+        write_json(config,self.config)
+        with mock.patch.object(host_queue,'exposure_review',side_effect=self.real_exposure), \
+             mock.patch.object(host_queue.subprocess,'check_output',return_value=b''), \
+             mock.patch.object(host_queue,'source_hash',return_value='source'), \
+             mock.patch.object(host_queue.subprocess,'run',return_value=subprocess.CompletedProcess([],0)), \
+             mock.patch.object(host_queue,'publish_exports') as publish:
+            self.assertEqual(host_queue.serve(queue,config,True,once=True),1)
+            publish.assert_not_called()
+        self.assertFalse(list((queue/'results').glob('*.tar')))
+        self.assertEqual(strict_json(read_file(queue/'results/first.json'))['exit'],1)
+
     def test_positive_exposure_count_stops_before_publishing_and_contains_only_counts(self):
         d=Path(self.request['evidence'])
         (d/'host').mkdir(parents=True)
@@ -1403,7 +1500,7 @@ class HostQueueTests(unittest.TestCase):
         self.assertFalse(self.real_exposure(queue,'exposure',self.request,self.packet))
         self.assertTrue((queue/'STOP').is_file())
         self.assertEqual(strict_json(read_file(queue/'claims/exposure/exposure.json')),
-                         {'scans':1,'files_examined':3,'files_with_matches':1,'errors':0,'credential_printed':False})
+                         {'scans':1,'files_examined':3,'files_with_matches':1,'errors':2,'credential_printed':False})
 
     def test_price_bands_known_cache_and_unknown_usage(self):
         from billing import charge,worst_case
@@ -2258,6 +2355,17 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(strict_json(read_file(self.published(self.first,3)/'READY.json'))['attempt'],3)
         self.assertEqual(self.calls('starts.jsonl'),[{'audit':self.first,'placement':2,'attempt':3}])
         self.assertEqual(strict_json(read_file(earlier/'RESULT.json')),result)
+
+    def test_preexisting_credential_in_staged_packet_never_reaches_the_child(self):
+        account={'account_label':self.key,'workspace_id':'offline','credential_label':'synthetic'}
+        self.retain(account=account)
+        failed,report=self.run_continuation(self.args(self.packet(),connection='synthetic'))
+        self.assertTrue(failed)
+        self.assertFalse(report['credential_sent'])
+        self.assertEqual(report['staging_scan']['findings'],[
+            {'artifact':'commission','producer':'packet staging','form':'literal','files':1}])
+        self.assertEqual(self.calls('starts.jsonl'),[])
+        self.assertEqual([row['bytes'] for row in self.calls('placement-stdin.jsonl')],[0])
 
     def test_wrong_key_starts_nothing_and_the_right_key_proceeds_as_the_next_attempt(self):
         self.retain()

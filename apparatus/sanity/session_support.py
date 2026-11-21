@@ -53,18 +53,28 @@ def decode_ascii_escapes(value):
     return re.sub(rb'\\u00[0-7][0-9a-fA-F]|\\["\\/]', replace, value)
 
 
+def credential_match_form(content, key):
+    if key in content:
+        return 'literal'
+    if key in decode_ascii_escapes(content):
+        return 'ASCII JSON escape'
+    return None
+
+
 def secret_matches(content, key):
-    return key in content or key in decode_ascii_escapes(content)
+    return credential_match_form(content, key) is not None
 
 
-def scan_tree(root, key):
+def scan_tree(root, key, *, classify=None):
     """Inspect every regular file without following links; failures withhold.
 
     The fixed overlap bounds a full 4096-byte credential in ASCII JSON escapes.
-    Reports intentionally contain counts, never matching bytes or filenames.
+    A private caller may group matches by fixed artifact and producer labels.
+    Report each file once, preferring a literal match when both forms occur.
     """
     started = time.time()
     files = matches = errors = 0
+    findings = {}
     root = Path(root)
     try:
         if not stat.S_ISDIR(root.lstat().st_mode):
@@ -101,23 +111,33 @@ def scan_tree(root, key):
                         continue
                     files += 1
                     tail = b''
-                    found = False
+                    form = None
                     while True:
                         chunk = stream.read(65536)
                         if not chunk:
                             break
                         content = tail + chunk
-                        found = found or secret_matches(content, key)
+                        if form != 'literal':
+                            form = credential_match_form(content, key) or form
                         tail = content[-24576:]
                     after = os.fstat(stream.fileno())
                     if (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns):
                         errors += 1
-                    matches += found
+                    if form is not None:
+                        matches += 1
+                        if classify:
+                            artifact, producer = classify(path.relative_to(root))
+                            group = (artifact, producer, form)
+                            findings[group] = findings.get(group, 0) + 1
             except OSError:
                 errors += 1
-    return {'files': files, 'files_with_matches': matches, 'errors': errors,
+    result = {'files': files, 'files_with_matches': matches, 'errors': errors,
             'started_at': started, 'ended_at': time.time(),
             'scope': 'regular-file bytes, literal and ASCII JSON escapes; no memory claim'}
+    if classify:
+        result['findings'] = [{'artifact': a, 'producer': p, 'form': f, 'files': n}
+                              for (a, p, f), n in sorted(findings.items())]
+    return result
 
 
 def validate_commission(value):

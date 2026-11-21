@@ -406,11 +406,19 @@ class Audit(Session):
                 'fake_requests':fake.requests if fake else None}
 
 
+def audit_artifact(path):
+    return {'submission': ('submission', 'audit intake'),
+            'archive': ('audit archive', 'Stewart'),
+            'returns': ('delivered package', 'Stewart'),
+            'evidence': ('audit observation', 'placement apparatus')}.get(
+                path.parts[0], ('other audit artifact', 'audit working directory'))
+
+
 def export_snapshot(root, destination, key, *, force_failure=False):
     """One immutable snapshot; caller holds the audit operator lock and checked current status."""
     destination.mkdir(mode=0o700)
     state = export_evidence_state(root)
-    scan = scan_tree(root,key)
+    scan = scan_tree(root,key,classify=audit_artifact)
     result = {'schema':'stewart.c10-export/2', 'started_at':time.time(), 'outcome':'withheld',
         'evidence_state':state, 'scan':scan, 'archive':None, 'reasons':[]}
     if state != 'complete':

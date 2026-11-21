@@ -355,6 +355,20 @@ python3 -I -B apparatus/c10/c10.py connection store stewart-haiku
 python3 -I -B apparatus/c10/c10.py connection status stewart-haiku
 ```
 
+For each placement the launcher scans its staged Git archive, commission and
+supplied inputs with the bound credential after intake and before handing the
+credential to the child. A literal or decoded ASCII JSON match, or an
+incomplete staging scan, closes the child's input without sending the key.
+A staging match identifies bytes already present before the provider request.
+
+Private scan receipts group matching files by a fixed artifact class, the
+step that produced it, and the match form. A literal match takes precedence
+when one file contains both forms. The receipt preserves counts without copying
+matched bytes, excerpts or filenames. The final host scan covers the entire
+launch directory, including staged inputs, launcher command output and
+container exports. The independent audit scan covers the private working tree
+before packaging.
+
 Every process obtains the launcher user's persistent keyring with
 `keyctl get_persistent @s`. This refreshes the ring inactivity timeout.
 Status searches only for the type and description. Launch, continuation and
@@ -634,8 +648,8 @@ It then records each command's argv, streams and exit while it:
    in the audit. If the process ends or the deadline passes first, or the
    record names another audit, placement or attempt, no credential is read or
    sent;
-6. reads the bound key from the launcher keyring and sends it
-   on the placement's input. The container compares it with the original
+6. reads the bound key from the launcher keyring, checks the staged inputs
+   and sends it on the placement's input only after a clean scan. The container compares it with the original
    placement's private marker before any start; a different key starts nothing;
 7. inspects the container and scans both the new record folder and the original
    evidence folder for the key, since the placement's records and the next

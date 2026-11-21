@@ -578,6 +578,43 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
     return report
 
 
+def staged_artifact(path):
+    if path == Path('source.tar'):
+        return 'source archive', 'git archive'
+    if path == Path('commission.json'):
+        return 'commission', 'packet staging'
+    if path.parts[0] == 'submissions':
+        return 'submission', 'input staging'
+    return 'other staged file', 'input staging'
+
+
+def host_artifact(path):
+    if path.parts[0] == 'staging' and len(path.parts) > 1:
+        return staged_artifact(Path(*path.parts[1:]))
+    if path.parts[0] == 'host':
+        if path.name in ('container.stdout', 'container.stderr', 'placement.stdout', 'placement.stderr'):
+            return 'container command stream', 'batch or continuation'
+        if path.name.startswith('container-inspect.'):
+            return 'container inspection', 'podman inspect'
+        return 'launcher record', 'host launcher'
+    if path.name == 'work.tar' and path.parts[0] == 'container':
+        return 'snapshot archive', 'audit export'
+    if path.parts[0] == 'container':
+        return 'container record', 'container runner'
+    return 'other launch artifact', 'launch directory'
+
+
+def handoff(proc, staging, key, report):
+    """Run after intake and before writing any credential byte to the child."""
+    scan = scan_tree(staging, key, classify=staged_artifact)
+    report['staging_scan'] = scan
+    require(scan['files'] > 0 and not scan['files_with_matches'] and not scan['errors'],
+            'staged inputs match the configured credential or their scan is incomplete')
+    proc.stdin.write(key)
+    proc.stdin.close()
+    report['credential_sent'] = True
+
+
 def launch_batch(args):
     mode=args.mode
     out=args.evidence
@@ -682,19 +719,17 @@ def launch_batch(args):
                 'container ended before intake completed; no credential sent',
                 'intake deadline expired; inspect retained container')
             require(ready=={'credential_free_intake_verified':True,'audits':[r['id'] for r in packet['runs']]},'intake readiness differs from packet')
-            print(json.dumps({'provider':'Anthropic','endpoint':packet['endpoint'],
-                'manager_supplied_account':packet['account'],'credential_source':report['credential_source']}),flush=True)
             phase='credential-handoff'
             key=(connection_key(connection,rehearsal=mode=='rehearse',record=host/'connection.json')
                  if connection else b'c10-NONFUNCTIONAL-'+os.urandom(24).hex().encode())
-            proc.stdin.write(key)
-            proc.stdin.close()
-            report['credential_sent']=True
+            handoff(proc,staging,key,report)
+            print(json.dumps({'provider':'Anthropic','endpoint':packet['endpoint'],
+                'manager_supplied_account':packet['account'],'credential_source':report['credential_source']}),flush=True)
             phase='placement'
             report['container_exit']=proc.wait()
         step('container-inspect',['podman','inspect',name])
         phase='host-scan'
-        report['host_scan']=scan_tree(out,key)
+        report['host_scan']=scan_tree(out,key,classify=host_artifact)
         require(not report['host_scan']['files_with_matches'] and not report['host_scan']['errors'],'host scan failed or uncertain')
         phase='batch-result'
         session=strict_json(read_file(exported/'RESULT.json'))
@@ -720,6 +755,11 @@ def launch_batch(args):
             report['error']=str(error)
         if proc is not None and proc.stdin is not None and not proc.stdin.closed:
             proc.stdin.close()
+        if proc is not None and proc.poll() is None and not report['credential_sent']:
+            try:
+                proc.wait(timeout=STOP_SECONDS)
+            except subprocess.TimeoutExpired:
+                pass
         if proc is not None and proc.poll() is None:
             report['container_process_state']='unknown; use recorded operator commands'
     finally:
@@ -862,21 +902,19 @@ def continue_placement(args,*,synthetic_key=None):
             consistent=ready==ready_record(audit,placement,attempt)
             require(consistent,'preflight readiness names another audit, placement or attempt; no credential sent')
             require(proc.poll() is None,'placement process ended before credential handoff; no credential sent')
-            print(json.dumps({'provider':'Anthropic','endpoint':packet['endpoint'],
-                'manager_supplied_account':packet['account'],'credential_source':report['credential_source']}),flush=True)
             phase='credential-handoff'
             key=(connection_key(connection,rehearsal=mode=='rehearse',record=host/'connection.json')
                  if connection else synthetic_key)
-            proc.stdin.write(key)
-            proc.stdin.close()
-            report['credential_sent']=True
+            handoff(proc,staging,key,report)
+            print(json.dumps({'provider':'Anthropic','endpoint':packet['endpoint'],
+                'manager_supplied_account':packet['account'],'credential_source':report['credential_source']}),flush=True)
             phase='placement'
             report['container_exit']=proc.wait()
         step('container-inspect',['podman','inspect',name])
         phase='host-scan'
         # New exports and the continuation's records land in the earlier folder
         # through the container's existing /out mount, so both trees are scanned.
-        report['host_scan']={'record':scan_tree(out,key),'evidence':scan_tree(evidence,key)}
+        report['host_scan']={'record':scan_tree(out,key,classify=host_artifact),'evidence':scan_tree(evidence,key,classify=host_artifact)}
         require(all(not scan['files_with_matches'] and not scan['errors'] for scan in report['host_scan'].values()),
                 'host scan failed or uncertain')
         phase='placement-result'
@@ -1073,11 +1111,11 @@ def host_control(args):
         result=subprocess.run(argv,env=host_environment(),input=key,stdout=stdout,stderr=stderr)
     stem.with_suffix('.exit').write_text(str(result.returncode)+'\n')
     if key is not None:
-        scan=scan_tree(args.evidence,key)
+        scan=scan_tree(args.evidence,key,classify=host_artifact)
         write_json(stem.with_suffix('.scan.json'),scan)
         clean=not scan['files_with_matches'] and not scan['errors']
         if earlier is not None:
-            scan=scan_tree(earlier['folder'],key)
+            scan=scan_tree(earlier['folder'],key,classify=host_artifact)
             write_json(stem.with_suffix('.evidence-scan.json'),scan)
             clean=clean and not scan['files_with_matches'] and not scan['errors']
         key=None

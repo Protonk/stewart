@@ -393,29 +393,75 @@ def publish_exports(results, evidence, audits):
 
 
 def exposure_review(queue, name, request, packet):
+    """Require the staging, full host and current audit scans independently."""
     record=evidence_path(request.get('record',request['evidence']))
     original=evidence_path(request['evidence'])
-    host=record/'host/RESULT.json'
-    scans=[]
-    if host.exists():
-        host_scan=strict_json(read_file(host)).get('host_scan') or {}
-        if 'files_with_matches' in host_scan:
-            scans.append(host_scan)
-        else:
-            scans.extend(host_scan.values())
-    audit=packet['audit'] if request['operation']=='continue' else packet['runs'][0]['id']
-    for receipt in sorted((original/'container'/audit).glob('export-*/EXPORT.json')):
-        scans.append(strict_json(read_file(receipt))['scan'])
-    value={'scans':len(scans),'files_examined':sum(s['files'] for s in scans),
-           'files_with_matches':sum(s['files_with_matches'] for s in scans),
-           'errors':sum(s['errors'] for s in scans),'credential_printed':False}
-    write_json(queue/'claims'/name/'exposure.json',value)
-    if value['files_with_matches']:
+    continuing=request['operation']=='continue'
+    summary={'scans':0,'files_examined':0,'files_with_matches':0,'errors':0,'credential_printed':False}
+
+    def document(path):
+        try:
+            value=strict_json(read_file(path))
+            return value if isinstance(value,dict) else {}
+        except (ValueError,OSError):
+            return {}
+
+    def count(scan):
+        if not isinstance(scan,dict) or any(type(scan.get(k)) is not int or scan[k]<0
+                                            for k in ('files','files_with_matches','errors')):
+            summary['errors']+=1
+            return
+        summary['scans']+=1
+        summary['files_examined']+=scan['files']
+        summary['files_with_matches']+=scan['files_with_matches']
+        summary['errors']+=scan['errors']
+        if scan['files']==0 or scan['files_with_matches']>scan['files']:
+            summary['errors']+=1
+
+    host=document(record/'host/RESULT.json')
+    count(host.get('staging_scan'))
+    host_scan=host.get('host_scan')
+    if continuing:
+        for scope in ('record','evidence'):
+            count(host_scan.get(scope) if isinstance(host_scan,dict) else None)
+    else:
+        count(host_scan)
+    audits=[packet['audit']] if continuing else [run['id'] for run in packet['runs']]
+    for audit in audits:
+        folder=original/'container'/audit
+        snapshots=set(folder.glob('export-*'))
+        snapshots.add(folder/'export-0001')
+        if continuing:
+            placement=packet['placement']
+            attempt=host.get('attempt')
+            session={}
+            if type(attempt) is int and attempt>0:
+                path=original/'container/continuations'/f'{audit}-p{placement}'/f'attempt-{attempt}'/'RESULT.json'
+                session=document(path)
+            snapshot=session.get('snapshot')
+            if (session.get('schema')!='stewart.c10-continuation-session/1'
+                    or session.get('audit')!=audit or session.get('placement')!=placement
+                    or session.get('attempt')!=attempt or session.get('packet_sha256')!=request['sha256']
+                    or not isinstance(snapshot,str) or not re.fullmatch(r'export-[0-9]{4,}',snapshot)
+                    or int(snapshot[7:])<placement):
+                summary['errors']+=1
+            else:
+                snapshots.add(folder/snapshot)
+                if session.get('export')!=document(folder/snapshot/'EXPORT.json'):
+                    summary['errors']+=1
+        for snapshot in snapshots:
+            if snapshot.is_symlink() or not re.fullmatch(r'export-[0-9]{4,}',snapshot.name):
+                summary['errors']+=1
+                continue
+            count(document(snapshot/'EXPORT.json').get('scan'))
+
+    write_json(queue/'claims'/name/'exposure.json',summary)
+    if summary['files_with_matches']:
         if not (queue/'STOP').exists():
             write_json(queue/'STOP',{'reason':'credential material found','claim':name})
         print('Credential material found in paid evidence; campaign stopped.',file=sys.stderr)
         return False
-    return bool(scans) and not value['errors']
+    return summary['errors']==0
 
 
 def priced_export(queue, name, request, packet, config, reserved):

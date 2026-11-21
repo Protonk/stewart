@@ -92,6 +92,14 @@ incomplete custody record requires reconciliation. The claim retains its full
 reservation and blocks subsequent placements. Only a clear, unexercised
 limit supports interpretation as an ordinary reference or selection.
 
+Paid publication requires complete, clean receipts from staging, the final
+host scan and each audit's export scan. A continuation also requires both
+host-directory scans and the snapshot identified by that placement's attempt.
+A previous snapshot cannot satisfy the current receipt. A match stops the
+queue. A missing, unreadable or incomplete required scan withholds the archive
+and settlement. The shared failure summary gives a fixed reason. The launcher
+keeps the detailed scan receipts under its private account.
+
 After a complete export, the runner reconstructs the placement from the
 digest-verified archive. Its settlement prices the recorded reported input,
 cache creation, cache reads and output per attempt at the matching tier.
