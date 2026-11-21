@@ -1,8 +1,9 @@
 # Linux development
 
 Stewart is Linux software and is to be developed on Linux. The development Mac
-becomes only the host for one Lima virtual machine. All development, checks,
-container suites, live apparatus and agent sessions will run inside that VM.
+hosts one Lima virtual machine and the maintainer signs releases on the Mac.
+All development, checks, container suites, live apparatus and agent sessions
+will run inside that VM.
 The Lima template will be the Mac host's entry point.
 
 Today the work runs in two worlds. Iteration is native on macOS, which no claim
@@ -45,34 +46,44 @@ supported platform and makes a development build a Linux build.
 
 The tooling stores no secret of its own, and nobody pastes a key for each run.
 
-- **Provider API keys** go into the Linux kernel's per-user persistent keyring.
-  - The maintainer enters the key through a non-echoing prompt after boot.
-    Feed its bytes to `keyctl padd` on stdin.
+- **Provider API keys** belong to a dedicated, unprivileged Linux launcher
+  account. Set it up before the first paid campaign. Development agents run
+  under a separate unprivileged account and submit requests to the bounded
+  launcher. For C10 campaigns, use the existing host queue.
+  - The maintainer enters the key through a non-echoing prompt as the launcher
+    user after boot. Feed its bytes to `keyctl padd` on stdin.
+  - The launcher runs a reviewed copy of the apparatus and writer, checks each
+    request against the authorized commission, and enforces its placement and
+    spending limits. The launcher or maintainer controls that code, its
+    configuration, the allowance records and the live Podman containers.
+    Agents can supply packets and read published results.
   - After verified intake or continuation preflight, the launcher reads the
     named key with `keyctl pipe` into a private pipe. Preserve the existing
     byte validation, rehearsal canary check, container stdin handoff, one-use
     descriptor to Stewart and credential scans. Keep real keys out of
     arguments, the environment, logs and exported records.
-  - Each fresh launcher session obtains the user's persistent ring with
+  - Each fresh launcher session obtains the launcher user's persistent ring with
     `keyctl get_persistent @s` and searches that ring by type and description.
     Obtaining it refreshes its inactivity timeout. Set the interval to cover
     the planned idle time. Expiry and guest reboot can require re-entry.
     [Persistent keyring](https://man7.org/linux/man-pages/man7/persistent-keyring.7.html)
 
-  Processes running as the development user can read that user's key. A
-  dedicated launcher account can restrict access if agents lack general sudo
-  and can invoke only launcher code and configuration controlled by that
-  account or the maintainer. Lima grants its default guest user passwordless
-  sudo. Encrypted systemd credentials are an option if re-entry after reboot
-  becomes a burden. [Lima guest privileges](https://lima-vm.io/docs/config/sudo/)
-- **GitHub pushes and release signing** use the Mac's SSH agent, forwarded
-  into the VM by Lima, so private keys stay on the Mac. The VM's clone uses the
-  SSH remote. A guest process with access to the forwarded socket can request
-  operations with the loaded identities. For the GitHub CLI fallback, use
-  an HTTPS remote with `gh auth setup-git` and provision a working credential
-  store before login. On a headless guest `gh` can fall back to a plaintext
+  Reserve guest administration for the maintainer. Lima grants its default
+  guest user passwordless sudo. The development account has neither general
+  sudo nor a shell as the launcher user. Encrypted systemd credentials remain
+  an option for the launcher if re-entry after reboot becomes a burden.
+  [Lima guest privileges](https://lima-vm.io/docs/config/sudo/)
+- **GitHub pushes** use the VM clone's SSH remote. Forward a dedicated Mac
+  SSH agent containing only Stewart's GitHub push identity. For the GitHub
+  CLI fallback, use a Stewart-scoped credential and an HTTPS remote with
+  `gh auth setup-git`. Provision a working credential store before login.
+  On a headless guest `gh` can fall back to a plaintext
   token file. Confirm the storage location with `gh auth status`. This fallback
   covers Git transport only. [GitHub CLI login](https://cli.github.com/manual/gh_auth_login)
+- **Release signing** stays on the Mac. The maintainer compares
+  `SHA256SUMS` against the qualified digests for both release binaries and
+  signs the reviewed file locally. Only the public verification key and the
+  resulting signature are needed in the VM.
 - **The Claude Code harness login** belongs to the harness. It is made once in
   the VM through the harness's sign-in URL, opened on the Mac. Stewart never
   reads or copies it.
@@ -94,7 +105,9 @@ else that assumes macOS becomes a task where it is found.
   Pin the Debian image by digest and record the tested Lima version. Enable
   Rosetta and its binfmt registration. Omit the default home-directory mount,
   disable Lima's bundled containerd and verify the effective guest mounts.
-  Configure SSH forwarding and keyring expiry as above. Install rootless
+  Provision the development and launcher accounts, configure keyring expiry,
+  and verify from the development login that the forwarded agent lists
+  exactly the expected push-key fingerprint. Install rootless
   Podman and `catatonit` for `--init`, configure subordinate UID/GID ranges
   and delegate the cgroup v2 CPU and memory controllers. Install git, Python
   3, keyutils, gnupg, curl, the native build tools, and rustup with the Rust
@@ -189,8 +202,13 @@ else that assumes macOS becomes a task where it is found.
   - `test_c10.py`'s fake `security` executable and its diagnostics.
   - `apparatus/testdata/keychain/`, a captured macOS lookup, which gives way to
     a keyring capture.
-  - Verify lookup after logout from a fresh `limactl shell` and from the
+  - Verify lookup from a fresh launcher-user login after logout and from the
     queue's minimal environment. Check loss on reboot with a synthetic key.
+  - Rehearse from both accounts with a synthetic key. An in-budget request
+    through the queue must reach the fake provider. From the agent account,
+    verify that direct key reads, changes to the launcher's code or allowance
+    records, and access to its Podman control socket are denied. An
+    over-budget request must produce a refusal with zero provider calls.
 - [ ] Give the harness apparatus a Linux route. A Linux executable has no Apple
   code signature, so pin it against the signed manifest instead. Keep the route
   short enough for a person outside this checkout to follow. Settle the profile
@@ -368,7 +386,10 @@ else that assumes macOS becomes a task where it is found.
   material is confined to Lima host setup, user guidance and evidence provenance.
 - The toolchain, release and runtime suites pass on both architectures under
   Podman, and the C10, sanity and harness rehearsals pass.
-- Secrets follow the decisions above.
+- The VM exposes only the Stewart push identity through SSH forwarding.
+  The maintainer can verify the release checksums and sign them on the Mac.
+  The two-account rehearsal demonstrates that agents can request authorized
+  placements and that the launcher enforces the commission.
 - The Mac checkout and Apple containers are retired, with every custody
   obligation met.
 - The documentation describes the Linux environment, and this plan is deleted.
