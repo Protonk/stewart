@@ -85,30 +85,27 @@ interrupted audit's output allowance as the
 describes. Otherwise the continuation ends `limit_reached` before it sends
 anything.
 
-## Authorize
+## Envelope
 
-Live use needs explicit permission bounded in models, spend and starts
-([AGENTS](../AGENTS.md)). For routine Haiku tests on the Messages route, that
-permission is meant to be a standing grant, not a request per test. A standing
-grant needs:
+Every live test runs under a plan that states its envelope: routes, models,
+budget, starts or placements, waves and hard stops. The plan is the authority;
+this procedure says how to stay inside it. Routine Haiku tests on the Messages
+route run under a standing plan whose envelope covers many small tests, not a
+plan per test.
+
+The Messages route's controls are technical:
 
 - a dedicated API key used only for Stewart live tests, in its own workspace,
-  with a provider-side monthly spending limit no higher than the grant;
+  with a provider-side spending limit no higher than the plan's budget;
 - the key reached only through a
   [saved connection](../apparatus/c10/README.md#saved-provider-connections),
   never in argv, the environment or chat;
-- the maintainer's written grant naming the models (Haiku by default), the
-  monthly ceiling, the worst-case ceiling per test, the route and the stop
-  conditions;
 - a [host queue](../apparatus/c10/HOST-QUEUE.md) campaign configuration
-  carrying the grant's authority text, a placement ceiling, the dollar budget
-  and the maintainer's recorded Console observation.
+  carrying the envelope's placement ceiling and budget.
 
-Under a standing grant, a developer or agent runs any test whose card fits it
-without further approval. A test that exceeds the grant, uses another model or
-uses the harness is an escalation. It needs its own bounded commission, normally
-written as a campaign plan (`git ls-files '*-PLAN.md'`). Until a standing grant
-exists, each live test needs its own explicit permission.
+A test whose card fits the envelope runs without further approval. A test
+outside it, such as one using another model, the harness or a larger budget,
+needs a plan whose envelope covers it ([writing a campaign plan](#writing-a-campaign-plan)).
 
 Authority to launch never bypasses a control. Packets stay frozen and approved
 by digest, rehearsals and bindings stay current, and nothing continues an audit
@@ -178,7 +175,7 @@ inspection purpose.
 | --- | --- |
 | A Stewart defect | Reproduce it as a failing scripted test, fix it, and run the change's checks |
 | A stand-in assumption is wrong | Update the fake provider or synthetic harness from the capture, with its provenance |
-| A design question | Decide it within your authority, implement and test it; otherwise state the precise boundary for the maintainer |
+| A design question | Decide it within the envelope, implement and test it. A decision beyond the envelope is recorded as such, with its precise boundary |
 | The model used the procedure in an unexpected way | Consider the procedural texts and tools. One observation is an anecdote, and nothing may depend on answer content |
 | An apparatus defect, or an unexercised condition | Fix the instrument and rehearse it |
 | Nothing new | Record the outcome and move on |
@@ -218,3 +215,30 @@ deliberate repetition. An escalation states:
 It uses this procedure's cards, outcomes and kinds of evidence.
 [Unresolved operations](UNRESOLVED-OPERATIONS.md) records what remains to be
 learned and helps choose the question.
+
+## Writing a campaign plan
+
+An escalation, or a standing allowance for routine tests, is written as an
+ordinary plan (`*-PLAN.md`), and the plan is the authority for its live work.
+It states:
+
+- **Question and objective:** the design question, and what finished means:
+  completed changes rather than recommendations.
+- **Envelope:** routes, models, budget, starts or placements, bindings,
+  permitted work and what lies beyond it, with at most two live waves. The
+  first wave is fixed in advance; the second is adaptive.
+- **Hard stops:** conditions that halt live work on a route whatever else is
+  decided. They include uncertain termination or effects, an unexplained wire
+  violation, an evidence-integrity failure, a custody failure and unsafe
+  spending. A stop that cannot be resolved ends that route's live work for the
+  campaign.
+- **First wave:** its tests, with cards and criteria fixed before launch.
+- **Ledger:** one row per packet, giving the wave, question and reason for
+  selection, digests and identities, conditions and any perturbation, and the
+  outcome.
+- **Finish:** implementation and verification, documentation, custody closure
+  and retention. The exit report gives the completed changes, the reviewed
+  evidence and what remains unknown.
+
+Between its start and its exit report, a campaign consults no one. Its
+two-wave limit is the stopping condition.

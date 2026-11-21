@@ -65,15 +65,19 @@ create another approval stage.
 
 The maintainer grants this envelope once, and it covers both waves. Within it,
 the operating agent freezes and approves each packet by digest, launches,
-reviews and decides, without further requests. It grants no right to launch
-outside these bounds and no exemption from any apparatus control.
+reviews and decides. It grants no right to launch outside these bounds and no
+exemption from any apparatus control.
+
+Between the grant and the exit report, no one is asked anything. Two waves is
+the campaign's stopping condition: after the second, only offline work
+remains.
 
 | Bound | Envelope |
 | --- | --- |
 | Routes | **Harness:** in the Linux development VM through the service procedure, with subscription login, included usage only and paid extra usage disabled. **Messages:** direct TLS to `api.anthropic.com` through C10 and its [host queue](apparatus/c10/HOST-QUEUE.md), on the `stewart-haiku` key. |
 | Models | **Harness:** `claude-sonnet-5-5` under the profile S0 produces, for the harness version S0 pins. **Messages:** `claude-sonnet-5-5`, and `claude-haiku-5-5` for wave 2 diagnostics. |
 | Starts and placements | **Harness:** S0's check sessions and at most 16 service starts, at most 9 of them in wave 1. **Messages:** at most 12 placements, at most 6 of them in wave 1. |
-| Cost | **Messages:** worst-case reservations of at most USD 10 across both waves. Each placement's worst case is reserved before launch, and actual reported usage is recorded after review. The key's external cap is shared with other commissions, so the Console headroom must cover the next reservation. **Harness:** included subscription usage only. |
+| Cost | **Messages:** a cutoff the maintainer sets at the grant, proposed at USD 10, with USD 8.25 kept aside on the same key for endpoint alignment. The agent tracks spend from Stewart's reported and estimated usage at list prices, and reserves each placement's worst case before launch. The maintainer may state the remaining budget at any time; the agent never asks. The key's provider-side cap is a backstop. **Harness:** included subscription usage only. |
 | Time | The service procedure's bounds of 600 seconds per placement and 900 seconds per packet, and C10's watchdog per audit. |
 | Bindings | Each packet binds its writer, apparatus commit, inputs, model, limits, interruption point or close, and its starts or placements. A harness packet also binds the profile, harness executable and interpreter. Writers come from commits whose required container suite passed. Each launch path has a current rehearsal of the committed apparatus with that writer. |
 | Waves | Wave 1 below, then at most one wave 2 within the remaining bounds. |
@@ -108,18 +112,20 @@ and continue the rest:
 ## Hard stops
 
 These constrain the agent, and no delegated decision overrides them. Each
-stops launches on the affected route until it is resolved; offline work
-continues.
+stops launches on the affected route until it is resolved, and offline work
+continues. A stop that cannot be resolved within the campaign ends that
+route's live work, and the exit report accounts for it. Nobody is consulted
+mid-campaign.
 
 | Condition | Stops | Resolution |
 | --- | --- | --- |
-| Uncertain termination or effects: a process group present or unknown, an uncertain start or an unreconciled claim | That audit and route | Establish the actual effects from retained records and process observations, then record a disposition. If they cannot be established, the route stays stopped and the agent reports. |
+| Uncertain termination or effects: a process group present or unknown, an uncertain start or an unreconciled claim | That audit and route | Establish the actual effects from retained records and process observations, then record a disposition. If they cannot be established, that route's live work ends for the campaign. |
 | An unexplained wire violation | That route | Explain it from the captures. A Stewart defect becomes a scripted test and a fix, and the route resumes only with a fixed, qualified writer. |
 | An evidence-integrity failure: a failed or incomplete review, a changed earlier archive snapshot or a missing witness record | That route | Explain it. If an apparatus or Stewart defect caused it, fix that defect and rehearse it again before resuming. |
-| Credential material found in evidence | All live work | Report to the maintainer. |
+| Credential material found in evidence | The campaign | The campaign ends at once, and the exit report leads with the finding. This is the one early return. |
 | A custody failure: criterion 2, 4 or 9 below, or a manager seal claiming auditor submission | Launches with that writer | Reproduce it as a failing scripted test, fix and qualify; continue only with the fixed writer. |
-| Unsafe spending on the harness: any sign the subscription allowance is near its end, paid extra usage appearing enabled, or a harness version differing from the pin | Harness work for the campaign | Reconvene with the maintainer. |
-| Unsafe spending on Messages: Console headroom below the next reservation, or a placement whose worst case exceeds the remaining reservation | Messages work for the campaign | Reconvene with the maintainer. |
+| Unsafe spending on the harness: any rate-limit or allowance message in the harness's output, paid extra usage appearing enabled, or a harness version differing from the pin | Harness work for the campaign | Harness live work ends for the campaign; the other route and offline work continue. |
+| Unsafe spending on Messages: the remaining cutoff below the next placement's worst case | Messages work for the campaign | Messages live work ends for the campaign; the other route and offline work continue. |
 
 An allowance that runs out mid-placement is recorded as an interruption and is
 never provoked.
@@ -128,18 +134,25 @@ never provoked.
 
 ### 1. Prepare
 
-- [ ] The maintainer grants the envelope and records the key's current Console
-  limit and spend for the host queue configuration, stating which key and
-  workspace they cover.
-- [ ] Record the grant in the campaign's configurations: a host queue
+- [ ] The maintainer grants the envelope and sets the Messages cutoff.
+- [ ] Record the envelope in the campaign's configurations: a host queue
   configuration for Messages, and a campaign ledger for harness starts. The
   agent checks and updates the ledger before each start, because the service
   procedure has no queue.
-- [ ] Let the service procedure accept approval under a recorded delegation, as
-  C10 does, and count starts against the ledger.
+- [ ] Let the service procedure and the host queue take their authority from
+  the campaign's envelope record rather than from a principal's approval. The
+  service procedure counts starts against the ledger. The host queue charges
+  placements against the cutoff from Stewart's usage records, in place of the
+  Console observation it requires today.
+- [ ] Record each auditor preparation in the audit log, on both routes. This
+  needs an INTERFACE change, scripted tests and both container suites, with
+  driver cases written by a separate agent under the driver-independence rule.
+  The agent decides whether `status` reports a preparation that has not been
+  submitted. The continuation notice and re-entry stay unchanged until
+  phase 3.
 - [ ] Add a witnessed interruption to the service procedure with two triggers:
   - P1, the placement's `run_started` record;
-  - P2, the auditor's completed `prepare` result record in the run directory.
+  - P2, the auditor's preparation record.
 
   On the trigger it signals the placement's process group or runs
   `stewart close REF`, and keeps its witness outside the archive. Permit
@@ -167,10 +180,11 @@ describes. Reproduce defects as failing scripted tests and fix them. Decide the
 in-scope design questions and implement them, using the synthetic peer and fake
 provider to test. Qualify the changed source.
 
-The P2 continuation question falls here: whether the notice or re-entry should
-tell a continuing auditor about a still-current preparation. R3b and M2b
-observe the current behavior first. Close the wave-1 audits with their own
-writers.
+The auditor-facing half of the P2 question falls here: whether the
+continuation notice or re-entry should tell a continuing auditor about a
+still-current preparation. R3b and M2b observe the auditor without that hint
+first. Close the wave-1 audits with their own writers. Wave 2 starts when the
+agent judges its candidates ready.
 
 ### 4. Wave 2, at most once
 
@@ -210,12 +224,11 @@ one of two points:
 
 - **P1, the first opportunity:** as soon as the placement's `run_started`
   record appears, before any recorded work.
-- **P2, between prepare and submit:** as soon as the auditor's `prepare` call
-  has a completed result record in the run directory. `prepare` publishes no
-  log record, so this is a new trigger. The window is at least one model turn
-  wide: `submit` needs the handle `prepare` returns, so the model must read
-  that reply and respond before any seal. The realistic miss is an auditor that
-  never prepares.
+- **P2, between prepare and submit:** as soon as the auditor's preparation
+  record appears in the audit log, which phase 1 adds. The window is at least
+  one model turn wide: `submit` needs the handle `prepare` returns, so the
+  model must read that reply and respond before any seal. The realistic miss is
+  an auditor that never prepares.
 
 | Trial | Route | What happens | Starts or placements |
 | --- | --- | --- | --- |
@@ -255,7 +268,7 @@ harness and the provider leave these behaviors intact.
 | Point | A reasonable app should | Stewart does |
 | --- | --- | --- |
 | P1 | Stop cleanly and record the interruption. Invent no answer or seal. Account honestly for anything that may have been spent. Leave the audit able to continue, or to close with an honest empty return. On continuation, the auditor starts fresh. | Ends `interrupted` with cause `signal`, exit 5; nothing recorded; the reminder stays unused. Messages aborts the in-flight first request and, if any byte of it was sent, charges an estimate of one turn, its whole `max_tokens` (up to 16,000) and its size ÷ 3 in input. On the harness the signal can come before the model sees the question; the start is still used and that session's usage is unknown. `run` continues with the continuation notice and an empty ledger. `close` seals the empty selection as manager and delivers an honest empty return. |
-| P2 | Never submit a preparation automatically or discard it; keep the entries. On continuation, let the auditor learn that a still-current preparation exists, or ask it to prepare again and review before submitting. A `close` seals the same selection as the manager's, never as the auditor's submission. | Ends `interrupted` with cause `signal`; entries and the preparation are kept; nothing is sealed. On Messages the request carrying the `prepare` result is probably in flight, so the same estimate is charged. On continuation, `what_am_i_working_with` does not mention the preparation. Its handle still works while the revision is unchanged, but an auditor without memory cannot know it, so it prepares again (identical bytes) before submitting. `close` prepares the selection current at its request and seals that as manager; the answer bytes match the auditor's preparation when nothing was edited. A signal during `submit` lets a seal whose link had begun stand; otherwise the submit is refused `placement_stopped`. |
+| P2 | Never submit a preparation automatically or discard it; keep the entries. On continuation, let the auditor learn that a still-current preparation exists, or ask it to prepare again and review before submitting. A `close` seals the same selection as the manager's, never as the auditor's submission. | Ends `interrupted` with cause `signal`; entries and the preparation are kept, and after phase 1 the log records the preparation; nothing is sealed. On Messages the request carrying the `prepare` result is probably in flight, so the same estimate is charged. On continuation, `what_am_i_working_with` does not mention the preparation. Its handle still works while the revision is unchanged, but an auditor without memory cannot know it, so it prepares again (identical bytes) before submitting. `close` prepares the selection current at its request and seals that as manager; the answer bytes match the auditor's preparation when nothing was edited. A signal during `submit` lets a seal whose link had begun stand; otherwise the submit is refused `placement_stopped`. |
 
 Reminders for whoever prepares the packets:
 

@@ -330,7 +330,7 @@ over the same ledger and limits. The runtime's rules are in
   aborted request, and the harness's internal calls. A billing witness could
   bound them after the fact, such as Console usage per model and day, or the
   Usage and Cost API with an admin credential.
-- **Next step:** a maintainer decision on a billing witness. No live test
+- **Next step:** a decision on a billing witness. No live test
   supplies one.
 
 ### The subscription allowance running out mid-placement
@@ -338,8 +338,8 @@ over the same ledger and limits. The runtime's rules are in
 - **Known:** nothing live. Stewart records whatever ending the harness
   produces.
 - **Unknown:** *behavior:* what the harness emits when this happens.
-- **Elicited by:** never deliberately; a usage-limit study needs its own
-  commission.
+- **Elicited by:** never deliberately; a usage-limit study needs its own plan
+  and budget.
 - **Next step:** record it if it happens.
 
 ## Observability boundaries
