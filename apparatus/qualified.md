@@ -22,8 +22,8 @@ not carry them.
 | --- | --- | --- | --- | --- | --- | --- |
 | acceptance | linux-aarch64 | [runtime-trials-preparation-release-01](#runtime-trials-preparation-release-01) | 2026-11-21T18:52:28Z | `6b3d8a4` | qualified | latest |
 | acceptance | linux-x86_64 | [runtime-trials-preparation-release-01](#runtime-trials-preparation-release-01) | 2026-11-21T18:52:28Z | `6b3d8a4` | qualified | latest |
-| runtime | linux-aarch64 | [linux-move-runtime-02](#linux-move-runtime-02) | 2026-11-21T04:31:41Z | `f68780d` | qualified | latest |
-| runtime | linux-x86_64 | [linux-move-runtime-02](#linux-move-runtime-02) | 2026-11-21T04:31:41Z | `f68780d` | qualified | latest |
+| runtime | linux-aarch64 | [runtime-trials-preparation-runtime-01](#runtime-trials-preparation-runtime-01) | 2026-11-21T19:24:42Z | `6b3d8a4` | qualified | latest |
+| runtime | linux-x86_64 | [runtime-trials-preparation-runtime-01](#runtime-trials-preparation-runtime-01) | 2026-11-21T19:24:42Z | `6b3d8a4` | qualified | latest |
 | toolchain | linux-aarch64 | [linux-move-toolchain-02](#linux-move-toolchain-02) | 2026-11-21T02:43:49Z | `9e84464` | qualified | latest |
 | toolchain | linux-x86_64 | [linux-move-toolchain-02](#linux-move-toolchain-02) | 2026-11-21T02:43:49Z | `9e84464` | qualified | latest |
 
@@ -62,15 +62,15 @@ not carry them.
 | Test binary SHA-256 | `5444adac3edd22406d8a495d5748fad1fda4b6fa8e299ef1a5611fff2603e7b4` | `ee56ffc1fa01de2ad379dd810b6de5ceed69bd12e860e15a6fa33a5a974c4dbc` |
 | RESULT.json SHA-256 | `3f78bb744890419f51ed787db95b8ab05327125d0ace1e77e04fd2f41a14c56e` | `b2c6dc88c4c5e5f88dad0e2ddfc1f5d06b8f1d25f0075d95f7879b33e0d6d517` |
 
-### linux-move-runtime-02
+### runtime-trials-preparation-runtime-01
 
 - Suite: runtime, `apparatus/runtime-acceptance.sh` (SHA-256 `55677bf16c1c2ee30b44f96d236dc8d25a8d250deafa7c067ba3974d24681524` at the source commit)
-- Source commit: `f68780dfea49dce9b9cb816139e8084bf314dd3e`; archive SHA-256 `b4da51ee4c543e570eb0328aa5ee5e47c60db890beb8c82c41ae38b62966430a`
-- Finished: 2026-11-21T04:31:41Z
+- Source commit: `6b3d8a4c6cb25ca4dfd97b66e389ded75cbcf493`; archive SHA-256 `b755d823dad64e3385cfc0eee35a92469f414d882c972f2c6b1470ff697c7141`
+- Finished: 2026-11-21T19:24:42Z
 - Outcome: **qualified**
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/linux-move-runtime-02` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/runtime-trials-preparation-runtime-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -81,15 +81,15 @@ not carry them.
 | Toolchain image | `sha256:e99d40aafba5d8a5bac10cf7ff7bb787d00d5e3714bd6d83086df571787f6548` | `sha256:45e388c67f16a6c32d950e03a9c980bdae395911ce3572c2488031d4bf7babda` |
 | rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
 | Python platform manifest | `sha256:dc354b0c18b5192842bc6800d22e624461383b149cdbbd9646fec78a28340721` | `sha256:b3ae2372f3c9b7f0a80ec21d1ae931002ea056509e04c5072f144efe9694732f` |
-| Synthetic runtime cases | cases 53, passed 53, failed 0, skipped 0 | cases 53, passed 53, failed 0, skipped 0 |
-| Synthetic runtime checks | checks 125308, checks passed 125308, checks failed 0 | checks 125308, checks passed 125308, checks failed 0 |
-| Synthetic runtime controls | 132/132 | 132/132 |
+| Synthetic runtime cases | cases 54, passed 54, failed 0, skipped 0 | cases 54, passed 54, failed 0, skipped 0 |
+| Synthetic runtime checks | checks 127182, checks passed 127182, checks failed 0 | checks 127182, checks passed 127182, checks failed 0 |
+| Synthetic runtime controls | 133/133 | 133/133 |
 | Synthetic runtime self-test | passed 406, failed 0, skipped 0 | passed 406, failed 0, skipped 0 |
-| Development binary SHA-256 | `b3a1c4f5bcf8f9d88c00fd1c0d77bf4d8b05efbb13dec54e188b61620d1b1d41` | `fbf1ed1f090d3c8f3eb68730b75826f8d8c6126c9263373acbf3070718bf4a21` |
-| Second development binary SHA-256 | `55af295ad1ec78cf4b9bd003094d66f459a1982bdd0defb73a7b81d25120ff18` | `1dc803f1ced15f683b47827757bd033d901724f9fb045d711ef0c2914bf43c0a` |
-| Synthetic runtime RESULT.json SHA-256 | `f0c769ff1f3aebfaf2c3b3f684f2f7511d9ea79d287e2659de214228df14992f` | `0590730685eb853ed6f99800b7770a2847a8b0b8e85834d1e59b0b236d7fab0e` |
-| Synthetic runtime evidence listing SHA-256 | `4cf5c749166d30f0711d3be2a8ca79f017e0b488a1dba9cb32123863f95634b1` | `6281b10e77af02a1f8c4dc023d89fee0ecc1c88cb97e3d944c27aa6d3bbe064d` |
-| Synthetic runtime work archive SHA-256 | `66e8025a96d765129b304a20176b449770bf769ef9ad004b7513b6128bae8f6e` | `9646c06202b4d9a50b2937741b66a8ad7f70023154ec20c8f252f36659f6367c` |
+| Development binary SHA-256 | `f309ba3f4ac91c785e1a6d47220b4090f36dabd8660ac41e3e0f0cd40cec9c05` | `e81f55ea9006d9b869a08ceec045798c5733ffc731da72753c16822fa692fd88` |
+| Second development binary SHA-256 | `8f8e27b75edd60b8398ebca5ea506ef4527cae5f26faf1987a6bdf7a5e17acd4` | `3383f1ffd9d03840e1adbbabee9105099e696ed43729fba997647399be4d1401` |
+| Synthetic runtime RESULT.json SHA-256 | `71d8e05ad47d68672fd458e62b3a9b124a83a527303f0ad31a7be78b49f593a6` | `37addaaa2b955040f8219bc98ca9219bcd6e3ca704c8c571ea324c76ddf9a924` |
+| Synthetic runtime evidence listing SHA-256 | `19e4243cc7104621fbc80c562795484bcf92b9fd6ef02484fa2b9806287064b0` | `3f46a999b13b2ddb65624afe1dffee09e14e389d90a414e519b727033df85a10` |
+| Synthetic runtime work archive SHA-256 | `1bf995727f75a3227d913029e16d79db3064745e8afc6fd045c3b75bd4ae14c9` | `386cf17b0537826c9b34c505cff32c12558142ffcbbfd4815b4a46d64a218446` |
 
 ### linux-move-toolchain-02
 

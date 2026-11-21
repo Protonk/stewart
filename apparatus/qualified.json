@@ -142,16 +142,16 @@
       "pin": null
     },
     {
-      "id": "linux-move-runtime-02",
+      "id": "runtime-trials-preparation-runtime-01",
       "kind": "suite",
       "suite": "runtime",
       "script": {
         "path": "apparatus/runtime-acceptance.sh",
         "sha256": "55677bf16c1c2ee30b44f96d236dc8d25a8d250deafa7c067ba3974d24681524"
       },
-      "source_commit": "f68780dfea49dce9b9cb816139e8084bf314dd3e",
-      "source_archive_sha256": "b4da51ee4c543e570eb0328aa5ee5e47c60db890beb8c82c41ae38b62966430a",
-      "date": "2026-11-21T04:31:41Z",
+      "source_commit": "6b3d8a4c6cb25ca4dfd97b66e389ded75cbcf493",
+      "source_archive_sha256": "b755d823dad64e3385cfc0eee35a92469f414d882c972f2c6b1470ff697c7141",
+      "date": "2026-11-21T19:24:42Z",
       "outcome": "qualified",
       "failures": [],
       "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
@@ -175,27 +175,27 @@
               "skipped": 0
             },
             "counts": {
-              "cases": 53,
-              "passed": 53,
+              "cases": 54,
+              "passed": 54,
               "failed": 0,
               "skipped": 0,
-              "checks": 125308,
-              "checks_passed": 125308,
+              "checks": 127182,
+              "checks_passed": 127182,
               "checks_failed": 0,
-              "controls": 132,
-              "controls_fired": 132
+              "controls": 133,
+              "controls_fired": 133
             },
-            "result_sha256": "f0c769ff1f3aebfaf2c3b3f684f2f7511d9ea79d287e2659de214228df14992f",
-            "environment_sha256": "ecf8fcf4d564013b09de3b6c7e5fe365100c5becaffcbc967ef8a20e90561a85",
-            "work_sha256": "66e8025a96d765129b304a20176b449770bf769ef9ad004b7513b6128bae8f6e",
+            "result_sha256": "71d8e05ad47d68672fd458e62b3a9b124a83a527303f0ad31a7be78b49f593a6",
+            "environment_sha256": "c0bd3a2edd9bc1ba43e3463fb28ded724b1cbaae3c7608d5cc371e43e4529212",
+            "work_sha256": "1bf995727f75a3227d913029e16d79db3064745e8afc6fd045c3b75bd4ae14c9",
             "evidence": {
-              "files": 6977,
-              "listing_sha256": "4cf5c749166d30f0711d3be2a8ca79f017e0b488a1dba9cb32123863f95634b1"
+              "files": 7034,
+              "listing_sha256": "19e4243cc7104621fbc80c562795484bcf92b9fd6ef02484fa2b9806287064b0"
             },
-            "development_sha256": "b3a1c4f5bcf8f9d88c00fd1c0d77bf4d8b05efbb13dec54e188b61620d1b1d41",
-            "release_sha256": "6624b41f5c02438b18f88b24674eded4e6d7389ada170261aa77839bf5d052ef",
-            "variant_sha256": "55af295ad1ec78cf4b9bd003094d66f459a1982bdd0defb73a7b81d25120ff18",
-            "driver_sha256": "87d7940fb333095bbecb90c9088df9759d638884aa8154d719fb134860b784a3"
+            "development_sha256": "f309ba3f4ac91c785e1a6d47220b4090f36dabd8660ac41e3e0f0cd40cec9c05",
+            "release_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33",
+            "variant_sha256": "8f8e27b75edd60b8398ebca5ea506ef4527cae5f26faf1987a6bdf7a5e17acd4",
+            "driver_sha256": "0e873418dd92e3e5128367a21694053ec1f490938b2b3dff28eaefd04b51b2da"
           },
           "python_manifest": "sha256:dc354b0c18b5192842bc6800d22e624461383b149cdbbd9646fec78a28340721"
         },
@@ -218,33 +218,33 @@
               "skipped": 0
             },
             "counts": {
-              "cases": 53,
-              "passed": 53,
+              "cases": 54,
+              "passed": 54,
               "failed": 0,
               "skipped": 0,
-              "checks": 125308,
-              "checks_passed": 125308,
+              "checks": 127182,
+              "checks_passed": 127182,
               "checks_failed": 0,
-              "controls": 132,
-              "controls_fired": 132
+              "controls": 133,
+              "controls_fired": 133
             },
-            "result_sha256": "0590730685eb853ed6f99800b7770a2847a8b0b8e85834d1e59b0b236d7fab0e",
-            "environment_sha256": "62773aa091673c8f470d140057b5d5851735da180c6b09761be8b76467bce93a",
-            "work_sha256": "9646c06202b4d9a50b2937741b66a8ad7f70023154ec20c8f252f36659f6367c",
+            "result_sha256": "37addaaa2b955040f8219bc98ca9219bcd6e3ca704c8c571ea324c76ddf9a924",
+            "environment_sha256": "5a3363a5ce899f0940a19edd37202c8f800e663f10a9b4b47d7747c23f9a0c9d",
+            "work_sha256": "386cf17b0537826c9b34c505cff32c12558142ffcbbfd4815b4a46d64a218446",
             "evidence": {
-              "files": 6977,
-              "listing_sha256": "6281b10e77af02a1f8c4dc023d89fee0ecc1c88cb97e3d944c27aa6d3bbe064d"
+              "files": 7034,
+              "listing_sha256": "3f46a999b13b2ddb65624afe1dffee09e14e389d90a414e519b727033df85a10"
             },
-            "development_sha256": "fbf1ed1f090d3c8f3eb68730b75826f8d8c6126c9263373acbf3070718bf4a21",
-            "release_sha256": "7aee3d255ca52260f6cc0387c76947b01baf7ea220976f29c8ac336524cccdbc",
-            "variant_sha256": "1dc803f1ced15f683b47827757bd033d901724f9fb045d711ef0c2914bf43c0a",
-            "driver_sha256": "87d7940fb333095bbecb90c9088df9759d638884aa8154d719fb134860b784a3"
+            "development_sha256": "e81f55ea9006d9b869a08ceec045798c5733ffc731da72753c16822fa692fd88",
+            "release_sha256": "4e3c43be318609cbbed1b0bb99bc7832cfa5119229ffdbee458551476cfca6c1",
+            "variant_sha256": "3383f1ffd9d03840e1adbbabee9105099e696ed43729fba997647399be4d1401",
+            "driver_sha256": "0e873418dd92e3e5128367a21694053ec1f490938b2b3dff28eaefd04b51b2da"
           },
           "python_manifest": "sha256:b3ae2372f3c9b7f0a80ec21d1ae931002ea056509e04c5072f144efe9694732f"
         }
       },
       "evidence": {
-        "path": ".scratch/linux-move-runtime-02",
+        "path": ".scratch/runtime-trials-preparation-runtime-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": null
