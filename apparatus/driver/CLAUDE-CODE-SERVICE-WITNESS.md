@@ -4,7 +4,7 @@
 an immutable outside witness. It launches nothing and never accepts an
 installed profile, installation receipt, authentication session or real
 harness. No output is an eligible profile check or a grant of invocation
-authority. The [service comparison procedure](../claude-code/README.md#native-service-comparison-procedure)
+authority. The [service comparison procedure](../claude-code/README.md#service-comparison-procedure)
 uses it for every submitted package, including in its synthetic rehearsal
 against the actual gated binary.
 

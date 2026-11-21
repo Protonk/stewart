@@ -804,8 +804,7 @@ def c_edits(t):
 
 @case("c3.interruptions", ["C3", "C13", "C4", "C16", "C6"],
       "kills while appending an entry, before linking it, after linking it (T7) and before the seal link: "
-      "only complete records count", mode="test", needs=("loopback", "lock"),
-      linux_reason="interruption is observed through the free OFD lock, a Linux-only expectation",
+      "only complete records count", mode="test", needs=("loopback",),
       controls=[Control("torn_as_entry", [r"^int\.(torn|unlinked)\.status-entries$",
                                           r"^int\.unlinked\.(reentry-empty|selection-recorded)$"])],
       faults=("stage.torn:entry=kill", "log.publish:entry=kill", "entry.after_link=kill", "log.publish:seal=kill"))
@@ -878,8 +877,7 @@ def c_interruptions(t):
 
 @case("c3.submit-races-close", ["C3", "C8", "C5"],
       "T6: submit racing close has exactly one winner, which names its actual actor",
-      mode="test", needs=("loopback", "lock"),
-      linux_reason="close waits on the OFD lock the run holds, a Linux-only expectation",
+      mode="test", needs=("loopback",),
       controls=[Control("manager_seal_as_auditor", [r"^t6\.close-wins\.seal-actor$"])],
       faults=("log.publish:seal=pause", "seal.after_link=pause"))
 def c_t6(t):
@@ -1531,35 +1529,32 @@ def c_run_refusals(t):
     # are c16.status-after-launch's and c12.start-races-close's.
     t.eq("c12.refusals.d.next", sorted({a[1] for a in r2.next_argvs()}), ["status"])
     t.eq("c12.refusals.d.no-request", len(fxd.exchanges), 0)
-    if is_linux():
-        sub_e = run_submission(t)
-        fxe = rs.provider(t, fp.Script([fp.Stall(120)]), label="held")
-        h = rs.start_run(t, sub_e, fxe, name="c12.refusals.e.holder")
-        try:
-            t.require("c12.refusals.e.request-stalled", rs.wait_for(
-                lambda: len(fxe.exchanges) == 1 and fxe.exchanges[0].outcome == "stalled", 30),
-                [e.outcome for e in fxe.exchanges])
-            t.require("c12.refusals.e.holder-live", h["proc"].running(), "holder exited before the competing run")
-            r2 = rs.run(t, sub_e, fxe, name="c12.refusals.e.second", expect="refused", reason="run_held")
-            started = t.log_bodies(sub_e, "run_started")
-            observations = (started[0] or {}).get("observations") if started else None
-            t.eq("c12.refusals.e.observed-pid", (observations or {}).get("pid"), h["proc"].p.pid)
-            t.eq("c12.refusals.e.holder", (r2.data.get("run"), r2.data.get("holder")), (1, observations))
-            t.eq("c12.refusals.e.effects", {k: v for k, v in r2.effects.items() if k != "diagnostic"},
-                 {"run": "still_held", "answer": "unchanged", "seal": "none", "delivery": "none"})
-            t.eq("c12.refusals.e.next", sorted({a[1] for a in r2.next_argvs()}), ["close", "status"])
-            t.eq("c12.refusals.e.no-second-request", len(fxe.exchanges), 1)
-        finally:
-            if h["proc"].running():
-                t.signal(h, signal.SIGTERM)
-            ended = rs.finish_run(t, h)
-        rs.check_run_reply(t, ended, sub_e, "c12.refusals.e.holder", ending="interrupted", cause="signal",
-                           run_number=1, fx=fxe, limits=rs.limits_of(sub_e))
-        t.check("c12.refusals.e.connection-closed", rs.wait_for(
-            lambda: fxe.exchanges[0].outcome == "stalled_client_closed", 5),
+    sub_e = run_submission(t)
+    fxe = rs.provider(t, fp.Script([fp.Stall(120)]), label="held")
+    h = rs.start_run(t, sub_e, fxe, name="c12.refusals.e.holder")
+    try:
+        t.require("c12.refusals.e.request-stalled", rs.wait_for(
+            lambda: len(fxe.exchanges) == 1 and fxe.exchanges[0].outcome == "stalled", 30),
             [e.outcome for e in fxe.exchanges])
-    else:
-        t.skip_part("run held", "Linux-only expectation: OFD lock exclusion during a live provider request")
+        t.require("c12.refusals.e.holder-live", h["proc"].running(), "holder exited before the competing run")
+        r2 = rs.run(t, sub_e, fxe, name="c12.refusals.e.second", expect="refused", reason="run_held")
+        started = t.log_bodies(sub_e, "run_started")
+        observations = (started[0] or {}).get("observations") if started else None
+        t.eq("c12.refusals.e.observed-pid", (observations or {}).get("pid"), h["proc"].p.pid)
+        t.eq("c12.refusals.e.holder", (r2.data.get("run"), r2.data.get("holder")), (1, observations))
+        t.eq("c12.refusals.e.effects", {k: v for k, v in r2.effects.items() if k != "diagnostic"},
+             {"run": "still_held", "answer": "unchanged", "seal": "none", "delivery": "none"})
+        t.eq("c12.refusals.e.next", sorted({a[1] for a in r2.next_argvs()}), ["close", "status"])
+        t.eq("c12.refusals.e.no-second-request", len(fxe.exchanges), 1)
+    finally:
+        if h["proc"].running():
+            t.signal(h, signal.SIGTERM)
+        ended = rs.finish_run(t, h)
+    rs.check_run_reply(t, ended, sub_e, "c12.refusals.e.holder", ending="interrupted", cause="signal",
+                       run_number=1, fx=fxe, limits=rs.limits_of(sub_e))
+    t.check("c12.refusals.e.connection-closed", rs.wait_for(
+        lambda: fxe.exchanges[0].outcome == "stalled_client_closed", 5),
+        [e.outcome for e in fxe.exchanges])
 
 
 # ---------------------------------------------------------------------------
@@ -1568,8 +1563,7 @@ def c_run_refusals(t):
 
 @case("c13.continuation", ["C13", "C4", "C3", "C6"],
       "kills during a request, while a result is written and between turns: the continuation finishes once",
-      mode="test", needs=("loopback", "lock"),
-      linux_reason="interruption is observed through the free OFD lock, a Linux-only expectation",
+      mode="test", needs=("loopback",),
       controls=[Control("reset_limits_on_continuation", [r"^c13\.cont\.[a-z-]+\.run-2\.allowances$",
                                                          r"^auditor\.reentry\.allowances$"]),
                 Control("fresh_ledger_on_continuation", [r"^c13\.cont\.[a-z-]+\.same-answer$"])],
@@ -1742,8 +1736,7 @@ def c_provider_shapes(t):
 
 @case("c13.stopping", ["C13", "C6"],
       "signals abort an in-flight request; a signal after the seal fails only the delivery",
-      mode="test", needs=("loopback", "lock"),
-      linux_reason="an interrupted placement is observed through its free OFD lock, a Linux-only expectation",
+      mode="test", needs=("loopback",),
       faults=("delivery.after_member:1=pause",))
 def c_stopping(t):
     """With a request stalled at the fake, SIGTERM, SIGINT and SIGHUP each abort it

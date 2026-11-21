@@ -11,7 +11,6 @@ import shlex
 import signal
 import struct
 import subprocess
-import sys
 import tempfile
 import time
 from pathlib import Path
@@ -29,9 +28,6 @@ REPORT = b"07:40 was moved to 07:45.\r\n"
 @contextlib.contextmanager
 def archive_access(root, observation):
     """Linux directory watches cover open/read events in the existing synthetic archive tree."""
-    if sys.platform != "linux":
-        yield
-        return
     directories = [path for path, _, _ in os.walk(root)]
     libc = ctypes.CDLL(None, use_errno=True)
     fd = libc.inotify_init1(os.O_NONBLOCK | os.O_CLOEXEC)
@@ -73,8 +69,6 @@ def archive_access(root, observation):
 
 @selftest
 def access_observation_selftest():
-    if sys.platform != "linux":
-        return [("effects.archive-open-read", None, "Linux inotify observer")]
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory) / "archive"
         capture = root / "intake" / "1" / "q.bin"
@@ -111,8 +105,6 @@ def c_effect_access(t):
     env = {"STEWART_ARCHIVE": sub.archive, "STEWART_PROVIDER_URL": peer.url}
     marker = peer.key.encode("ascii") + b"\n"
     observations = []
-    if sys.platform != "linux":
-        t.skip_part("archive-open-read-observation", "Linux inotify observes open/read events in the marked archive")
     def observe(label, args, **options):
         row = {"label": label, "archive": sub.archive, "provider": peer.url}
         observations.append(row)
@@ -136,18 +128,16 @@ def c_effect_access(t):
         t.eq(label + ".command", reply.data.get("command"), command)
         t.eq(label + ".unread-marker", remaining == marker, True)
         t.eq(label + ".no-connection", row["connections_after"], 0)
-        if sys.platform == "linux":
-            t.eq(label + ".no-archive-open-or-read", row["events"], [])
+        t.eq(label + ".no-archive-open-or-read", row["events"], [])
 
     # An ordinary read of the very same capture must fire the archive observer.
     raw, row, remaining = observe("access.receipt-control", ["receipt", sub.ref, "--read", "question-body"],
                                   op="receipt-read", json_reply=False, envelope=False)
     t.eq("access.readback-control", raw.stdout, BODY)
     t.eq("access.receipt-keeps-descriptor", remaining == marker, True)
-    if sys.platform == "linux":
-        captured = [e for e in row["events"] if e["path"].endswith("/q.bin")]
-        t.driver_control("archive-open-and-read", any(e["mask"] & 0x20 for e in captured)
-                         and any(e["mask"] & 0x01 for e in captured), captured)
+    captured = [e for e in row["events"] if e["path"].endswith("/q.bin")]
+    t.driver_control("archive-open-and-read", any(e["mask"] & 0x20 for e in captured)
+                     and any(e["mask"] & 0x01 for e in captured), captured)
     # A genuine run consumes exactly these marker bytes and contacts the same peer.
     run, row, remaining = observe("access.run-control", ["run", sub.ref, "--key-fd", "0"], expect="completed")
     t.eq("access.run-cause", run.data.get("cause"), "provider_rejected")

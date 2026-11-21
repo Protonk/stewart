@@ -21,7 +21,7 @@ Three documents divide the subject:
   campaign answers, narrows or leaves open are recorded there.
 
 The [runtime contract](docs/claude-code/CONTRACT.md) owns the runtime's
-boundaries. The [service procedure](apparatus/claude-code/README.md#native-service-comparison-procedure)
+boundaries. The [service procedure](apparatus/claude-code/README.md#service-comparison-procedure)
 and [C10](apparatus/c10/README.md) own the apparatus.
 
 **Status:** proposed. The envelope is not yet granted, and nothing has been

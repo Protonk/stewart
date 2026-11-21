@@ -15,7 +15,7 @@ python3 -I -B apparatus/driver/claude_code_peer.py --self-test
 The self-test uses supplied environments, synthetic frames and mocked helper
 transports. It starts no process or socket. It retains the checks, source and
 mock traffic, including positive, denial and invariance comparisons. Actual
-helper operation and group stopping require the controller's native rehearsal.
+helper operation and group stopping require the controller's Linux rehearsal.
 
 ## Controller interface
 

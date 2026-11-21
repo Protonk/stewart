@@ -2150,8 +2150,7 @@ def _pub_ended(t, a):
 
 @case("c8.close-running", ["C8", "C12", "C16", "C3"],
       "T13: close stops a held run; a stopped holder leaves close run_still_held; a seal alone is not a stop",
-      mode="test", needs=("loopback", "lock"), heavy=True,
-      linux_reason="a live run is observed through its OFD lock and close waits on it, a Linux-only expectation",
+      mode="test", needs=("loopback",), heavy=True,
       controls=[Control("seal_as_stopped", [r"^c8\.held-sealed\.close\.(closure|effects\.run)$"])],
       faults=("delivery.after_member:1=pause",))
 def c_close_running(t):

@@ -1,8 +1,9 @@
 # Stewart build toolchain: the pinned Rust image plus the native musl target
 # and musl C toolchain (ring compiles C and assembly for the target).
-# Built once per platform by apparatus/step2.sh; the resulting image digest is
+# Built once per platform by apparatus/step2.sh; the resulting image configuration digest is
 # the toolchain pin recorded with each build.
-FROM docker.io/library/rust@sha256:81015672d6939b0265f09adf96d5de125482bb1330106076956b0518e74edc90
+ARG RUST_IMAGE=docker.io/library/rust@sha256:81015672d6939b0265f09adf96d5de125482bb1330106076956b0518e74edc90
+FROM ${RUST_IMAGE}
 RUN set -eu; \
     arch="$(uname -m)"; \
     rustup target add "${arch}-unknown-linux-musl"; \

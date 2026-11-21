@@ -19,8 +19,7 @@ obligations, excuse unreported failures or turn intended behavior into evidence.
   and forms. [ACCEPTANCE.md](ACCEPTANCE.md) states the evidence owed.
 - **Builds and checks.** [DEVELOPMENT](development/DEVELOPMENT.md) covers
   building from the vendored crates, the Cargo configurations, the independent
-  drivers and the container suites. Native runs, on Linux or the development
-  Mac, are for iteration and qualify nothing.
+  drivers and the container suites. Use the unprivileged development account in the Linux guest for iteration.
 - **Audits belong to their writer.** Only the exact binary that created an audit
   can change it. A rebuilt binary can read its receipt and status but refuses
   every mutation, including `run` and `close`. Keep that binary until its
@@ -159,7 +158,7 @@ such as a specification example pinned by the driver, is split between two agent
 one changes specification and implementation, the other changes the driver from
 the specification alone.
 
-Development-machine runs help iteration but are not qualification evidence.
+Run development checks in the Linux guest.
 Evidence comes from the Linux container suite for the corresponding release or
 development runtime. Each suite qualifies the behavior it exercises. Retained `.scratch` runs
 follow [Evidence and retention](development/DEVELOPMENT.md#evidence-and-retention).
@@ -178,7 +177,7 @@ retrieval worked or grant authority to resume an audit.
 
 ## Use the environment correctly
 
-If the sandbox blocks a required host operation, use the harness's normal
+If the sandbox blocks a required guest or Lima operation, use the harness's normal
 escalation route for that command.
 
 Run Python with an explicit interpreter and isolated startup (`-I`, plus `-B`

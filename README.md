@@ -76,7 +76,7 @@ empty folder to close, with files only and with the preparation server.
 ## Before running
 
 - **Platform:** Linux x86_64 or aarch64. The archive must be on local ext4,
-  xfs or btrfs. Source builds also run on Apple-silicon macOS for development.
+  xfs or btrfs. On a Mac, run Stewart in a Linux VM or container and keep the archive on one of those filesystems.
 - **Access:** the auditor works on accepted text through Stewart's tools. It
   cannot execute supplied code, use a shell or retrieve additional material.
 - **Credentials:** only `run` needs the provider key and network. Supply the key
@@ -107,14 +107,12 @@ The [qualification record](apparatus/qualified.md)
 identifies those builds and results.
 
 A default-off development adapter, included only in source builds, has
-completed native open inquiries through an agent harness with auditor
+completed open inquiries on macOS through an agent harness with auditor
 submission, verified delivery and close. Its captured usage remains partial and
 live continuation unexercised. Full 64 KiB material pages arrived whole in one
-bounded encounter. These native encounters establish no model or platform qualification.
+bounded encounter. Those encounters predate the Linux harness port. Its Linux live behavior remains unverified.
 
-Stewart is a single Rust binary, supported on Linux x86_64 and aarch64. The
-source also builds on Apple-silicon macOS, without a support or qualification
-claim. See [building and testing](development/DEVELOPMENT.md), the
+Stewart is a single Rust binary, supported on Linux x86_64 and aarch64. See [building and testing](development/DEVELOPMENT.md), the
 [crate guide](service/README.md) and [contributing](AGENTS.md), or read the [design](DESIGN.md),
 [behavioral contracts](CONTRACTS.md) and [acceptance requirements](ACCEPTANCE.md).
 

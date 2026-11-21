@@ -1,0 +1,32 @@
+# Lima 2.3.0. The maintainer's shell is separate from the development login.
+minimumLimaVersion: 2.3.0
+vmType: vz
+arch: aarch64
+cpus: 6
+memory: 8GiB
+disk: 80GiB
+images:
+- location: https://cloud.debian.org/images/cloud/trixie/20261103-2651/debian-13-genericcloud-arm64-20261103-2651.qcow2
+  digest: sha512:5d3ecec46fd29605db4084388a1e2eb82fd19a80202898f962840ea73793261de721e505e3877c829ae86c37fdd2f6c205b0b3b1337a89d0d4b98d9081adc0c2
+  arch: aarch64
+user:
+  name: stewart-admin
+mounts: []
+portForwards:
+- guestIP: "0.0.0.0"
+  proto: any
+  ignore: true
+containerd:
+  system: false
+  user: false
+vmOpts:
+  vz:
+    rosetta:
+      enabled: true
+      binfmt: true
+# Forward the dedicated push agent only on the development user's SSH connection.
+ssh:
+  forwardAgent: false
+provision:
+- mode: system
+  file: provision.sh

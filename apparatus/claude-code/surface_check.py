@@ -90,7 +90,6 @@ def prepare_packet(packet, writer, model, family='open-inquiry', installation=No
     """Create fresh immutable inputs; no harness/helper/auth process starts."""
     packet, writer = p.absolute(packet), p.absolute(writer)
     os.close(p.directory(packet.parent))
-    writer_hash = helper_binary(writer)
     if family not in surface.FAMILIES:
         raise ValueError('unknown question family')
     p.text(model, 'model')
@@ -101,6 +100,8 @@ def prepare_packet(packet, writer, model, family='open-inquiry', installation=No
     mode = 'real-harness' if installation is not None else 'synthetic-rehearsal'
     if installation is not None:
         launch_raw, _ = p.validated_installation(p.absolute(installation))
+        p.separate_login(p.decode(launch_raw)['config_directory'], packet, writer)
+    writer_hash = helper_binary(writer)
     python = str(Path(sys.executable).resolve())
     packet.mkdir(mode=0o700)
     for name in SOURCE_FILES:
@@ -184,11 +185,14 @@ def verify_packet(packet):
             'authentication_invocations': 3, 'model_invocations': 3, 'overall_timeout_seconds': total}
             or commission['scope'] != 'supplied-surface fixture compatibility only'):
         raise ValueError('commission allowance or scope differs from this comparison')
-    bounded.verify_bindings(budget)
     if [case['id'] for case in commission['cases']] != list(KINDS):
         raise ValueError('case order differs from the commissioned comparisons')
     launch_raw = p.read_file(packet / 'prepared/positive/inputs/launch.json')
     launch = p.decode(launch_raw)
+    if commission['mode'] == 'real-harness':
+        p.separate_login(launch['config_directory'], packet, commission['writer']['path'],
+                         *(item['path'] for item in budget['bindings']))
+    bounded.verify_bindings(budget)
     if commission['mode'] == 'real-harness':
         if p.validated_installation(packet / 'installation')[0] != launch_raw or commission['scenario'] is not None:
             raise ValueError('real-harness launch differs from its verified installation')

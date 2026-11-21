@@ -12,7 +12,7 @@ import tempfile
 
 
 VERSION = "2.1.322"
-PLATFORM = "darwin-arm64"
+MANIFEST_PLATFORMS = {"aarch64": "linux-arm64", "x86_64": "linux-x64"}
 FINGERPRINT = "31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE"
 BASE = "https://downloads.claude.ai"
 
@@ -25,13 +25,20 @@ def digest(path):
     return h.hexdigest()
 
 
-def manifest_checksum(data):
+def platforms():
+    host = os.uname()
+    if host.sysname != "Linux" or host.machine not in MANIFEST_PLATFORMS:
+        raise ValueError("the release pin requires Linux on aarch64 or x86_64")
+    return MANIFEST_PLATFORMS[host.machine], "linux-" + host.machine
+
+
+def manifest_checksum(data, platform):
     obj = json.loads(data)
     if obj.get("version") != VERSION:
         raise ValueError("manifest version does not match the approved pin")
-    checksum = obj["platforms"][PLATFORM]["checksum"]
+    checksum = obj["platforms"].get(platform, {}).get("checksum")
     if not isinstance(checksum, str) or not re.fullmatch(r"[0-9a-f]{64}", checksum):
-        raise ValueError("manifest has no valid darwin-arm64 SHA-256")
+        raise ValueError("manifest has no valid %s SHA-256" % platform)
     return checksum
 
 
@@ -55,8 +62,7 @@ def run_logged(out, name, argv):
 
 
 def fetch(out, source, destination):
-    if os.uname().machine != "arm64":
-        raise RuntimeError("this approved pin is for native macOS ARM64")
+    platforms()  # Refuse an unsupported host before fetching anything.
     out.mkdir(mode=0o700, parents=False, exist_ok=False)
     for name, url in [
         ("claude-code.asc", BASE + "/keys/claude-code.asc"),
@@ -70,6 +76,7 @@ def fetch(out, source, destination):
 
 
 def verify(out, source, destination):
+    platform, _ = platforms()
     gpg, gpgv = shutil.which("gpg"), shutil.which("gpgv")
     if not gpg or not gpgv:
         raise RuntimeError("gpg and gpgv are required; no Claude executable has been launched")
@@ -82,7 +89,7 @@ def verify(out, source, destination):
                         "--status-fd", "1", str(out / "manifest.json.sig"), str(out / "manifest.json")])
     if not signed_by_release_key(status.decode("utf-8")):
         raise RuntimeError("signature does not identify the pinned Anthropic release key")
-    checksum = manifest_checksum((out / "manifest.json").read_bytes())
+    checksum = manifest_checksum((out / "manifest.json").read_bytes(), platform)
     source = source.resolve(strict=True)
     if digest(source) != checksum:
         raise RuntimeError("installed binary does not match the authenticated manifest")
@@ -104,8 +111,7 @@ def verify(out, source, destination):
                 os.link(tmp, destination)  # Exclusive publication; never overwrite a pin.
             finally:
                 tmp.unlink(missing_ok=True)
-    run_logged(attempt, "codesign", ["/usr/bin/codesign", "--verify", "--verbose", str(destination)])
-    receipt = {"version": VERSION, "platform": PLATFORM, "binary": str(destination), "sha256": checksum,
+    receipt = {"version": VERSION, "platform": platform, "binary": str(destination), "sha256": checksum,
                "manifest_sha256": digest(out / "manifest.json"), "signer": FINGERPRINT,
                "verification": str(attempt)}
     with (out / "pin.json").open("x") as record:
@@ -120,11 +126,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path, help="new evidence directory under .scratch")
     parser.add_argument("--verify-only", action="store_true", help="verify already downloaded files; retain a new verification attempt")
-    args = parser.parse_args()
     home = Path.home()
+    parser.add_argument("--source", type=Path, default=home / ".local/share/claude/versions" / VERSION,
+                        help="downloaded or installed executable to compare with the signed platform checksum")
+    args = parser.parse_args()
     try:
         action = verify if args.verify_only else fetch
-        action(args.output.resolve(), home / ".local/share/claude/versions" / VERSION,
+        action(args.output.resolve(), args.source,
                home / ".local/share/stewart-claude-code" / VERSION / "claude")
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as exc:
         parser.exit(1, "pin refused: %s\n" % exc)

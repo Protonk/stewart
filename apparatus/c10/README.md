@@ -165,10 +165,12 @@ python3 -I -B apparatus/c10/c10.py rehearse \
 python3 -I -B apparatus/c10/c10.py review "$PWD/.scratch/c10-launch-NN"
 ```
 
-The rehearsal uses Apple `container` 1.6.1, a pinned Python image, Linux aarch64,
-512 MiB of memory and no external network. It retains the container and private
-originals. The Linux process-access checks use the existing launcher's same-user
-and different-user controls. Environment, filesystem observations and process
+The rehearsal uses rootless Podman 5.x, the preloaded qualified arm64 Python manifest,
+two CPUs, 512 MiB of memory and loopback only. A fresh named volume on guest ext4
+holds the archive and independent witnesses at `/work`. Keep the volume and its
+named container through review. Run operator commands from the same guest
+account. The Linux process-access checks use the launcher's same-user and
+different-user controls. Environment, filesystem observations and process
 RSS high-water marks are retained; these do not qualify full-size C10 workloads.
 
 The rehearsal contains 22 audits and 28 placements: the six fixed cases, ten
@@ -327,110 +329,61 @@ allowances and a watchdog are not a dollar ceiling. These commands do not
 authorize a live run:
 
 ```sh
-shasum -a 256 .scratch/c10-packet.json
+sha256sum .scratch/c10-packet.json
 python3 -I -B apparatus/c10/c10.py live "$PWD/.scratch/c10-live-NN" \
   --qualification QUALIFICATION_ID --commission "$PWD/.scratch/c10-packet.json" \
   --approved-commission APPROVED_SHA256 --rehearsal "$PWD/.scratch/c10-launch-NN"
 ```
 
-For a direct, authorized launch, use a terminal for hidden key entry or select
-a saved connection with `--connection`. For a campaign commissioned to use
-the [host queue](HOST-QUEUE.md), dispatch its placements through that queue.
-The launcher first checks bindings, opens a credential-free TCP connection to
-the provider and completes every intake/readback. It then obtains the key by
-hidden entry or the explicitly selected saved connection and sends it through
-an inherited descriptor. Keys never belong in argv, environment
-variables or chat. Private command records remain in the container. Automatic
-ordinary close occurs only after a checked auditor submission. A failure does
-not authorize restarting the batch.
+For a direct authorized launch, use the dedicated launcher account. For a
+delegated campaign dispatch through the [host queue](HOST-QUEUE.md).
+After checking bindings and a credential-free TCP preflight, the launcher
+verifies intake and reads the key from its packet-bound keyring label.
+Keys travel through container stdin and a one-use Stewart descriptor.
+Automatic ordinary close follows a checked auditor submission.
 
 ## Saved provider connections
 
-The macOS host can supply the original credential from its login Keychain for
-launch and collection. Each connection is a generic password with service
-`stewart-provider` and account equal to the packet's `credential_label`.
-Labels contain 1–80 letters, digits, dots, underscores or hyphens, starting with
-a letter or digit. Provider account/workspace labels remain manager-supplied;
-Keychain presence establishes no provider identity or inference access.
-
-Create the item in your own terminal. Keep `-w` last and enter the API key at
-the hidden prompt. The default keychain must be your login keychain; inspect it
-with `security default-keychain -d user` if uncertain.
+In a `stewart-launch` login, provision the key through the non-echoing prompt
+after boot. The command sends validated bytes to `keyctl padd` on stdin, under
+the type `user` and description `stewart-provider:LABEL`. Its permission
+mask grants access to the launcher UID. A label starts with an ASCII letter
+or digit and contains up to 80 letters, digits, dots, underscores or hyphens.
 
 ```sh
-security add-generic-password -s stewart-provider -a stewart-haiku -l stewart-haiku -T "" -w
+python3 -I -B apparatus/c10/c10.py connection store stewart-haiku
 python3 -I -B apparatus/c10/c10.py connection status stewart-haiku
 ```
 
-`-T ""` removes the creating tool's default trusted access. Retain confirmation
-before access and use the one-time Allow choice for an intended lookup; Always
-Allow changes that policy. Lookup holds the key privately and passes it through
-the existing container standard-input handoff after verified intake. The host
-also uses it for the export scan, then drops its reference. This promises no
-memory erasure or secrecy from the host administrator.
+Every process obtains the launcher user's persistent keyring with
+`keyctl get_persistent @s`. This refreshes the ring inactivity timeout.
+Status searches only for the type and description. Launch, continuation and
+collection search for the bound label and use `keyctl pipe` over a private
+pipe. Each keyctl command has a ten-second deadline. Records give the stage
+and classified outcome. The Debian [metadata capture](../testdata/keyring/metadata-missing.json)
+records the missing-key diagnostic used by the offline test. A missing or inaccessible key, invalid bytes or
+timeout withholds the handoff. Account and workspace labels come from the
+manager.
 
-Add `--connection stewart-haiku` to `live` or `control ... collect`. The label
-must equal the packet's credential label; mismatch refuses before lookup.
-Without the option, hidden entry remains available. Neither route reads
-`ANTHROPIC_API_KEY`, and failures never fall back to another credential source.
-Status requests no password and verifies no access policy or provider access.
-Password lookup has a 60-second deadline; metadata status has a 10-second one.
-
-Diagnostics distinguish missing tool, missing item in this execution context,
-denied/cancelled access, locked keychain or unavailable interaction, deadline,
-invalid credential, and unclassified failure. Records keep the exit status and
-fixed classification. Raw stdout and stderr are withheld, since unexpected
-diagnostics could contain credentials. An invalid-parameter error followed by
-item-not-found stays unclassified; it does not establish absence.
-
-The [captured metadata lookup](../testdata/keychain/metadata-missing.json)
-records a November 18, 2026 invocation of macOS `security` for a random test
-account. It discarded stdout, requested no password and retained only recognized
-diagnostic lines. The sandbox and host invocations both returned exit 44 with a
-parameter error followed by item-not-found. The offline test replays that pair,
-removes the parameter line to exercise the missing-item classification, and
-reverses the lines to check that parameter failure still takes precedence.
-The locked and cancelled lookup cases use synthetic diagnostics.
-
-Rehearse with a separate item whose value starts with `c10-NONFUNCTIONAL-`.
-Use fresh random characters after the prefix, not text present in the source or
-evidence: the host credential scan must not find the value there. Enter it at
-the prompt below. Never use the real item in a test.
+Live launch and collection use the packet's `account.credential_label`.
+An explicit `--connection LABEL` must match. Supply a separate rehearsal
+connection whose payload begins with `c10-NONFUNCTIONAL-` followed by fresh
+random characters. The synthetic witness stays outside the archive and exports.
+A complete saved-connection rehearsal uses a new process for follow-up
+collection and for each of the six continuation controls.
 
 ```sh
-security add-generic-password -s stewart-provider -a stewart-synthetic -l stewart-synthetic -T "" -w
+python3 -I -B apparatus/c10/c10.py connection store stewart-synthetic
 python3 -I -B apparatus/c10/c10.py rehearse "$PWD/.scratch/c10-launch-NN" \
   --qualification QUALIFICATION_ID --connection stewart-synthetic
 ```
 
-Rehearsal refuses a value without that prefix before handoff. After its ordinary
-checks it starts a fresh launcher process, looks up the item again and collects
-`open-ordinary-r1` into a second immutable snapshot. Each of the six
-continuation controls is then another fresh launcher process with its own
-lookup, made only after that placement's preflight record. All eight lookups
-may prompt. Saved-connection live use requires this successful collection and
-these saved-connection continuations as well as the full Linux rehearsal. A
-failed collection or continuation leaves the initial records intact and
-prevents live use. Collection never starts a model.
-
-Host checks use only the synthetic item. Retain commands, streams, exits,
-macOS version, prompt observations and execution context under a new
-`.scratch/connection-checks-NN`. Check metadata; observe the allowed lookup and
-fresh-process collection; deny a lookup; try a missing label; and exercise a
-locked keychain, restoring it afterwards. Existing operator controls test
-wrong-key collection. Offline tests use a fake `security` executable and
-establish no host Keychain behavior.
-
-Rotate by creating an item with a new label and binding new packets to it.
-Keep the old credential until every run using it has been collected. Historical
-packets stay unchanged. To disconnect a chosen item locally:
-
-```sh
-security delete-generic-password -s stewart-provider -a LABEL
-```
-
-This removes local access only. Provider revocation happens separately in the
-Console and is not confirmed by the launcher. It never deletes an item itself.
+Check the guest's `/proc/sys/kernel/keys/persistent_keyring_expiry` against the
+intended idle interval. Expiry and reboot can require fresh provisioning.
+Rotate through a new label. Keep the original key available for collection
+and retain superseded writers, launchers and private containers with audits
+that still need them. Local removal and provider revocation are separate
+operations.
 
 ## Study submissions
 
@@ -613,7 +566,7 @@ python3 -I -B apparatus/c10/c10.py propose-continuation \
 python3 -I -B apparatus/c10/c10.py packet \
   "$PWD/.scratch/continuation-proposal.json" "$PWD/.scratch/continuation-packet.json" \
   --qualification QUALIFICATION_ID
-shasum -a 256 .scratch/continuation-packet.json
+sha256sum .scratch/continuation-packet.json
 ```
 
 `propose-continuation` takes the evidence folder of the audit's original launch
@@ -680,7 +633,7 @@ It then records each command's argv, streams and exit while it:
    in the audit. If the process ends or the deadline passes first, or the
    record names another audit, placement or attempt, no credential is read or
    sent;
-6. obtains the key by hidden entry or the selected saved connection and sends it
+6. reads the bound key from the launcher keyring and sends it
    on the placement's input. The container compares it with the original
    placement's private marker before any start; a different key starts nothing;
 7. inspects the container and scans both the new record folder and the original
@@ -688,7 +641,7 @@ It then records each command's argv, streams and exit while it:
    `export-NNNN` reach the original folder through the container's existing
    mount.
 
-`host/RESULT.json` (`stewart.c10-continuation-launch/1`) records the prior state
+`host/RESULT.json` (`stewart.c10-continuation-launch/2`) records the prior state
 found, the attempt number, the delivered code directory and the container's own
 result by path and digest. Exit zero means the placement was observed and
 nothing failed; like a first launch, it does not mean the auditor submitted.
@@ -714,7 +667,7 @@ prior state, so a placement the service has recorded cannot be started twice.
 
 A host launch therefore ends in one of three ways besides success. A refusal
 before the container is touched creates no record folder. `not_started` names
-the stage at which the container stopped, for example a denied Keychain lookup
+the stage at which the container stopped, for example a denied keyring lookup
 or a mistyped key; it exits nonzero, and a further attempt is a new launch with
 a new record folder and the same approved packet. `failed` is incomplete at a
 named host step: the container reported a start, an uncertain start or nothing
@@ -741,9 +694,9 @@ understands every placement; collection scans both folders. `review` and
   and any size or digest difference, still withholds.
 - Live provider captures are Stewart-owned. Only rehearsal has an independent
   provider witness, including for the request a signal interrupts.
-- The archive exists only in the retained container's filesystem. Whether that
-  filesystem survives a stop or host restart is not established here; a
-  continuation needs the container running and unchanged.
+- A continuation needs the original named container running with its private
+  volume mounted at `/work`. Keep the writer, volume, and frozen apparatus
+  through custody review.
 - Compaction review uses the same capture reconstruction in every placement.
   Real-provider coverage requires a real summary and later ordinary work;
   the synthetic rehearsal alone supplies neither observation.
@@ -784,8 +737,7 @@ verifies package bytes and identifies the answer to read privately; it does not
 judge its contents. If close requires confirmation, inspect the return, then
 issue `close --confirm TOKEN` explicitly. There is no automatic loss surrender.
 
-`collect` needs the original credential for scanning: hidden terminal entry by
-default, or the selected saved connection. A private HMAC check refuses a different key without storing the key
+`collect` reads the original credential from the packet’s bound keyring label. A private HMAC check refuses a different key without storing the key
 itself. It observes the writer stopped under the operator lock, repeats the
 evidence-membership and credential checks, and creates `export-0002`, then
 `export-0003`, and so on. It never changes an earlier snapshot. Uncertain or

@@ -254,22 +254,13 @@ fn a_held_lock_is_an_intake_in_progress() {
         .write(true)
         .open(format!("{}/active.lock", e.audit_dir(&r)))
         .unwrap();
-    // The development lock is flock; the Linux lock is an OFD lock (same open
-    // file description semantics, so each needs its own primitive here).
-    #[cfg(target_os = "macos")]
+    // Hold an independent open file description write lock (F_OFD_SETLK).
+    let mut fl: libc::flock = unsafe { std::mem::zeroed() };
+    fl.l_type = libc::F_WRLCK as libc::c_short;
     assert_eq!(
-        unsafe { libc::flock(f.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) },
+        unsafe { libc::fcntl(f.as_raw_fd(), 37, &mut fl as *mut libc::flock) },
         0
     );
-    #[cfg(target_os = "linux")]
-    {
-        let mut fl: libc::flock = unsafe { std::mem::zeroed() };
-        fl.l_type = libc::F_WRLCK as libc::c_short;
-        assert_eq!(
-            unsafe { libc::fcntl(f.as_raw_fd(), 37, &mut fl as *mut libc::flock) },
-            0
-        );
-    }
     let o = e.commission(&r, &h);
     assert_eq!(s(&o.json(), &["reason"]), "intake_in_progress");
     let j = e.run(&["status", &r, "--json"]).json();
@@ -407,7 +398,7 @@ fn manager_mcp(e: &Env, launch: &[&str], calls: &[(&str, String)]) -> Vec<stewar
         .collect()
 }
 
-/// On a filesystem that folds case (the macOS default), a source named in
+/// In a directory that folds case, a source named in
 /// another case is absent, and a candidate named in another case collides
 /// with the existing one in a dry run and at creation instead of opening it.
 /// The release driver qualifies on case-sensitive Linux filesystems, where

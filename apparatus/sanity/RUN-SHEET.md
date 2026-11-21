@@ -66,13 +66,13 @@ a model.
 
 ## Procedure for the later paid run
 
-The credential entry path uses a hidden terminal prompt on the host and a pipe
-to a one-use inherited descriptor selected with `run --key-fd` in the Linux
-container. It uses no persistent credential store. Intake and receipt
-verification finish before the prompt. The launch environment selects the direct
-provider endpoint explicitly and excludes ambient
-credentials and proxies. The user enters the key locally, never into chat or an
-argument. Retain the qualified executable until this audit is closed.
+In a launcher login, provision the provider key once through the hidden prompt.
+After verified intake the launcher reads the packet’s bound label from its
+persistent keyring. Pipe input goes to container stdin, then the one-use
+descriptor selected by Stewart's `run --key-fd`. The launch environment
+selects the direct endpoint explicitly and excludes ambient credentials and
+proxies. Retain the qualified executable until the audit closes.
+[Saved provider connections](../c10/README.md#saved-provider-connections)
 
 1. **Freeze the launch packet.** Copy this specimen into a new retained run.
    Fill the exact approved model, destination and cumulative limits; preserve
@@ -86,10 +86,10 @@ argument. Retain the qualified executable until this audit is closed.
    `receipt --read` for the question and both materials against the independent
    input copies. Save `status`. These operations consume no model tokens.
 3. **Launch once.** Before launching, check that a fresh container with the
-   same image and `--network default` can open a TCP connection to the
-   provider endpoint; the container's egress follows the host, and an active
-   host VPN blocked it in the first attempt, which spent four connection
-   timeouts and nothing else. Run that same executable's `run REF --json` under
+   same image and `--network pasta` can open a TCP connection to the
+   authorized provider endpoint through the guest. Record any host VPN on
+   that route and the observed reachability at launch. Earlier timeouts on a
+   Mac host do not establish the guest route. Run that same executable's `run REF --json` under
    the commissioned bounds and credential mechanism. Retain the run process identity
    and provide a separate `status REF --json` and `close REF --json` command. Close ends
    authoring and may seal unfinished work as manager. Stewart's existing

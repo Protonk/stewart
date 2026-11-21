@@ -58,8 +58,8 @@ The existing owned-group firing/stopping controls still use actual processes.
 ## Linux procfs access
 
 `procfs-arm64.json` and `procfs-amd64.json` are complete observer records from
-the 2026-11-13 `acceptance-readiness-02` Linux runs. The second architecture was
-emulated through Rosetta. Each contains a readable same-UID control, a readable
+the 2026-11-13 `acceptance-readiness-02` runs under Apple `container`. Both
+used Linux userlands. The amd64 run used Rosetta. Each contains a readable same-UID control, a readable
 then denied pre-input transition, and a denied during-request observation.
 Denial is errno 13 for `environ`, `maps`, `mem` and `fd`; `cmdline` remains
 readable. The records retain byte identities and counts, never environment or
@@ -71,3 +71,33 @@ must prevent a claim that all reads were denied. JSON member ordering preserves
 the result. These are supplied-record predicate comparisons; the original Linux
 case, including its independently readable control, owns the enforcement
 evidence. Procfs denial and process-group denial are separate mechanisms.
+
+### Podman interpreter and descriptor identity
+
+The two `podman-python-*.json` fixtures record a synthetic Python child in the
+rootless Stewart VM on 2026-11-21 UTC. Each observation names the probe by digest,
+the observer and child by PID, the UID, the supplied argv and the time of each
+sample. The parent read its child's complete NUL-terminated procfs cmdline while
+the child waited with `PR_GET_DUMPABLE` equal to 1, then 0. At startup the child
+tested descriptors 3 through 11 before opening a file containing 37 known bytes.
+
+The Python OCI index was
+`2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`.
+Both userlands ran on the VM's aarch64 kernel, with networking disabled. The
+recorded image manifests and original command, file identities and home
+inventories are beside the observations identified by [ORIGINS.json](ORIGINS.json).
+
+| Linux userland | Registry manifest (SHA-256) | Cmdline at dumpable 1, then 0 | Startup descriptors and subsequent reuse |
+| --- | --- | --- | --- |
+| arm64 | `dc354b0c18b5192842bc6800d22e624461383b149cdbbd9646fec78a28340721` | Supplied argv in both states | 3 and 4 closed. The file open reused 3. |
+| amd64 through Rosetta | `b3ae2372f3c9b7f0a80ec21d1ae931002ea056509e04c5072f144efe9694732f` | Supplied argv, then the interpreter path followed by the complete supplied argv | 3 held `/usr/local/bin/python3.14`, 4 held `/mnt/lima-rosetta/rosetta`, and the file open reused 5. |
+
+The interpreter prefix was exactly `/mnt/lima-rosetta/rosetta`. The matcher
+checks the identity and length of the entire argument vector in each accepted
+form. Controls change an argument, prepend a different executable, repeat the
+interpreter prefix or append an argument. The descriptor control checks the
+candidate against the observed EBADF and the descriptor returned by the open.
+
+A native guest observer inventoried a separate, initially empty home before
+and after each container. The arm64 home remained empty. The amd64 home gained
+the directories `.cache` and `.cache/rosetta` with no files during this probe.

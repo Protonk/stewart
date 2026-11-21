@@ -9,7 +9,7 @@ use crate::{ids, util};
 use sha2::{Digest, Sha256};
 use std::io::Read;
 
-pub const PROFILE_SCHEMA: &str = "stewart.claude-code.profile/2";
+pub const PROFILE_SCHEMA: &str = "stewart.claude-code.profile/3";
 pub const ARRANGEMENT_SCHEMA: &str = "stewart.claude-code.arrangement/3";
 pub const SIGNER: &str = "31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE";
 pub const MAX_PROFILE_BYTES: u64 = 64 * 1024;
@@ -245,6 +245,10 @@ impl Profile {
                 "home",
                 "temporary_directory",
             ])?;
+            let platform = l.str("platform")?;
+            if !matches!(platform, "linux-aarch64" | "linux-x86_64") {
+                return Err(l.invalid("platform", "expected linux-aarch64 or linux-x86_64"));
+            }
             let i = o.obj("installation")?;
             i.exactly(&["manifest_sha256", "signer", "binary_sha256"])?;
             i.sha256("manifest_sha256")?;
@@ -280,7 +284,7 @@ impl Profile {
                 executable: absolute(&l, "executable")?,
                 sha256: l.sha256("sha256")?.into(),
                 version: version.into(),
-                platform: l.str("platform")?.into(),
+                platform: platform.into(),
                 config_directory: absolute(&l, "config_directory")?,
                 home: absolute(&l, "home")?,
                 temporary_directory: absolute(&l, "temporary_directory")?,
@@ -462,6 +466,12 @@ pub(crate) mod tests {
     fn profile_refusals_name_the_independently_changed_check_member() {
         let good = fixture(PROFILE_SCHEMA, "surface_sha256", &surface::sha256(), b"[]");
         Profile::parse(good.as_bytes()).unwrap();
+        let invalid_platform = good.replace(
+            &format!("linux-{}", std::env::consts::ARCH),
+            "unsupported-platform",
+        );
+        let refusal = Profile::parse(invalid_platform.as_bytes()).unwrap_err();
+        assert!(refusal.starts_with("value at /launch/platform "), "{refusal}");
         let wrong_outcome = good.replace(r#""outcome":"observed""#, r#""outcome":"unobserved""#);
         let refusal = Profile::parse(wrong_outcome.as_bytes()).unwrap_err();
         assert!(refusal.starts_with("value at /check/outcome "), "{refusal}");
@@ -494,14 +504,14 @@ pub(crate) mod tests {
     fn only_the_current_profile_form_is_read() {
         let own = surface::sha256();
         let earlier = fixture(
-            "stewart.claude-code.profile/1",
+            "stewart.claude-code.profile/2",
             "surface_sha256",
             &own,
             b"[]",
         );
         let refusal = Profile::parse(earlier.as_bytes()).unwrap_err();
         assert!(
-            refusal.contains("stewart.claude-code.profile/1") && refusal.contains(PROFILE_SCHEMA),
+            refusal.contains("stewart.claude-code.profile/2") && refusal.contains(PROFILE_SCHEMA),
             "{refusal}"
         );
         let writer_bound = fixture(PROFILE_SCHEMA, "writer_sha256", &own, b"[]");

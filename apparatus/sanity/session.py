@@ -864,6 +864,10 @@ def main():
             active_session = session
             session.intake()
             sessions.append(session)
+        archive_fs = subprocess.check_output(['findmnt', '-n', '-T', str(sessions[0].archive), '-o', 'FSTYPE']).strip()
+        if archive_fs != b'ext4':
+            raise RuntimeError('archive must be on the private ext4 work volume')
+        write_json(args.out / 'ENVIRONMENT.json', {'archive': str(sessions[0].archive), 'filesystem': 'ext4'})
         phase, active_mode, active_session = 'publish-readiness', None, None
         write_json(args.out / 'READY.json', {'credential_free_intake_verified': True,
             'scenarios': modes, 'operator_roots': [str(s.root) for s in sessions], 'at': time.time()})

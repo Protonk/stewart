@@ -85,17 +85,36 @@ def control_counts(scenario, shape=0):
 REHEARSAL_AUDITS = ([name + '-r1' for name in FIXED_CASES]
                     + ['control-' + name for name in SINGLE_PLACEMENT_CONTROLS + list(CONTINUED_CONTROLS)])
 
-FAKE_SECURITY = '''import json, os, pathlib, sys, time
+FAKE_KEYCTL = '''import json, os, pathlib, sys, time
 root=pathlib.Path(__file__).parent
 value=json.loads((root/'response.json').read_text())
 assert 'ANTHROPIC_API_KEY' not in os.environ
-assert not sys.stdin.buffer.read()
+args=sys.argv[1:]
+data=sys.stdin.buffer.read()
 with (root/'calls.jsonl').open('a') as stream:
-    stream.write(json.dumps(sys.argv[1:])+'\\n')
+    stream.write(json.dumps(args)+'\\n')
 time.sleep(value['sleep'])
-sys.stdout.write(value['stdout'])
-sys.stderr.write(value['stderr'])
-sys.exit(value['exit'])
+if args[0] == 'padd':
+    assert data.decode() == value['stdout'].rstrip('\\n')
+else:
+    assert not data
+if args[0] == value.get('fail_at','pipe') and value['exit']:
+    sys.stderr.write(value['stderr'])
+    sys.exit(value['exit'])
+if args == ['get_persistent', '@s']:
+    print('111')
+elif args[0] == 'padd':
+    print('222')
+elif args[0] == 'setperm':
+    assert args == ['setperm','222','0x003f0000']
+elif args[:3] == ['search','111','user'] and args[3] in ['stewart-provider:synthetic','stewart-provider:approved']:
+    print('222')
+elif args == ['pipe','222']:
+    sys.stdout.write(value['stdout'])
+else:
+    print('keyctl_search: Required key not available',file=sys.stderr)
+    sys.exit(1)
+sys.exit(0)
 '''
 
 
@@ -392,22 +411,22 @@ class ConnectionTests(unittest.TestCase):
         self.key='c10-NONFUNCTIONAL-private-test-value'
         self.response=self.bin/'response.json'
         self.configure()
-        executable=self.bin/'security'
-        executable.write_text('#!'+sys.executable+'\n'+FAKE_SECURITY)
+        executable=self.bin/'keyctl'
+        executable.write_text('#!'+sys.executable+'\n'+FAKE_KEYCTL)
         executable.chmod(0o700)
         patch=mock.patch.dict(os.environ,{'PATH':str(self.bin)+os.pathsep+os.environ.get('PATH',''),
                                          'ANTHROPIC_API_KEY':'never-read-this-ambient-key'})
         patch.start();self.addCleanup(patch.stop)
 
-    def configure(self,exit=0,stdout=None,stderr='',sleep=0):
+    def configure(self,exit=0,stdout=None,stderr='',sleep=0,fail_at='pipe'):
         self.response.write_text(json.dumps({'exit':exit,'stdout':self.key+'\n' if stdout is None else stdout,
-                                            'stderr':stderr,'sleep':sleep}))
+                                            'stderr':stderr,'sleep':sleep,'fail_at':fail_at}))
 
     def test_lookup_reuses_separate_process_without_recording_secret(self):
         for n in range(2):
             self.assertEqual(connections.lookup('synthetic',rehearsal=True,record=self.records/f'{n}.json'),self.key.encode())
         calls=[json.loads(line) for line in (self.bin/'calls.jsonl').read_text().splitlines()]
-        self.assertEqual(calls,[['find-generic-password','-s','stewart-provider','-a','synthetic','-w']]*2)
+        self.assertEqual(calls,[['get_persistent','@s'], ['search','111','user','stewart-provider:synthetic'], ['pipe','222']]*2)
         self.assertTrue(all(self.key.encode() not in path.read_bytes() for path in self.records.iterdir()))
 
     def test_status_never_requests_or_prints_password(self):
@@ -415,38 +434,40 @@ class ConnectionTests(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertTrue(json.loads(result.stdout)['present'])
         self.assertNotIn(self.key.encode(),result.stdout+result.stderr)
-        self.assertNotIn('-w',json.loads((self.bin/'calls.jsonl').read_text()))
+        self.assertEqual([json.loads(line)[0] for line in (self.bin/'calls.jsonl').read_text().splitlines()], ['get_persistent','search'])
 
-    def test_metadata_lookup_with_compound_diagnostic(self):
-        path = HERE.parent / 'testdata/keychain/metadata-missing.json'
-        raw = path.read_bytes()
-        self.assertEqual(hashlib.sha256(raw).hexdigest(),
-                         'fbff58d70c4800d936c19ec70a0094a11c7a9d39f4956e5c45c35508c4177373')
-        observed = json.loads(raw)
-        self.assertEqual((observed['exit'], observed['password_requested'], observed['stderr_complete']),
-                         (44, False, True))
-        parameter, missing = observed['stderr'].splitlines(keepends=True)
-        for label, stderr, expected in [
-                ('observed', observed['stderr'], 'lookup_failed'),
-                ('only-missing', missing, 'missing_item'),
-                ('reordered', missing + parameter, 'lookup_failed')]:
-            with self.subTest(label=label):
-                self.configure(exit=observed['exit'], stdout='', stderr=stderr)
-                record = self.records / (label + '.json')
-                with self.assertRaises(connections.ConnectionError) as caught:
-                    connections.status('synthetic', record=record)
-                self.assertEqual(caught.exception.code, expected)
-                receipt = json.loads(record.read_bytes())
-                self.assertEqual((receipt['exit'], receipt['outcome'], receipt['password_requested']),
-                                 (44, expected, False))
-                self.assertNotIn('SecKeychain', record.read_text())
+    def test_provisioning_only_supplies_key_on_padd_stdin(self):
+        with mock.patch.object(connections, 'hidden_credential', return_value=self.key.encode()):
+            result = connections.provision('synthetic')
+        self.assertTrue(result['stored'])
+        calls = [json.loads(line) for line in (self.bin/'calls.jsonl').read_text().splitlines()]
+        self.assertEqual(calls, [['get_persistent','@s'], ['padd','user','stewart-provider:synthetic','111'],
+                                 ['setperm','222','0x003f0000']])
+        self.assertNotIn(self.key, json.dumps([result, calls]))
+
+    def test_guest_missing_metadata_lookup_replays_without_requesting_payload(self):
+        observed = strict_json(read_file(HERE.parent/'testdata/keyring/metadata-missing.json'))
+        self.assertIs(observed['payload_requested'], False)
+        self.configure(exit=observed['exit'], stdout=observed['stdout'], stderr=observed['stderr'], fail_at='search')
+        record = self.records/'missing.json'
+        with self.assertRaises(connections.ConnectionError) as error:
+            connections.status('synthetic',record=record)
+        self.assertEqual(error.exception.code,'missing_item')
+        result=strict_json(read_file(record))
+        self.assertEqual([result['stage'],result['payload_requested'],result['outcome']],['search',False,'missing_item'])
+        self.assertNotIn('"pipe"',(self.bin/'calls.jsonl').read_text())
+
+    def test_wrong_label_withholds_payload(self):
+        with self.assertRaises(connections.ConnectionError) as caught:
+            connections.lookup('different')
+        self.assertEqual(caught.exception.code, 'missing_item')
+        self.assertNotIn('"pipe"', (self.bin/'calls.jsonl').read_text())
 
     def test_failures_are_distinct_and_never_echo_tool_streams(self):
         for n,(status,message,code) in enumerate([
-            (44,'The specified item could not be found in the keychain.','missing_item'),
-            (128,'User canceled the operation.','access_denied'),
-            (36,'User interaction is not allowed.','locked_keychain'),
-            (44,'One or more parameters passed to a function were not valid.\nThe specified item could not be found.','lookup_failed'),
+            (1,'keyctl_search: Required key not available','missing_item'),
+            (1,'keyctl_read_alloc: Permission denied','access_denied'),
+            (1,'keyctl_read_alloc: Key has expired','expired_key'),
             (1,'unexpected diagnostic','lookup_failed')]):
             self.configure(exit=status,stderr=message+' '+self.key)
             with self.subTest(code=code),self.assertRaises(connections.ConnectionError) as caught:
@@ -484,19 +505,18 @@ class ConnectionTests(unittest.TestCase):
         root=self.root/'run';(root/'host').mkdir(parents=True);(root/'staging').mkdir()
         packet=proposal('example-model');packet['account']['credential_label']='synthetic'
         write_json(root/'staging/commission.json',packet)
-        write_json(root/'host/RESULT.json',{'mode':'live','commission_sha256':digest(read_file(root/'staging/commission.json'))})
-        write_json(root/'host/operator.json',{'container':'stewart-c10-1-2','audits':['open-ordinary-r1']})
+        write_json(root/'host/RESULT.json',{'schema':'stewart.c10-launch/3','mode':'live','commission_sha256':digest(read_file(root/'staging/commission.json'))})
+        write_json(root/'host/operator.json',{'schema':'stewart.c10-operator/1','container':'stewart-c10-1-2','audits':['open-ordinary-r1']})
         args=argparse.Namespace(evidence=root,audit='open-ordinary-r1',operation='collect',confirm=None,connection='synthetic')
         actual_run=subprocess.run
         observed=[]
         def run(argv,**kw):
-            if argv[0]=='container':
+            if argv[0]=='podman':
                 observed.append((argv,kw['input'],kw['env']))
                 return subprocess.CompletedProcess(argv,0)
             return actual_run(argv,**kw)
-        with mock.patch.object(c10.subprocess,'run',side_effect=run),mock.patch.object(c10,'hidden_credential') as prompt:
+        with mock.patch.object(c10.subprocess,'run',side_effect=run):
             self.assertEqual(c10.host_control(args),0)
-            prompt.assert_not_called()
         self.assertEqual(observed[0][1],self.key.encode())
         self.assertNotIn(self.key,json.dumps([observed[0][0],observed[0][2]]))
         self.assertTrue(all(self.key.encode() not in path.read_bytes() for path in root.rglob('*') if path.is_file()))
@@ -850,7 +870,7 @@ class PacketTests(unittest.TestCase):
 
     def test_live_packet_refusals_name_their_reason_before_bindings_or_credential(self):
         """Each refusal differs from an approved packet in one respect and stops before any binding check,
-        Keychain lookup or prompt; the approved packet itself passes to the binding check."""
+        keyring lookup or prompt; the approved packet itself passes to the binding check."""
         def approved(value):
             value['spending_authority'] = 'synthetic gate control; no launch'
             value['account'] = {key:'synthetic-label' for key in value['account']}
@@ -876,18 +896,18 @@ class PacketTests(unittest.TestCase):
                     approved_commission=approval or digest(read_file(packet)),rehearsal=Path(temp),
                     qualification='unused',connection=connection)
                 with self.subTest(refusal=name), mock.patch.object(c10,'bindings') as bind, \
-                        mock.patch.object(c10,'hidden_credential') as prompt, mock.patch.object(c10,'connection_key') as lookup:
+                        mock.patch.object(c10,'connection_key') as lookup:
                     with self.assertRaisesRegex(error, reason):
                         c10.launch_batch(args)
-                    bind.assert_not_called();prompt.assert_not_called();lookup.assert_not_called()
+                    bind.assert_not_called();lookup.assert_not_called()
             packet = Path(temp)/'approved.json';write_json(packet,approved(proposal('example-model')))
             args = argparse.Namespace(mode='live',evidence=evidence,commission=packet,
                 approved_commission=digest(read_file(packet)),rehearsal=Path(temp),qualification='unused',connection=None)
             with mock.patch.object(c10,'bindings',side_effect=RuntimeError('digest gate passed')) as bind, \
-                    mock.patch.object(c10,'hidden_credential') as prompt:
+                    mock.patch.object(c10,'connection_key') as lookup:
                 with self.assertRaisesRegex(RuntimeError, '^digest gate passed$'):
                     c10.launch_batch(args)
-                bind.assert_called_once();prompt.assert_not_called()
+                bind.assert_called_once();lookup.assert_not_called()
         self.assertFalse(evidence.exists())
 
 
@@ -1255,6 +1275,20 @@ class ReportingTests(unittest.TestCase):
 
 
 class HostQueueTests(unittest.TestCase):
+    def test_launcher_checkout_retains_its_own_git_metadata_and_objects(self):
+        git = self.root/'.git'
+        git.write_text('gitdir: /agent-controlled/metadata')
+        with self.assertRaisesRegex(ValueError, 'standalone'):
+            host_queue.check_repository(self.root)
+        git.unlink()
+        (git/'objects/info').mkdir(parents=True)
+        (git/'objects/info/alternates').write_text('/agent-controlled/objects')
+        with self.assertRaisesRegex(ValueError, 'standalone'):
+            host_queue.check_repository(self.root)
+        (git/'objects/info/alternates').unlink()
+        with mock.patch.object(host_queue,'protected'):
+            host_queue.check_repository(self.root)
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
@@ -1262,7 +1296,13 @@ class HostQueueTests(unittest.TestCase):
         (self.root / '.scratch').mkdir()
         patch = mock.patch.object(host_queue, 'REPO', self.root)
         patch.start(); self.addCleanup(patch.stop)
-        self.config = {'campaign': 'test-campaign', 'authority': 'bounded test authority',
+        self.config = {'schema': 'stewart.c10-campaign/2',
+            'envelope': {'cases': list(catalog()), 'submissions': {}, 'efforts':[None],
+                         'limits':{'turns':12,'input_tokens':160000,'output_tokens':30000},
+                         'max_placements':2,'watchdog_seconds':900,'study_build_sha256':None,
+                         'pricing':{'max_input_per_attempt':1000000,'max_output_per_attempt':16000,
+                                    'input_cents_per_million':1,'output_cents_per_million':5}},
+            'campaign': 'test-campaign', 'authority': 'bounded test authority',
             'model': 'test-model', 'qualification': 'test-qualified',
             'account': {'account_label': 'test', 'workspace_id': 'test-workspace', 'credential_label': 'test-key'},
             'synthetic_connection': 'test-synthetic', 'placement_ceiling': 2, 'budget_usd': 50,
@@ -1274,8 +1314,21 @@ class HostQueueTests(unittest.TestCase):
         self.packet['spending_authority'] = self.config['authority']
         self.packet['bindings'] = dict.fromkeys(self.packet['bindings'], 'test-binding')
         self.packet['bindings']['qualification_id'] = 'test-qualified'
-        self.path = self.root / 'packet.json'
+        self.packets = self.root/'queue/packets'
+        self.packets.mkdir(parents=True)
+        self.path = self.packets / 'packet.json'
         self.save_packet()
+        self.publish = host_queue.result_summary
+        def summary(queue,name,request,code,slots,money,**extra):
+            if code==0 and request.get('operation') in ['live','continue','rehearse']:
+                # Child process is stubbed in these queue tests.
+                record=Path(request.get('record',request['evidence']))
+                (record/'host').mkdir(parents=True)
+                write_json(record/'host/operator.json',{'schema':'stewart.c10-operator/1','audits':[]})
+                write_json(record/'host/RESULT.json',{'outcome':'stubbed'})
+            return self.publish(queue,name,request,code,slots,money,**extra)
+        publication=mock.patch.object(host_queue,'result_summary',side_effect=summary)
+        publication.start(); self.addCleanup(publication.stop)
         self.request = {'operation': 'live', 'evidence': str(self.root / '.scratch/live-01'),
             'packet': str(self.path), 'sha256': digest(read_file(self.path)),
             'rehearsal': str(self.root / '.scratch/rehearsal-01')}
@@ -1341,7 +1394,7 @@ class HostQueueTests(unittest.TestCase):
             'automatic_continuation':False,'stop_after_seconds':900,'spending_authority':self.config['authority'],
             'account':self.config['account'].copy(),
             'bindings':{**dict.fromkeys(common.BINDINGS,'test-binding'),'qualification_id':'test-qualified'},**changes}
-        path=self.root/'continuation.json'
+        path=self.packets/'continuation.json'
         path.write_text(json.dumps(packet))
         return {'operation':'continue','evidence':str(evidence),'record':str(self.root/'.scratch/later-01'),
                 'packet':str(path),'sha256':digest(read_file(path)),'rehearsal':str(self.root/'.scratch/rehearsal-01')}
@@ -1393,22 +1446,24 @@ class HostQueueTests(unittest.TestCase):
                 return host_queue.serve(queue,config,True,once=True),run.call_count
         # An earlier paid claim that failed blocks this one until it is reconciled.
         (queue/'claims/first').mkdir(parents=True)
-        write_json(queue/'claims/first/command.json',{'placement_charge':1})
+        write_json(queue/'claims/first/command.json',{'placement_charge':1,'reserved_cents':100})
         write_json(queue/'claims/first/result.json',{'exit':1})
-        with self.assertRaisesRegex(ValueError,'unfinished host claim'):
-            serve()
+        write_json(queue/'claims/first/request.json',{'operation':'live','evidence':str(self.root/'.scratch/earlier-01')})
+        self.assertEqual(serve(),(1,0))
+        self.assertIn('unfinished host claim',strict_json(read_file(queue/'results/second.json'))['reason'])
         self.assertFalse((queue/'claims/second').exists())
         witness=self.root/'witness.json';witness.write_bytes(b'{"observed":"fixture stopped"}')
         write_json(queue/'claims/first/reconciliation.json',{'author':'test reader','disposition':'fixture effects reconciled',
             'evidence':[{'path':str(witness),'sha256':digest(read_file(witness))}]})
+        write_json(queue/'requests/reconciled.json', self.continuation())
         self.assertEqual(serve(),(0,1))
-        command=strict_json(read_file(queue/'claims/second/command.json'))
+        command=strict_json(read_file(queue/'claims/reconciled/command.json'))
         self.assertEqual((command['placement_charge'],command['argv'][4:6]),(1,['continue','live']))
         # The claimed request is never dispatched again, and both slots stay charged.
         self.assertEqual(serve(),(0,0))
         write_json(queue/'requests/third.json',{**self.continuation(),'record':str(self.root/'.scratch/later-02')})
-        with self.assertRaisesRegex(ValueError,'campaign placement ceiling reached'):
-            serve()
+        self.assertEqual(serve(),(1,0))
+        self.assertIn('ceiling',strict_json(read_file(queue/'results/third.json'))['reason'])
 
     def test_control_scope_and_no_surrender(self):
         out = self.root / '.scratch/live-01'
@@ -1426,20 +1481,20 @@ class HostQueueTests(unittest.TestCase):
     def test_dispatch_retains_streams_and_never_repeats_claim(self):
         (self.root / 'claims').mkdir()
         argv = [sys.executable, '-I', '-B', '-c', 'import sys; print("fake output"); print("fake error", file=sys.stderr); sys.exit(7)']
-        self.assertEqual(host_queue.dispatch(self.root, 'attempt', b'{}', argv, 1, 'config'), 7)
+        self.assertEqual(host_queue.dispatch(self.root, 'attempt', b'{}', argv, 1, 'config', 100), 7)
         claim = self.root / 'claims/attempt'
         self.assertEqual(read_file(claim / 'stdout'), b'fake output\n')
         self.assertEqual(read_file(claim / 'stderr'), b'fake error\n')
         self.assertFalse(host_queue.reconciled(claim))
         with self.assertRaises(FileExistsError):
-            host_queue.dispatch(self.root, 'attempt', b'{}', argv, 1, 'config')
+            host_queue.dispatch(self.root, 'attempt', b'{}', argv, 1, 'config', 100)
         self.assertEqual(strict_json(read_file(claim / 'result.json'))['exit'], 7)
 
     def test_interruption_keeps_claim_and_needs_attributed_evidence(self):
         (self.root / 'claims').mkdir()
         with mock.patch.object(host_queue.subprocess, 'run', side_effect=OSError('lost caller')):
             with self.assertRaises(OSError):
-                host_queue.dispatch(self.root, 'attempt', b'{}', ['fake'], 1, 'config')
+                host_queue.dispatch(self.root, 'attempt', b'{}', ['fake'], 1, 'config', 100)
         claim = self.root / 'claims/attempt'
         self.assertFalse((claim / 'result.json').exists())
         self.assertFalse(host_queue.reconciled(claim))
@@ -1456,18 +1511,18 @@ class HostQueueTests(unittest.TestCase):
         queue = self.root / 'queue'
         (queue / 'requests').mkdir(parents=True)
         (queue / 'claims/previous').mkdir(parents=True)
-        write_json(queue / 'claims/previous/command.json', {'placement_charge': 1})
+        write_json(queue / 'claims/previous/command.json', {'placement_charge': 1,'reserved_cents':100})
         write_json(queue / 'claims/previous/result.json', {'exit': 0})
         (queue / 'claims/earlier').mkdir()
-        write_json(queue / 'claims/earlier/command.json', {'placement_charge': 1})
+        write_json(queue / 'claims/earlier/command.json', {'placement_charge': 1,'reserved_cents':100})
         write_json(queue / 'claims/earlier/result.json', {'exit': 0})
         write_json(queue / 'requests/next.json', self.request)
         config = self.root / 'config.json'; write_json(config, self.config)
         with mock.patch.object(host_queue.subprocess, 'check_output', return_value=b''), \
              mock.patch.object(host_queue, 'source_hash', return_value='source'), \
              mock.patch.object(host_queue, 'dispatch') as dispatch:
-            with self.assertRaisesRegex(ValueError, 'ceiling'):
-                host_queue.serve(queue, config, True, once=True)
+            self.assertEqual(host_queue.serve(queue, config, True, once=True),1)
+            self.assertIn('ceiling',strict_json(read_file(queue/'results/next.json'))['reason'])
             dispatch.assert_not_called()
 
     def test_serial_queue_restart_skips_completed_request(self):
@@ -1485,8 +1540,93 @@ class HostQueueTests(unittest.TestCase):
         self.assertEqual(len(list((queue / 'sessions').iterdir())), 2)
         self.assertEqual(strict_json(read_file(queue / 'claims/offline/command.json'))['placement_charge'], 0)
 
+    def test_packet_input_is_snapshotted_and_stays_below_inbox(self):
+        session=self.root/'session';session.mkdir()
+        snapshot=host_queue.snapshot_packet(self.request,self.root/'queue',session,'accepted')
+        original=read_file(Path(snapshot['packet']))
+        self.path.write_bytes(b'changed after admission')
+        self.assertEqual(read_file(Path(snapshot['packet'])),original)
+        private=self.root/'private.json';private.write_text('private bytes')
+        self.path.unlink();self.path.symlink_to(private)
+        for path in [private,self.path]:
+            with self.subTest(path=path), self.assertRaises((ValueError,OSError)):
+                host_queue.snapshot_packet({**self.request,'packet':str(path)},self.root/'queue',session,'refused')
+
+    def test_budget_gate_withholds_dispatch_for_one_cent_over_and_unknown_cost(self):
+        # The recorded price and full attempt bounds are operator inputs.
+        self.assertEqual(host_queue.reservation(self.config,1),52)
+        for name,headroom,prior in [('within',52,None),('over',51,None),('after',103,52),('unknown',5000,None)]:
+            with self.subTest(name=name):
+                queue=self.root/name
+                for directory in ['requests','packets','claims']:
+                    (queue/directory).mkdir(parents=True)
+                path=queue/'packets/approved.json';path.write_bytes(read_file(self.path))
+                write_json(queue/'requests/case.json',{**self.request,'packet':str(path),'evidence':str(self.root/'.scratch'/name)})
+                if prior or name=='unknown':
+                    claim=queue/'claims/earlier';claim.mkdir()
+                    write_json(claim/'result.json',{'exit':0})
+                    if prior:
+                        write_json(claim/'command.json',{'placement_charge':1,'reserved_cents':prior})
+                config=self.root/(name+'.json')
+                write_json(config,{**self.config,'budget_usd':headroom/100,'placement_ceiling':10})
+                with mock.patch.object(host_queue.subprocess,'check_output',return_value=b''), \
+                        mock.patch.object(host_queue,'source_hash',return_value='source'), \
+                        mock.patch.object(host_queue.subprocess,'run',return_value=subprocess.CompletedProcess([],0)) as invoked:
+                    code=host_queue.serve(queue,config,True,once=True)
+                self.assertEqual((code,invoked.call_count),(0,1) if name=='within' else (1,0))
+                self.assertEqual((queue/'claims/case').exists(),name=='within')
+
+    def test_caller_cannot_expand_limits_or_choose_uncommissioned_input_or_effort(self):
+        for key,value in [('limits',{**self.packet['limits'],'turns':13}),('effort','high')]:
+            with self.subTest(key=key):
+                original=self.packet[key];self.packet[key]=value;self.save_packet()
+                with self.assertRaises(ValueError):
+                    host_queue.command(self.request,self.config,True)
+                self.packet[key]=original
+        self.save_packet()
+        envelope={**self.config['envelope'],'cases':[]}
+        with self.assertRaisesRegex(ValueError,'case outside commission'):
+            host_queue.command(self.request,{**self.config,'envelope':envelope},True)
+
+    def test_published_archives_are_digest_verified_and_withheld_snapshots_stay_private(self):
+        results=self.root/'published';results.mkdir()
+        evidence=self.root/'.scratch/campaign'
+        audit=evidence/'container/case-a'
+        clean=audit/'export-0001';clean.mkdir(parents=True)
+        data=b'only the credential-scanned export'
+        expected={'sha256':digest(data),'bytes':len(data)}
+        receipt={'schema':'stewart.c10-export/2','outcome':'exported','evidence_state':'complete',
+                 'scan':{'files_with_matches':[],'errors':[]},'archive':expected}
+        write_json(clean/'EXPORT.json',receipt)
+        (clean/'work.tar').write_bytes(data)
+        withheld=audit/'export-0002';withheld.mkdir()
+        write_json(withheld/'EXPORT.json',{'outcome':'withheld'})
+        (withheld/'work.tar').write_bytes(b'private original must stay private')
+        published=host_queue.publish_exports(results,evidence,['case-a'])
+        self.assertEqual(len(published),1)
+        archive=results/published[0]['file']
+        self.assertEqual((archive.read_bytes(),archive.stat().st_mode & 0o777),(data,0o640))
+        self.assertEqual(list(results.iterdir()),[archive])
+        self.assertEqual(host_queue.publish_exports(results,evidence,['case-a']),published)
+        altered=audit/'export-0003';altered.mkdir()
+        write_json(altered/'EXPORT.json',{**receipt,'archive':{'sha256':'0'*64,'bytes':len(data)}})
+        (altered/'work.tar').write_bytes(data)
+        with self.assertRaisesRegex(ValueError,'differs from its receipt'):
+            host_queue.publish_exports(results,evidence,['case-a'])
+        self.assertEqual(list(results.iterdir()),[archive])
+
+    def test_documented_synthetic_rehearsal_reserves_fake_placements_against_the_same_envelope(self):
+        document=(HERE/'HOST-QUEUE.md').read_text()
+        config=host_queue.configuration(json.loads(document.split('```json',1)[1].split('```',1)[0]),False)
+        request={'operation':'rehearse','evidence':str(self.root/'.scratch/queue-boundary'),'submissions':[]}
+        argv,slots=host_queue.command(request,config,False)
+        self.assertIn('rehearse',argv)
+        self.assertEqual(slots,28)
+        self.assertEqual(host_queue.reservation(config,slots),host_queue.cents(config['budget_usd']))
+        self.assertEqual(config['placement_ceiling'],2*slots)
+
     def test_second_runner_cannot_claim_while_first_holds_lock(self):
-        queue = self.root / 'queue'; queue.mkdir()
+        queue = self.root / 'queue'
         config = self.root / 'config.json'; write_json(config, self.config)
         with (queue / 'lock').open('a') as first:
             host_queue.fcntl.flock(first, host_queue.fcntl.LOCK_EX | host_queue.fcntl.LOCK_NB)
@@ -1498,7 +1638,7 @@ class HostQueueTests(unittest.TestCase):
         (queue / 'requests').mkdir(parents=True)
         damaged = queue / 'claims/damaged'; damaged.mkdir(parents=True)
         (damaged / 'command.json').write_bytes(b'{"placement_charge":')
-        self.assertEqual(host_queue.placement_charge(damaged), 1)
+        self.assertEqual(host_queue.charges(damaged,self.config), (2,5000))
         write_json(queue / 'requests/offline.json', {'operation': 'rehearse',
             'evidence': str(self.root / '.scratch/offline'), 'submissions': []})
         config = self.root / 'config.json'; write_json(config, self.config)
@@ -1508,7 +1648,7 @@ class HostQueueTests(unittest.TestCase):
             self.assertEqual(host_queue.serve(queue, config, False, once=True), 0)
 
 
-# A stand-in for Apple `container`, limited to what the continuation launcher
+# A stand-in for Podman, limited to what the continuation launcher
 # sends. `/work` is a temporary directory and `/out` the retained folder's
 # `container/`. The launcher's own delivery scripts run unchanged against that
 # directory; the placement process follows a per-audit plan set by each test.
@@ -1520,9 +1660,11 @@ assert 'ANTHROPIC_API_KEY' not in os.environ
 with (root/'container-calls.jsonl').open('a') as stream:
     stream.write(json.dumps(argv)+'\\n')
 if argv == ['--version']:
-    print('container CLI version 1.6.1 (build: release, commit: fixture)')
+    print('podman version 5.4.2')
     sys.exit(0)
-if argv[0] in ['system', 'inspect']:
+if argv[0] == 'info':
+    print('true'); sys.exit(0)
+if argv[0] == 'inspect':
     print('{}')
     sys.exit(0)
 assert argv[0] == 'exec', argv
@@ -1596,7 +1738,7 @@ sys.exit(plan['exit'])
 
 
 class ContinuationTests(unittest.TestCase):
-    """Host checks for one later placement of a retained audit; no container, model or Keychain."""
+    """Host checks for one later placement of a retained audit; no container, model or keyring."""
     container='stewart-c10-1700000000-4242'
     bound={'qualification_id':'fixture-qualification','binary_sha256':'1'*64,'source_commit':'2'*40,
            'apparatus_sha256':'3'*64,'image':'docker.io/library/python@sha256:'+'4'*64,'catalog_sha256':'5'*64}
@@ -1641,7 +1783,7 @@ class ContinuationTests(unittest.TestCase):
         self.work=self.root/'container/work'
         self.key='c10-NONFUNCTIONAL-'+os.urandom(12).hex()
         (self.bin/'response.json').write_text(json.dumps({'exit':0,'stdout':self.key+'\n','stderr':'','sleep':0}))
-        for name,body in [('security',FAKE_SECURITY),('container',FAKE_CONTAINER)]:
+        for name,body in [('keyctl',FAKE_KEYCTL),('podman',FAKE_CONTAINER)]:
             (self.bin/name).write_text('#!'+sys.executable+'\n'+body);(self.bin/name).chmod(0o700)
         for target,values in [(os.environ,{'PATH':str(self.bin)+os.pathsep+os.environ.get('PATH',''),
                                            'ANTHROPIC_API_KEY':'never-read-this-ambient-key'})]:
@@ -1650,8 +1792,7 @@ class ContinuationTests(unittest.TestCase):
         self.audits=[]
         self.bind=subprocess.CompletedProcess([],0,b'qualification record checked\n',b'')
         for name,value in [('REPO',self.repo),('review_batch',mock.Mock(side_effect=self.review)),
-                           ('bindings',mock.Mock(side_effect=lambda *a,**k:(dict(self.bound),Path('/unused'),self.bind))),
-                           ('hidden_credential',mock.Mock(return_value=self.key.encode()))]:
+                           ('bindings',mock.Mock(side_effect=lambda *a,**k:(dict(self.bound),Path('/unused'),self.bind,self.bound['image'])))]:
             patch=mock.patch.object(c10,name,value);patch.start();self.addCleanup(patch.stop)
         self.evidence=self.scratch/'earlier-01'
         self.plans={}
@@ -1729,10 +1870,10 @@ class ContinuationTests(unittest.TestCase):
         self.audits=[run['id'] for run in packet['runs']]
         raw=json.dumps(packet).encode()
         (self.evidence/'staging/commission.json').write_bytes(raw)
-        write_json(self.evidence/'host/operator.json',{'container':self.container,'audits':self.audits})
-        write_json(self.evidence/'host/RESULT.json',{'schema':'stewart.c10-launch/2','mode':mode,
+        write_json(self.evidence/'host/operator.json',{'schema':'stewart.c10-operator/1','container':self.container,'audits':self.audits})
+        write_json(self.evidence/'host/RESULT.json',{'schema':'stewart.c10-launch/3','mode':mode,
             'outcome':'completed' if mode=='rehearse' else 'observed','bindings':dict(self.bound),
-            'container':self.container,'commission_sha256':digest(raw)})
+            'container':self.container,'platform_image':self.bound['image'],'commission_sha256':digest(raw)})
         self.heads={audit:self.export(audit,endings) for audit,endings in exports}
         self.first=exports[0][0]
         for audit,_ in exports:
@@ -1794,7 +1935,7 @@ class ContinuationTests(unittest.TestCase):
         return self.evidence/'container/continuations'/f'{audit}-p{placement}'/f'attempt-{attempt}'
 
     def supply(self,key=None,exit=0,stderr=''):
-        """What the fake Keychain returns for the next lookup."""
+        """What the fake keyring returns for the next lookup."""
         (self.bin/'response.json').write_text(json.dumps({'exit':exit,'stdout':(key or self.key)+'\n','stderr':stderr,'sleep':0}))
 
     def calls(self,name='container-calls.jsonl'):
@@ -1805,12 +1946,10 @@ class ContinuationTests(unittest.TestCase):
         """A refusal for its stated reason, before any record, container command or credential use."""
         logs=['container-calls.jsonl','calls.jsonl','placement-stdin.jsonl','starts.jsonl']
         before=[self.calls(name) for name in logs]
-        prompts=c10.hidden_credential.call_count
         with self.assertRaisesRegex(c10.Refused,reason):
             self.run_continuation(args,**options)
         self.assertFalse(args.record.exists())
         self.assertEqual([self.calls(name) for name in logs],before)
-        self.assertEqual(c10.hidden_credential.call_count,prompts)
 
     def tree(self,root):
         return {path.relative_to(root).as_posix():path.read_bytes() for path in sorted(root.rglob('*')) if path.is_file()}
@@ -1826,7 +1965,7 @@ class ContinuationTests(unittest.TestCase):
         failed,report=self.run_continuation(self.args(packet))
         self.assertFalse(failed)
         self.assertEqual((report['schema'],report['mode'],report['outcome'],report['credential_sent'],report['container_exit']),
-                         ('stewart.c10-continuation-launch/1','rehearse','completed',True,0))
+                         ('stewart.c10-continuation-launch/2','rehearse','completed',True,0))
         record=self.scratch/'later-01'
         # The host wrote only to its new record folder; the earlier folder gained what the container published.
         self.assertEqual({name:self.tree(self.evidence/name) for name in ['host','staging']},before)
@@ -1851,13 +1990,13 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(read_file(record/'staging/commission.json'),read_file(packet))
         self.assertEqual(report['commission_sha256'],digest(read_file(packet)))
         # Every command has argv, both streams and an exit; the rehearsal makes no network preflight.
-        for label in ['version','system-status','container-ready','source','source-delivery','packet-delivery','container-inspect']:
+        for label in ['version','rootless','container-ready','source','source-delivery','packet-delivery','container-inspect']:
             for suffix in ['.argv.json','.stdout','.stderr','.exit']:
                 self.assertTrue((record/'host'/(label+suffix)).is_file(),label+suffix)
             self.assertEqual(read_file(record/'host'/(label+'.exit')),b'0\n')
         self.assertFalse((record/'host/network-preflight.exit').exists())
         placement=strict_json(read_file(record/'host/placement.argv.json'))
-        self.assertEqual(placement,['container','exec','--interactive',self.container,'env','-i',
+        self.assertEqual(placement,['podman','exec','--interactive',self.container,'env','-i',
             'PATH=/usr/local/bin:/usr/bin:/bin','HOME=/work','python3','-I','-B',
             '/work/'+code.name+'/apparatus/c10/placements.py','rehearse','--binary','/bin-in/stewart',
             '--packet','/work/continuation-packets/later-01/commission.json'])
@@ -1886,20 +2025,19 @@ class ContinuationTests(unittest.TestCase):
         c10.bindings.assert_called_once()
         with mock.patch.object(c10,'check_rehearsal') as rehearsal:
             failed,report=self.run_continuation(self.args(packet))
-        rehearsal.assert_called_once_with(self.scratch/'rehearsal-01',self.bound,self.original,connection=False)
+        rehearsal.assert_called_once_with(self.scratch/'rehearsal-01',self.bound,self.original,connection=True)
         self.assertFalse(failed)
-        self.assertEqual((report['outcome'],report['credential_source']),('observed',{'kind':'hidden-entry'}))
-        c10.hidden_credential.assert_called_once()
+        self.assertEqual((report['outcome'],report['credential_source']),('observed',connections.source('approved')))
         self.assertEqual(read_file(self.scratch/'later-01/host/network-preflight.exit'),b'0\n')
         self.assertEqual(self.calls('placement-stdin.jsonl')[0]['sha256'],digest(self.key.encode()))
-        self.assertEqual(self.calls('calls.jsonl'),[])
+        self.assertEqual([args[0] for args in self.calls('calls.jsonl')],['get_persistent','search','pipe'])
 
     def test_saved_connection_is_looked_up_only_after_the_preflight_record(self):
         self.retain()
         failed,report=self.run_continuation(self.args(self.packet(),connection='synthetic'))
         self.assertFalse(failed)
-        self.assertEqual(report['credential_source'],{'kind':'keychain','service':'stewart-provider','account':'synthetic'})
-        self.assertEqual(self.calls('calls.jsonl'),[['find-generic-password','-s','stewart-provider','-a','synthetic','-w']])
+        self.assertEqual(report['credential_source'],connections.source('synthetic'))
+        self.assertEqual(self.calls('calls.jsonl'),[['get_persistent','@s'], ['search','111','user','stewart-provider:synthetic'], ['pipe','222']])
         self.assertEqual(self.calls('placement-stdin.jsonl')[0]['sha256'],digest(self.key.encode()))
         self.assertNotIn(self.key.encode(),read_file(self.scratch/'later-01/host/connection.json'))
         with self.assertRaises(connections.ConnectionError):
@@ -2055,17 +2193,17 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(self.calls('starts.jsonl'),[{'audit':self.first,'placement':2,'attempt':2}])
         self.assertEqual([(row['attempt'],row['sha256']==digest(self.key.encode())) for row in self.calls('placement-stdin.jsonl')],
                          [(1,False),(2,True)])
-        self.assertEqual(len(self.calls('calls.jsonl')),2)
+        self.assertEqual(len([args for args in self.calls('calls.jsonl') if args[0]=='pipe']),2)
         # Having started, the placement is closed to any further attempt.
         with self.assertRaisesRegex(c10.Refused,'an earlier attempt of this placement started or may have started'):
             self.run_continuation(self.args(packet,'later-03',connection='synthetic'))
 
-    def test_denied_keychain_or_container_refusal_is_not_started_and_may_be_followed(self):
+    def test_denied_keyring_or_container_refusal_is_not_started_and_may_be_followed(self):
         audits=['control-continue-cap','control-continue-entries']
         self.retain(exports=tuple((audit,[['interrupted','max_tokens']]) for audit in audits))
-        # The Keychain denies the lookup: nothing is sent, and the container records that it started nothing.
+        # The keyring denies the lookup: nothing is sent, and the container records that it started nothing.
         denied=self.packet(audits[0],'denied.json')
-        self.supply(exit=128,stderr='User canceled the operation.')
+        self.supply(exit=1,stderr='keyctl_read_alloc: Permission denied')
         failed,report=self.run_continuation(self.args(denied,'later-01',connection='synthetic'))
         self.assertTrue(failed)
         self.assertEqual((report['outcome'],report['credential_sent'],report['connection_error'],report['container_exit']),
@@ -2096,7 +2234,7 @@ class ContinuationTests(unittest.TestCase):
         for reason,value in [('the original launch record is incomplete',{**launch,'outcome':'failed'}),
                              ('the retained packet differs from its launch record',{**launch,'commission_sha256':'0'*64}),
                              ('the retained container identity is missing or inconsistent',{**launch,'container':'stewart-c10-9-9'}),
-                             ('does not hold an original launch record',{**launch,'schema':'stewart.c10-continuation-launch/1'})]:
+                             ('does not hold an original launch record',{**launch,'schema':'stewart.c10-continuation-launch/2'})]:
             (self.evidence/'host/RESULT.json').unlink()
             write_json(self.evidence/'host/RESULT.json',value)
             with self.subTest(reason=reason):
@@ -2185,9 +2323,8 @@ class ContinuationTests(unittest.TestCase):
                                  ('failed','preflight',False))
                 self.assertIn('incomplete at preflight',report['error'])
                 self.assertNotIn('not_started',report)
-                # No Keychain lookup, no prompt and no byte on the placement's input.
+                # No keyring lookup, no prompt and no byte on the placement's input.
                 self.assertEqual(self.calls('calls.jsonl'),[])
-                c10.hidden_credential.assert_not_called()
                 self.assertFalse((self.scratch/record/'host/connection.json').exists())
                 self.assertEqual([row for row in self.calls('placement-stdin.jsonl') if row['bytes']],[])
                 self.assertEqual(self.calls('starts.jsonl'),[])
@@ -2201,7 +2338,7 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(strict_json(read_file(self.published(audits[2])/'READY.json'))['attempt'],2)
         failed,report=self.run_continuation(self.args(self.packet(audits[4],'ready.json'),'later-ready',connection='synthetic'))
         self.assertEqual((failed,report['credential_sent']),(False,True))
-        self.assertEqual(len(self.calls('calls.jsonl')),1)
+        self.assertEqual(len([args for args in self.calls('calls.jsonl') if args[0]=='pipe']),1)
         self.assertEqual(self.calls('starts.jsonl'),[{'audit':audits[4],'placement':2,'attempt':1}])
 
     def test_failed_unobserved_or_credential_bearing_placement_is_incomplete(self):

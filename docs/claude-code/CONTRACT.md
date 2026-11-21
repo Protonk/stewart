@@ -2,8 +2,8 @@
 
 This is the decided contract for the default-off `claude-code` development
 runtime. It does not change the distributed Messages API contract.
-The gated adapter is implemented and has passed native offline service checks
-and Linux container acceptance using a synthetic harness. The
+The gated adapter is implemented. Recorded Linux container runs exercise it
+with a synthetic harness. The
 [qualification record](../../apparatus/qualified.md) identifies the exact
 source and binaries covered. Those checks exercise the Rust core, custody,
 submission, continuation and process controls; they do
@@ -23,8 +23,7 @@ The distributed binary excludes this adapter at build time and carries no
 switch for it; a source build includes it with the `claude-code` feature. Keep
 this runtime in line with the Messages path wherever the transport allows, so
 that what is learned about the manager's interface on one holds on the other.
-Linux x86_64 and aarch64 are the platforms Stewart supports. Apple-silicon
-macOS is a build target without a support or qualification claim.
+Stewart and its development runtime support Linux x86_64 and aarch64.
 
 Runtime-specific contracts, schemas and technical explanations live in this
 directory. Root documents describe excluded adapters and other authentication
@@ -39,7 +38,7 @@ Offline controls must exercise the actual core through MCP: exact traffic,
 positive effects, denial and invariance, publication after closure, startup
 mismatch, owner/relay loss, unknown usage, cumulative placement limits and
 continuation. An independent author derives driver cases from this contract.
-Native macOS checks remain development checks. Linux qualification applies to
+Native checks support iteration. Container qualification applies to
 the recorded synthetic comparisons; separately commissioned real-harness
 compaction, submission and stopping comparisons remain necessary for the claims
 they exercise. Endpoint alignment for the harness is a reviewed check of the
@@ -116,11 +115,11 @@ The annotation exists because the harness's documented default persists a
 successful text result above 50,000 characters to a file and gives the
 conversation a pointer and short preview instead; the per-tool annotation
 raises that threshold up to 500,000 characters, and `MAX_MCP_OUTPUT_TOKENS`
-alone does not change it. Without the annotation, a native encounter saw both
+alone does not change it. Without the annotation, a macOS encounter saw both
 full 64 KiB material pages replaced by previews in the conversation while the
 MCP replies were exact, and the harness wrote the full replies under its
 configuration directory despite `--no-session-persistence`. With it, one
-bounded native encounter delivered the same pages whole. The
+bounded encounter on macOS delivered the same pages whole. The
 [qualification record](../../apparatus/qualified.md) identifies both
 encounters (`readiness-c3-01`, `readiness-pages-service-01`).
 
@@ -138,8 +137,7 @@ environment, an explicit MCP tool arrangement, no background tasks and
 no fallback to a different model or adapter. Reject a changed effective tool,
 plugin or routing inventory. These restrict the auditor's tool interface; the
 trusted harness still has host access. This is not OS filesystem confinement or
-proof that hidden managed instructions are absent. Native and Linux enforcement
-must be demonstrated independently.
+proof that hidden managed instructions are absent. A claim about Linux enforcement requires observations on Linux.
 
 The credential boundary is structural: the unmodified harness owns the login
 and secret; the adapter accepts no credential argument and cannot fall through
@@ -312,14 +310,13 @@ exact synthetic prompt and result with it. Do not hash or copy the credential
 store. Profile validation, installation verification and assembly from separately
 reviewed evidence are implemented in the [profile apparatus](../../apparatus/claude-code/README.md).
 The independent fixture exercises actual helpers offline. A bounded invocation
-library and independent observer have passed native controls. Their integrated
-controller and explicit review workflow have passed native synthetic integration
-rehearsals with the actual helpers, independent traffic witnesses and firing
-failure controls. A reviewed native real-harness supplied-surface comparison has
-produced a profile for the exact open-inquiry surface; the
+library, observer, integrated controller and review workflow passed synthetic
+rehearsals on macOS using the actual helpers and independent traffic witnesses.
+A reviewed macOS real-harness supplied-surface comparison produced a profile
+for the open-inquiry surface on that installation. The
 [evidence record](../../apparatus/qualified.md) identifies its bindings and scope.
-The [demonstrated status](../../README.md#status) also identifies native
-real-service use and its limits.
+The [demonstrated status](../../README.md#status) also identifies real-service use
+on macOS and its limits.
 Synthetic driver attestations exercise validation and are not real-harness
 commissioning evidence.
 
@@ -342,7 +339,7 @@ check is proposed. Recheck after an observable input changes or a startup mismat
 show the check's date and scope without assigning an unsupported expiry period.
 
 A prior check cannot freeze server-managed policy or prove the next session's
-configuration. The native comparison saw `system/init` only after input. Validate
+configuration. The macOS comparison saw `system/init` only after input. Validate
 each actual startup and keep the MCP data/authoring gate closed until it matches,
 but acknowledge that its system prompt and first question may already have
 reached the harness/provider before a mismatch is reported. Do not describe this
@@ -367,8 +364,7 @@ observed behavior. Recheck them at every harness pin.
   configuration directory holds; either direction can select a billing route
   silently. Hence the explicit child environment and the authentication-status
   and `apiKeySource` checks.
-- **Bare mode excludes subscription login.** It never reads OAuth credentials,
-  the keychain or `CLAUDE_CODE_OAUTH_TOKEN`, and it disables configured hooks,
+- **Bare mode excludes subscription login.** It never reads the stored OAuth login or `CLAUDE_CODE_OAUTH_TOKEN`, and it disables configured hooks,
   so this route is non-bare and controls hooks, skills, plugins, MCP discovery,
   memory, instruction files and background tasks individually. The
   documentation says bare mode will become the default for `-p`.
@@ -380,9 +376,11 @@ observed behavior. Recheck them at every harness pin.
 - **Hook exit status.** A `PreToolUse` command hook that exits 2 blocks the
   tool call, with its stderr as the reason. Any other non-zero status is a
   non-blocking error and the call proceeds, so the hook helper fails only with 2.
-- **Login storage.** A `/login` credential is stored in the macOS Keychain, or in
-  `.credentials.json` under the configuration directory on Linux. Stewart
-  never reads either.
+- **Login storage.** On Linux the harness keeps its `/login` credential in
+  `.credentials.json` under the configuration directory. The harness owns
+  this directory. Keep it separate from submissions, archives, destinations
+  and apparatus evidence trees. None may contain the login or lie within it. Stewart passes its path to the harness and never
+  reads the login.
 - **Binary integrity.** Each release from 2.1.89 publishes `manifest.json` with
   a SHA-256 per platform binary and a detached GPG signature by the release key
   (fingerprint `31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE`, a profile's
@@ -493,13 +491,13 @@ audit.
 
 The profile is strict control JSON, at most 64 KiB, read through no-follow
 directory/file descriptors. It has exactly `schema`, `launch`, `installation`
-and `check`. Its schema is `stewart.claude-code.profile/2`. Any other profile
+and `check`. Its schema is `stewart.claude-code.profile/3`. Any other profile
 schema identifier refuses, with a diagnostic naming it and the identifier this
 binary reads; there is no reader for another form.
 
 | Object | Exact members |
 | --- | --- |
-| `launch` | `executable` (absolute regular file path), `sha256` (binary digest), `version` (pinned CLI version), `platform` (`macos-aarch64`, `linux-aarch64` or `linux-x86_64`), `config_directory`, `home`, `temporary_directory` (absolute directory paths). |
+| `launch` | `executable` (absolute regular file path), `sha256` (binary digest), `version` (pinned CLI version), `platform` (`linux-aarch64` or `linux-x86_64`), `config_directory`, `home`, `temporary_directory` (absolute directory paths). |
 | `installation` | `manifest_sha256`, `signer`, `binary_sha256`. The signer is `31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE`; binary digest equals `launch.sha256`. |
 | `check` | `surface_sha256`, `launch_sha256`, `tools_sha256`, `model`, `checked_at`, `evidence_sha256`, `outcome` (exactly `observed`). |
 

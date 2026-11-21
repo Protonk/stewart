@@ -12,7 +12,21 @@ real-harness runs are native on macOS too. One Linux environment removes the
 macOS code paths and the per-platform notes. It puts live runtime evidence on a
 supported platform and makes a development build a Linux build.
 
-**Status:** decided by the maintainer and ready to start.
+**Status:** the Debian guest and both unprivileged accounts are running. The
+repository and retained qualification evidence have been restored there. The
+source and suite qualification, credential setup and custody disposition
+remain in progress. Use HTTPS for this installation at the maintainer's request.
+The Mac originals remain the source copy pending independent backup.
+
+The destination passed `qualified.py check --require-evidence` on all 119
+retained records. Ten historical 256-byte source filenames live in the
+digest-verified `~/migration/long-name-originals.tar` with a readable VFAT
+copy. The other original suite files are in `~/stewart/.scratch`.
+The launcher owns `~/migration/launcher-containers-01` in its own home. Nine
+stopped Mac rehearsal environments contain 33 open references. Preserve those
+environments, their exact writers and the Mac checkout while reviewing their
+disposition. Four older Mac writer digests were absent from the native inventory;
+they belong to intentionally interrupted or negative development fixtures.
 
 ## Decisions
 
@@ -95,7 +109,7 @@ else that assumes macOS becomes a task where it is found.
 
 ### 1. Create the VM
 
-- [ ] Inventory the Mac's retained containers, native audits, exact writers and
+- [x] Inventory the Mac's retained containers, native audits, exact writers and
   qualification pins while their original checkout and launchers still work.
   Keep each needed execution environment available through custody review and
   reserve fresh evidence directory names across both machines.
@@ -106,13 +120,14 @@ else that assumes macOS becomes a task where it is found.
   Rosetta and its binfmt registration. Omit the default home-directory mount,
   disable Lima's bundled containerd and verify the effective guest mounts.
   Provision the development and launcher accounts, configure keyring expiry,
-  and verify from the development login that the forwarded agent lists
-  exactly the expected push-key fingerprint. Install rootless
+  and verify the selected Git transport from the development login. For SSH,
+  require exactly the expected forwarded push-key fingerprint. For HTTPS,
+  verify the credential store and repository-scoped push access. Install rootless
   Podman and `catatonit` for `--init`, configure subordinate UID/GID ranges
   and delegate the cgroup v2 CPU and memory controllers. Install git, Python
   3, keyutils, gnupg, curl, the native build tools, and rustup with the Rust
   version recorded for the pinned toolchain image.
-- [ ] Create `stewart`, clone the repository with its history, and run the link
+- [x] Create `stewart`, clone the repository with its history, and run the link
   check and driver self-tests. Bootstrap the ignored `service/vendor` tree
   from the committed lockfile and compare its file digest listing with the
   recorded toolchain run. Run the four offline Cargo configurations from
@@ -185,7 +200,7 @@ else that assumes macOS becomes a task where it is found.
     evidence and that private witnesses keep their permissions. The default
     rootless mapping maps container root to the VM user, so container-root
     exports can be private and readable by that user. [Podman user namespaces](https://docs.podman.io/en/latest/markdown/podman-run.1.html#userns-mode)
-- [ ] Replace the Keychain lookup of saved provider connections with the
+- [x] Replace the Keychain lookup of saved provider connections with the
   keyring lookup, keyed by connection name. Test it with synthetic keys,
   including missing, expired, unreadable and wrong-label keys. Check that
   failures withhold the handoff, status reads metadata only, and exported
@@ -209,7 +224,7 @@ else that assumes macOS becomes a task where it is found.
     verify that direct key reads, changes to the launcher's code or allowance
     records, and access to its Podman control socket are denied. An
     over-budget request must produce a refusal with zero provider calls.
-- [ ] Give the harness apparatus a Linux route. A Linux executable has no Apple
+- [x] Give the harness apparatus a Linux route. A Linux executable has no Apple
   code signature, so pin it against the signed manifest instead. Keep the route
   short enough for a person outside this checkout to follow. Settle the profile
   form in the runtime contract before assigning service and independent driver
@@ -236,7 +251,7 @@ else that assumes macOS becomes a task where it is found.
 
 ### 3. Remove macOS
 
-- [ ] Service: remove the macOS branches in `service/src/platform.rs` and other
+- [x] Service: remove the macOS branches in `service/src/platform.rs` and other
   macOS-only code and comments. The crate builds and tests only on Linux. Known
   sites:
   - the crate documentation in `lib.rs`: its macOS build note and its
@@ -250,7 +265,7 @@ else that assumes macOS becomes a task where it is found.
     case-alias test and its filesystem probe. Linux ext4 supports case-folded
     directories. Run that test on a folding workspace and retain its skip
     reason on a case-sensitive one.
-- [ ] Apparatus outside the driver: what stage 2 leaves of process
+- [x] Apparatus outside the driver: what stage 2 leaves of process
   observation, paths and notes in `apparatus/claude-code/`, C10, sanity and the
   host queue.
 - [ ] The driver, its fixtures and their test data: assign these to a separate
@@ -290,7 +305,7 @@ else that assumes macOS becomes a task where it is found.
     do not move into the VM say so.
   - The driver guide states Python 3.9 and `driver_core.py` states 3.8. Settle
     one minimum.
-- [ ] Documentation. Known sites:
+- [x] Documentation. Known sites:
   - **README:** the platform paragraph, the status paragraph's second macOS
     sentence, and its "native" encounters.
   - **DESIGN and ACCEPTANCE:** their platform lines.
@@ -386,7 +401,8 @@ else that assumes macOS becomes a task where it is found.
   material is confined to Lima host setup, user guidance and evidence provenance.
 - The toolchain, release and runtime suites pass on both architectures under
   Podman, and the C10, sanity and harness rehearsals pass.
-- The VM exposes only the Stewart push identity through SSH forwarding.
+- The development login can push using only the Stewart-scoped credential
+  for the selected Git transport.
   The maintainer can verify the release checksums and sign them on the Mac.
   The two-account rehearsal demonstrates that agents can request authorized
   placements and that the launcher enforces the commission.

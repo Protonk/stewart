@@ -51,7 +51,7 @@ The harness is launched with a pinned executable, profile and launch surface
 
 - **Known:** the contract wants a configuration check before the first message.
   Under the selected launch, `system/init` arrives only after input, as the
-  native real-harness encounters observed. Stewart checks the startup inventory
+  retained macOS harness encounters showed. Stewart checks the startup inventory
   against the profile and stops on a mismatch.
 - **Unknown:** whether the question has already reached the provider when a
   mismatch is found. *Inaccessible:* only a provider or network witness could
@@ -115,7 +115,7 @@ The harness is launched with a pinned executable, profile and launch surface
 
 ### Recovery after tool and provider errors in the harness
 
-- **Known:** native encounters recovered from quotation refusals, and showed
+- **Known:** macOS encounters recovered from quotation refusals, and showed
   one harness-reported output-cap sequence. The synthetic suite covers error
   replies.
 - **Unknown:** *behavior:* how the harness proceeds after provider errors such
@@ -137,7 +137,7 @@ for the runtime, in its
 
 - **Known:** Stewart's publication gate refuses a late effect. A mutation whose
   log link had begun completes; others are refused `placement_stopped`. The
-  synthetic suite exercises cancellation. On the Messages route, a native
+  synthetic suite exercises cancellation. On the Messages route, a macOS
   control against a fake provider produced all four timings of a witnessed
   signal.
 - **Unknown:** *behavior:*
@@ -287,7 +287,7 @@ over the same ledger and limits. The runtime's rules are in
 ### Usage across placements in the harness
 
 - **Known:** the contract keeps a separate series per session, and leaves a
-  missing final result unknown rather than estimating it. Native encounters
+  missing final result unknown rather than estimating it. The retained macOS encounters
   captured partial usage, and the synthetic suite covers continuation.
 - **Unknown:** *behavior:* what result frames each real session emits across a
   continuation.
@@ -359,8 +359,7 @@ over the same ledger and limits. The runtime's rules are in
 
 ## Coverage not yet sought
 
-The real harness has run only the open-inquiry family, with Haiku in native
-encounters, and Sonnet is the model selected for its trials. Other families,
+The real harness has run only the open-inquiry family, with Haiku on macOS, and Sonnet is the model selected for its trials. Other families,
 the inadequate-evidence variants and other models in the harness have no live
 harness evidence. They become questions here only when a design comes to depend
 on how they behave.

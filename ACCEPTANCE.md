@@ -677,8 +677,8 @@ contract. Results under one runtime or credential route qualify no other.
 
 Qualify the distributed binary in Linux containers on aarch64 and x86_64.
 Identify the source, binaries, images, architecture, execution environment
-and observed archive filesystem for each result. Apple-silicon macOS is a
-native build and development-test target.
+and observed archive filesystem for each result. Record the guest kernel and
+which architecture ran under emulation.
 
 ### Credential handling
 

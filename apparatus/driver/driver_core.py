@@ -49,8 +49,6 @@ Evidence rules it follows (ACCEPTANCE, "Rules every check follows"):
 - Counts. RESULT.json and RESULTS.md report cases and checks run, passed,
   failed and skipped, which controls fired, and per-operation timings.
 
-Linux-only expectations (the ext4/xfs/btrfs allowlist, OFD lock behaviour,
-byte-string file names) are skipped with an explicit reason elsewhere.
 The exit status is 0 only when every selected case passed (or was skipped with
 a reason) and every control fired; 1 otherwise; 2 for a usage refusal.
 """
@@ -79,8 +77,8 @@ import time
 import traceback
 import unicodedata
 
-if sys.version_info < (3, 8):  # pragma: no cover
-    sys.stderr.write("stewart_driver needs Python 3.8 or later\n")
+if sys.version_info < (3, 9):  # pragma: no cover
+    sys.stderr.write("stewart_driver needs Python 3.9 or later\n")
     sys.exit(2)
 
 DRIVER_SCHEMA = "stewart.acceptance-driver/2"
@@ -107,7 +105,7 @@ def loopback_listen_probe():
     finally:
         s.close()
 # Paths an emulator creates under HOME on its own account (for example Rosetta's
-# translation cache, .cache/rosetta, when x86_64 binaries run on Apple silicon).
+# translation cache, .cache/rosetta, when running the x86_64 Linux userland).
 # Set by --emulator-home-artifact; additions at these paths, their ancestors or
 # their descendants in a watched home are recorded as emulator artifacts, not as
 # writes by Stewart. Every other change to a home remains a violation.
@@ -910,14 +908,15 @@ def read_bytes(path):
         return f.read()
 
 
-def is_linux():
-    return sys.platform.startswith("linux")
+def platform_name():
+    system, machine = platform.system(), platform.machine()
+    if system != "Linux" or machine not in ("aarch64", "x86_64"):
+        raise ValueError("the driver requires Linux aarch64 or x86_64, got %s %s" % (system, machine))
+    return "linux-" + machine
 
 
 def fs_type_of(path):
-    """The filesystem type holding path on Linux (from mountinfo), else None."""
-    if not is_linux():
-        return None
+    """The filesystem type holding path in mountinfo, or None if unavailable."""
     try:
         lines = open("/proc/self/mountinfo", encoding="utf-8", errors="replace").read().splitlines()
     except OSError:
@@ -938,8 +937,6 @@ def fs_type_of(path):
 
 
 def tmpfs_mounts():
-    if not is_linux():
-        return []
     out = []
     try:
         for line in open("/proc/self/mountinfo", encoding="utf-8", errors="replace"):
@@ -1210,16 +1207,7 @@ def build_entries(base, entries):
                 elif kind == "link":
                     os.symlink(payload, name, dir_fd=parent)
                 elif kind == "fifo":
-                    if os.mkfifo in os.supports_dir_fd:
-                        os.mkfifo(name, 0o644, dir_fd=parent)
-                    else:  # macOS system Python: mkfifo has no dir_fd
-                        here = os.open(".", os.O_RDONLY)
-                        try:
-                            os.fchdir(parent)
-                            os.mkfifo(name, 0o644)
-                        finally:
-                            os.fchdir(here)
-                            os.close(here)
+                    os.mkfifo(name, 0o644, dir_fd=parent)
                 elif kind == "hard":
                     oparts = payload.split(b"/")
                     oparent = _open_dir_path(root_fd, oparts[:-1], False)
@@ -1412,7 +1400,7 @@ class Proc:
         wall = ((self.t_end or time.perf_counter()) - self.t0) * 1000.0
         maxrss = None
         if self.rusage is not None:
-            maxrss = self.rusage.ru_maxrss // (1024 if sys.platform == "darwin" else 1)
+            maxrss = self.rusage.ru_maxrss
         return {"rc": rc, "stdout": bytes(self.out), "stdout_len": self.out_len,
                 "stdout_sha256": self.out_hash.hexdigest(), "stderr": bytes(self.err),
                 "wall_ms": round(wall, 3), "maxrss_kib": maxrss, "timed_out": self.timed_out,
@@ -1441,10 +1429,9 @@ class Control:
 
 
 class CaseSpec:
-    def __init__(self, cid, claims, title, fn, mode, needs, controls, heavy, tags, linux_reason, faults=()):
+    def __init__(self, cid, claims, title, fn, mode, needs, controls, heavy, tags, faults=()):
         self.id, self.claims, self.title, self.fn = cid, claims, title, fn
         self.mode, self.needs, self.controls, self.heavy, self.tags = mode, needs, controls, heavy, tags
-        self.linux_reason = linux_reason
         self.faults = tuple(faults)
         self.doc = " ".join((fn.__doc__ or "").split())
 
@@ -1452,8 +1439,7 @@ class CaseSpec:
 CASES = []
 
 
-def case(cid, claims, title, *, mode="release", needs=(), controls=(), heavy=False, tags=(),
-         linux_reason=None, faults=()):
+def case(cid, claims, title, *, mode="release", needs=(), controls=(), heavy=False, tags=(), faults=()):
     """Register a case. mode: release (release binary, plus test baseline when it has
     controls), test (test binary only: fault cases), both (release and test baseline).
     heavy: long by design (bound-sized inputs or close's bounded waits); --skip-heavy skips it.
@@ -1461,7 +1447,7 @@ def case(cid, claims, title, *, mode="release", needs=(), controls=(), heavy=Fal
     setting an undeclared one fails the check driver.fault-declared."""
     def deco(fn):
         CASES.append(CaseSpec(cid, list(claims), title, fn, mode, set(needs), list(controls),
-                              heavy, set(tags), linux_reason, faults))
+                              heavy, set(tags), faults))
         return fn
     return deco
 
@@ -2829,8 +2815,6 @@ class Driver:
         return chosen
 
     def skip_reason(self, spec):
-        if ("linux" in spec.needs or "lock" in spec.needs) and not is_linux():
-            return "Linux-only expectation: %s" % (spec.linux_reason or "needs Linux")
         if "nonroot" in spec.needs and os.geteuid() == 0:
             return "needs an unprivileged user: root bypasses file permissions"
         if spec.heavy and self.args.skip_heavy:
@@ -2981,7 +2965,7 @@ class Driver:
         selected = self.select()
         platform_info = {"system": platform.system(), "release": platform.release(), "machine": platform.machine(),
                          "python": sys.version, "euid": os.geteuid(), "work": self.work,
-                         "work_filesystem": fs_type_of(self.work), "linux": is_linux()}
+                         "work_filesystem": fs_type_of(self.work)}
         start = {"schema": DRIVER_SCHEMA, "started_at": self.started_at, "argv": sys.argv,
                  "platform": platform_info, "binaries": {"release": self.release, "test": self.test},
                  "selected": [s.id for s in selected],
@@ -3420,7 +3404,7 @@ def parse_args(argv):
                    help="skip cases whose ID matches this glob (repeatable), e.g. 'close.*'")
     p.add_argument("--work", metavar="DIR",
                    help="parent for the temporary work directory (archives, folders, homes); default: the system "
-                        "temporary directory. Must be outside the repository; on Linux use ext4, xfs or btrfs.")
+                        "temporary directory. Use ext4, xfs or btrfs outside the repository.")
     p.add_argument("--component-source-work", metavar="ABSOLUTE_WRITABLE_ROOT",
                    help="existing writable source-only root for C19's 255/256 UTF-8 byte filename specimens; "
                         "must preserve exact names and permit the 256-byte multibyte name. Archives and ordinary "
@@ -3432,7 +3416,7 @@ def parse_args(argv):
                    help="fail unless every sabotage control of INTERFACE Appendix C.2 is assigned to a selected "
                         "case and fired (the full suite sets this)")
     p.add_argument("--network-isolated", action="store_true",
-                   help="declare that this run has no network (container --network none); enables the cases in "
+                   help="declare that this run has only loopback (podman run --network none); enables the cases in "
                         "which the binary resolves provider.test itself and must fail offline")
     p.add_argument("--emulator-home-artifact", action="append", default=[], metavar="RELPATH",
                    help="a path an emulator creates under HOME by itself (e.g. .cache/rosetta); "
@@ -3445,6 +3429,11 @@ def parse_args(argv):
                    help="with --list, print each case's description (its docstring) under its line")
     p.add_argument("--self-test", action="store_true", help="check the driver's own helpers and exit")
     args = p.parse_args(argv)
+    if not args.list:
+        try:
+            platform_name()
+        except ValueError as exc:
+            p.error(str(exc))
     if not (args.list or args.self_test):
         missing = [n for n in ("binary", "test_binary", "evidence") if not getattr(args, n)]
         if missing:

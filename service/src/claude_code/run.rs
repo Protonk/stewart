@@ -782,41 +782,6 @@ enum Input {
     Hook(UnixStream, Vec<u8>),
     ToolFinished,
 }
-fn accepted_stream(stream: UnixStream) -> std::io::Result<UnixStream> {
-    // BSD sockets inherit the listener's nonblocking flag. Only accept is
-    // polled; each connected reader must wait through idle intervals.
-    stream.set_nonblocking(false)?;
-    Ok(stream)
-}
-
-const MCP_READ_INTERVAL: Duration = Duration::from_millis(100);
-
-struct McpInput(UnixStream);
-impl McpInput {
-    fn new(stream: UnixStream) -> std::io::Result<Self> {
-        // On the development Mac, a blocked socket read can miss a peer's
-        // write-half shutdown even though a new read observes EOF. Periodic
-        // reads recover that observation without treating idle time as loss.
-        // The placement supervisor still owns the execution deadline.
-        stream.set_read_timeout(Some(MCP_READ_INTERVAL))?;
-        Ok(Self(stream))
-    }
-}
-impl Read for McpInput {
-    fn read(&mut self, bytes: &mut [u8]) -> std::io::Result<usize> {
-        loop {
-            match self.0.read(bytes) {
-                Err(e)
-                    if matches!(
-                        e.kind(),
-                        std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
-                    ) => {}
-                result => return result,
-            }
-        }
-    }
-}
-
 fn reader(mut input: impl Read, channel: &'static str, tx: mpsc::SyncSender<Input>) {
     loop {
         let mut bytes = vec![0; 65536];
@@ -884,8 +849,8 @@ fn place(
     launch_directory(live.audit, &workspace)
         .map_err(|problem| format!("private launch directory refused: {problem}"))?;
     // The owner and both harness helpers use this same private working
-    // directory. Relative socket names avoid sockaddr_un's short path bound
-    // on macOS, including its normal long TMPDIR. All audit I/O is descriptor
+    // directory. Relative socket names avoid sockaddr_un's path length bound
+    // regardless of the workspace's absolute path. All audit I/O is descriptor
     // relative or absolute; the signal thread does not use the working directory.
     std::env::set_current_dir(&workspace).map_err(|e| e.to_string())?;
     let mut cap = Capture {
@@ -962,8 +927,8 @@ fn place(
         let quit_m = quitting.clone();
         scope.spawn(move || {
             while !quit_m.load(Ordering::SeqCst) {
-                match mcp_listener.accept().and_then(|(s, _)| accepted_stream(s)) {
-                    Ok(stream) => {
+                match mcp_listener.accept() {
+                    Ok((stream, _)) => {
                         let _ = tx_m.send(Input::Mcp(stream));
                     }
                     Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
@@ -980,8 +945,8 @@ fn place(
         let quit_h = quitting.clone();
         scope.spawn(move || {
             while !quit_h.load(Ordering::SeqCst) {
-                match hook_listener.accept().and_then(|(s, _)| accepted_stream(s)) {
-                    Ok(mut stream) => {
+                match hook_listener.accept() {
+                    Ok((mut stream, _)) => {
                         let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
                         let mut b = Vec::new();
                         match (&mut stream)
@@ -1133,8 +1098,7 @@ fn place(
                         stream
                             .set_write_timeout(Some(Duration::from_secs(2)))
                             .map_err(|e| e.to_string())?;
-                        let input = McpInput::new(stream.try_clone().map_err(|e| e.to_string())?)
-                            .map_err(|e| format!("configure MCP reader: {e}"))?;
+                        let input = stream.try_clone().map_err(|e| e.to_string())?;
                         let tx = tx.clone();
                         scope.spawn(move || reader(input, "mcp", tx));
                         connection = Some(stream);
@@ -2242,63 +2206,33 @@ mod tests {
     }
 
     #[test]
-    fn accepted_connection_waits_through_idle_intervals() {
-        use std::os::fd::AsRawFd;
-
-        // A plain timed read fails while the peer is idle. The MCP wrapper
-        // must survive multiple such intervals without reporting disconnect.
-        let (mut control, _control_peer) = UnixStream::pair().unwrap();
-        control.set_read_timeout(Some(MCP_READ_INTERVAL)).unwrap();
-        assert!(matches!(
-            control.read(&mut [0; 1]).unwrap_err().kind(),
-            std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
-        ));
-        for inherited_nonblocking in [true, false] {
-            let (stream, peer) = UnixStream::pair().unwrap();
-            stream.set_nonblocking(inherited_nonblocking).unwrap();
-            if inherited_nonblocking {
-                assert_eq!(
-                    (&stream).read(&mut [0; 1]).unwrap_err().kind(),
-                    std::io::ErrorKind::WouldBlock,
-                    "the inherited-mode control must fire before normalization"
-                );
+    fn mcp_reader_waits_through_idle_periods_and_observes_half_close() {
+        let (tx, rx) = mpsc::sync_channel(4);
+        let (input, mut peer) = UnixStream::pair().unwrap();
+        std::thread::scope(move |scope| {
+            scope.spawn(move || reader(input, "mcp", tx));
+            for bytes in [b"first\n".as_slice(), b"second\n".as_slice()] {
+                assert!(matches!(
+                    rx.recv_timeout(Duration::from_millis(300)),
+                    Err(mpsc::RecvTimeoutError::Timeout)
+                ));
+                peer.write_all(bytes).unwrap();
+                assert!(matches!(
+                    rx.recv_timeout(Duration::from_secs(2)),
+                    Ok(Input::Bytes("mcp", got)) if got == bytes
+                ));
             }
-            let stream = accepted_stream(stream).unwrap();
-            // Retrying timeouts must not mask a nonblocking busy loop.
-            let mode = unsafe { libc::fcntl(stream.as_raw_fd(), libc::F_GETFL) };
-            assert!(mode >= 0);
-            assert_eq!(mode & libc::O_NONBLOCK, 0);
-            let input = McpInput::new(stream).unwrap();
-            let (tx, rx) = mpsc::sync_channel(4);
-            std::thread::scope(|scope| {
-                let mut peer = peer;
-                scope.spawn(move || reader(input, "mcp", tx));
-                for bytes in [b"first\n".as_slice(), b"second\n".as_slice()] {
-                    assert!(matches!(
-                        rx.recv_timeout(MCP_READ_INTERVAL * 3),
-                        Err(mpsc::RecvTimeoutError::Timeout)
-                    ));
-                    peer.write_all(bytes).unwrap();
-                    assert!(matches!(
-                        rx.recv_timeout(Duration::from_secs(2)),
-                        Ok(Input::Bytes("mcp", got)) if got == bytes
-                    ));
-                }
-                peer.shutdown(std::net::Shutdown::Write).unwrap();
-                match rx.recv_timeout(Duration::from_secs(2)) {
-                    Ok(Input::Eof("mcp")) => (),
-                    Ok(Input::Error(error)) => panic!(
-                        "reader failed after peer half-close (inherited nonblocking: {inherited_nonblocking}): {error}"
-                    ),
-                    Ok(Input::Bytes(channel, bytes)) => {
-                        panic!("unexpected {channel} bytes after peer half-close: {bytes:?}")
-                    }
-                    Ok(_) => panic!("unexpected reader event after peer half-close"),
-                    Err(error) => panic!(
-                        "no EOF after peer half-close (inherited nonblocking: {inherited_nonblocking}): {error}"
-                    ),
-                }
-            });
-        }
+            // Leave the reader blocked on the open connection before the
+            // peer half-closes. EOF must wake it without a socket timeout.
+            assert!(matches!(
+                rx.recv_timeout(Duration::from_millis(300)),
+                Err(mpsc::RecvTimeoutError::Timeout)
+            ));
+            peer.shutdown(std::net::Shutdown::Write).unwrap();
+            assert!(matches!(
+                rx.recv_timeout(Duration::from_secs(2)),
+                Ok(Input::Eof("mcp"))
+            ));
+        });
     }
 }

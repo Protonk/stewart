@@ -10,7 +10,7 @@
 //! - `json`: strict control JSON and the deterministic writer.
 //! - `util`: digests, UTC timestamps, errno names and edit distance.
 //! - `ids`: identifiers, handle checks and the `stw1:` reference.
-//! - `platform`: the Linux-only calls, with development fallbacks.
+//! - `platform`: Linux file, process and kernel interfaces.
 //! - `fsx`: descriptor-relative filesystem access and exclusive writes.
 //! - `archive`, `log`, `records`: the archive, its log and its records.
 //! - `bodies`: the log record bodies after launch; `usage`: allowances.
@@ -30,7 +30,7 @@
 //! also declares weak (for its own fallback) can link to nothing when this
 //! crate calls it through `libc::`, because LTO merges the two declarations
 //! and std's weak one wins. Such a call silently does nothing on aarch64 and
-//! crashes on x86_64, and debug, thin-LTO and macOS builds never show it.
+//! crashes on x86_64, while debug and thin-LTO builds succeed.
 //! Make these calls through `libc::syscall` instead, as
 //! `platform::random_fill` does. For the musl targets and the pinned
 //! toolchain they are `getrandom`, `copy_file_range`, `gettid`,
@@ -45,6 +45,9 @@
     clippy::collapsible_if,
     clippy::too_many_arguments
 )]
+
+#[cfg(not(all(target_os = "linux", any(target_arch = "aarch64", target_arch = "x86_64"))))]
+compile_error!("Stewart requires Linux on aarch64 or x86_64.");
 
 #[macro_use]
 pub mod fault;

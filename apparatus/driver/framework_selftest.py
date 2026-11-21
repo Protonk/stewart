@@ -24,7 +24,7 @@ def runner_selftest():
                         {"actual": actual, "expected": expected}))
 
     def specimen(label, fn, mode="driver", controls=()):
-        return core.CaseSpec(label, [], label, fn, mode, set(), list(controls), False, set(), None)
+        return core.CaseSpec(label, [], label, fn, mode, set(), list(controls), False, set())
 
     def passed(t):
         t.check("measured", True)
@@ -100,9 +100,9 @@ def runner_selftest():
             def sets_fault(t):
                 t.env(fault="point.one=kill")
             core.CASES[:] = [core.CaseSpec("declared", [], "declared", sets_fault, "driver", set(), [], False, set(),
-                                           None, faults=("point.one=kill",)),
+                                           faults=("point.one=kill",)),
                              core.CaseSpec("undeclared", [], "undeclared", sets_fault, "driver", set(), [], False,
-                                           set(), None)]
+                                           set())]
             drv = driver("faults", ["*"])
             with contextlib.redirect_stderr(io.StringIO()):
                 drv.run()

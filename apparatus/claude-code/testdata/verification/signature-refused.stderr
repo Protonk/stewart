@@ -1,0 +1,3 @@
+gpgv: Signature made Tue Nov 10 01:08:04 2026 UTC
+gpgv:                using RSA key 31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
+gpgv: BAD signature from "Anthropic Claude Code Release Signing <security@anthropic.com>"

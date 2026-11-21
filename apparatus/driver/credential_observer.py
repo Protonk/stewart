@@ -19,6 +19,14 @@ import sys
 import time
 
 
+ROSETTA_INTERPRETER = "/mnt/lima-rosetta/rosetta"
+
+
+def reuse_candidate(targets):
+    """Low descriptor expected to be free in a fresh direct or translated process."""
+    return 5 if targets["4"] == ROSETTA_INTERPRETER else 3
+
+
 def descriptor_reuse_observation(path):
     """Witness a closed low descriptor, then deliberately reuse it for a file.
 
@@ -32,8 +40,7 @@ def descriptor_reuse_observation(path):
             targets[str(fd)] = os.readlink("/proc/self/fd/%d" % fd)
         except OSError:
             targets[str(fd)] = None
-    rosetta = targets["4"] == "/run/rosetta/rosetta"
-    selected = 5 if rosetta else 3
+    selected = reuse_candidate(targets)
     try:
         os.fstat(selected)
         before_errno = None
@@ -44,7 +51,7 @@ def descriptor_reuse_observation(path):
         data = os.read(fd, 4096)
         return {"schema": "stewart.credential-descriptor-observation/1",
                 "observer_pid": os.getpid(), "observer_uid": os.geteuid(),
-                "startup_targets": targets, "rosetta": rosetta,
+                "startup_targets": targets, "rosetta": selected == 5,
                 "selected_fd": selected, "before_errno": before_errno,
                 "opened_fd": fd, "read_bytes": len(data),
                 "read_sha256": hashlib.sha256(data).hexdigest()}
@@ -60,7 +67,7 @@ def cmdline_forms(argv):
     by suffix: each candidate includes every original argument and terminator.
     """
     result = {}
-    for form, prefix in (("direct", []), ("rosetta", ["/run/rosetta/rosetta"])):
+    for form, prefix in (("direct", []), ("rosetta", [ROSETTA_INTERPRETER])):
         data = b"\0".join(os.fsencode(arg) for arg in prefix + list(argv)) + b"\0"
         result[form] = {"sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)}
     return result

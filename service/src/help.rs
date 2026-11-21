@@ -502,7 +502,7 @@ mod tests {
             "runtime-profile",
             "max-placements",
             "placement-timeout-seconds",
-            "stewart.claude-code.profile/2",
+            "stewart.claude-code.profile/3",
             "nonsecret",
             "launch surface",
             "runtime_profile_invalid",

@@ -27,10 +27,9 @@ spec.loader.exec_module(p)
 SOURCES = ('claude-code/service_check.py', 'claude-code/profile.py', 'claude-code/pin.py',
            'driver/claude_code_service_witness.py', 'driver/answer_witness.py',
            'driver/claude_code.py', 'driver/driver_core.py', 'driver/rawjson.py')
-ENV = {'PATH': '/usr/bin:/bin', 'TMPDIR': '/private/tmp', 'LANG': 'C.UTF-8'}
-# Python before 3.10 gives macOS time.monotonic_ns() a process-local origin.
-CLOCK_NAME = 'CLOCK_UPTIME_RAW' if sys.platform == 'darwin' else 'CLOCK_MONOTONIC'
-CLOCK = getattr(time, CLOCK_NAME)
+ENV = {'PATH': '/usr/bin:/bin', 'TMPDIR': '/tmp', 'LANG': 'C.UTF-8'}
+CLOCK_NAME = 'CLOCK_MONOTONIC'
+CLOCK = time.CLOCK_MONOTONIC
 # After an abnormal run return the client may just have been stopped; allow
 # the service's groups this many one-second read-only observations.
 ABNORMAL_STOP_PROBES = 6
@@ -122,7 +121,9 @@ def profile_from(preparation):
     require(type(settings['limits']['max_placements']) is int
             and 1 <= settings['limits']['max_placements'] <= 3,
             'this procedure permits one to three placements')
-    return reply, settings, p.decode(settings['runtime']['profile'].encode())
+    profile = p.decode(settings['runtime']['profile'].encode())
+    require(profile['schema'] == 'stewart.claude-code.profile/3', 'unknown runtime profile schema')
+    return reply, settings, profile
 
 
 def prepare(output, preparation, reference, folder, writer, mode='real-harness', synthetic=None):
@@ -134,6 +135,9 @@ def prepare(output, preparation, reference, folder, writer, mode='real-harness',
     archive = p.absolute(parts[3])
     require(not any(output == path or output in path.parents or path in output.parents
                     for path in (archive, folder, writer)), 'packet overlaps protected inputs')
+    if mode == 'real-harness':
+        p.separate_login(profile['launch']['config_directory'], output, archive, folder, settings['destination'],
+                         preparation, writer, profile['launch']['executable'], settings['runtime']['profile_path'])
     audit = archive / 'audits' / parts[1]
     ref_raw = p.read_file(audit / 'REFERENCE.json')
     ref = p.decode(ref_raw)
@@ -179,7 +183,7 @@ def prepare(output, preparation, reference, folder, writer, mode='real-harness',
     if synthetic:
         paths += [Path(synthetic['script']), Path(synthetic['scenario'])]
         paths += list(Path(synthetic['script']).parent.glob('*.py'))
-    manifest = {'schema': 'stewart.claude-code.service-commission/2', 'mode': mode,
+    manifest = {'schema': 'stewart.claude-code.service-commission/3', 'mode': mode,
                 'prepared_at': utc(), 'reference': reference, 'folder': str(folder),
                 'archive': str(archive), 'writer': str(writer), 'python': str(Path(sys.executable).resolve()),
                 'prepared_handle': reply['data']['prepared'], 'model': settings['model'],
@@ -187,7 +191,7 @@ def prepare(output, preparation, reference, folder, writer, mode='real-harness',
                 'max_service_starts': placements, 'max_authentication_invocations': placements,
                 'max_model_invocations': placements, 'max_placement_seconds': seconds * placements,
                 'continuation_causes': ['placement_deadline'],
-                'environment': ENV, 'cwd': '/private/tmp', 'submission': inventory(folder),
+                'environment': ENV, 'cwd': '/tmp', 'submission': inventory(folder),
                 'bindings': [{'path': str(path), 'sha256': p.read_file(path, limit=None, hash_only=True)[0]}
                              for path in dict.fromkeys(paths)],
                 'scope': 'One prepared audit with numbered, individually reviewed service placements; retain every stopped capture. No automatic close, continuation or replacement.',
@@ -202,18 +206,18 @@ def verify(packet):
     packet = p.absolute(packet)
     raw = p.read_file(packet / 'COMMISSION.json')
     value = p.decode(raw)
-    require(value['schema'] == 'stewart.claude-code.service-commission/2', 'unknown commission schema')
+    require(value['schema'] == 'stewart.claude-code.service-commission/3', 'unknown commission schema')
     require(value['mode'] in ('real-harness', 'synthetic-rehearsal')
             and type(value['max_service_starts']) is int and 1 <= value['max_service_starts'] <= 3
             and value['max_service_starts'] == value['max_authentication_invocations'] == value['max_model_invocations'],
             'commission is outside bounded placement scope')
-    require(value['environment'] == ENV and value['cwd'] == '/private/tmp', 'manager environment changed')
+    require(value['environment'] == ENV and value['cwd'] == '/tmp', 'manager environment changed')
     require(value['continuation_causes'] == ['placement_deadline'], 'continuation scope changed')
-    for row in value['bindings']:
-        require(p.read_file(Path(row['path']), limit=None, hash_only=True)[0] == row['sha256'],
-                'bound input changed: ' + row['path'])
-    require(inventory(Path(value['folder'])) == value['submission'], 'submission membership or bytes changed')
     reply, settings, profile = profile_from(packet / 'inputs/prepare.json')
+    if value['mode'] == 'real-harness':
+        p.separate_login(profile['launch']['config_directory'], packet, value['archive'], value['folder'],
+                         settings['destination'], *(row['path'] for row in value['bindings']))
+    require(inventory(Path(value['folder'])) == value['submission'], 'submission membership or bytes changed')
     require(value['prepared_handle'] == reply['data']['prepared']
             and value['model'] == settings['model']
             and value['placement_timeout_seconds'] == settings['limits']['placement_timeout_seconds']
@@ -234,6 +238,9 @@ def verify(packet):
         required.update(str(path) for path in Path(value['synthetic']['script']).parent.glob('*.py'))
     require(len(value['bindings']) == len(required) and {row['path'] for row in value['bindings']} == required,
             'binding inventory omits or adds an input')
+    for row in value['bindings']:
+        require(p.read_file(Path(row['path']), limit=None, hash_only=True)[0] == row['sha256'],
+                'bound input changed: ' + row['path'])
     if value['mode'] == 'synthetic-rehearsal':
         synthetic = value['synthetic']
         require(profile['launch']['version'] == 'synthetic-offline-1'
@@ -262,14 +269,14 @@ def execution_evidence(out):
 def command(directory, label, argv, timeout):
     """Observe the direct client group; service-owned groups are checked separately."""
     save(directory / (label + '.start.json'), {'argv': argv, 'timeout_seconds': timeout,
-         'environment': ENV, 'cwd': '/private/tmp', 'started_at': utc()})
+         'environment': ENV, 'cwd': '/tmp', 'started_at': utc()})
     result = {'exit': None, 'timed_out': False, 'client_reaped': False, 'client_group_absent': False}
     started = time.monotonic()
     child = None
     try:
         with (directory / (label + '.stdout')).open('xb') as stdout, (directory / (label + '.stderr')).open('xb') as stderr:
             child = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr,
-                                     env=ENV, cwd='/private/tmp', start_new_session=True)
+                                     env=ENV, cwd='/tmp', start_new_session=True)
             save(directory / (label + '.process.json'), {'pid': child.pid, 'group': child.pid})
             try:
                 result['exit'] = child.wait(timeout=timeout)

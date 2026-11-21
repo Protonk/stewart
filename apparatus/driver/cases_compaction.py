@@ -492,8 +492,7 @@ def c_compaction_retries(t):
 
 @case("c4.compaction-stopping", ["C4", "C13", "C8"],
       "signals and close abort a summary request under the same stopping path and charge an estimate",
-      mode="test", needs=("loopback", "lock"),
-      linux_reason="close reaches a held summary through the Linux OFD lock")
+      mode="test", needs=("loopback",))
 def c_compaction_stopping(t):
     """SIGTERM, SIGINT, SIGHUP and close during an in-flight summary abort it through the normal
     stopping path with estimated usage, retained request capture and no reminder."""

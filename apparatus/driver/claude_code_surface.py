@@ -34,8 +34,8 @@ FAMILIES = ("open-inquiry", "inquiry-framing", "comparison")
 MARKER = "This note is an effect in the independent synthetic fixture.\n"
 QUESTION = ("This is a synthetic interface check. Call record_account once with the exact text "
             + json.dumps(MARKER) + ". Do not submit an audit or use any other tool.\n")
-CLOCK_NAME = "CLOCK_UPTIME_RAW" if sys.platform == "darwin" else "CLOCK_MONOTONIC"
-CLOCK_ID = getattr(time, CLOCK_NAME)
+CLOCK_NAME = "CLOCK_MONOTONIC"
+CLOCK_ID = time.CLOCK_MONOTONIC
 
 
 def utc_now():
@@ -265,9 +265,8 @@ def self_test():
           and (root / "prepared/inputs" / name).read_bytes() == raw for name, raw in literal["files"].items()))
     check("prepare.exact-first-input", json.loads((root / "prepared/inputs/input.jsonl").read_bytes())["message"]["content"] == QUESTION)
     event = json.loads((root / "open-inquiry/events.jsonl").read_bytes().splitlines()[0])
-    clock_name = "CLOCK_UPTIME_RAW" if sys.platform == "darwin" else "CLOCK_MONOTONIC"
-    check("journal.shared-clock-and-observer", event["clock"] == clock_name
-          and event["observer_pid"] == os.getpid() and event["time_ns"] <= time.clock_gettime_ns(getattr(time, clock_name)))
+    check("journal.shared-clock-and-observer", event["clock"] == "CLOCK_MONOTONIC"
+          and event["observer_pid"] == os.getpid() and event["time_ns"] <= time.clock_gettime_ns(time.CLOCK_MONOTONIC))
     try:
         prepare(root / "refused", root / "refused-work", Path(__file__).resolve(),
                 compact(launch) + b"\n", "open-inquiry", spec.MODEL)

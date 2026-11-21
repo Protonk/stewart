@@ -200,7 +200,7 @@ fn write_profile(p: &Prepared) {
     let family = stewart::forms::family("open-inquiry").unwrap();
     let tools = stewart::claude_code::mcp_tools(&stewart::forms::tools(family).bytes()).unwrap();
     let profile = format!(
-        r#"{{"schema":"stewart.claude-code.profile/2","launch":{launch},"installation":{{"manifest_sha256":"{}","signer":"31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE","binary_sha256":"{executable}"}},"check":{{"surface_sha256":"{}","launch_sha256":"{}","tools_sha256":"{}","model":"fixture-model","checked_at":"2026-11-11","evidence_sha256":"{}","outcome":"observed"}}}}"#,
+        r#"{{"schema":"stewart.claude-code.profile/3","launch":{launch},"installation":{{"manifest_sha256":"{}","signer":"31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE","binary_sha256":"{executable}"}},"check":{{"surface_sha256":"{}","launch_sha256":"{}","tools_sha256":"{}","model":"fixture-model","checked_at":"2026-11-11","evidence_sha256":"{}","outcome":"observed"}}}}"#,
         "1".repeat(64),
         contract_surface().1,
         digest(launch.as_bytes()),

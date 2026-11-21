@@ -3,21 +3,21 @@
 This apparatus prepares installation evidence and reviewed runtime profiles.
 Profile preparation and assembly launch no Claude process. It remains separate
 from Stewart's service and independent acceptance driver. Python uses only its
-standard library. The pinned installation is the darwin-arm64 release checked
-with Apple's code signature, and the service procedure runs its commands in
-`/private/tmp`, so the live commands and synthetic rehearsals here run on the
-development Mac.
+standard library. Run these commands on Linux aarch64 or x86_64.
+The service procedure runs manager commands with working directory and
+`TMPDIR` both set to `/tmp`.
 
 ## Preparing a profile
 
 `profile.py prepare` verifies the retained public manifest/signature again with
-an isolated GPG keyring, checks the selected native executable's digest and
-Apple code signature, and writes exact `launch.json` and `installation.json`
+an isolated GPG keyring, compares the selected Linux executable's SHA-256
+with its signed platform entry, and writes exact `launch.json` and `installation.json`
 values. `PREPARATION.json` records the verification time, their bindings and an
 inventory of every retained public verification input and command result. The
 producer checks the named login directory's existence without reading its
-contents. It does not execute Claude, query authentication or issue a check
-attestation. It currently uses the selected native pin supported by `pin.py`.
+contents. Keep this directory outside submissions, archives, return destinations
+and evidence directories. The harness owns its `.credentials.json`.
+The profile apparatus launches no processes against the login.
 
 ```sh
 python3 -I -B apparatus/claude-code/profile.py prepare \
@@ -166,10 +166,10 @@ real-harness startup ordering. Rehearsal observations remain explicitly syntheti
 and both attestation and profile assembly refuse them. The controller's unit
 review records are labelled parser fixtures, not live evidence.
 
-## Native service comparison procedure
+## Service comparison procedure
 
 `service_check.py` freezes one already-prepared open-inquiry audit with a
-reviewed profile. Its version-2 commission binds exact input, preparation,
+reviewed profile. Its version-3 commission binds exact input, preparation,
 arrangement and source bytes, the original writer, profile, harness executable
 and Python interpreter. Preparation launches nothing. Experiment bounds are one
 to three service starts, at most 600 seconds per placement and 900 seconds per
@@ -318,9 +318,32 @@ product limits or authorize a usage-limit study.
 
 `pin.py` fetches the public release key, manifest and signature, checks the
 pinned signer with `gpgv`, compares the installed executable's SHA-256 and
-preserves an exclusive copy outside the repository. It also checks Apple's
-code signature. It never launches Claude. The public-key verification uses
-an isolated keyring without a GPG agent or the user's trust configuration.
+preserves an exclusive copy outside the repository. It selects `linux-arm64`
+on aarch64 or `linux-x64` on x86_64 in the signed manifest. Verification uses
+an isolated keyring, with the pinned fingerprint
+`31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE`.
+
+Install `curl`, `gpg` and `gpgv` in the Linux guest. Run this from the
+repository root with a fresh evidence path. The downloaded file stays
+non-executable until its bytes have been authenticated and copied to
+`~/.local/share/stewart-claude-code/2.1.322/claude`.
+
+```sh
+umask 077
+case "$(uname -m)" in
+    aarch64) platform=linux-arm64 ;;
+    x86_64) platform=linux-x64 ;;
+    *) exit 1 ;;
+esac
+download=$(mktemp)
+curl --fail --location --proto '=https' --proto-redir '=https' \
+  "https://downloads.claude.ai/claude-code-releases/2.1.322/$platform/claude" \
+  --output "$download" &&
+python3 -I -B apparatus/claude-code/pin.py /absolute/new-pin-evidence --source "$download"
+```
+
+With an existing installation at `~/.local/share/claude/versions/2.1.322`,
+omit `--source`. Use the resulting `pin.json` with `profile.py prepare`.
 
 ## Checks
 
@@ -335,7 +358,7 @@ python3 -I -B apparatus/claude-code/test_service_check.py
 ```
 
 Pin and profile controls use [captured local verification output](testdata/verification/README.md)
-from GPG and code-signature checks, supplied as subprocess results. The temporary
+from GPG signature verification, supplied as subprocess results. The temporary
 installation, public-input canaries, observation and review records remain
 synthetic; these tests do not verify a real executable's signature or establish
 real-harness compatibility. They exercise exact launch-byte preservation,
@@ -361,11 +384,10 @@ counts as absence. Cleanup failures are recorded separately
 and no cleanup signal is sent after observed absence. These controls establish
 no real-harness observation.
 
-New observations name their clock and observer PID. They use the kernel's
-`CLOCK_UPTIME_RAW` on macOS and `CLOCK_MONOTONIC` on Linux so separate processes
-share a clock origin. Python versions before 3.10 give macOS
-`time.monotonic_ns()` a process-local origin. Older records that used it support
-timing within one observer only; never rewrite them to imply a shared clock.
+Observations name the observer PID and the Linux kernel clock
+`CLOCK_MONOTONIC`, which separate processes can compare on the same boot.
+Historical macOS records that used a process-local clock support timing
+within one observer only.
 
 Keep the original failed and successful observations through review under
 [evidence and retention](../../development/DEVELOPMENT.md#evidence-and-retention).

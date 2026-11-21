@@ -6,6 +6,7 @@ from contextlib import redirect_stderr
 import io
 import json
 from pathlib import Path
+from types import SimpleNamespace
 import sys
 import subprocess
 import tempfile
@@ -42,15 +43,24 @@ class PinControls(unittest.TestCase):
             self.assertFalse(output.exists())
 
     def test_manifest_version_and_checksum(self):
-        obj = {"version": pin.VERSION, "platforms": {pin.PLATFORM: {"checksum": "a" * 64}}}
-        self.assertEqual(pin.manifest_checksum(json.dumps(obj)), "a" * 64)
+        obj = {"version": pin.VERSION, "platforms": {
+            "linux-arm64": {"checksum": "a" * 64}, "linux-x64": {"checksum": "b" * 64}}}
+        for machine, selected, digest in (("aarch64", "linux-arm64", "a"), ("x86_64", "linux-x64", "b")):
+            with mock.patch.object(pin.os, 'uname', return_value=SimpleNamespace(sysname='Linux', machine=machine)):
+                self.assertEqual(pin.platforms(), (selected, "linux-" + machine))
+                self.assertEqual(pin.manifest_checksum(json.dumps(obj), selected), digest * 64)
+        for system, machine in (('Darwin', 'arm64'), ('Linux', 's390x')):
+            with mock.patch.object(pin.os, 'uname', return_value=SimpleNamespace(sysname=system, machine=machine)):
+                with self.assertRaisesRegex(ValueError, 'requires Linux on aarch64 or x86_64'):
+                    pin.platforms()
         obj["version"] = "different"
         with self.assertRaisesRegex(ValueError, 'manifest version does not match the approved pin'):
-            pin.manifest_checksum(json.dumps(obj))
+            pin.manifest_checksum(json.dumps(obj), "linux-x64")
         obj["version"] = pin.VERSION
-        obj["platforms"][pin.PLATFORM]["checksum"] = "invalid"
-        with self.assertRaisesRegex(ValueError, 'manifest has no valid darwin-arm64 SHA-256'):
-            pin.manifest_checksum(json.dumps(obj))
+        for platforms in ({"linux-arm64": {"checksum": "invalid"}}, {"linux-x64": {"checksum": "b" * 64}}):
+            obj["platforms"] = platforms
+            with self.assertRaisesRegex(ValueError, 'manifest has no valid linux-arm64 SHA-256'):
+                pin.manifest_checksum(json.dumps(obj), "linux-arm64")
 
     def test_signature_identity_and_control(self):
         status = (FIXTURES / 'signature.stdout').read_text()
@@ -65,17 +75,16 @@ class PinControls(unittest.TestCase):
         self.assertTrue(pin.signed_by_release_key('\r\n'.join(status.splitlines()) + '\r\n'))
 
     def test_verification_capture_digests(self):
-        empty = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
-        zero = '9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa'
         expected = {
-            'dearmor.stdout': (0, empty), 'dearmor.stderr': (0, empty), 'dearmor.exit': (2, zero),
+            'dearmor.stdout': (0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'),
+            'dearmor.stderr': (0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'),
+            'dearmor.exit': (2, '9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa'),
             'signature.stdout': (382, '92fb6272050944cb16ef49d2693fa0ab29c869e5e19107bdf197352e474ef5a6'),
-            'signature.stderr': (217, 'ea2578fb0a6dd908573d0c6b848a0112b7ac1271805165adcf6159fc319ccd7b'),
-            'signature.exit': (2, zero), 'codesign.stdout': (0, empty),
-            'codesign.stderr': (179, 'dbb465ef6079213b7e02121c6f60bda6e4f175dd705fcda236028f6ad5497e35'),
-            'codesign.exit': (2, zero), 'codesign-refused.stdout': (0, empty),
-            'codesign-refused.stderr': (144, 'd064cf2ee794341db368137bd2b3db5ef061e8395272920ea20d112d87f52ce8'),
-            'codesign-refused.exit': (2, '4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865'),
+            'signature.stderr': (217, 'e8b516ab23c86e9c6146cbb39a364baa9a89dc9ae162b892537ba33ff983b517'),
+            'signature.exit': (2, '9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa'),
+            'signature-refused.stdout': (179, 'eb065bf5608adb09068b843a399cb2175ed172970c735ebcf3ad0df2f47fbe16'),
+            'signature-refused.stderr': (216, '55c5c5f02c9c609fbae64757bd33e6a12448aac090981efc5af5ea0433a175a7'),
+            'signature-refused.exit': (2, '4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865'),
         }
         for name, identity in expected.items():
             with self.subTest(name=name):
@@ -85,8 +94,8 @@ class PinControls(unittest.TestCase):
     def test_logged_verifier_preserves_captured_streams_and_refuses_failed_exit(self):
         # CompletedProcess is a supplied result, not fresh signature verification.
         # The exit-only comparison distinguishes failure propagation from prose.
-        for name, exit_override in [('dearmor', None), ('signature', None), ('codesign', None),
-                                    ('codesign', 1), ('codesign-refused', None)]:
+        for name, exit_override in [('dearmor', None), ('signature', None),
+                                    ('signature', 1), ('signature-refused', None)]:
             with self.subTest(name=name, exit_override=exit_override), tempfile.TemporaryDirectory() as tmp:
                 out = Path(tmp)
                 stdout = (FIXTURES / (name + '.stdout')).read_bytes()
@@ -96,7 +105,7 @@ class PinControls(unittest.TestCase):
                 result = subprocess.CompletedProcess(argv, code, stdout, stderr)
                 with mock.patch.object(pin.subprocess, 'run', return_value=result) as launched:
                     if code:
-                        with self.assertRaisesRegex(RuntimeError, 'failed \\(exit 1\\); inspect'):
+                        with self.assertRaisesRegex(RuntimeError, r'failed \(exit [1-9]\d*\); inspect'):
                             pin.run_logged(out, 'verification', argv)
                     else:
                         self.assertEqual(pin.run_logged(out, 'verification', argv), stdout)

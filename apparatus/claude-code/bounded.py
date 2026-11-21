@@ -21,8 +21,8 @@ import time
 _spec = importlib.util.spec_from_file_location('bounded_profile', Path(__file__).with_name('profile.py'))
 data = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(data)
-CLOCK_NAME = 'CLOCK_UPTIME_RAW' if sys.platform == 'darwin' else 'CLOCK_MONOTONIC'
-CLOCK = getattr(time, CLOCK_NAME)
+CLOCK_NAME = 'CLOCK_MONOTONIC'
+CLOCK = time.CLOCK_MONOTONIC
 AUTH_LIMIT = 65536
 MODEL_LIMIT = 32 * 1024 * 1024
 STOP_GRACE = 0.3

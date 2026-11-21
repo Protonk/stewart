@@ -10,7 +10,7 @@ own suite, `sh apparatus/acceptance.sh EVIDENCE_DIR`. Give each run a fresh
 evidence directory.
 
 Run from the repository root with an explicit Python 3.9 or later interpreter.
-The driver supports macOS arm64 and Linux aarch64/x86_64. Runtime checks need a
+The driver runs on Linux aarch64 and x86_64. Runtime checks need a
 host that permits Unix-domain socket listeners and observation and signalling
 of owned process groups. A sandbox denying those operations prevents the
 controls from firing; it does not establish a passing runtime result.
@@ -114,7 +114,7 @@ from the contract's member table and its own copies of the pinned texts. Its
 self-test compares that reconstruction with the contract's worked example and
 stated digest, byte for byte. Against a binary, a check naming another surface
 must refuse with the digest and exact document the binary requires, and the
-earlier profile identifier, the earlier form and its writer member must refuse.
+previous profile identifier (`/2`), the `/1` form and its writer member must refuse.
 Every refused profile is checked for the stated reason and surface data. With
 a second build, the same profile file must be accepted by both writers, each
 pinning the same surface, while the second writer still refuses to run the
@@ -152,7 +152,7 @@ keeps the same answer; a changed error flag interrupts with the prior version
 preserved. All supplied material and historical payload bytes have external
 witnesses. Its combined schedule is synthetic and makes no live near-limit claim.
 
-The reply-fidelity cases use the short control and two full pages from the native
+The reply-fidelity cases use the short control and two full pages from the macOS
 C3 encounter (2026-11-13, CLI 2.1.322, `claude-haiku-5-5`), repeated unchanged in
 the annotated-page encounter (2026-11-15, the same CLI/model). The generator pins
 the exact source bytes, including each tail label:
@@ -320,8 +320,8 @@ cases from launching. The self-test prints the directory containing the partial
 witnesses and watchdog results. It checks the pipe packing rule for both
 platforms with controls (merging, page-sized and large writes, packet mode,
 other geometries), then compares it with fresh unread pipes
-on the host and prints the host's packing facts. On Linux that comparison is the
-direct kernel witness for the notice cases' page packing.
+on Linux and prints the measured pipe capacity and page size. The kernel's
+accepted writes witness the page packing used by the notice cases.
 Environment controls exercise the actual wrapper and inspection path with the
 specified environment, an injected `LC_CTYPE=C.UTF-8`, a changed `LANG`, an extra
 variable and a repeated normal launch. They retain raw and interpreted snapshots
@@ -365,8 +365,8 @@ main-loop result. Subsequent placements emit no result, avoiding an ordinary
 ending after the audit-wide reminder has been used. After each stop, the expected
 reported-placement count remains one and the unknown-interval count is one,
 two, then three. The provider completeness remains unverified. A six-second
-placement timeout exercises the deadline; native evidence must establish the
-actual ending and group absence before another start.
+placement timeout exercises the deadline. The driver checks the recorded
+ending and observes group absence before another start.
 
 The self-test preserves three-start fake-peer sequences, unchanged scenario and
 prior-session witnesses, and controls for missing/malformed re-entry, changed
@@ -579,10 +579,10 @@ not shared between processes on every host. The harness draws no conclusions.
   boundaries as their notices fit in its input pipe, then ends its turn, so the
   reminder's frame cannot fit: captured, it is `unknown`; never captured,
   `not_sent`, and the arm reports that the incomplete write was not reached.
-  Fit follows the platform's packing, not raw bytes. A macOS pipe holds 65,536
-  bytes. A Linux pipe holds `F_GETPIPE_SZ` / page size page buffers, and a small
-  write merges into the last one only when it fits there whole (`fs/pipe.c`), so
-  the 255-byte notice fits 256 times in sixteen 4 KiB pages, not 257. The harness
+  Linux packs these writes into pages. The number of page buffers is
+  `F_GETPIPE_SZ` divided by the page size. A small write merges into the last
+  page only when it fits there whole (`fs/pipe.c`). Sixteen 4 KiB pages hold
+  exactly 256 of the 255-byte notices. The harness
   probes fresh unread pipes of the same capacity, and they must accept exactly
   what that rule predicts. The capture, packed by the same rule, must show that
   the unread input before the reminder left it no room. The harness then hangs, so
@@ -653,7 +653,7 @@ the archive. `driver-snapshot/` preserves the executable synthetic harness and
 its specification-derived helpers used by that run. Keep the work directory
 through review, then apply the repository's
 [evidence retention rules](../../development/DEVELOPMENT.md#evidence-and-retention).
-Native results are development evidence only. The runtime acceptance suite runs
+Direct runs in the development VM support iteration. The runtime acceptance suite runs
 this driver on both supported Linux architectures with the two release-profile
 development writers described above and a featureless release binary. It
 requires every case and control and records the failure count in `host/DONE`.

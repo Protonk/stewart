@@ -370,8 +370,7 @@ def c_reflection(t):
 
 @case("credentials.process", ["C1", "C12"],
       "Linux blocks actual same-user process inspection before credential read and closes its input",
-      needs=("linux", "loopback", "nonroot"),
-      linux_reason="Linux procfs permissions and core-dump wait status")
+      needs=("loopback", "nonroot"))
 def c_process(t):
     secret = canary()
     t.protect_check_value(secret)
@@ -468,13 +467,25 @@ def credential_selftests():
         data = b"\0".join(os.fsencode(arg) for arg in args) + b"\0"
         return {"access": {"cmdline": {"allowed": True}},
                 "cmdline_sha256": sha256_hex(data), "cmdline_bytes": len(data)}
-    out += [("credentials.argv-direct", observer.match_cmdline(observed_argv(argv), argv) == "direct"),
-            ("credentials.argv-rosetta", observer.match_cmdline(
-                observed_argv(["/run/rosetta/rosetta"] + argv), argv) == "rosetta")]
+    for arch in ("arm64", "amd64"):
+        launch = os_fixtures.document("podman-python-" + arch + ".json")
+        prefix = "credentials.podman." + arch
+        exposed, hardened = launch["observations"]
+        out.append((prefix + ".dumpable-states", [exposed["dumpable"], hardened["dumpable"]] == [1, 0]))
+        for label, row, form in (("exposed", exposed, "direct"),
+                                 ("hardened", hardened, "rosetta" if arch == "amd64" else "direct")):
+            observed = {"access": {"cmdline": {"allowed": True}},
+                        "cmdline_sha256": row["cmdline_sha256"], "cmdline_bytes": row["cmdline_bytes"]}
+            out.append((prefix + ".argv-" + label, observer.match_cmdline(observed, launch["argv"]) == form))
+        targets = {fd: exposed["startup_fds"][fd].get("target") for fd in ("3", "4")}
+        selected = observer.reuse_candidate(targets)
+        out.append((prefix + ".closed-descriptor-reused",
+                    exposed["startup_fds"][str(selected)] == {"errno": errno.EBADF}
+                    and exposed["reuse"]["opened_fd"] == selected))
     for label, actual in (("changed-argument", argv[:-1] + ["--other"]),
                           ("arbitrary-prefix", ["/arbitrary/interpreter"] + argv),
-                          ("repeated-prefix", ["/run/rosetta/rosetta"] * 2 + argv),
-                          ("extra-value", ["/run/rosetta/rosetta"] + argv + [secret])):
+                          ("repeated-prefix", [observer.ROSETTA_INTERPRETER] * 2 + argv),
+                          ("extra-value", [observer.ROSETTA_INTERPRETER] + argv + [secret])):
         out.append(("credentials.argv-" + label + "-control",
                     observer.match_cmdline(observed_argv(actual), argv) is None))
     unreadable_argv = observed_argv(argv)

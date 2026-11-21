@@ -189,12 +189,9 @@ def c_identity(t):
         t.check("identity.release-lacks.%s" % s, s.encode() not in rb, "release contains sabotage name %s" % s)
     for p in FAULT_POINT_NAMES:
         t.check("identity.release-lacks.%s" % p.decode(), p not in rb, "release contains fault point %s" % p.decode())
-    if is_linux():
-        fst = fs_type_of(t.root)
-        t.check("identity.work-filesystem", fst in ("ext4", "xfs", "btrfs"),
-                "work directory is on %r; archives need ext4, xfs or btrfs" % fst)
-    else:
-        t.skip_part("work filesystem allowlist", "Linux-only expectation: macOS development builds have no ext4/xfs/btrfs allowlist")
+    fst = fs_type_of(t.root)
+    t.check("identity.work-filesystem", fst in ("ext4", "xfs", "btrfs"),
+            "work directory is on %r; archives need ext4, xfs or btrfs" % fst)
 
 
 @case("apparatus.driver-controls", [], "the driver's own checks fail on deliberately broken inputs", mode="driver")
@@ -768,7 +765,7 @@ def c_prelaunch(t):
 
 
 @case("c16.intake-in-progress", ["C16", "C17"], "a live intake holds the lock: status and a second commission see it",
-      mode="test", needs=("lock",), linux_reason="OFD lock behaviour (F_OFD_SETLK/GETLK) is a Linux-only expectation",
+      mode="test",
       faults=("commission.after_capture:1=pause",))
 def c_intake_in_progress(t):
     """With commission paused after its first capture, status reports intake_in_progress
@@ -1768,8 +1765,7 @@ def c_close_gone_delivery_members(t):
 
 
 @case("close.during-intake", ["C8", "C17"], "close races a live intake; their recorded outcomes agree",
-      mode="test", needs=("lock",), tags=("close",),
-      linux_reason="close waits on the OFD lock held by the intake; OFD locks are a Linux-only expectation",
+      mode="test", tags=("close",),
       faults=("commission.after_capture:1=pause",))
 def c_close_during_intake(t):
     """Commission pauses after its first capture; close publishes close_requested and
@@ -1805,8 +1801,7 @@ def c_close_during_intake(t):
 
 
 @case("close.intake-still-running", ["C8", "C16"], "close gives up after its 10 s intake wait, then completes later",
-      mode="test", needs=("lock",), tags=("close",), heavy=True, faults=("commission.after_capture:1=pause",),
-      linux_reason="close waits on the OFD lock held by the intake; OFD locks are a Linux-only expectation")
+      mode="test", tags=("close",), heavy=True, faults=("commission.after_capture:1=pause",))
 def c_close_intake_running(t):
     """With the intake paused throughout, close replies completed with closure unfinished
     and unfinished_reason intake_still_running after waiting about 10 s. The released
@@ -2114,8 +2109,7 @@ def c_permissions(t):
     t.prepare(other, name="perm.prepare-restored")
 
 
-@case("c18.filesystem-unsupported", ["C18"], "an archive on tmpfs is refused, naming the type",
-      needs=("linux",), linux_reason="the ext4/xfs/btrfs allowlist is a Linux-only expectation")
+@case("c18.filesystem-unsupported", ["C18"], "an archive on tmpfs is refused, naming the type")
 def c_fs_unsupported(t):
     """new --archive on a writable tmpfs mount refuses archive_filesystem_unsupported,
     naming the observed type, and creates nothing there."""
@@ -2383,7 +2377,7 @@ def c_names(t):
         t.prepare(sub, name="names.invalid-utf8", expect="refused", reason="name_invalid")
         t.driver_change("remove the non-UTF-8 name", lambda: os.unlink(p))
     else:
-        t.skip_part("invalid UTF-8 name", "this filesystem refuses non-UTF-8 names (Linux-only expectation)")
+        t.skip_part("invalid UTF-8 name", "this filesystem refuses non-UTF-8 names")
     nfc = "caf" + unicodedata.normalize("NFC", NFD_E) + ".txt"
     nfd = "caf" + NFD_E + ".txt"
     if _probe_names(t, [nfc.encode(), nfd.encode()]):
@@ -2609,24 +2603,19 @@ def c_settings(t):
     for label, dest in (("absent", os.path.join(t.root, "no such returns")), ("file", afile)):
         t.edit(qpath, question_md(dest=dest))
         t.prepare(sub, name="settings.destination-%s" % label, expect="refused", reason="destination_invalid")
-    long_dest = None
-    if is_linux():
-        path = t.mkdir("long %d" % t.next_k())
-        while len(path.encode()) < 1024:
-            left = 1024 - len(path.encode())       # bytes still to add, including the "/"
-            n = min(200, left - 1)
-            if left - 1 - n == 1:                  # never leave a single byte: "/" needs a name
-                n -= 1
-            path = path + "/" + "L" * n
-        if len(path.encode()) == 1024:
-            os.makedirs(path)
-            long_dest = path
-    if long_dest:
-        t.watch(long_dest, "frozen", "1024-byte destination")
-        t.edit(qpath, question_md(dest=long_dest))
-        t.prepare(sub, name="settings.destination-1024")
-    else:
-        t.skip_part("1024-byte destination", "needs Linux PATH_MAX; macOS cannot create a 1,024-byte absolute path")
+    long_dest = t.mkdir("long %d" % t.next_k())
+    if len(os.fsencode(long_dest)) > 1022:
+        raise ValueError("work path is too long to construct the 1,024-byte destination specimen")
+    while len(os.fsencode(long_dest)) < 1024:
+        remaining = 1024 - len(os.fsencode(long_dest))
+        length = min(200, remaining - 1)  # Allow for the slash.
+        if remaining - length - 1 == 1:
+            length -= 1  # Leave at least two bytes for a slash and another name.
+        long_dest = os.path.join(long_dest, "L" * length)
+    os.makedirs(long_dest)
+    t.watch(long_dest, "frozen", "1024-byte destination")
+    t.edit(qpath, question_md(dest=long_dest))
+    t.prepare(sub, name="settings.destination-1024")
 
 
 @case("c20.front-matter", ["C20", "C19", "C11"], "front matter is parsed strictly, naming the line",

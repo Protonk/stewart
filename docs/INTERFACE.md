@@ -9,9 +9,7 @@ families, their instruction texts and the renderer are specified in
 
 Implementation and qualification status are reported in
 [README.md](../README.md). Where this document and CONTRACTS differ, CONTRACTS
-wins and this document is corrected. Linux is the product platform; the
-filesystem calls named here are Linux calls. Native macOS development fallbacks
-are described in [DEVELOPMENT](../development/DEVELOPMENT.md#building-and-testing-natively).
+wins and this document is corrected. Stewart runs on Linux and uses the Linux filesystem calls named here.
 The default-off runtime's [leaf contract](claude-code/CONTRACT.md) owns its
 question/arrangement schemas, transport, accounting and stopping differences;
 the Messages API wire and token limits below are not its harness protocol.

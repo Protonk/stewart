@@ -510,13 +510,13 @@ def main():
     require(source_hash()==packet['bindings']['apparatus_sha256'],'container apparatus source differs from packet')
     try:
         sessions=prepare_batch(args.binary,args.private,args.out,packet,args.mode,submissions=args.submissions)
-        filesystem=subprocess.run(['stat','-f','-c','%T',str(sessions[0].archive)],
+        filesystem=subprocess.run(['findmnt','-n','-T',str(sessions[0].archive),'-o','FSTYPE'],
             capture_output=True,check=False)
         write_json(args.out/'ENVIRONMENT.json',{'system':platform.system(),'kernel':platform.release(),
             'machine':platform.machine(),'python':platform.python_version(),'uid':os.getuid(),
             'archive_filesystem_observation':{'argv':filesystem.args,'exit':filesystem.returncode,
                 'stdout':filesystem.stdout.decode('utf-8','replace'),'stderr':filesystem.stderr.decode('utf-8','replace')}})
-        require(filesystem.returncode==0,'archive filesystem observation failed')
+        require(filesystem.returncode==0 and filesystem.stdout.strip()==b'ext4','archive must be on the private ext4 work volume')
         write_json(args.out/'READY.json',{'credential_free_intake_verified':True,'audits':[s.run_item['id'] for s in sessions]})
         key=credential_bytes(sys.stdin.buffer.read(4098))
         checks=Path('/work/credential-check')

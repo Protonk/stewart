@@ -119,8 +119,8 @@ automatically.
    writer in the [qualification record](../apparatus/qualified.md), inside its
    retained Linux container, with a current rehearsal of the committed
    apparatus ([C10](../apparatus/c10/README.md#prepare-a-concrete-live-commission)).
-   The harness route runs a native gated build with a reviewed profile through
-   the [service procedure](../apparatus/claude-code/README.md#native-service-comparison-procedure).
+   The harness route runs a Linux gated build with a reviewed profile through
+   the [service procedure](../apparatus/claude-code/README.md#service-comparison-procedure).
    Today, qualifying the changed source is the main cost of a Messages test.
 3. Propose, packet and launch as the apparatus guide describes, through the
    host queue under the plan's envelope.
@@ -199,7 +199,7 @@ incomplete for an instrument reason.
 - **Experiment, alignment and scripted evidence.** A live test is an
   experiment. Alignment is the release's model gate, and the scripted tier
   qualifies Stewart's behavior.
-- **Development Mac and Linux.** Native runs qualify nothing.
+- Record the platform, executable and runtime profile for each live encounter. The container suites own release and runtime qualification.
 
 ## Escalation
 

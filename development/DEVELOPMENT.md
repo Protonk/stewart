@@ -11,11 +11,8 @@ development rules.
 
 The product is one statically linked binary for Linux x86_64 and aarch64
 (CONTRACTS, "Platform and auditor access"), built and qualified in Linux
-containers. Linux is the supported platform. `aarch64-apple-darwin` is a build
-target: the crate builds, tests and runs there, with no release, support or
-qualification claim. Work iterates quickly natively, on a Linux host or the
-development Mac, but native runs qualify nothing; qualification comes from the
-corresponding Linux container suite.
+containers. Develop in the dedicated Linux guest. The guest setup covers the
+accounts, rootless container storage and Git transport. [Provisioning and access](../apparatus/lima/README.md)
 
 ## What to run for what you changed
 
@@ -75,14 +72,14 @@ sandbox that denies the bind fails those tests.
 | Code, tests or dependencies shared by the released service and development adapter | Run the release and adapter Cargo commands above. Each affected suite records its own verdict. |
 | Release driver and shared helpers in `apparatus/driver/` | `stewart_driver.py --self-test` and `--list`, which loads every release case module. Shared helpers used by the standalone runtime driver also need that driver's checks below. Helpers the C10 and sanity apparatus import (their `SOURCE_PATHS` in `apparatus/c10/common.py`) also need the `apparatus/c10/` checks, and their live use then needs a new rehearsal. Qualify the changed release driver with the `acceptance.sh` container suite. Edit only under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
 | `apparatus/driver/claude_code.py` or its `CLAUDE-CODE.md` | `python3 -I -B apparatus/driver/claude_code.py --self-test` and `--list`, and `stewart_driver.py --list`, because a release case imports this module's transport decoder. Runtime behavior changes also need the affected cases against a `claude-code` build, with a featureless release as `--release-binary` and a release-profile `claude-code,fault-injection` build as `--variant-binary`; keep their witnesses as [the driver guide](../apparatus/driver/CLAUDE-CODE.md) describes. The real-harness fixtures and controllers import this module, so also run the next row's offline checks. Linux qualification uses `runtime-acceptance.sh` on both architectures. |
-| `apparatus/claude-code/`, or the real-harness fixtures `apparatus/driver/claude_code_{surface,observer,peer,service_witness}.py` and their `CLAUDE-CODE-*.md` guides | Offline checks: each fixture module's `--self-test`, and `python3 -I -B apparatus/claude-code/test_NAME.py` for `pin`, `profile`, `bounded`, `surface_check` and `service_check`. When the change reaches the surface fixture, observer, peer, launcher or supplied-surface controller, also run that controller's `prepare-rehearsal` and frozen `run-rehearsal` for `normal`, `bad-init` and `wrong-auth` with the gated binary, as in [the controller guide](../apparatus/claude-code/README.md#synthetic-controller-rehearsal): `normal` must be observed; `bad-init` must stop at startup and `wrong-auth` at authentication, with no fixture effect and every later slot unstarted. When it reaches the service procedure or the package witness, run that procedure's `prepare-rehearsal` and the positive packet's frozen `rehearse` from [the procedure guide](../apparatus/claude-code/README.md#native-service-comparison-procedure), and review its six comparisons and package reviews. These run on the development Mac, use no real harness or credential, and establish no Linux qualification. |
+| `apparatus/claude-code/`, or the real-harness fixtures `apparatus/driver/claude_code_{surface,observer,peer,service_witness}.py` and their `CLAUDE-CODE-*.md` guides | Offline checks: each fixture module's `--self-test`, and `python3 -I -B apparatus/claude-code/test_NAME.py` for `pin`, `profile`, `bounded`, `surface_check` and `service_check`. When the change reaches the surface fixture, observer, peer, launcher or supplied-surface controller, also run that controller's `prepare-rehearsal` and frozen `run-rehearsal` for `normal`, `bad-init` and `wrong-auth` with the gated binary, as in [the controller guide](../apparatus/claude-code/README.md#synthetic-controller-rehearsal): `normal` must be observed; `bad-init` must stop at startup and `wrong-auth` at authentication, with no fixture effect and every later slot unstarted. When it reaches the service procedure or the package witness, run that procedure's `prepare-rehearsal` and the positive packet's frozen `rehearse` from [the procedure guide](../apparatus/claude-code/README.md#service-comparison-procedure), and review its six comparisons and package reviews. Run these checks in the Linux guest with synthetic peers and credentials. |
 | Runtime schemas or pinned texts in `docs/claude-code/CONTRACT.md` | The link check, the `claude-code` Cargo configuration, and the standalone runtime driver's self-test and list. Update exact service/driver copies when their pinned bytes change, preserving independent authorship. Prose-only status changes need the link check. |
 | `apparatus/c10/` | `python3 -I -B apparatus/c10/test_c10.py`, `python3 -I -B apparatus/c10/test_placements.py` and `python3 -I -B apparatus/sanity/test_launch.py`. Exercise changed run, reviewer and operator behavior with the native fake-provider commands in [the apparatus instructions](../apparatus/c10/README.md#run-the-offline-checks). Qualify the committed change with a retained Linux `c10.py rehearse` run; any source change invalidates earlier rehearsal bindings for live use. No model calls are needed for these checks. |
 | Python in `apparatus/sanity/` | `python3 -I -B apparatus/sanity/test_launch.py`, and the `apparatus/c10/` checks above for the files C10 imports. The C10 rehearsal qualifies those files. Run the sanity launcher's retained Linux rehearsal only when its own launch path changes or before its next live use; any change under `apparatus/sanity/` invalidates its previous rehearsal binding for live use. |
 | Shell scripts in `apparatus/` or `apparatus/container/` | `sh -n` on each changed script. Qualify the change with a passing container run of the suite that uses it. `step2.sh` runs `container/inner-build.sh` and `acceptance.sh` runs the release driver. `runtime-acceptance.sh` runs the runtime driver. Changes to shared suite helpers require both suites. |
 | `apparatus/check-build-markers.sh`, `apparatus/test_build_markers.py` or `apparatus/claude-code-markers.txt` | `sh -n apparatus/check-build-markers.sh` and `python3 -I -B apparatus/test_build_markers.py`; run the marker check against release-profile release and development binaries, expecting absence and presence. Qualify with `runtime-acceptance.sh`. |
 | `apparatus/check_links.py` | `python3 -I -B apparatus/check_links.py --self-test`, then the link check. |
-| `apparatus/qualified.py` | `python3 -I -B apparatus/qualified.py --self-test`, then `python3 -I -B apparatus/qualified.py check`. |
+| `apparatus/qualified.py` | `TMPDIR=/var/lib/stewart/fixtures/fold/work python3 -I -B apparatus/qualified.py --self-test` exercises the case-alias control, then run `python3 -I -B apparatus/qualified.py check`. |
 | `service/Cargo.toml`, `service/Cargo.lock`, the vendored crates or `apparatus/container/Containerfile` | Run `step2.sh` to rebuild the toolchain images, vendor the crates named by the committed `Cargo.lock` into `service/vendor`, and build and check the release binary for both architectures. It refuses while `service/vendor` exists, so move the old tree aside first. Run the release and adapter Cargo checks above with the resulting vendor tree. Qualification requires the toolchain, release and runtime container suites to pass. |
 
 `apparatus/qualified.py` keeps the qualification record ([Evidence and
@@ -148,7 +145,7 @@ The release profile in `service/Cargo.toml` uses one codegen unit, fat LTO,
 `panic = "abort"` and stripped symbols. Fat LTO has one known hazard, described
 in the crate documentation in `service/src/lib.rs`: in the static musl release
 build, a call through `libc::` to a function that std also declares weak can
-link to nothing, and debug, thin-LTO and macOS builds never show it. Such calls
+link to nothing, and debug and thin-LTO builds can mask this defect. Such calls
 go through `libc::syscall`, as `platform::random_fill` does.
 
 The dependencies are six crates pinned to exact versions in
@@ -178,15 +175,10 @@ crates.
 
 ## Building and testing natively
 
-On a Linux host or the development Mac (Apple silicon) the crate builds and
-tests with a native Rust toolchain and the vendored crates; the commands below
-and the drivers' native commands are the same on both. On Linux they exercise
-the supported code paths, which makes a Linux host the most faithful native
-loop, but its runs are still development evidence, not qualification. The Linux-only calls are gathered in
-`service/src/platform.rs`, whose module documentation lists each one beside its
-macOS fallback: `flock` for the OFD lock, `st_birthtime` for `statx`,
-`getentropy` for `getrandom`, no process start time, and so on. The fallbacks
-make the macOS build target work; they are not supported behavior.
+Run Cargo in `service/` as the development user with the pinned Rust toolchain
+and vendored crates. Use a private directory on guest ext4 for test archives,
+for example `export STEWART_IT_TMP=/var/lib/stewart/dev-tmp`. The guest also
+provides `/var/lib/stewart/fixtures/fold/work` for the case-alias test.
 
 The [release and fault/sabotage configurations](#what-to-run-for-what-you-changed)
 differ in what they compile and run. The first runs every unit and integration
@@ -261,10 +253,9 @@ folder that does not exist yet, and a work directory (`--work`, default the
 system temporary directory) outside the repository. Its exit status is 0 only
 when no case failed and every control fired.
 
-Run natively on the development Mac, the driver is for iteration. Cases with
-Linux-only expectations (the OFD lock, `/proc` observations, the archive
-filesystem allowlist, byte-string names) are skipped with their reason, as are
-cases needing the fake provider where loopback listening is not permitted.
+Run the driver in the guest for iteration. Cases that depend on a distinct
+filesystem or a loopback listener report missing prerequisites. Full Linux
+qualification requires the exercised cases and their firing controls.
 [apparatus/README.md](../apparatus/README.md) describes the driver's modules,
 cases, controls and evidence in detail.
 
@@ -278,9 +269,8 @@ second gated build with a different digest for the profile/writer comparison.
 
 ## Container suites
 
-Run the suites on the development Mac with access to Apple `container` 1.6.1.
-Each script checks the version and that the container services are
-running, and stops otherwise. Both driver suites
+Run the suites from the Linux development login with rootless Podman 5 and
+cgroup v2. Both driver suites
 need the toolchain images and `service/vendor` from
 `step2.sh`. The network is used only to pull pinned images, build the toolchain
 images and vendor crates; every build and driver run is offline
@@ -309,8 +299,8 @@ another checkout uses that checkout's own `service/vendor`.
 - `acceptance.sh` builds the release and fault/sabotage writers and a small
   dynamic ELF control for each architecture. It checks static linkage, then
   runs the independent release driver with its loopback fake provider,
-  unprivileged, in the pinned Python image. Only the UTF-8 filename-bound
-  source fixture uses a host-backed filesystem.
+  unprivileged, in the pinned Python image. The per-run archive resides on a named ext4-backed volume. The UTF-8
+  filename-bound source uses the guest VFAT fixture.
 - `runtime-acceptance.sh` builds a featureless release and two distinct
   development writers, checks that the adapter markers are absent from the
   release and present in both writers, and runs the independent synthetic
@@ -319,13 +309,10 @@ another checkout uses that checkout's own `service/vendor`.
 
 Both driver suites record the committed source, per-platform outputs, binary
 digests, self-tests, counts and final verdict in separate evidence folders.
-[The apparatus guide](../apparatus/README.md) describes the outputs. Native
-Apple-silicon builds and tests exercise the Mac development port. Linux
-qualification comes from the corresponding Linux suite on both architectures.
-On the development Mac the x86_64 containers run under Rosetta and report the
-same kernel build as the arm64 containers: they exercise the x86_64 binaries,
-while kernel behavior such as the OFD lock, `/proc` and process protection is
-observed on that one kernel.
+[The apparatus guide](../apparatus/README.md) describes the outputs. The release and runtime suites
+qualify their respective Linux binaries. The aarch64 guest runs arm64 containers
+natively and amd64 containers through Rosetta. Both userlands exercise the same
+kernel for OFD locks, `/proc` and process protection.
 
 The container suites use the fake provider. Endpoint alignment uses its own
 apparatus and requires explicit authorization for the models and budget used.

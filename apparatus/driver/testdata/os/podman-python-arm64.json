@@ -1,0 +1,117 @@
+{
+  "schema": "stewart.driver-platform-observation/1",
+  "started_at": "2026-11-21T02:30:47.952164+00:00",
+  "probe_sha256": "d585df6c484a7a761047eec11dae8b4eaa0a78aa81a19be70e6f8633e01d21a4",
+  "uid": 1000,
+  "observer_pid": 1,
+  "child_pid": 2,
+  "machine": "aarch64",
+  "kernel_release": "6.12.115+deb13.1-cloud-arm64",
+  "synthetic_home": "/home/synthetic",
+  "argv": [
+    "/usr/local/bin/python3",
+    "-I",
+    "-B",
+    "/probe.py",
+    "--child",
+    "/tmp/tmpj1k5qpi8/fixture"
+  ],
+  "observations": [
+    {
+      "dumpable": 1,
+      "startup_fds": {
+        "3": {
+          "errno": 9
+        },
+        "4": {
+          "errno": 9
+        },
+        "5": {
+          "errno": 9
+        },
+        "6": {
+          "errno": 9
+        },
+        "7": {
+          "errno": 9
+        },
+        "8": {
+          "errno": 9
+        },
+        "9": {
+          "errno": 9
+        },
+        "10": {
+          "errno": 9
+        },
+        "11": {
+          "errno": 9
+        }
+      },
+      "reuse": {
+        "opened_fd": 3,
+        "bytes": 37,
+        "sha256": "52b96103251a5665db11ce6e26ec0c67e4164e30eba555b864ccb5e3120662da"
+      },
+      "cmdline": [
+        "/usr/local/bin/python3",
+        "-I",
+        "-B",
+        "/probe.py",
+        "--child",
+        "/tmp/tmpj1k5qpi8/fixture"
+      ],
+      "cmdline_bytes": 72,
+      "cmdline_sha256": "5358d6f4bbe016da818317304559c5b477871100eb2ce844e06576d57cb5fd82",
+      "observed_monotonic_ns": 1771333665674
+    },
+    {
+      "dumpable": 0,
+      "startup_fds": {
+        "3": {
+          "errno": 9
+        },
+        "4": {
+          "errno": 9
+        },
+        "5": {
+          "errno": 9
+        },
+        "6": {
+          "errno": 9
+        },
+        "7": {
+          "errno": 9
+        },
+        "8": {
+          "errno": 9
+        },
+        "9": {
+          "errno": 9
+        },
+        "10": {
+          "errno": 9
+        },
+        "11": {
+          "errno": 9
+        }
+      },
+      "reuse": {
+        "opened_fd": 3,
+        "bytes": 37,
+        "sha256": "52b96103251a5665db11ce6e26ec0c67e4164e30eba555b864ccb5e3120662da"
+      },
+      "cmdline": [
+        "/usr/local/bin/python3",
+        "-I",
+        "-B",
+        "/probe.py",
+        "--child",
+        "/tmp/tmpj1k5qpi8/fixture"
+      ],
+      "cmdline_bytes": 72,
+      "cmdline_sha256": "5358d6f4bbe016da818317304559c5b477871100eb2ce844e06576d57cb5fd82",
+      "observed_monotonic_ns": 1771333753948
+    }
+  ]
+}

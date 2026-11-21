@@ -290,10 +290,8 @@ impl Gate for Io<'_> {
             return Err(Stop::Timeout);
         }
         let left = (self.deadline - now).max(Duration::from_millis(1));
-        // Some kernels (macOS) refuse socket options once the peer has shut
-        // the connection down. The next call then returns at once with the
-        // connection's own end or error, which is the fact worth recording;
-        // the timeout set before stays in force otherwise.
+        // The previous timeout stays in force if the update fails. Let the
+        // I/O operation report EOF or the connection's own error.
         let _ = self.ctl.set_timeout(left);
         Ok(())
     }
@@ -1257,16 +1255,14 @@ pub(crate) mod tests {
         assert!(m.contains("407"), "{m}");
 
         let a = over_pair(&c, b"{}", &AbortHandle::new(), BODY_LIMIT, |mut s| {
-            let mut b = [0u8; 8];
-            let _ = s.read(&mut b);
+            read_request(&mut s);
             let _ = s.write_all(b"SSH-2.0-x\r\n\r\n");
         });
         assert_eq!(a.written, Written::None);
         assert!(a.failure_text().unwrap().contains("status line"));
 
         let a = over_pair(&c, b"{}", &AbortHandle::new(), BODY_LIMIT, |mut s| {
-            let mut b = [0u8; 8];
-            let _ = s.read(&mut b);
+            read_request(&mut s);
         });
         assert_eq!(a.written, Written::None);
         assert!(

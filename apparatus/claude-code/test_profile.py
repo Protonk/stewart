@@ -36,14 +36,14 @@ class ProfileControls(unittest.TestCase):
         self.config, self.home, self.tmp = [self.root / name for name in ('login', 'home', 'temporary')]
         for directory in (self.config, self.home, self.tmp):
             directory.mkdir()
-        (self.config / 'credential-canary').write_bytes(b'not-to-be-read')
+        (self.config / '.credentials.json').write_bytes(b'not-to-be-read')
         binary_sha = profile.sha(self.binary.read_bytes())
         manifest = profile.compact({'version': profile.pin.VERSION,
-                                   'platforms': {profile.pin.PLATFORM: {'checksum': binary_sha}}})
+                                   'platforms': {profile.pin.platforms()[0]: {'checksum': binary_sha}}})
         (self.pin_root / 'manifest.json').write_bytes(manifest)
         (self.pin_root / 'manifest.json.sig').write_bytes(b'synthetic public signature')
         (self.pin_root / 'claude-code.asc').write_bytes(b'synthetic public key')
-        self.receipt = {'version': profile.pin.VERSION, 'platform': profile.pin.PLATFORM,
+        self.receipt = {'version': profile.pin.VERSION, 'platform': profile.pin.platforms()[0],
                         'binary': str(self.binary), 'sha256': binary_sha, 'manifest_sha256': profile.sha(manifest),
                         'signer': profile.pin.FINGERPRINT, 'verification': 'synthetic-prior-verification'}
         (self.pin_root / 'pin.json').write_bytes(profile.compact(self.receipt))
@@ -120,12 +120,12 @@ class ProfileControls(unittest.TestCase):
     def test_valid_profile_preserves_exact_launch_and_review_digest_without_launch(self):
         launch = (self.install / 'launch.json').read_bytes()
         result = self.assemble()
-        self.assertEqual(result['schema'], 'stewart.claude-code.profile/2')
+        self.assertEqual(result['schema'], 'stewart.claude-code.profile/3')
         self.assertIn(b'"launch":' + launch + b',"installation":', self.output.read_bytes())
         self.assertEqual(result['check']['launch_sha256'], profile.sha(launch))
         self.assertEqual(result['check']['evidence_sha256'], profile.sha(self.review.read_bytes()))
-        self.assertEqual([name for name, _ in self.calls], ['dearmor', 'signature', 'codesign'])
-        for name in ('dearmor', 'signature', 'codesign'):
+        self.assertEqual([name for name, _ in self.calls], ['dearmor', 'signature'])
+        for name in ('dearmor', 'signature'):
             for channel in ('stdout', 'stderr', 'exit'):
                 self.assertEqual((self.install / 'installation/verification' / (name + '.' + channel)).read_bytes(),
                                  (FIXTURES / (name + '.' + channel)).read_bytes())
@@ -204,7 +204,7 @@ class ProfileControls(unittest.TestCase):
         path = self.observation / 'witness/observed.bin'
         original = path.read_bytes()
         path.unlink()
-        path.symlink_to(self.config / 'credential-canary')
+        path.symlink_to(self.config / '.credentials.json')
         self.refused('link|loop|Too many')
         path.unlink()
         os.mkfifo(path)
@@ -213,19 +213,31 @@ class ProfileControls(unittest.TestCase):
         path.write_bytes(original)
         self.assemble()
 
+    def test_login_cannot_be_captured_as_evidence(self):
+        for root in (self.config, self.config / 'evidence', self.config.parent):
+            with self.subTest(root=root), mock.patch.object(profile, 'validate_observation') as inventory:
+                with self.assertRaisesRegex(ValueError, 'overlaps the harness login directory'):
+                    if root == self.config.parent:
+                        profile.separate_login(self.config, root)
+                    else:
+                        root.mkdir(exist_ok=True)
+                        profile.assemble(self.install, root, self.review, self.output)
+                inventory.assert_not_called()
+        self.assemble()
+
     def test_harness_digest_change_refuses_without_execution(self):
         self.binary.write_bytes(b'changed executable')
         self.refused('executable changed')
 
     def test_failed_installation_record_refuses(self):
-        (self.install / 'installation/verification/codesign.exit').write_bytes(b'1\n')
+        (self.install / 'installation/verification/signature.exit').write_bytes(b'1\n')
         # Keep the evidence binding valid so only the failed verifier outcome
         # can refuse this installation, not the changed-file inventory check.
         path = self.install / 'PREPARATION.json'
         prepared = json.loads(path.read_bytes())
         prepared['verification_files'] = profile.verification_inventory(self.install / 'installation')
         path.write_bytes(profile.compact(prepared))
-        self.refused('installation verification did not pass: codesign')
+        self.refused('installation verification did not pass: signature')
 
     def test_public_signature_and_key_must_remain_exact_and_present(self):
         for name in ('manifest.json.sig', 'claude-code.asc'):
@@ -269,24 +281,23 @@ class ProfileControls(unittest.TestCase):
         self.assertFalse((out / 'launch.json').exists())
         self.assertFalse(self.marker.exists())
 
-    def test_captured_codesign_failure_stops_preparation_and_retains_diagnostic(self):
-        out = self.root / 'failed-codesign'
+    def test_captured_signature_failure_stops_preparation_and_retains_diagnostic(self):
+        out = self.root / 'failed-signature'
         calls = []
         def observed_result(argv, **kwargs):
-            name = 'codesign-refused' if argv[0] == '/usr/bin/codesign' else (
-                'signature' if '--status-fd' in argv else 'dearmor')
+            name = 'signature-refused' if '--status-fd' in argv else 'dearmor'
             calls.append(name)
             return subprocess.CompletedProcess(argv, int((FIXTURES / (name + '.exit')).read_bytes()),
                                                (FIXTURES / (name + '.stdout')).read_bytes(),
                                                (FIXTURES / (name + '.stderr')).read_bytes())
         with mock.patch.object(profile.pin.subprocess, 'run', side_effect=observed_result), \
                 mock.patch.object(profile.shutil, 'which', side_effect=lambda name: '/synthetic/' + name):
-            with self.assertRaisesRegex(RuntimeError, 'codesign failed \\(exit 1\\)'):
+            with self.assertRaisesRegex(RuntimeError, r'signature failed \(exit [1-9]\d*\)'):
                 profile.prepare(self.pin_root / 'pin.json', out, self.config, self.home, self.tmp)
-        self.assertEqual(calls, ['dearmor', 'signature', 'codesign-refused'])
+        self.assertEqual(calls, ['dearmor', 'signature-refused'])
         for channel in ('stdout', 'stderr', 'exit'):
-            self.assertEqual((out / 'installation/verification' / ('codesign.' + channel)).read_bytes(),
-                             (FIXTURES / ('codesign-refused.' + channel)).read_bytes())
+            self.assertEqual((out / 'installation/verification' / ('signature.' + channel)).read_bytes(),
+                             (FIXTURES / ('signature-refused.' + channel)).read_bytes())
         self.assertFalse((out / 'launch.json').exists())
         self.assertFalse((out / 'PREPARATION.json').exists())
         self.assertFalse(self.marker.exists())

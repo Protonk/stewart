@@ -16,11 +16,22 @@ rec env-mountinfo cat /proc/self/mountinfo
 rec env-network sh -c 'cat /proc/net/route; ls /sys/class/net'
 rec env-binaries sha256sum /bin-in/stewart*
 rec env-cpuinfo sh -c 'head -20 /proc/cpuinfo'
-# Under Rosetta (an x86_64 kernel on a VirtualApple CPU) the emulator writes its
-# own translation cache to $HOME/.cache/rosetta; the driver records that as an
-# emulator artifact rather than as a write by Stewart.
+# The translated Python process keeps the VZ interpreter open. Verify the
+# interpreter and CPU marker before exempting the observed empty cache directories.
+rec env-interpreter python3 -I -B -c '
+import os
+try:
+    print(os.readlink("/proc/self/fd/4"))
+except FileNotFoundError:
+    print("absent")
+'
 EMULATION=""
-if [ "$(uname -m)" = x86_64 ] && grep -q VirtualApple /proc/cpuinfo 2>/dev/null; then
+if [ "${STEWART_EXPECT_ROSETTA:-0}" = 1 ]; then
+    [ "$(uname -m)" = x86_64 ] && grep -q VirtualApple /proc/cpuinfo &&
+        grep -Fxq /mnt/lima-rosetta/rosetta /out/env-interpreter.stdout || {
+            echo "missing expected Rosetta interpreter or CPU marker" >&2
+            exit 1
+        }
     EMULATION="--emulator-home-artifact .cache/rosetta"
 fi
 echo "${EMULATION:-none}" >/out/emulation.txt
@@ -38,7 +49,7 @@ if ! id -u stewartdrv >/dev/null 2>&1; then
 fi
 chown 1000:1000 /work/tmp /work/run
 chmod 0755 /work /work/driver
-rec env-work-mount sh -c 'stat -f -c "%T" /work/tmp 2>/dev/null || true; grep -E " / | /work" /proc/self/mountinfo'
+rec env-work-mount sh -c 'findmnt --target /work/run && test "$(findmnt -n -o FSTYPE -T /work/run)" = ext4' || exit 1
 
 if command -v setpriv >/dev/null 2>&1; then
     set -- setpriv --reuid=1000 --regid=1000 --clear-groups

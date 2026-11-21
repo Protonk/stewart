@@ -46,6 +46,18 @@ class ControllerControls(unittest.TestCase):
         self.assertFalse(fixture.marker.exists())
         return commission, fixture
 
+    def test_login_directory_is_excluded_before_packet_creation_or_writer_hashing(self):
+        fixture = profile_tests.ProfileControls('runTest')
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        for packet, writer in ((fixture.config / 'packet', self.writer),
+                               (self.packet, fixture.config / '.credentials.json')):
+            with self.subTest(packet=packet, writer=writer), patch.object(c, 'helper_binary') as hash_writer:
+                with self.assertRaisesRegex(ValueError, 'overlaps the harness login directory'):
+                    c.prepare_packet(packet, writer, 'synthetic-control-model', installation=fixture.install)
+                hash_writer.assert_not_called()
+                self.assertFalse(packet.exists())
+
     def rewrite_budget(self, change):
         path = self.packet / 'invocations/BUDGET.json'
         value = c.p.decode(path.read_bytes())

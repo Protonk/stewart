@@ -4,6 +4,10 @@ The [local wire captures](wire/README.md) preserve independent HTTP framing,
 CONNECT acceptance and an authentication challenge, with observations from
 both ends of the successful tunnel.
 
+The `.scratch/` paths below identify originals by their locations in the Mac
+checkout. The Linux VM receives the tracked fixtures with the clone. A retained
+original is available there only after its separate evidence transfer.
+
 For the `messages/` and `citations/` cases documented here, the release binary
 and the clean test binary each exercise every fixture variant and cross-fixture
 comparison. Each sabotage run exercises the fixture named by its target checks.
@@ -172,7 +176,7 @@ These comparisons do not exercise live interruption, delivery or close.
 
 ## `runtime/`: C1 surface-observer captures
 
-These inputs come from the 2026-11-13 native C1 supplied-surface encounter,
+These inputs come from the 2026-11-13 macOS C1 supplied-surface encounter,
 CLI `2.1.322`, model `claude-haiku-5-5`, effort omitted. Originals live under
 `.scratch/readiness-c1-01/packet/observation/cases/`; the
 [qualification index](../../qualified.md#readiness-c1-01) binds that retained
@@ -232,7 +236,7 @@ result prose and reported costs.
 ### C4/C5 authoring and error forms
 
 `runtime-captured-authoring` uses these exact captured calls and one complete
-conversation result from native CLI `2.1.322`, model `claude-haiku-5-5`, effort
+conversation result from macOS CLI `2.1.322`, model `claude-haiku-5-5`, effort
 omitted. C4 ran on 2026-11-14; C5 on 2026-11-15. Calls are Stewart-owned captures;
 the C5 user frame is captured harness output, not provider HTTP. Materials are
 from the separately frozen pre-intake packet inputs.
@@ -304,7 +308,7 @@ live near-limit partial submission, timing, model behavior or provider usage.
 ## `citations/`: M1/C2/C3 recovery operands
 
 These are exact captured calls from M1 direct (Messages API, 2026-11-13), C2
-ordinary (native CLI, 2026-11-13), and C3 pages (native CLI, 2026-11-13). All used
+ordinary (macOS CLI, 2026-11-13), and C3 pages (macOS CLI, 2026-11-13). All used
 `claude-haiku-5-5`, effort omitted; the two CLI encounters used `2.1.322`.
 Calls are Stewart-owned capture, not an independent provider wire witness.
 Material bytes come from the separate pre-intake inputs. M1's independent

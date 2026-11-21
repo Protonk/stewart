@@ -1,0 +1,18 @@
+{
+  "guest": "Debian GNU/Linux 13.7 (trixie), aarch64",
+  "tool": "keyctl from keyutils-1.6.3 (Built 2025-04-13)",
+  "account": "stewart-launch",
+  "session": "runuser -l stewart-launch",
+  "locale": "C",
+  "ring": "serial from keyctl get_persistent @s",
+  "operation": [
+    "search",
+    "<ring>",
+    "user",
+    "stewart-provider:absent-452671"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "keyctl_search: Required key not available\n",
+  "payload_requested": false
+}

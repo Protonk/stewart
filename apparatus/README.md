@@ -28,10 +28,8 @@ prepares installation evidence and runtime profiles.
 
 ## Running the scripts
 
-On the development Mac the containers run under Apple `container` 1.6.1. Each
-script checks that version and that the container services are running, and
-stops otherwise. Run the scripts from a shell with access to the host's
-container service. Each script requires one argument, its evidence folder, and
+Run the scripts in the Linux development login with rootless Podman 5 and
+cgroup v2. [Guest setup](lima/README.md). Each script requires one argument, its evidence folder, and
 refuses one that exists; give a new folder directly under `.scratch/` as an
 absolute path. Without the argument a script prints its usage and exits 2
 before doing anything else.
@@ -45,8 +43,7 @@ sh apparatus/step2.sh "$PWD/.scratch/apparatus-NN"  # from the repository root; 
 It creates `service/vendor` and refuses to start while that folder exists. The
 script:
 
-1. Checks the container CLI version, that its services are running and that it
-   supports `build`.
+1. Checks the Podman version, rootless operation and cgroup version.
 2. Archives `service/` and `apparatus/` from `HEAD` with `git archive`. The
    build therefore sees only committed files, and the commit is recorded.
 3. With network access:
@@ -68,7 +65,7 @@ script:
 code under `host/` or the build folder. The toolchain image digests are the
 pins for later builds and are recorded in `host/toolchain-inspect-*.stdout`.
 
-The x86_64 builds run under Rosetta emulation on the development Mac.
+The amd64 builds run through Rosetta in the aarch64 guest.
 
 Vendored crates come from crates.io at the versions and checksums in
 `Cargo.lock`. To produce `service/vendor` in another checkout, run `step2.sh`
@@ -98,8 +95,7 @@ harness; the fake Messages API, the two auditors and the byte-exact witnesses
 are described below. `mini_stewart.py` is a stand-in used only by self-tests.
 Test-only TLS certificates are in [`driver/testdata/`](driver/testdata/README.md).
 
-Natively, for example on the development Mac against a development build
-(not qualification evidence):
+Run against a guest development build for iteration.
 
 ```sh
 python3 -I -B apparatus/driver/stewart_driver.py --list [--describe]
@@ -111,9 +107,8 @@ python3 -I -B apparatus/driver/stewart_driver.py \
 
 Build the test binary into its own target folder, for example with
 `CARGO_TARGET_DIR`, so the two builds never share artifacts. Expectations that
-only Linux can show, such as OFD lock behavior, `/proc` observations, the
-archive filesystem allowlist and byte-string names, are skipped elsewhere with
-their reason. `--skip-heavy` skips the cases `--list` marks heavy: bound-sized
+cover OFD locks, process observations, the archive filesystem allowlist and
+raw filename bytes on both Linux architectures. `--skip-heavy` skips the cases `--list` marks heavy: bound-sized
 inputs and close's bounded waits. The evidence folder holds `START.json`,
 `RESULT.json`, `RESULTS.md`, each command's argv, streams, exit status and
 timing, the inventories, and the witnesses. The exit status is 0 only when no
@@ -222,8 +217,8 @@ repeat these comparisons after the fact.
 sh apparatus/acceptance.sh "$PWD/.scratch/acceptance-NN"  # from the repository root; NN not yet used
 ```
 
-One container suite runs the whole driver on Linux aarch64 and x86_64 (on the
-development Mac, aarch64 natively and x86_64 under Rosetta), offline. It needs
+One container suite runs the whole driver on Linux aarch64 and x86_64 offline.
+The arm64 guest executes x86_64 binaries through Rosetta. It needs
 the toolchain images and `service/vendor` from `step2.sh`, and pulls the pinned
 python image (its only network use). It archives `service`, `apparatus`,
 `docs` and `examples` from `HEAD` (the driver compares its pinned texts and

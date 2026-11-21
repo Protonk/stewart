@@ -150,18 +150,60 @@ class LaunchTests(unittest.TestCase):
             with self.subTest(value_length=len(bad)), self.assertRaises(ValueError):
                 credential_bytes(bad)
 
+    def test_qualified_arm64_manifest_pinned_for_private_rootless_work(self):
+        manifest = 'sha256:' + 'a'*64
+        entry = {'python_image':'sha256:'+'b'*64, 'platforms':{'linux-aarch64':{'python_manifest':manifest}}}
+        image = launch.podman.qualified_image(entry)
+        self.assertEqual(image,'docker.io/library/python@'+manifest)
+        for arch, digest, rootless, running_id, ok in [
+            ('arm64',manifest,'true','cc',True),
+            ('amd64',manifest,'true','cc',False),
+            ('arm64',entry['python_image'],'true','cc',False),
+            ('arm64',manifest,'false','cc',False),
+            ('arm64',manifest,'true','dd',False),
+        ]:
+            with self.subTest(arch=arch,rootless=rootless,digest=digest,running_id=running_id), tempfile.TemporaryDirectory() as temp:
+                host = Path(temp)
+                calls = {}
+                def step(label,argv):
+                    calls[label]=argv
+                    replies={'version':'podman version 5.4.2','rootless':rootless,
+                             'image':json.dumps([{'Id':'cc','Digest':digest,'Os':'linux','Architecture':arch}]),
+                             'running-image':running_id}
+                    (host/(label+'.stdout')).write_text(replies.get(label,''))
+                def start():
+                    launch.podman.check_engine(step,host)
+                    launch.podman.start(step,host,'fixture',image,host/'in',host/'bin',host/'out',True)
+                if not ok:
+                    with self.assertRaises(ValueError):
+                        start()
+                    self.assertNotIn('container-ready',calls)
+                    continue
+                start()
+                argv=calls['container-start']
+                self.assertIn('--pull=never',argv)
+                self.assertIn(image,argv)
+                self.assertEqual(argv[argv.index('--network')+1],'none')
+                self.assertEqual(calls['work-volume'],['podman','volume','create','fixture-work'])
+                self.assertIn('fixture-work:/work:nocopy',argv)
+                self.assertEqual(argv[argv.index('--user')+1],'0:0')
+                self.assertIn('core=0:0',argv)
+        del entry['platforms']['linux-aarch64']['python_manifest']
+        with self.assertRaisesRegex(ValueError,'arm64 Python manifest'):
+            launch.podman.qualified_image(entry)
+
     def test_getpass_cannot_fall_back_to_echo(self):
         def fallback(prompt):
-            warnings.warn('cannot control echo', launch.getpass.GetPassWarning)
+            warnings.warn('cannot control echo', launch.connections.getpass.GetPassWarning)
             return 'should-not-be-read'
-        with mock.patch.object(launch.getpass, 'getpass', return_value='synthetic-hidden-key'):
-            self.assertEqual(launch.hidden_credential(), b'synthetic-hidden-key')
-        with mock.patch.object(launch.getpass, 'getpass', fallback), self.assertRaisesRegex(RuntimeError, 'hidden terminal input unavailable'):
-            launch.hidden_credential()
+        with mock.patch.object(launch.connections.getpass, 'getpass', return_value='synthetic-hidden-key'):
+            self.assertEqual(launch.connections.hidden_credential(), b'synthetic-hidden-key')
+        with mock.patch.object(launch.connections.getpass, 'getpass', fallback), self.assertRaisesRegex(RuntimeError, 'hidden terminal input unavailable'):
+            launch.connections.hidden_credential()
 
     def test_real_hidden_entry_without_a_terminal_refuses_before_reading_stdin(self):
         script = ('import sys; sys.path.insert(0, sys.argv[1]); import launch; '
-                  'launch.hidden_credential()')
+                  'launch.connections.hidden_credential()')
         canary = b'synthetic-stdin-key\n'
         read_fd, write_fd = os.pipe()
         try:
@@ -178,14 +220,14 @@ class LaunchTests(unittest.TestCase):
         finally:
             os.close(read_fd)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn(b'hidden terminal input unavailable; no credential was sent', result.stderr)
+        self.assertIn(b'hidden terminal input unavailable', result.stderr)
         self.assertNotIn(b'synthetic-stdin-key', result.stdout + result.stderr)
 
     def test_host_environment_excludes_credentials_and_routing(self):
         with mock.patch.dict(os.environ, {'PATH': '/bin', 'HOME': '/home/test',
                 'ANTHROPIC_API_KEY': 'synthetic', 'STEWART_PROVIDER_URL': 'http://127.0.0.1:1',
                 'HTTPS_PROXY': 'http://127.0.0.1:2', 'PYTHONPATH': '/tmp/injected'}, clear=True):
-            self.assertEqual(launch.host_environment(), {'PATH': '/bin', 'HOME': '/home/test'})
+            self.assertEqual(launch.host_environment(), {'PATH': '/bin', 'HOME': '/home/test', 'XDG_RUNTIME_DIR': '/run/user/' + str(os.getuid())})
 
     def test_commission_refuses_fallbacks_and_unbounded_repetition(self):
         validate_commission(self.packet())
@@ -225,7 +267,7 @@ class LaunchTests(unittest.TestCase):
             argv = ['launch.py', 'live', str(out), '--qualification', 'unused',
                 '--commission', str(packet), '--approved-commission', digest(raw)]
             stderr = io.StringIO()
-            with mock.patch.object(sys, 'argv', argv), mock.patch.object(launch, 'hidden_credential') as hidden, mock.patch.object(launch.subprocess, 'run') as run, mock.patch.object(launch.subprocess, 'check_output') as checkout, redirect_stderr(stderr), self.assertRaises(SystemExit) as stopped:
+            with mock.patch.object(sys, 'argv', argv), mock.patch.object(launch.connections, 'lookup') as hidden, mock.patch.object(launch.subprocess, 'run') as run, mock.patch.object(launch.subprocess, 'check_output') as checkout, redirect_stderr(stderr), self.assertRaises(SystemExit) as stopped:
                 launch.main()
             self.assertEqual(stopped.exception.code, 2)
             self.assertIn("record the principal's bounded spending authorization", stderr.getvalue())
@@ -239,7 +281,7 @@ class LaunchTests(unittest.TestCase):
             raw = (json.dumps(value) + '\n').encode()
             packet.write_bytes(raw)
             argv[-1] = digest(raw)
-            with mock.patch.object(sys, 'argv', argv), mock.patch.object(launch, 'hidden_credential') as hidden, mock.patch.object(launch.subprocess, 'run') as run, mock.patch.object(launch.subprocess, 'check_output', side_effect=RuntimeError('authority gate passed')) as checkout:
+            with mock.patch.object(sys, 'argv', argv), mock.patch.object(launch.connections, 'lookup') as hidden, mock.patch.object(launch.subprocess, 'run') as run, mock.patch.object(launch.subprocess, 'check_output', side_effect=RuntimeError('authority gate passed')) as checkout:
                 with self.assertRaisesRegex(RuntimeError, '^authority gate passed$'):
                     launch.main()
             checkout.assert_called_once()

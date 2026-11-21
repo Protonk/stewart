@@ -1,11 +1,10 @@
 """Launch a retained Linux sanity session, with no credential in argv or environment.
 
 Rehearse uses a generated nonfunctional canary and an offline container. Live
-requires an exact commission digest and hidden terminal input after verified
+requires an exact commission digest and its bound keyring label after verified
 credential-free intake. Neither mode repeats a placement or removes a container.
 """
 import argparse
-import getpass
 import json
 import os
 from pathlib import Path
@@ -13,28 +12,12 @@ import resource
 import subprocess
 import sys
 import time
-import warnings
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import connections
+import podman
+from connections import host_environment
 from session_support import credential_bytes, digest, rehearsal_commission, scan_tree, strict_json, submission_identity, validate_commission, write_json
-
-
-def host_environment():
-    return {k: v for k, v in os.environ.items() if k in ['PATH', 'HOME', 'TMPDIR', 'USER', 'LOGNAME']}
-
-
-def hidden_credential():
-    # getpass otherwise falls back to echoed stdin. Treat its warning as failure.
-    with warnings.catch_warnings():
-        warnings.simplefilter('error', getpass.GetPassWarning)
-        try:
-            value = getpass.getpass('Anthropic test key (hidden; sent through a pipe): ')
-        except (getpass.GetPassWarning, EOFError):
-            raise RuntimeError('hidden terminal input unavailable; no credential was sent') from None
-    try:
-        return credential_bytes(value.encode('ascii'))
-    except (UnicodeEncodeError, ValueError):
-        raise RuntimeError('invalid credential; no credential was sent') from None
 
 
 def credential_cases_qualified(result):
@@ -77,6 +60,7 @@ def main():
     parser.add_argument('--qualification', required=True)
     parser.add_argument('--commission', type=Path)
     parser.add_argument('--approved-commission', metavar='SHA256', help='live only: the exact packet digest authorized by the principal')
+    parser.add_argument('--connection', help='Saved connection label for rehearsal or the bound live credential label')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     out = args.evidence
@@ -102,11 +86,20 @@ def main():
             parser.error('rehearsal has a fixed synthetic commission and accepts no live packet')
         commission = rehearsal_commission()
         raw = (json.dumps(commission, indent=2) + '\n').encode()
+    connection = args.connection
+    try:
+        if args.mode == 'live':
+            connection = connections.validate_label(connection or commission['account']['credential_label'], commission)
+        elif connection is not None:
+            commission['account']['credential_label'] = connections.validate_label(connection)
+    except connections.ConnectionError as error:
+        parser.error(str(error))
     dirty = subprocess.check_output(['git', 'status', '--porcelain', '--', 'apparatus/sanity', 'apparatus/driver/credential_observer.py'], cwd=repo, env=env)
     if dirty:
         parser.error('commit apparatus/sanity first; the container uses committed source')
     try:
         qualification, binary_dir = select_qualification(repo, args.qualification)
+        image = podman.qualified_image(qualification)
     except (ValueError, OSError, KeyError) as error:
         parser.error(str(error))
     # The qualification checker re-extracts retained evidence before we rely on it.
@@ -131,15 +124,18 @@ def main():
     (staging / 'commission.json').write_bytes(raw)
     started = time.time()
     name = f'stewart-sanity-{int(started)}-{os.getpid()}'
-    image = 'docker.io/library/python@' + qualification['python_image']
-    report = {'schema': 'stewart.sanity-launch/1', 'mode': args.mode, 'started_at': started,
-        'container': name, 'qualification': args.qualification,
+    report = {'schema': 'stewart.sanity-launch/2', 'mode': args.mode, 'started_at': started,
+        'container': name, 'work_volume': name + '-work', 'platform_image': image,
+        'registry_index': podman.image_reference(qualification['python_image']),
+        'credential_source': connections.source(connection) if connection else {'kind': 'generated'},
+        'qualification': args.qualification,
         'binary_sha256': qualification['platforms']['linux-aarch64']['release_sha256'],
         'binary_source': qualification['source_commit'], 'commission_sha256': digest(raw),
         'source': source, 'bindings': actual_bindings,
         'model_calls': 0 if args.mode == 'rehearse' else None, 'credential_sent': False}
 
     def step(label, argv):
+        write_json(host / (label + '.argv.json'), argv)
         with (host / (label + '.stdout')).open('xb') as stdout, (host / (label + '.stderr')).open('xb') as stderr:
             result = subprocess.run(argv, cwd=repo, env=env, stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr)
         (host / (label + '.exit')).write_text(str(result.returncode) + '\n')
@@ -148,35 +144,18 @@ def main():
 
     proc = None
     try:
-        step('version', ['container', '--version'])
-        if 'version 1.6.1 ' not in (host / 'version.stdout').read_text():
-            raise RuntimeError('this launcher requires Apple container 1.6.1')
-        step('system-status', ['container', 'system', 'status'])
-        step('image', ['container', 'image', 'inspect', image])
+        podman.check_engine(step, host)
         step('archive', ['git', 'archive', '--format=tar', '-o', str(staging / 'source.tar'), 'HEAD', 'apparatus/sanity', 'apparatus/driver/credential_observer.py'])
         report['source_archive_sha256'] = digest((staging / 'source.tar').read_bytes())
-        argv = ['container', 'run', '--name', name, '--detach', '--init', '--ulimit', 'core=0:0',
-                '--cpus', '2', '--memory', '512M', '--platform', 'linux/arm64',
-                '--network', 'none' if args.mode == 'rehearse' else 'default',
-                '--mount', f'type=bind,source={staging},target=/in,readonly',
-                '--mount', f'type=bind,source={binary_dir},target=/bin-in,readonly',
-                '--mount', f'type=bind,source={exported},target=/out', image,
-                # Stewart opens ancestors for reading as part of descriptor path
-                # validation. Shared scaffolding exposes only generic names;
-                # each private scenario and the credential witness stay 0700.
-                'sh', '-c', 'umask 077; ulimit -c 0; mkdir -p /work/code && chmod 755 /work /work/code && tar -xf /in/source.tar -C /work/code && touch /work/code/.ready && exec sleep infinity']
-        write_json(host / 'container.argv.json', argv)
-        (host / 'container.name').write_text(name + '\n')
-        step('container-start', argv)
-        step('container-ready', ['container', 'exec', name, 'sh', '-c', 'n=0; until test -f /work/code/.ready; do n=$((n+1)); test "$n" -lt 100 || exit 1; sleep 0.1; done'])
+        podman.start(step, host, name, image, staging, binary_dir, exported, args.mode == 'rehearse')
         # Independent operator calls can run while the foreground session is busy.
-        operator_base = ['container', 'exec', name, 'env', '-i', 'PATH=/usr/local/bin:/usr/bin:/bin',
+        operator_base = ['podman', 'exec', name, 'env', '-i', 'PATH=/usr/local/bin:/usr/bin:/bin',
             'python3', '-I', '-B', '/work/code/apparatus/sanity/control.py']
         write_json(host / 'operator.json', {'container': name, 'status': operator_base + ['status'],
             'close': operator_base + ['close'], 'close_ends_authoring': True,
             'private_records': '/work/private', 'no_automatic_continuation': True})
         print('Retained container ' + name + '; operator commands: ' + str(host / 'operator.json'), flush=True)
-        argv = ['container', 'exec', '--interactive', name, 'env', '-i',
+        argv = ['podman', 'exec', '--interactive', name, 'env', '-i',
                 'PATH=/usr/local/bin:/usr/bin:/bin', 'HOME=/work', 'python3', '-I', '-B',
                 '/work/code/apparatus/sanity/session.py', args.mode, '--binary', '/bin-in/stewart',
                 '--packet', '/in/commission.json']
@@ -193,12 +172,13 @@ def main():
             ready = strict_json((exported / 'READY.json').read_bytes())
             if ready.get('credential_free_intake_verified') is not True:
                 raise RuntimeError('intake did not verify; no credential sent')
-            key = (b'stewart-canary-NOT-A-CREDENTIAL-' + os.urandom(24).hex().encode()) if args.mode == 'rehearse' else hidden_credential()
+            key = (connections.lookup(connection, rehearsal=args.mode == 'rehearse', record=host / 'connection.json')
+                   if connection else connections.SYNTHETIC_PREFIX + os.urandom(24).hex().encode())
             proc.stdin.write(key)
             proc.stdin.close()
             report['credential_sent'] = True
             report['container_exit'] = proc.wait()
-        step('inspect', ['container', 'inspect', name])
+        step('inspect', ['podman', 'inspect', name])
         report['host_credential_scan'] = scan_tree(out, key)
         del key
         if report['host_credential_scan']['files_with_matches'] or report['host_credential_scan']['errors']:

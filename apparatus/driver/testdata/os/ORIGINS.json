@@ -43,5 +43,15 @@
     "origin": ".scratch/acceptance-readiness-02/driver-amd64/evidence/cases/credentials.process/release/process-observers.json",
     "bytes": 3765,
     "sha256": "3da1570c7ff1adb35e841cbd2a972381bfb10b7aa7d13d510880db0b7a54953b"
+  },
+  "podman-python-arm64.json": {
+    "origin": "Stewart VM: ~stewart-dev/driver-port/native-control-xfkoOY/observation.json",
+    "bytes": 2467,
+    "sha256": "fe5e49558b250b615ac79a6facb0cffa091fd6574dff11e91d735b1f7aed3de4"
+  },
+  "podman-python-amd64.json": {
+    "origin": "Stewart VM: ~stewart-dev/driver-port/platform-20261121T021852Z-alAGhz/amd64/observation.json",
+    "bytes": 2611,
+    "sha256": "50f4401adf78e75e4facb7b2c7595c90bae7785c438ae08730ed5fc6e12934a2"
   }
 }

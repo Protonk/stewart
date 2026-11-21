@@ -1,0 +1,118 @@
+{
+  "schema": "stewart.driver-platform-observation/1",
+  "started_at": "2026-11-21T02:20:49.584044+00:00",
+  "probe_sha256": "d585df6c484a7a761047eec11dae8b4eaa0a78aa81a19be70e6f8633e01d21a4",
+  "uid": 1000,
+  "observer_pid": 1,
+  "child_pid": 2,
+  "machine": "x86_64",
+  "kernel_release": "6.12.115+deb13.1-cloud-arm64",
+  "synthetic_home": "/home/synthetic",
+  "argv": [
+    "/usr/local/bin/python3",
+    "-I",
+    "-B",
+    "/probe.py",
+    "--child",
+    "/tmp/tmp9u94y1xd/fixture"
+  ],
+  "observations": [
+    {
+      "dumpable": 1,
+      "startup_fds": {
+        "3": {
+          "target": "/usr/local/bin/python3.14"
+        },
+        "4": {
+          "target": "/mnt/lima-rosetta/rosetta"
+        },
+        "5": {
+          "errno": 9
+        },
+        "6": {
+          "errno": 9
+        },
+        "7": {
+          "errno": 9
+        },
+        "8": {
+          "errno": 9
+        },
+        "9": {
+          "errno": 9
+        },
+        "10": {
+          "errno": 9
+        },
+        "11": {
+          "errno": 9
+        }
+      },
+      "reuse": {
+        "opened_fd": 5,
+        "bytes": 37,
+        "sha256": "52b96103251a5665db11ce6e26ec0c67e4164e30eba555b864ccb5e3120662da"
+      },
+      "cmdline": [
+        "/usr/local/bin/python3",
+        "-I",
+        "-B",
+        "/probe.py",
+        "--child",
+        "/tmp/tmp9u94y1xd/fixture"
+      ],
+      "cmdline_bytes": 72,
+      "cmdline_sha256": "86bbf111d589583d5747492e41bef32532067838e9095b9f8ab79c89d424999f",
+      "observed_monotonic_ns": 1171507117444
+    },
+    {
+      "dumpable": 0,
+      "startup_fds": {
+        "3": {
+          "target": "/usr/local/bin/python3.14"
+        },
+        "4": {
+          "target": "/mnt/lima-rosetta/rosetta"
+        },
+        "5": {
+          "errno": 9
+        },
+        "6": {
+          "errno": 9
+        },
+        "7": {
+          "errno": 9
+        },
+        "8": {
+          "errno": 9
+        },
+        "9": {
+          "errno": 9
+        },
+        "10": {
+          "errno": 9
+        },
+        "11": {
+          "errno": 9
+        }
+      },
+      "reuse": {
+        "opened_fd": 5,
+        "bytes": 37,
+        "sha256": "52b96103251a5665db11ce6e26ec0c67e4164e30eba555b864ccb5e3120662da"
+      },
+      "cmdline": [
+        "/mnt/lima-rosetta/rosetta",
+        "/usr/local/bin/python3",
+        "-I",
+        "-B",
+        "/probe.py",
+        "--child",
+        "/tmp/tmp9u94y1xd/fixture"
+      ],
+      "cmdline_bytes": 98,
+      "cmdline_sha256": "ecbf4402c56754104a7931dcfb402540fc1a5fb1bbbaf8ca2fcde15bdee91245",
+      "observed_monotonic_ns": 1171508233746
+    }
+  ]
+}

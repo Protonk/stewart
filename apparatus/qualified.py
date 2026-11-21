@@ -1031,6 +1031,84 @@ def runtime_platform(ctx, ev, head, p, machine, native, expectations, bins):
             "rustc": rustc.splitlines()[0] if rustc else None, "script_checks": checks, "runtime": runtime}
 
 
+def podman_inspection(ev, role, arch, need):
+    path = "host/%s-podman-%s.stdout" % (role, arch)
+    rows = ev.json(path, need)
+    if rows is None:
+        return None
+    if (not isinstance(rows, list) or len(rows) != 1 or not isinstance(rows[0], dict)
+            or rows[0].get("Os") != "linux" or rows[0].get("Architecture") != arch):
+        ev.problem("%s: expected one linux/%s image" % (path, arch))
+        return None
+    return rows[0]
+
+
+def registry_platform(ev, role, arch, index_digest, need):
+    """Reconcile the registry's index bytes, selected Linux descriptor and local inspection."""
+    path = "host/index-%s.stdout" % role
+    raw = ev.bytes(path, need)
+    if raw is None:
+        return None
+    if "sha256:" + sha256(raw) != index_digest:
+        ev.problem("%s: bytes differ from the committed image index digest" % path)
+        return None
+    try:
+        index = parse_json(raw)
+    except (ValueError, UnicodeDecodeError) as exc:
+        ev.problem("%s: invalid registry index (%s)" % (path, exc))
+        return None
+    manifests = index.get("manifests") if isinstance(index, dict) else None
+    matches = []
+    for row in manifests if isinstance(manifests, list) else ():
+        platform = row.get("platform") if isinstance(row, dict) else None
+        if isinstance(platform, dict) and platform.get("os") == "linux" and platform.get("architecture") == arch:
+            matches.append(row.get("digest"))
+    if len(matches) != 1 or not isinstance(matches[0], str) or not re.fullmatch(r"sha256:[a-f0-9]{64}", matches[0]):
+        ev.problem("%s: expected exactly one linux/%s manifest digest" % (path, arch))
+        return None
+    local = podman_inspection(ev, role, arch, need)
+    if local is None:
+        return None
+    if local.get("Digest") != matches[0]:
+        ev.problem("the local %s linux/%s manifest differs from its index" % (role, arch))
+        return None
+    return matches[0]
+
+
+def podman_images(ctx, ev, head, suite, platforms, python_index=None):
+    commit = head["source_commit"]
+    if not commit or not ctx.git(["ls-tree", commit, "--", "apparatus/container/podman-images.sh"]).stdout:
+        return
+    source = "apparatus/step2.sh" if suite == "toolchain" else "apparatus/container/suite-host.sh"
+    script = ctx.blob(commit, source)
+    if script is None:
+        ev.problem(ctx.why_no_blob(commit, source))
+        return
+    roles = ("rust", "alpine") if suite == "toolchain" else ("python",)
+    pins = {}
+    for role in roles:
+        pattern = r"^%s=[^\s@]+@(sha256:[a-f0-9]{64})$" % role.upper()
+        match = re.search(pattern, script.decode("utf-8", "replace"), re.M)
+        if not match:
+            ev.problem("%s at %s: missing %s registry pin" % (source, commit, role))
+            continue
+        pins[role] = match.group(1)
+    if python_index is not None and pins.get("python") != python_index:
+        ev.problem("host/python-inspect.stdout: recorded index differs from the pinned source")
+    for arch, key, _machine in PLATFORMS:
+        pl = platforms[key]
+        need = head["finished"] or pl.get("outcome") == "qualified"
+        local = podman_inspection(ev, "toolchain", arch, need)
+        if local is not None:
+            config = str(local.get("Id", "")).removeprefix("sha256:")
+            if not HEX64.fullmatch(config) or "sha256:" + config != ev.image("host/toolchain-inspect-%s.stdout" % arch):
+                ev.problem("the linux/%s toolchain ID differs from its recorded inspection" % arch)
+        for role, index in pins.items():
+            manifest = registry_platform(ev, role, arch, index, need)
+            if manifest is not None:
+                pl[role + "_manifest"] = manifest
+
+
 def extract_acceptance(ctx, ev, suite):
     head = read_header(ctx, ev, suite)
     native = None
@@ -1047,6 +1125,7 @@ def extract_acceptance(ctx, ev, suite):
     for p, key, machine in PLATFORMS:
         platforms[key] = reader(ctx, ev, head, p, machine, native, expectations, bins)
     extra = {"python_image": ev.image("host/python-inspect.stdout", need=head["finished"])}
+    podman_images(ctx, ev, head, suite, platforms, extra["python_image"])
     return suite_entry(ev, head, suite, platforms, extra)
 
 
@@ -1144,6 +1223,7 @@ def extract_toolchain(ctx, ev):
     extra = {"vendor": None if listing is None else {
         "files": sum(1 for l in listing.decode("utf-8", "replace").splitlines() if l.strip()),
         "listing_sha256": sha256(listing)}}
+    podman_images(ctx, ev, head, "toolchain", platforms)
     return suite_entry(ev, head, "toolchain", platforms, extra)
 
 
@@ -1382,7 +1462,7 @@ def _platforms(suite):
                 continue
             if suite == "toolchain":
                 spec = TOOLCHAIN_PLATFORM
-            elif isinstance(pl, dict) and set(pl) <= set(ACCEPTANCE_NOT_RUN):
+            elif isinstance(pl, dict) and set(pl) - {"python_manifest"} <= set(ACCEPTANCE_NOT_RUN):
                 spec = ACCEPTANCE_NOT_RUN
             elif suite == "runtime":
                 spec = {key: ACCEPTANCE_PLATFORM[key] for key in (
@@ -1391,6 +1471,12 @@ def _platforms(suite):
                 spec = dict(ACCEPTANCE_PLATFORM, timing_gate=_timing_gate)
             else:
                 spec = dict(ACCEPTANCE_PLATFORM, timing_samples=_object({"commands": _COUNT, "protocol": _COUNT}))
+            manifest_fields = ("rust_manifest", "alpine_manifest") if suite == "toolchain" else ("python_manifest",)
+            for field in manifest_fields:
+                if isinstance(pl, dict) and field in pl:
+                    spec = dict(spec, **{field: _want(lambda v: isinstance(v, str) and
+                                                     re.fullmatch(r"sha256:[a-f0-9]{64}", v) is not None,
+                                                     "a SHA-256 image manifest digest")})
             # Runtime evidence is present precisely when the run's own source
             # script required it. Do not invent observations for earlier runs.
             _fields(pl, spec, "%s.%s" % (where, key), probs, checked_elsewhere=() if suite == "runtime" else ("runtime",))
@@ -1769,6 +1855,10 @@ def render_platform_rows(e):
             ("Failures", ["; ".join(cell(f) for f in pl.get("failures") or []) or "none" for pl in pls]),
             ("Toolchain image", [code(pl.get("toolchain_image")) for pl in pls]),
             ("rustc", [cell(pl.get("rustc")) for pl in pls])]
+    for role in ("python", "rust", "alpine"):
+        field = role + "_manifest"
+        if any(field in pl for pl in pls):
+            rows.append((role.capitalize() + " platform manifest", [code(pl.get(field)) for pl in pls]))
     def counts(pl, key, order):
         d = pl.get(key) or {}
         return ", ".join("%s %s" % (k.replace("_", " "), cell(d.get(k))) for k in order) if d else "not recorded"
@@ -2343,14 +2433,16 @@ def run_folder(ctx, arg):
 def inside_folder(ctx, folder, arg, what):
     """ARG, given relative to FOLDER or as a path inside it, as a normalized path relative to FOLDER."""
     rel = arg
-    if not os.path.lexists(os.path.join(folder, arg)):
+    if os.path.isabs(arg) or not os.path.lexists(os.path.join(folder, arg)):
         full = os.path.abspath(arg)
         for base in (folder, os.path.realpath(folder)):
             if full == base or full.startswith(base + os.sep):
                 rel = os.path.relpath(full, base)
                 break
         else:
-            raise Refusal("%s %s is neither a path in %s nor a path inside it" % (what, arg, ctx.show(folder)))
+            # Leave a relative operand to Evidence, which can explain a case mismatch.
+            if os.path.isabs(arg):
+                raise Refusal("%s %s is not inside %s" % (what, arg, ctx.show(folder)))
     rel = clean_rel(rel.replace(os.sep, "/"))
     if rel is None:
         raise Refusal("%s %s is not inside %s" % (what, arg, ctx.show(folder)))
@@ -3105,6 +3197,29 @@ def _self_test_controls(base, isolated, control):
     _fixture_run(ctx, "run-a", commit, "2026-01-01T00:00:00Z", False)
     _fixture_run(ctx, "run-b", commit, "2026-01-02T00:00:00Z", False)
     _fixture_run(ctx, "run-c", commit, "2026-01-03T00:00:00Z", True)
+    # A registry index binds each platform to its own local Linux manifest.
+    pev = Evidence(ctx, "run-0")
+    child = "sha256:" + sha256(b"ARM child")
+    path = "host/index-python.stdout"
+    index = json.dumps({"manifests": [{"platform": {"os": "linux", "architecture": "arm64"}, "digest": child}]})
+    index_id = "sha256:" + sha256(index.encode())
+    _write(pev.dir, path, index)
+    ipath = "host/python-podman-arm64.stdout"
+    inspect = {"Os": "linux", "Architecture": "arm64", "Digest": child}
+    _write(pev.dir, ipath, json.dumps([inspect]))
+    control("Podman: pinned index selects the locally inspected Linux manifest",
+            registry_platform(pev, "python", "arm64", index_id, True) == child and not pev.problems, repr(pev.problems))
+    for about, key, different in (("architecture", "Architecture", "amd64"), ("manifest", "Digest", "sha256:" + "f"*64)):
+        _write(pev.dir, ipath, json.dumps([dict(inspect, **{key: different})]))
+        pev = Evidence(ctx, "run-0")
+        control("Podman: a different local " + about + " is refused",
+                registry_platform(pev, "python", "arm64", index_id, True) is None and bool(pev.problems),
+                repr(pev.problems))
+    _write(pev.dir, ipath, json.dumps([inspect]))
+    _write(pev.dir, path, index + "\n")
+    pev = Evidence(ctx, "run-0")
+    control("Podman: a change to the registry bytes breaks the source pin",
+            registry_platform(pev, "python", "arm64", index_id, True) is None and bool(pev.problems), repr(pev.problems))
     # A failed case alone must determine failure even if every exit record and
     # other count says success. Restore this temporary fixture after the check.
     case_path = os.path.join(ctx.scratch, "run-0", "driver-arm64/evidence/RESULT.json")

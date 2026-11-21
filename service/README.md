@@ -131,7 +131,7 @@ each tool call, then `delivery/` and `ops/close.rs`.
 
 **Platform**
 
-- `platform.rs`: the Linux-only calls, with development fallbacks.
+- `platform.rs`: Linux file, process and kernel interfaces.
 - `fsx.rs`: descriptor-relative filesystem access and exclusive writes.
 - `util.rs`: digests, UTC timestamps, errno names and edit distance.
 
@@ -173,8 +173,7 @@ The independent drivers, the [release driver](../apparatus/README.md#the-indepen
 and the [runtime driver](../apparatus/driver/CLAUDE-CODE.md), own the behavior
 they witness; run them natively with `--case` while iterating. An integration
 test here covers what they do not: a fault point or boundary no driver case
-reaches, behavior a driver case observes only on Linux, or exact bytes and
-archive state that only the implementation names.
+reaches, filesystem-specific behavior, or exact bytes and archive state that only the implementation names.
 
 | File | Covers | Built with |
 | --- | --- | --- |
@@ -223,7 +222,7 @@ CARGO_TARGET_DIR=target-local cargo test --locked --offline --features claude-co
 CARGO_TARGET_DIR=target-local cargo build --locked --offline --release --features claude-code
 ```
 
-This extends the native Apple-silicon workflow. Keep the resulting binary for
+Keep the resulting binary for
 any audits it creates: its writer digest differs from the release binary, so
 the release cannot continue or close those audits. A runtime profile's check is
 bound to the [launch surface](../docs/claude-code/CONTRACT.md#launch-surface)
@@ -253,11 +252,9 @@ suites. The release and development runtime have separate Linux qualification re
 
 ## Platform
 
-Linux is the supported platform. Apple-silicon macOS is a build target. Every
-Linux-only call is in `src/platform.rs`, each beside its macOS fallback. The
-fallbacks let the crate build, test and run natively on a Mac; they are not
-supported behavior, and what rests on them (the OFD active lock, `/proc` observations, the archive
-filesystem allowlist) behaves as shipped only on Linux.
+Stewart builds on Linux x86_64 and aarch64. `src/platform.rs` implements
+the open file description lock, observations from `/proc` and the archive
+filesystem allowlist. Place the archive on local ext4, xfs or btrfs.
 
 Before adding a call to a libc function, read "Calling libc" in the crate
 documentation in `src/lib.rs`. The fat-LTO static release build constrains how

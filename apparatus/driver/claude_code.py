@@ -20,6 +20,7 @@ import argparse
 import base64
 import contextlib
 import copy
+import fcntl
 import hashlib
 import json
 import os
@@ -43,7 +44,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from driver_core import (CONTINUATION, FAMILY_TEXT, FAMILY_TOOLS, ORIENTATION, REMINDER, REPLY_SCHEMA,
                          check_advice, check_commissioning, check_description, expected_tools, iter_values,
-                         parse_reference, reading_problem, strict_loads)
+                         parse_reference, platform_name, reading_problem, strict_loads)
 from rawjson import compact, parse
 
 
@@ -83,7 +84,7 @@ CHECKPOINTS = (
     {"num_turns": 3, "usage": {"input_tokens": 17, "cache_creation_input_tokens": 120,
                                "cache_read_input_tokens": 950, "output_tokens": 65}},
 )
-PROFILE_SCHEMA = "stewart.claude-code.profile/2"
+PROFILE_SCHEMA = "stewart.claude-code.profile/3"
 ARRANGEMENT_SCHEMA = "stewart.claude-code.arrangement/3"
 SURFACE_SCHEMA = "stewart.claude-code.surface/1"
 ARRANGEMENT_KEYS = {
@@ -489,16 +490,6 @@ def surface_example(spec):
     return "".join(block.split("\n")).encode("utf-8"), stated.group(1) if stated else None
 
 
-def platform_name():
-    system, machine = platform.system(), platform.machine()
-    value = {("Darwin", "arm64"): "macos-aarch64",
-             ("Linux", "aarch64"): "linux-aarch64",
-             ("Linux", "x86_64"): "linux-x86_64"}.get((system, machine))
-    if value is None:
-        raise ValueError("unsupported native driver platform: %s %s" % (system, machine))
-    return value
-
-
 def authoring_capture(name):
     return transport_loads((HERE / "testdata" / "runtime" / (name + ".json")).read_bytes())
 
@@ -714,12 +705,12 @@ def sequence_selftest(check):
     child = subprocess.Popen(["/bin/sleep", "20"], stdin=read_end)
     try:
         held = pipe_readers(read_end)
-        check("sequence.pipe-readers.other-holder", held is None or held == [[child.pid, 0]])
+        check("sequence.pipe-readers.other-holder", held == [[child.pid, 0]])
     finally:
         child.kill()
         child.wait(timeout=5)
     alone = pipe_readers(read_end)
-    check("sequence.pipe-readers.sole-holder-control", alone is None or alone == [])
+    check("sequence.pipe-readers.sole-holder-control", alone == [])
     os.close(read_end)
     os.close(write_end)
     pipe_packing_selftest(check)
@@ -731,17 +722,12 @@ def pipe_packing_selftest(check):
     notice, reminder = len(user_frame(COMPACTED)), len(user_frame(REMINDER))
     check("pipe-packing.frame-lengths", (notice, reminder) == (255, 249))
     linux = {"platform": "linux", "capacity": 65536, "page_size": 4096, "packet": False}
-    macos = {"platform": "darwin", "capacity": MACOS_PIPE_BYTES, "page_size": None, "packet": False}
-    # Linux: 16 notices fill a 4 KiB page (4,080 bytes), 16 pages hold 256; macOS holds 257 in
-    # 65,535 bytes. Raw bytes overstate Linux by one notice.
+    # Sixteen notices occupy 4,080 bytes of a 4 KiB page. Sixteen pages hold 256 notices.
     check("pipe-packing.linux-pages", pipe_frames_fit(notice, linux) == 256)
-    check("pipe-packing.macos-bytes", pipe_frames_fit(notice, macos) == 257)
     check("pipe-packing.byte-count-control", 65536 // notice == 257 and pipe_accepts([notice] * 257, linux) == 256)
     # After the fitting notices the reminder cannot complete; one notice fewer leaves it room.
     check("pipe-packing.linux-reminder-blocked", pipe_accepts([notice] * 256 + [reminder], linux) == 256
           and pipe_accepts([notice] * 255 + [reminder], linux) == 256)
-    check("pipe-packing.macos-reminder-blocked", pipe_accepts([notice] * 257 + [reminder], macos) == 257
-          and pipe_accepts([notice] * 256 + [reminder], macos) == 257)
     # A sub-page write merges into the last page only when it fits there whole.
     check("pipe-packing.linux-merge-fits-whole", pipe_accepts([notice] * 256 + [16, 1], linux) == 257
           and pipe_accepts([notice] * 256 + [17], linux) == 256)
@@ -769,8 +755,7 @@ def pipe_packing_selftest(check):
     # fewer leaves the reminder room. The kernel must agree on every sequence.
     check("pipe-packing.host-rule", [pipe_accepts(writes, facts) for writes in sequences[:3]] == [fit, fit, fit])
     check("pipe-packing.host-probe", [p["accepted"] for p in probed] == [pipe_accepts(w, facts) for w in sequences])
-    check("pipe-packing.host-probe-capacity", all(p["capacity"] == (facts["capacity"] if facts["page_size"] else None)
-                                                   for p in probed))
+    check("pipe-packing.host-probe-capacity", all(p["capacity"] == facts["capacity"] for p in probed))
 
 
 def snapshot(root):
@@ -848,87 +833,45 @@ def input_frames(stream):
 
 
 def pipe_readers(fd=0):
-    """Other processes holding the read side of the pipe on this process's descriptor fd,
-    as sorted [pid, fd] pairs; None when this host gives no such observation. Linux reads
-    /proc; macOS lists open files with lsof, whose device field names one pipe end."""
+    """Other visible processes holding the pipe's read side, as sorted [pid, fd] pairs.
+    None means the supplied descriptor could not be identified as a pipe in procfs."""
     me = os.getpid()
-    if sys.platform.startswith("linux"):
+    try:
+        target = os.readlink("/proc/self/fd/%d" % fd)
+    except OSError:
+        return None
+    if not target.startswith("pipe:"):
+        return None
+    holders = []
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit() or int(pid) == me:
+            continue
         try:
-            target = os.readlink("/proc/self/fd/%d" % fd)
+            names = os.listdir("/proc/%s/fd" % pid)
         except OSError:
-            return None
-        if not target.startswith("pipe:"):
-            return None
-        holders = []
-        for pid in os.listdir("/proc"):
-            if not pid.isdigit() or int(pid) == me:
-                continue
+            continue
+        for name in names:
             try:
-                names = os.listdir("/proc/%s/fd" % pid)
-            except OSError:
-                continue
-            for name in names:
-                try:
-                    if os.readlink("/proc/%s/fd/%s" % (pid, name)) != target:
-                        continue
-                    with open("/proc/%s/fdinfo/%s" % (pid, name)) as info:
-                        flags = next(int(line.split()[1], 8) for line in info if line.startswith("flags:"))
-                except (OSError, StopIteration, ValueError, IndexError):
+                if os.readlink("/proc/%s/fd/%s" % (pid, name)) != target:
                     continue
-                if flags & 3 != os.O_WRONLY:
-                    holders.append([int(pid), int(name)])
-        return sorted(holders)
-    if sys.platform == "darwin" and os.path.exists("/usr/sbin/lsof"):
-        def listing(arguments):
-            try:
-                # lsof must not inherit the descriptor under observation.
-                done = subprocess.run(["/usr/sbin/lsof", "-b", "-w", "-nP", "-F", "ftd"] + arguments,
-                                      stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                      stderr=subprocess.DEVNULL, timeout=10)
-            except (OSError, subprocess.TimeoutExpired):
-                return None
-            rows, pid, name, kind = [], None, None, None
-            for line in done.stdout.decode("utf-8", "replace").splitlines():
-                tag, value = line[:1], line[1:]
-                if tag == "p":
-                    pid = int(value)
-                elif tag == "f":
-                    name, kind = value, None
-                elif tag == "t":
-                    kind = value
-                elif tag == "d" and kind == "PIPE":
-                    rows.append((pid, name, value))
-            return rows
-        own = listing(["-a", "-p", str(me), "-d", str(fd)])
-        own = [device for _, name, device in own or [] if name == str(fd)]
-        everyone = listing([]) if len(own) == 1 else None
-        if everyone is None:
-            return None
-        return sorted([pid, int(name)] for pid, name, device in everyone
-                      if device == own[0] and name.isdigit() and (pid, name) != (me, str(fd)))
-    return None
+                with open("/proc/%s/fdinfo/%s" % (pid, name)) as info:
+                    flags = next(int(line.split()[1], 8) for line in info if line.startswith("flags:"))
+            except (OSError, StopIteration, ValueError, IndexError):
+                continue
+            if flags & 3 != os.O_WRONLY:
+                holders.append([int(pid), int(name)])
+    return sorted(holders)
 
 
 LINUX_F_SETPIPE_SZ = 1031
 LINUX_F_GETPIPE_SZ = 1032
-# XNU grows a pipe's single byte buffer on demand up to this bound (BIG_PIPE_SIZE). No call
-# reports it; pipe_probe and the self-test observe it.
-MACOS_PIPE_BYTES = 65536
 
 
 def input_pipe_facts(fd=0):
-    """The facts that decide how writes pack into the pipe on descriptor fd. On Linux,
-    F_GETPIPE_SZ reports the pipe's page-buffer slots times the page size, and a packet-mode
-    (O_DIRECT) pipe never merges writes. A macOS pipe is one byte buffer, so it has no page
-    size here."""
-    if sys.platform.startswith("linux"):
-        import fcntl
-        return {"platform": "linux", "capacity": fcntl.fcntl(fd, LINUX_F_GETPIPE_SZ),
-                "page_size": os.sysconf("SC_PAGESIZE"),
-                "packet": bool(fcntl.fcntl(fd, fcntl.F_GETFL) & getattr(os, "O_DIRECT", 0))}
-    if sys.platform == "darwin":
-        return {"platform": "darwin", "capacity": MACOS_PIPE_BYTES, "page_size": None, "packet": False}
-    raise ValueError("no pipe packing rule for " + sys.platform)
+    """Capacity, page size and packet mode determine how Linux packs pipe writes."""
+    return {"platform": "linux", "capacity": fcntl.fcntl(fd, LINUX_F_GETPIPE_SZ),
+            "page_size": os.sysconf("SC_PAGESIZE"),
+            "packet": bool(fcntl.fcntl(fd, fcntl.F_GETFL) & os.O_DIRECT)}
 
 
 def pipe_accepts(writes, facts):
@@ -940,14 +883,7 @@ def pipe_accepts(writes, facts):
     Linux pipes are page-granular (fs/pipe.c, pipe_write). When the pipe is not empty, a
     write's sub-page remainder merges into the last page buffer if it fits there whole;
     everything else takes fresh page buffers, of which the pipe has capacity / page size.
-    Packet-mode pipes never merge. A macOS pipe accepts bytes up to its buffer bound."""
-    if facts["page_size"] is None:
-        used = 0
-        for count, size in enumerate(writes):
-            if used + size > facts["capacity"]:
-                return count
-            used += size
-        return len(writes)
+    Packet-mode pipes never merge."""
     page = facts["page_size"]
     slots = facts["capacity"] // page
     buffers = []  # bytes held by each page buffer in use, oldest first; nothing is read
@@ -981,15 +917,12 @@ def pipe_probe(writes, capacity=None):
     read_end, write_end = os.pipe()
     try:
         os.set_blocking(write_end, False)
-        observed = None
-        if sys.platform.startswith("linux"):
-            import fcntl
-            if capacity is not None and fcntl.fcntl(write_end, LINUX_F_GETPIPE_SZ) != capacity:
-                try:
-                    fcntl.fcntl(write_end, LINUX_F_SETPIPE_SZ, capacity)
-                except OSError:
-                    pass  # the reported capacity shows the difference
-            observed = fcntl.fcntl(write_end, LINUX_F_GETPIPE_SZ)
+        if capacity is not None and fcntl.fcntl(write_end, LINUX_F_GETPIPE_SZ) != capacity:
+            try:
+                fcntl.fcntl(write_end, LINUX_F_SETPIPE_SZ, capacity)
+            except OSError:
+                pass  # the reported capacity shows the difference
+        observed = fcntl.fcntl(write_end, LINUX_F_GETPIPE_SZ)
         for count, size in enumerate(writes):
             try:
                 if os.write(write_end, b"\0" * size) != size:
@@ -1985,21 +1918,23 @@ class Driver:
         self.control("other-surface", reply.get("outcome") == "refused")
         self.profile_refusal("surface.other-surface", reply, named=(other, SURFACE_SHA))
         # The earlier profile identifier is refused by name; nothing reads it.
-        earlier = "stewart.claude-code.profile/1"
+        earlier = "stewart.claude-code.profile/2"
         renamed = f["profile"].replace(compact(PROFILE_SCHEMA), compact(earlier), 1)
         self.replace_profile(f, "earlier-identifier", renamed)
         reply = self.prepare(f, "earlier-identifier", "refused")
         self.control("earlier-profile-identifier", reply.get("outcome") == "refused")
         self.profile_refusal("surface.earlier-identifier", reply, named=(earlier, PROFILE_SCHEMA))
-        # The whole earlier form, with a correct writer digest, is refused too.
+        # Profile /1 used a writer digest in place of the supplied surface.
+        writer_form = "stewart.claude-code.profile/1"
         writer = compact(sha(self.binary.read_bytes()))
-        earlier_form = renamed.replace(b'"surface_sha256":' + compact(SURFACE_SHA),
-                                       b'"writer_sha256":' + writer, 1)
-        self.require("surface.earlier-form-built", earlier_form != renamed, "check member not found")
+        legacy = f["profile"].replace(compact(PROFILE_SCHEMA), compact(writer_form), 1)
+        earlier_form = legacy.replace(b'"surface_sha256":' + compact(SURFACE_SHA),
+                                      b'"writer_sha256":' + writer, 1)
+        self.require("surface.earlier-form-built", earlier_form != legacy, "check member not found")
         self.replace_profile(f, "earlier-form", earlier_form)
         reply = self.prepare(f, "earlier-form", "refused")
         self.control("earlier-profile-form", reply.get("outcome") == "refused")
-        self.profile_refusal("surface.earlier-form", reply, named=(earlier,))
+        self.profile_refusal("surface.earlier-form", reply, named=(writer_form,))
         # The current identifier admits neither the old member in place of the
         # surface binding nor beside it.
         in_place = f["profile"].replace(b'"surface_sha256":' + compact(SURFACE_SHA),
@@ -2093,7 +2028,7 @@ class Driver:
             named = "tool" if key == "tools_sha256" else key.split("_")[0]
             self.profile_refusal("binding." + section + "-" + key, reply, named=(named,))
         changed_launch = json.loads(f["profile"])["launch"]
-        changed_launch["platform"] = "linux-x86_64" if platform_name() != "linux-x86_64" else "macos-aarch64"
+        changed_launch["platform"] = "linux-x86_64" if platform_name() != "linux-x86_64" else "linux-aarch64"
         node = parse(f["profile"]).get("launch")
         changed_raw = compact(changed_launch)
         mutated = f["profile"][:node.start] + changed_raw + f["profile"][node.end:]
@@ -5708,7 +5643,7 @@ class Driver:
         expected = {"frames": count,
                     "next": None if fill["next_bytes"] is None
                     else pipe_accepts([fill["frame_bytes"]] * count + [fill["next_bytes"]], facts),
-                    "probe_capacity": facts["capacity"] if facts["page_size"] is not None else None}
+                    "probe_capacity": facts["capacity"]}
         self.eq(label + ".pipe-probe", observed, expected)
         return fill
 
@@ -5754,7 +5689,7 @@ class Driver:
         captured = self.captured_reminder(f)
         if captured:
             # A write can be incomplete only if the unread input before the reminder leaves
-            # no room for it, by the platform's packing: pages on Linux, bytes on macOS.
+            # no room for it, given the available space in the Linux pipe pages.
             lengths, contents = self.unread_input(f, label)
             at = contents.index(REMINDER)
             accepted = pipe_accepts(lengths[:at + 1], fill["facts"])
@@ -6537,10 +6472,7 @@ def synthetic_harness(scenario_path, environment_path, argv):
                     # read side are recorded for review.
                     stop_inputs.set()
                     input_thread.join(timeout=2)
-                    capacity = None
-                    if sys.platform.startswith("linux"):
-                        import fcntl
-                        capacity = fcntl.fcntl(0, LINUX_F_GETPIPE_SZ)
+                    capacity = fcntl.fcntl(0, LINUX_F_GETPIPE_SZ)
                     event("seq-stopped-reading", readers=pipe_readers(0), parent=os.getppid(),
                           reader_alive=input_thread.is_alive(), pipe_capacity=capacity)
                 elif op == "submit":
@@ -7359,7 +7291,7 @@ def self_test():
           "67926d9628757c6f2604e9154e8fe6a2ba015ad26846c48ccb1547cc42fff501")
     check("fidelity.notices-grounded", len(C3_NOTICES) == 2 and all(
           "<persisted-output>" in text and "/synthetic/external/tool-result.json" in text
-          and "/Users/" not in text and "Preview (first 2KB)" in text for text in C3_NOTICES))
+          and "/Users/" not in text and "/home/" not in text and "Preview (first 2KB)" in text for text in C3_NOTICES))
     check("fidelity.notices-omit-tails", all(page[2] not in text for page, text in zip(FIDELITY_PAGES[1:], C3_NOTICES)))
     fixture_materials = {"materials/report.txt":
         "Supplied report: café passed.\r\nThis is not an observed execution.\n".encode()}
@@ -7687,7 +7619,7 @@ def self_test():
     check("inventory.addition-invariance", immutable_changes(before, added) == [])
     check("recorder-diagnostic.positive", capture_failure_diagnostic("write capture failed: Permission denied"))
     check("recorder-diagnostic.nonfailure-control", not capture_failure_diagnostic("capture completed"))
-    check("recorder-diagnostic.path-is-not-evidence", not capture_failure_diagnostic("writer /private/tmp/runtime-recorder-failure"))
+    check("recorder-diagnostic.path-is-not-evidence", not capture_failure_diagnostic("writer /tmp/runtime-recorder-failure"))
     check("recorder-diagnostic.unrelated-write-is-not-capture", not capture_failure_diagnostic("write diagnostic failed: Permission denied"))
     check("recorder-diagnostic.path-invariance", capture_failure_diagnostic("write capture failed: Permission denied /unrelated/path"))
     for name, value in (("used", 1), ("allowed", 5), ("remaining", 4)):
@@ -7999,6 +7931,10 @@ def main():
         for name, description in CASES:
             print("%s: %s" % (name, description))
         return 0
+    try:
+        platform_name()
+    except ValueError as exc:
+        parser.error(str(exc))
     if args.self_test:
         return self_test()
     if args.binary is None or args.work is None:
@@ -8013,7 +7949,6 @@ def main():
         if path is not None and (not path.is_file() or not os.access(path, os.X_OK)):
             parser.error("binary must be an executable regular file: " + str(path))
     try:
-        platform_name()
         return Driver(args.binary, args.work, args.release_binary, args.case, args.variant_binary).run()
     except (OSError, ValueError) as exc:
         print("Driver setup failed: %s" % exc, file=sys.stderr)

@@ -83,6 +83,27 @@ def directory(path):
         raise
 
 
+def separate_login(config, *locations):
+    """Keep captured trees and individual inputs disjoint from the login directory.
+
+    Compare directory identities along both ancestries so case aliases cannot
+    place a capture inside the login. A fresh output may not exist yet.
+    """
+    config = absolute(config)
+    login = config.stat()
+    ancestors = [p.stat() for p in config.parents]
+    for location in locations:
+        path = absolute(location)
+        for entry in (path, *path.parents):
+            try:
+                identity = entry.stat()
+            except FileNotFoundError:
+                continue
+            if (os.path.samestat(login, identity)
+                    or entry == path and any(os.path.samestat(parent, identity) for parent in ancestors)):
+                raise ValueError('input or evidence location overlaps the harness login directory: ' + str(path))
+
+
 def read_file(path, limit=16 * 1024 * 1024, hash_only=False):
     path = absolute(path)
     parent = directory(path.parent)
@@ -131,14 +152,15 @@ def verification_inventory(root):
     return members
 
 
-def verify_public_installation(output, receipt_path):
+def verify_public_installation(output, receipt_path, config):
     """Reverify retained public release evidence; never execute the signed binary."""
     raw = read_file(receipt_path)
     receipt = decode(raw)
     exact(receipt, ('version', 'platform', 'binary', 'sha256', 'manifest_sha256', 'signer', 'verification'), 'pin receipt')
-    if receipt['version'] != pin.VERSION or receipt['platform'] != pin.PLATFORM or receipt['signer'] != pin.FINGERPRINT:
+    if receipt['version'] != pin.VERSION or receipt['platform'] != pin.platforms()[0] or receipt['signer'] != pin.FINGERPRINT:
         raise ValueError('installation differs from the selected native release pin')
     executable = absolute(text(receipt['binary'], 'pinned executable'))
+    separate_login(config, executable)
     for key in ('sha256', 'manifest_sha256'):
         checksum(receipt[key], key)
     public = output / 'installation'
@@ -147,7 +169,7 @@ def verify_public_installation(output, receipt_path):
     for name in ('claude-code.asc', 'manifest.json', 'manifest.json.sig'):
         publish(public / name, read_file(receipt_path.parent / name))
     manifest = read_file(public / 'manifest.json')
-    if sha(manifest) != receipt['manifest_sha256'] or pin.manifest_checksum(manifest) != receipt['sha256']:
+    if sha(manifest) != receipt['manifest_sha256'] or pin.manifest_checksum(manifest, receipt['platform']) != receipt['sha256']:
         raise ValueError('release manifest does not match the installation receipt')
     gpg, gpgv = shutil.which('gpg'), shutil.which('gpgv')
     if not gpg or not gpgv:
@@ -163,20 +185,19 @@ def verify_public_installation(output, receipt_path):
         raise ValueError('signature does not identify the pinned release key')
     if read_file(executable, limit=None, hash_only=True)[0] != receipt['sha256']:
         raise ValueError('pinned executable differs from the authenticated manifest')
-    pin.run_logged(verification, 'codesign', ['/usr/bin/codesign', '--verify', '--verbose', str(executable)])
-    if read_file(executable, limit=None, hash_only=True)[0] != receipt['sha256']:
-        raise ValueError('pinned executable changed during installation verification')
     return receipt
 
 
 def prepare(receipt_path, output, config, home, temporary):
     for path in (config, home, temporary):
         os.close(directory(path))  # Directory metadata only; never read login contents.
+    separate_login(config, receipt_path, output,
+                   *(receipt_path.parent / name for name in ('claude-code.asc', 'manifest.json', 'manifest.json.sig')))
     os.close(directory(output.parent))
     output.mkdir(mode=0o700)
-    receipt = verify_public_installation(output, receipt_path)
+    receipt = verify_public_installation(output, receipt_path, config)
     launch = {'executable': receipt['binary'], 'sha256': receipt['sha256'], 'version': receipt['version'],
-              'platform': 'macos-aarch64', 'config_directory': str(config), 'home': str(home),
+              'platform': pin.platforms()[1], 'config_directory': str(config), 'home': str(home),
               'temporary_directory': str(temporary)}
     installation = {'manifest_sha256': receipt['manifest_sha256'], 'signer': receipt['signer'],
                     'binary_sha256': receipt['sha256']}
@@ -236,8 +257,10 @@ def evidence(root, manifest_raw):
 def validated_installation(installation_root):
     """Recheck retained public evidence and executable bytes; never launch Claude."""
     launch_raw = read_file(installation_root / 'launch.json', 65536)
+    launch = decode(launch_raw)
+    separate_login(launch['config_directory'], installation_root, launch['executable'])
     installation_raw = read_file(installation_root / 'installation.json', 65536)
-    launch, installation = decode(launch_raw), decode(installation_raw)
+    installation = decode(installation_raw)
     prepared = decode(read_file(installation_root / 'PREPARATION.json'))
     exact(prepared, ('schema', 'scope', 'verified_at', 'launch_sha256', 'installation_sha256',
                      'pin_receipt_sha256', 'verification_files'),
@@ -255,8 +278,8 @@ def validated_installation(installation_root):
     receipt = decode(read_file(installation_root / 'installation/pin.json'))
     exact(receipt, ('version', 'platform', 'binary', 'sha256', 'manifest_sha256', 'signer', 'verification'), 'pin receipt')
     if (launch['sha256'] != receipt['sha256'] or launch['executable'] != receipt['binary']
-            or launch['version'] != pin.VERSION or launch['platform'] != 'macos-aarch64'
-            or receipt['version'] != pin.VERSION or receipt['platform'] != pin.PLATFORM
+            or launch['version'] != pin.VERSION or launch['platform'] != pin.platforms()[1]
+            or receipt['version'] != pin.VERSION or receipt['platform'] != pin.platforms()[0]
             or receipt['signer'] != pin.FINGERPRINT
             or installation != {'manifest_sha256': receipt['manifest_sha256'], 'signer': pin.FINGERPRINT,
                                 'binary_sha256': launch['sha256']}):
@@ -264,9 +287,9 @@ def validated_installation(installation_root):
     public = installation_root / 'installation'
     manifest = read_file(public / 'manifest.json')
     if (sha(manifest) != installation['manifest_sha256']
-            or pin.manifest_checksum(manifest) != launch['sha256']):
+            or pin.manifest_checksum(manifest, receipt['platform']) != launch['sha256']):
         raise ValueError('retained installation manifest changed')
-    for name in ('dearmor', 'signature', 'codesign'):
+    for name in ('dearmor', 'signature'):
         if read_file(public / 'verification' / (name + '.exit')).strip() != b'0':
             raise ValueError('installation verification did not pass: ' + name)
     if not pin.signed_by_release_key(read_file(public / 'verification/signature.stdout').decode('utf-8')):
@@ -330,6 +353,8 @@ def assemble(installation_root, observation_root, review_path, output):
         # filesystems; a lexical prefix check alone would permit mutation there.
         if any(os.path.samefile(root, ancestor) for ancestor in output.parents):
             raise ValueError('profile output must stay outside the ' + label + ' evidence directory')
+    launch_raw, installation_raw = validated_installation(installation_root)
+    separate_login(decode(launch_raw)['config_directory'], observation_root, review_path, output)
     raw_observation, observation, _ = validate_observation(observation_root)
     raw_review = read_file(review_path)
     review = decode(raw_review)
@@ -345,7 +370,6 @@ def assemble(installation_root, observation_root, review_path, output):
     for key in BINDINGS:
         if review[key] != observation[key]:
             raise ValueError('review binding differs: ' + key)
-    launch_raw, installation_raw = validated_installation(installation_root)
     installation = decode(installation_raw)
     if launch_raw != read_file(observation_root / 'inputs/launch.json'):
         raise ValueError('observed launch differs from the installation preparation')
@@ -354,7 +378,7 @@ def assemble(installation_root, observation_root, review_path, output):
         raise ValueError('launch file must contain exactly the JSON value without surrounding whitespace')
     check = {key: review[key] for key in ('surface_sha256', 'launch_sha256', 'tools_sha256', 'model', 'checked_at')}
     check.update(evidence_sha256=sha(raw_review), outcome='observed')
-    profile = (b'{"schema":"stewart.claude-code.profile/2","launch":' + launch_raw
+    profile = (b'{"schema":"stewart.claude-code.profile/3","launch":' + launch_raw
                + b',"installation":' + compact(installation) + b',"check":' + compact(check) + b'}\n')
     if len(profile) > 65536:
         raise ValueError('profile exceeds 64 KiB')

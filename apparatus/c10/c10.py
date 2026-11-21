@@ -2,7 +2,7 @@
 
 Rehearsals use offline Linux containers and synthetic credentials. Live launch
 needs a qualified binary or explicitly bound unqualified study build, a matching rehearsal, an exact authorized
-commission digest and hidden entry or an explicitly selected saved connection.
+commission digest and its bound keyring connection.
 Each launch performs one placement. A later placement of a retained audit needs
 its own continuation packet, approved by exact digest, and `continue`; nothing
 continues, repeats or retries a placement on its own.
@@ -21,12 +21,13 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 from common import (BINDINGS,CONTINUED,HERE,LIMITS,MAX_PLACEMENTS,REPO,SOURCE_PATHS,AttemptsUnsettled,catalog,
     compact,digest,file_hash,identifier,proposal,read_file,rehearsal_packet,require,scan_tree,settled_attempts,
     source_hash,strict_json,validate_continuation,validate_packet,write_json)
-from launch import hidden_credential,host_environment,select_qualification
+import podman
+from launch import host_environment,select_qualification
 from batch import allowance_facts
 from verify import Evidence,ordinary_submission,serial_names,verify
 from session import failure_details
 from reporting import ReportError, current_issues, review_exports, write_report
-from connections import ConnectionError, lookup as connection_key, status as connection_status, validate_label
+from connections import ConnectionError, lookup as connection_key, status as connection_status, provision, source as connection_source, validate_label
 from study import (copy_submission, inspect_submission, resolve_submission,
                    study_proposal, supplied_runs)
 import study_build
@@ -46,7 +47,7 @@ def bindings(qualification_id,build=None):
         'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,env=env).decode().strip(),
         'apparatus_sha256':source_hash(),'image':'docker.io/library/python@'+qualification['python_image'],
         'catalog_sha256':file_hash(HERE/'catalog.json')}
-    return bound,binaries,result
+    return bound,binaries,result,podman.qualified_image(qualification)
 
 
 def review_batch(root):
@@ -91,10 +92,10 @@ def retained_launch(evidence):
         launch=strict_json(launch_raw)
         raw=read_file(evidence/'staging/commission.json')
         packet=strict_json(raw)
-        refuse(launch['schema']=='stewart.c10-launch/2' and launch['mode'] in ['rehearse','live'],
+        refuse(launch['schema']=='stewart.c10-launch/3' and launch['mode'] in ['rehearse','live'],
                'the evidence folder does not hold an original launch record')
         refuse(digest(raw)==launch['commission_sha256'],'the retained packet differs from its launch record')
-        refuse(isinstance(operator['container'],str) and re.fullmatch(CONTAINER,operator['container'])
+        refuse(operator.get('schema')=='stewart.c10-operator/1' and isinstance(operator['container'],str) and re.fullmatch(CONTAINER,operator['container'])
                and operator['container']==launch['container'] and isinstance(operator['audits'],list),
                'the retained container identity is missing or inconsistent')
         refuse(all(isinstance(launch['bindings'][key],str) for key in ['binary_sha256','image'])
@@ -152,7 +153,7 @@ def recorded_not_started(path,mode,audit,placement):
 
 
 def placement_argv(name,code,mode,packet_path):
-    return ['container','exec','--interactive',name,'env','-i','PATH=/usr/local/bin:/usr/bin:/bin','HOME=/work',
+    return ['podman','exec','--interactive',name,'env','-i','PATH=/usr/local/bin:/usr/bin:/bin','HOME=/work',
             'python3','-I','-B',code+'/apparatus/c10/placements.py',mode,'--binary','/bin-in/stewart','--packet',packet_path]
 
 
@@ -360,8 +361,9 @@ def bind_continuation(value,qualification):
     evidence=Path(value['evidence'])
     retained=retained_launch(evidence)
     check_retained(value,retained,evidence)
-    bound,_,_=bindings(qualification,retained['packet'].get('study_build'))
-    refuse(all(bound[key]==retained['launch']['bindings'][key] for key in ['binary_sha256','image']),
+    bound,_,_,platform_image=bindings(qualification,retained['packet'].get('study_build'))
+    refuse(platform_image==retained['launch'].get('platform_image') and
+           all(bound[key]==retained['launch']['bindings'][key] for key in ['binary_sha256','image']),
            'the qualified writer or image differs from the retained launch')
     return {**value,'bindings':bound}
 
@@ -444,7 +446,7 @@ print(json.dumps({'delivered': True, 'sha256': expected}))
 
 
 def in_container(name,command,*,interactive=False):
-    return ['container','exec']+(['--interactive'] if interactive else [])+[name,
+    return ['podman','exec']+(['--interactive'] if interactive else [])+[name,
             'env','-i','PATH=/usr/local/bin:/usr/bin:/bin',*command]
 
 
@@ -496,7 +498,7 @@ def check_rehearsal_inputs(rehearsed,packet=None):
 def check_rehearsal(path,bound,packet=None,*,connection=False):
     host=strict_json(read_file(path/'host/RESULT.json'))
     session=strict_json(read_file(path/'container/RESULT.json'))
-    require(host['schema']=='stewart.c10-launch/2' and session['schema']=='stewart.c10-session/2'
+    require(host['schema']=='stewart.c10-launch/3' and session['schema']=='stewart.c10-session/2'
         and host['mode']=='rehearse' and host['outcome']=='completed'
         and session['outcome']=='passed' and session['local_iteration_only'] is False,
         'a successful retained Linux rehearsal is required')
@@ -505,7 +507,7 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
     rehearsed=strict_json(read_file(path/'container/PLAN.json'))['commission']
     expected=check_rehearsal_inputs(rehearsed,packet)
     if connection:
-        require(host.get('credential_source',{}).get('kind')=='keychain'
+        require(host.get('credential_source',{}).get('kind')=='persistent-keyring'
                 and read_file(path/'host/connection-collect.exit')==b'0\n',
                 'saved connections require a synthetic connection rehearsal and later collection')
     require(session['planned']==len(expected) and session['observed']==len(expected)
@@ -589,6 +591,8 @@ def launch_batch(args):
                     'compaction study scenarios cannot be combined with a guidance override')
             packet=study_build.attach(packet,strict_json(read_file(args.study_build)))
     connection=getattr(args,'connection',None)
+    if mode=='live' and connection is None:
+        connection=packet['account']['credential_label']
     if connection is not None:
         validate_label(connection,packet if mode=='live' else None)
         if mode=='rehearse':
@@ -606,7 +610,7 @@ def launch_batch(args):
         case=inspect_submission(resolve_submission(run),run['case'],run['submission_sha256'])
         require(not packet.get('study_build') or case.get('guidance') is None,
                 'choose supplied guidance or a study-build override, not both')
-    bound,binaries,checked=bindings(args.qualification,packet.get('study_build'))
+    bound,binaries,checked,platform_image=bindings(args.qualification,packet.get('study_build'))
     if mode=='live':
         require(packet['bindings']==bound,'approved packet bindings changed')
         check_rehearsal(args.rehearsal,bound,packet,connection=connection is not None)
@@ -624,9 +628,9 @@ def launch_batch(args):
     (host/'qualification-check.stderr').write_bytes(checked.stderr)
     (host/'qualification-check.exit').write_text(str(checked.returncode)+'\n')
     name=f'stewart-c10-{int(time.time())}-{os.getpid()}'
-    report={'schema':'stewart.c10-launch/2','mode':mode,'bindings':bound,'container':name,
+    report={'schema':'stewart.c10-launch/3','mode':mode,'bindings':bound,'container':name,'work_volume':name+'-work','platform_image':platform_image,
         'commission_sha256':digest(raw),'credential_sent':False,'started_at':time.time(),'outcome':'failed'}
-    report['credential_source']={'kind':'keychain','service':'stewart-provider','account':connection} if connection else {'kind':'generated' if mode=='rehearse' else 'hidden-entry'}
+    report['credential_source']=connection_source(connection) if connection else {'kind':'generated'}
     env=host_environment()
     phase='preparation'
     def step(label,argv):
@@ -641,27 +645,16 @@ def launch_batch(args):
             (staging/'submissions').mkdir(mode=0o700)
             for run in supplied_runs(packet):
                 copy_submission(resolve_submission(run),staging/'submissions'/run['id'],run['submission_sha256'])
-        step('version',['container','--version'])
-        require('version 1.6.1 ' in (host/'version.stdout').read_text(),'Apple container 1.6.1 required')
-        step('system-status',['container','system','status'])
-        step('image',['container','image','inspect',bound['image']])
+        podman.check_engine(step,host)
         step('source',['git','archive','--format=tar','-o',str(staging/'source.tar'),'HEAD',*SOURCE_PATHS])
         report['source_archive_sha256']=file_hash(staging/'source.tar')
-        argv=['container','run','--name',name,'--detach','--init','--ulimit','core=0:0','--cpus','2','--memory','512M',
-            '--platform','linux/arm64','--network','none' if mode=='rehearse' else 'default',
-            '--mount',f'type=bind,source={staging},target=/in,readonly',
-            '--mount',f'type=bind,source={binaries},target=/bin-in,readonly',
-            '--mount',f'type=bind,source={exported},target=/out',bound['image'],
-            'sh','-c','umask 077; ulimit -c 0; mkdir -p /work/code && chmod 755 /work /work/code && tar -xf /in/source.tar -C /work/code && touch /work/code/.ready && exec sleep infinity']
-        (host/'container.name').write_text(name+'\n')
-        step('container-start',argv)
-        step('container-ready',['container','exec',name,'sh','-c','n=0; until test -f /work/code/.ready; do n=$((n+1)); test "$n" -lt 100 || exit 1; sleep 0.1; done'])
+        podman.start(step,host,name,platform_image,staging,binaries,exported,mode=='rehearse')
         if mode=='live':
             step('network-preflight',network_preflight(name))
-        write_json(host/'operator.json',{'container':name,'audits':[r['id'] for r in packet['runs']],'code':'/work/code',
+        write_json(host/'operator.json',{'schema':'stewart.c10-operator/1','container':name,'audits':[r['id'] for r in packet['runs']],'code':'/work/code',
             'command':['python3','-I','-B','apparatus/c10/c10.py','control',str(out),'AUDIT','status'],
             'close_ends_authoring':True,'automatic_continuation':False})
-        argv=['container','exec','--interactive',name,'env','-i','PATH=/usr/local/bin:/usr/bin:/bin','HOME=/work',
+        argv=['podman','exec','--interactive',name,'env','-i','PATH=/usr/local/bin:/usr/bin:/bin','HOME=/work',
               'python3','-I','-B','/work/code/apparatus/c10/batch.py',mode,'--binary','/bin-in/stewart','--packet','/in/commission.json']
         if supplied_runs(packet):
             argv+=['--submissions','/in/submissions']
@@ -678,14 +671,13 @@ def launch_batch(args):
                 'manager_supplied_account':packet['account'],'credential_source':report['credential_source']}),flush=True)
             phase='credential-handoff'
             key=(connection_key(connection,rehearsal=mode=='rehearse',record=host/'connection.json')
-                 if connection else (b'c10-NONFUNCTIONAL-'+os.urandom(24).hex().encode())
-                 if mode=='rehearse' else hidden_credential())
+                 if connection else b'c10-NONFUNCTIONAL-'+os.urandom(24).hex().encode())
             proc.stdin.write(key)
             proc.stdin.close()
             report['credential_sent']=True
             phase='placement'
             report['container_exit']=proc.wait()
-        step('container-inspect',['container','inspect',name])
+        step('container-inspect',['podman','inspect',name])
         phase='host-scan'
         report['host_scan']=scan_tree(out,key)
         require(not report['host_scan']['files_with_matches'] and not report['host_scan']['errors'],'host scan failed or uncertain')
@@ -726,7 +718,7 @@ def launch_batch(args):
     print(json.dumps(report,indent=2))
     if mode=='rehearse' and report['outcome']=='completed':
         if connection:
-            # A second launcher process makes a new Keychain lookup for later
+            # A second launcher process makes a new keyring lookup for later
             # collection. Its original placement and first snapshot stay unchanged.
             argv=[sys.executable,'-I','-B',str(HERE/'c10.py'),'control',str(out),
                   'open-ordinary-r1','collect','--connection',connection]
@@ -769,6 +761,8 @@ def continue_placement(args,*,synthetic_key=None):
         refuse(connection is not None or synthetic_key is not None,
                'a rehearsal continuation needs its rehearsal\'s own synthetic credential: pass --connection, or let rehearse run it')
     packet=checked_continuation(value,rehearsal=mode=='rehearse',approved=mode=='live')
+    if mode=='live' and connection is None:
+        connection=packet['account']['credential_label']
     if connection is not None:
         validate_label(connection,packet)
     retained=retained_launch(evidence)
@@ -782,11 +776,12 @@ def continue_placement(args,*,synthetic_key=None):
     observed=observed_prior(evidence,audit)
     check_prior(packet,observed)
     try:
-        bound,binaries,checked=bindings(args.qualification,retained['packet'].get('study_build'))
+        bound,binaries,checked,platform_image=bindings(args.qualification,retained['packet'].get('study_build'))
     except (ValueError,OSError,KeyError,subprocess.CalledProcessError) as error:
         raise Refused('bindings unavailable: '+safe_reason(error)) from None
     refuse(packet['bindings']==bound,'packet bindings differ from the committed apparatus and selected qualification')
-    refuse(all(bound[key]==retained['launch']['bindings'][key] for key in ['binary_sha256','image']),
+    refuse(platform_image==retained['launch'].get('platform_image') and
+           all(bound[key]==retained['launch']['bindings'][key] for key in ['binary_sha256','image']),
            'the qualified writer or image differs from the retained launch')
     if mode=='live':
         try:
@@ -803,13 +798,13 @@ def continue_placement(args,*,synthetic_key=None):
     (host/'qualification-check.stdout').write_bytes(checked.stdout)
     (host/'qualification-check.stderr').write_bytes(checked.stderr)
     (host/'qualification-check.exit').write_text(str(checked.returncode)+'\n')
-    report={'schema':'stewart.c10-continuation-launch/1','mode':mode,'evidence':str(evidence),
+    report={'schema':'stewart.c10-continuation-launch/2','mode':mode,'evidence':str(evidence),
         'retained_launch':{'path':str(evidence/'host/RESULT.json'),'sha256':retained['launch_sha256']},
         'container':name,'audit':audit,'placement':placement,'attempt':attempt,'reference':packet['reference'],
         'bindings':bound,'commission_sha256':digest(raw),'prior_observed':observed,
         'credential_sent':False,'started_at':time.time(),'outcome':'failed'}
-    report['credential_source']=({'kind':'keychain','service':'stewart-provider','account':connection} if connection
-        else {'kind':'rehearsal-generated' if mode=='rehearse' else 'hidden-entry'})
+    report['credential_source']=(connection_source(connection) if connection
+        else {'kind':'rehearsal-generated'})
     env=host_environment()
     phase='preparation'
     def step(label,argv,source=None):
@@ -820,10 +815,8 @@ def continue_placement(args,*,synthetic_key=None):
     key=None
     consistent=True
     try:
-        step('version',['container','--version'])
-        require('version 1.6.1 ' in (host/'version.stdout').read_text(),'Apple container 1.6.1 required')
-        step('system-status',['container','system','status'])
-        step('container-ready',['container','exec',name,'sh','-c','test -d /work/c10-private/'+audit])
+        podman.check_engine(step,host)
+        step('container-ready',['podman','exec',name,'sh','-c','test -d /work/c10-private/'+audit])
         step('source',['git','archive','--format=tar','-o',str(staging/'source.tar'),'HEAD',*SOURCE_PATHS])
         archive=file_hash(staging/'source.tar')
         code='/work/code-'+archive[:12]
@@ -838,7 +831,7 @@ def continue_placement(args,*,synthetic_key=None):
         report['packet']=target
         if mode=='live':
             step('network-preflight',network_preflight(name))
-        write_json(host/'operator.json',{'container':name,'audits':[audit],'code':code,'evidence':str(evidence),
+        write_json(host/'operator.json',{'schema':'stewart.c10-operator/1','container':name,'audits':[audit],'code':code,'evidence':str(evidence),
             'placement':placement,'attempt':attempt,'command':['python3','-I','-B','apparatus/c10/c10.py','control',str(out),'AUDIT','status'],
             'close_ends_authoring':True,'automatic_continuation':False})
         argv=placement_argv(name,code,mode,target)
@@ -858,13 +851,13 @@ def continue_placement(args,*,synthetic_key=None):
                 'manager_supplied_account':packet['account'],'credential_source':report['credential_source']}),flush=True)
             phase='credential-handoff'
             key=(connection_key(connection,rehearsal=mode=='rehearse',record=host/'connection.json')
-                 if connection else synthetic_key if mode=='rehearse' else hidden_credential())
+                 if connection else synthetic_key)
             proc.stdin.write(key)
             proc.stdin.close()
             report['credential_sent']=True
             phase='placement'
             report['container_exit']=proc.wait()
-        step('container-inspect',['container','inspect',name])
+        step('container-inspect',['podman','inspect',name])
         phase='host-scan'
         # New exports and the continuation's records land in the earlier folder
         # through the container's existing /out mount, so both trees are scanned.
@@ -930,7 +923,7 @@ def rehearse_continuations(out,packet,qualification,connection,key):
     """Run the later placement of every continued control through `continue`.
 
     With a saved connection each one is a new launcher process making its own
-    Keychain lookup. Otherwise the rehearsal's generated key is reused here and
+    keyring lookup. Otherwise the rehearsal's generated key is reused here and
     never written. The first failure leaves the remaining controls not started.
     """
     host,env=out/'host',host_environment()
@@ -995,7 +988,7 @@ def check_rehearsed_continuations(path,host,expected,report,*,connection=False):
         # A rehearsed control is continued once: its first attempt is the one that must have passed.
         result=attempt_folder(path,run['id'],placement,1)/'RESULT.json'
         launch=strict_json(read_file(continuation_record(path,run['id'],placement)/'host/RESULT.json'))
-        require(launch['schema']=='stewart.c10-continuation-launch/1' and launch['mode']=='rehearse'
+        require(launch['schema']=='stewart.c10-continuation-launch/2' and launch['mode']=='rehearse'
                 and launch['outcome']=='completed' and launch['evidence']==str(path)
                 and launch['container']==host['container'] and launch['audit']==run['id']
                 and launch['placement']==placement and launch['attempt']==1 and launch['bindings']==host['bindings']
@@ -1003,7 +996,7 @@ def check_rehearsed_continuations(path,host,expected,report,*,connection=False):
                 and launch['code']['directory']=='/work/code-'+launch['code']['source_archive_sha256'][:12]
                 and launch['session']=={'path':str(result),'sha256':file_hash(result)},
                 'continuation control did not complete through the host path')
-        require(not connection or launch['credential_source']['kind']=='keychain',
+        require(not connection or launch['credential_source']['kind']=='persistent-keyring',
                 'saved connections require a synthetic connection continuation')
         continuation_controls(continuation_session(result,'rehearse',run['id'],placement),run['scenario'])
         snapshots=reviewed[run['id']]['snapshots']
@@ -1024,6 +1017,7 @@ def check_rehearsed_continuations(path,host,expected,report,*,connection=False):
 
 def host_control(args):
     meta=strict_json(read_file(args.evidence/'host/operator.json'))
+    require(meta.get('schema')=='stewart.c10-operator/1','unsupported operator record; use its original launcher')
     require(args.audit in meta['audits'] and identifier(args.audit),'unknown audit')
     require(re.fullmatch(CONTAINER,meta['container']),'unknown container identity')
     # A continuation's record folder names the code directory delivered for it:
@@ -1037,14 +1031,15 @@ def host_control(args):
         require(earlier['operator']['container']==meta['container'] and args.audit in earlier['operator']['audits'],
                 'record folder names another retained audit')
     connection=getattr(args,'connection',None)
-    if connection is not None:
-        require(args.operation=='collect','--connection is only used for collection')
+    require(connection is None or args.operation=='collect','--connection is only used for collection')
+    if args.operation=='collect':
         raw=read_file(args.evidence/'staging/commission.json')
         launch_record=strict_json(read_file(args.evidence/'host/RESULT.json'))
+        require(launch_record['schema'] in ['stewart.c10-launch/3','stewart.c10-continuation-launch/2'], 'unsupported launch record')
         require(digest(raw)==launch_record['commission_sha256'],'retained packet differs from launch')
         packet=strict_json(raw)
-        validate_label(connection,packet)
-    argv=['container','exec']+(['--interactive'] if args.operation=='collect' else [])+[meta['container'],
+        connection=validate_label(connection or packet['account']['credential_label'],packet)
+    argv=['podman','exec']+(['--interactive'] if args.operation=='collect' else [])+[meta['container'],
         'env','-i','PATH=/usr/local/bin:/usr/bin:/bin','python3','-I','-B',
         code+'/apparatus/c10/operations.py',args.audit,args.operation]
     if args.confirm is not None:
@@ -1055,7 +1050,7 @@ def host_control(args):
     stem=folder/str(time.time_ns())
     write_json(stem.with_suffix('.argv.json'),argv)
     key=(connection_key(connection,rehearsal=launch_record['mode']=='rehearse',record=stem.with_suffix('.connection.json'))
-         if connection is not None else hidden_credential() if args.operation=='collect' else None)
+         if connection is not None else None)
     with stem.with_suffix('.stdout').open('xb') as stdout,stem.with_suffix('.stderr').open('xb') as stderr:
         result=subprocess.run(argv,env=host_environment(),input=key,stdout=stdout,stderr=stderr)
     stem.with_suffix('.exit').write_text(str(result.returncode)+'\n')
@@ -1077,6 +1072,7 @@ def host_control(args):
 
 def main():
     os.umask(0o077)
+    resource.setrlimit(resource.RLIMIT_CORE,(0,0))
     parser=argparse.ArgumentParser(description=__doc__)
     subs=parser.add_subparsers(dest='command',required=True)
     subs.add_parser('list',help='List fixed cases and the full C10 planning count')
@@ -1119,7 +1115,7 @@ def main():
     p.add_argument('--approved-packet',metavar='SHA256',help='Live: the exact packet digest the principal approved')
     p.add_argument('--rehearsal',type=Path,help='Live: retained Linux rehearsal made by this committed apparatus, with every continuation control passed')
     p.add_argument('--qualification',required=True,help='Qualification whose writer the retained audit already uses')
-    p.add_argument('--connection',help='Read the stewart-provider Keychain item; the label must match credential_label and hold the original placement\'s key')
+    p.add_argument('--connection',help='Read the launcher keyring entry; the label must match credential_label and hold the original placement\'s key')
     for mode,text in [('rehearse','Retained Linux rehearsal: every first placement, then each continuation control through `continue`'),
                       ('live','Retained Linux live launch of first placements')]:
         p=subs.add_parser(mode,help=text+'; never resumes or repeats a placement')
@@ -1130,7 +1126,7 @@ def main():
         p.add_argument('--approved-commission')
         p.add_argument('--rehearsal',type=Path)
         p.add_argument('--study-build',type=Path,help='Rehearsal only: explicit unqualified family-guidance build')
-        p.add_argument('--connection',help='Read the stewart-provider Keychain item; live label must match credential_label')
+        p.add_argument('--connection',help='Read the launcher keyring entry; live label must match credential_label')
         p.add_argument('--submission',action='append',nargs=2,metavar=('ID','FOLDER'),
                        help='Rehearsal only: include these study inputs alongside all conformance controls')
         if mode=='rehearse':
@@ -1147,10 +1143,12 @@ def main():
     p.add_argument('audit')
     p.add_argument('operation',choices=['status','close','inspect','collect'])
     p.add_argument('--confirm')
-    p.add_argument('--connection',help='Collection only: read the original credential from the named Keychain item')
-    p=subs.add_parser('connection',help='Inspect local connection metadata without reading a password')
+    p.add_argument('--connection',help='Collection only: read the original credential from the named keyring entry')
+    p=subs.add_parser('connection',help='Provision a launcher key or check its metadata')
     actions=p.add_subparsers(dest='connection_action',required=True)
     p=actions.add_parser('status',help='Check presence; this does not test password access or provider authorization')
+    p.add_argument('label')
+    p=actions.add_parser('store',help='Store a key from a non-echoing terminal prompt under the launcher UID')
     p.add_argument('label')
     args=parser.parse_args()
     try:
@@ -1196,7 +1194,7 @@ def main():
                     require(value['schema']!='stewart.interruption-commission/1',
                             'an interrupted study uses a qualified binary; no study build')
                     value=study_build.attach(value,strict_json(read_file(args.study_build)))
-                value['bindings'],_,_=bindings(args.qualification,value.get('study_build'))
+                value['bindings'],_,_,_=bindings(args.qualification,value.get('study_build'))
             write_json(args.output,value)
             print(json.dumps({'packet':str(args.output),'sha256':file_hash(args.output),'approved':False},indent=2))
         elif args.command=='study-build':
@@ -1222,7 +1220,7 @@ def main():
         elif args.command=='control':
             return host_control(args)
         elif args.command=='connection':
-            print(json.dumps(connection_status(args.label),indent=2))
+            print(json.dumps(provision(args.label) if args.connection_action=='store' else connection_status(args.label),indent=2))
         return 0
     except ReportError as error:
         parser.exit(1,error.code+': report not assembled; inspect selected input paths and hashes. No source records changed.\n')

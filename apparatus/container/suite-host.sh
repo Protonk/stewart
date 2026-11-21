@@ -1,6 +1,6 @@
 # Common host setup for the offline Linux release and runtime suites.
 PYTHON=docker.io/library/python@sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb
-TAG=stewart-toolchain:1
+TAG=localhost/stewart-toolchain:1
 PLATFORMS="arm64 amd64"
 case "$(uname -m)" in
     arm64 | aarch64) NATIVE=arm64 ;;
@@ -10,7 +10,7 @@ esac
 
 [ -e "$OUT" ] && { echo "refusing: $OUT exists; each run needs a new evidence folder" >&2; exit 2; }
 [ -d "$REPO/service/vendor" ] || { echo "refusing: $REPO/service/vendor is missing; run apparatus/step2.sh first" >&2; exit 2; }
-mkdir -p "$OUT/host" || exit 2
+mkdir -p "$(dirname "$OUT")" && mkdir -m 0700 "$OUT" && mkdir "$OUT/host" || exit 2
 LOG="$OUT/host/driver.log"
 FAILURES=0
 
@@ -42,15 +42,12 @@ expect() {
 
 note "$SUITE suite start; repository $REPO; native architecture $NATIVE"
 note "working-file retention: $KEEP_WORK; independent evidence retained through review"
-hstep version container --version
-grep -q 'version 1\.6\.1 ' "$OUT/host/version.stdout" || stop_here "container is not version 1.6.1"
-hstep system-status container system status || stop_here "container services are not running"
-hstep help-run container run --help || stop_here "container run is unavailable"
+. "$REPO/apparatus/container/podman-images.sh"
+podman_host || stop_here "need rootless Podman 5 on cgroup v2"
 hstep host-uname uname -a
-hstep host-sw-vers sw_vers
+hstep host-os cat /etc/os-release
 for p in $PLATFORMS; do
-    hstep "toolchain-inspect-$p" container image inspect "$TAG-$p" \
-        || stop_here "image $TAG-$p is missing; run apparatus/step2.sh first"
+    toolchain_identity "$p" || stop_here "need the toolchain image for $p from step2.sh"
 done
 
 # Source identity: a git archive of HEAD; uncommitted files are not built or run.
@@ -63,51 +60,53 @@ hstep worktree git -C "$REPO" status --porcelain -- service apparatus docs examp
 hstep archive git -C "$REPO" archive --format=tar -o "$OUT/staging/source.tar" HEAD service apparatus docs examples \
     || stop_here "git archive failed"
 cp "$OUT/host/commit.stdout" "$OUT/staging/COMMIT"
-shasum -a 256 "$OUT/staging/source.tar" >"$OUT/host/source.sha256"
-(cd "$REPO/service" && find vendor -type f -exec shasum -a 256 {} + | LC_ALL=C sort) >"$OUT/host/vendor.sha256"
+sha256sum "$OUT/staging/source.tar" >"$OUT/host/source.sha256"
+(cd "$REPO/service" && find vendor -type f -exec sha256sum {} + | LC_ALL=C sort) >"$OUT/host/vendor.sha256"
 
 # The only network step: the pinned python image for both architectures.
-for p in $PLATFORMS; do
-    hstep "pull-python-$p" container image pull --platform "linux/$p" "$PYTHON" || stop_here "pull python $p"
-done
-hstep python-inspect container image inspect "$PYTHON"
-
+image_index python "$PYTHON" || stop_here "resolve or pull the pinned driver images"
+hstep python-inspect image_descriptor "${PYTHON##*@}" || stop_here "record Python index"
 
 build_arch() {
     b="build-$p"
     mkdir -p "$OUT/$b"
-    hstep "$b" container run --rm --network none --init --cpus 4 --memory 4G --platform "linux/$p" \
+    hstep "$b" podman run --pull=never --rm --network none --init --cpus 4 --memory 4G --platform "linux/$p" \
         --mount "type=bind,source=$OUT/staging,target=/in,readonly" \
         --mount "type=bind,source=$REPO/service/vendor,target=/vendor,readonly" \
         --mount "type=bind,source=$OUT/$b,target=/out" \
-        "$TAG-$p" sh -c 'mkdir -p /tmp/s && tar -xf /in/source.tar -C /tmp/s apparatus/container && sh /tmp/s/apparatus/container/acceptance-inner-build.sh "$1"' sh "$SUITE" \
+        "$(cat "$OUT/host/toolchain-$p.id")" sh -c 'mkdir -p /tmp/s && tar -xf /in/source.tar -C /tmp/s apparatus/container && sh /tmp/s/apparatus/container/acceptance-inner-build.sh "$1"' sh "$SUITE" \
         || { fail "$b"; return 1; }
 }
 
 run_driver() {
     d="driver-$p"
     mkdir -p "$OUT/$d" "$OUT/bin-$p" || stop_here "$p: create driver workspace"
+    chmod 0755 "$OUT/bin-$p" || stop_here "$p: make binary mount traversable"
     for binary do
-        cp "$OUT/$b/$binary" "$OUT/bin-$p/" || { fail "$p: missing $binary"; return 1; }
+        install -m 0555 "$OUT/$b/$binary" "$OUT/bin-$p/$binary" || { fail "$p: missing $binary"; return 1; }
     done
     set --
     if [ "$SUITE" = acceptance ]; then
-        mkdir "$OUT/component-source-$p" && chmod 1777 "$OUT/component-source-$p" || stop_here "$p: prepare component source workspace"
-        set -- --mount "type=bind,source=$OUT/component-source-$p,target=/component-source-work"
+        source_dir=/var/lib/stewart/fixtures/names/$(basename "$OUT")-$p
+        [ "$(findmnt -n -o FSTYPE -T /var/lib/stewart/fixtures/names)" = vfat ] && mkdir "$source_dir" || stop_here "$p: need a fresh guest VFAT filename fixture"
+        set -- --mount "type=bind,source=$source_dir,target=/component-source-work"
     fi
     driver_container="stewart-$SUITE-$p-$(date -u +%Y%m%dT%H%M%SZ)-$$"
     printf '%s\n' "$driver_container" >"$OUT/host/$d.container"
-    hstep "$d" container run --name "$driver_container" --network none --init --cpus 4 --memory 4G --platform "linux/$p" \
+    rosetta=0
+    if [ "$p" = amd64 ] && [ "$NATIVE" = arm64 ]; then rosetta=1; fi
+    hstep "$d" podman run --pull=never --name "$driver_container" --env "STEWART_EXPECT_ROSETTA=$rosetta" --network none --init --cpus 4 --memory 4G --platform "linux/$p" \
         --mount "type=bind,source=$OUT/staging,target=/in,readonly" \
         --mount "type=bind,source=$OUT/bin-$p,target=/bin-in,readonly" \
         --mount "type=bind,source=$OUT/$d,target=/out" "$@" \
-        "$PYTHON" sh -c 'mkdir -p /tmp/s && tar -xf /in/source.tar -C /tmp/s apparatus/container && sh "/tmp/s/apparatus/container/$1" "$2"' sh "$DRIVER_SCRIPT" "$KEEP_WORK" \
+        --mount "type=volume,source=$driver_container-work,target=/work" \
+        "$(cat "$OUT/host/python-$p.ref")" sh -c 'mkdir -p /tmp/s && tar -xf /in/source.tar -C /tmp/s apparatus/container && sh "/tmp/s/apparatus/container/$1" "$2"' sh "$DRIVER_SCRIPT" "$KEEP_WORK" \
         || fail "$d: the $SUITE driver reported a failure (see $OUT/$d/)"
     note "$p: driver container $driver_container retained until review"
 }
 
 finish_suite() {
-    shasum -a 256 "$OUT"/build-*/stewart* >"$OUT/host/binaries.sha256" 2>/dev/null
+    sha256sum "$OUT"/build-*/stewart* >"$OUT/host/binaries.sha256" 2>/dev/null
     printf 'done %s failures=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$FAILURES" >"$OUT/host/DONE"
     note "finished with failures=$FAILURES; evidence in $OUT"
     [ "$FAILURES" -eq 0 ]

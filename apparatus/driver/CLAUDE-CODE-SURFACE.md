@@ -31,8 +31,8 @@ Claude received them. No custody, publication, service conformance, effective
 managed configuration, provider traffic or spending claim follows from this fixture.
 
 Hook decision bytes are journaled separately from the bytes supplied on the
-connection. Events identify their observer and shared kernel clock:
-`CLOCK_UPTIME_RAW` on macOS and `CLOCK_MONOTONIC` on Linux. Preparation copies
+connection. Events identify their observer and use the shared Linux kernel clock
+`CLOCK_MONOTONIC`. Preparation copies
 the fixture and the specification-derived helpers it uses into `sources/`.
 
 `manifest()` builds the `EVIDENCE.json` inventory of regular files by relative

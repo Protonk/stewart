@@ -199,6 +199,30 @@ class Controls(unittest.TestCase):
             c.snapshot(source, self.root / 'refused')
         self.assertFalse((self.root / 'refused').exists())
 
+    def test_login_tree_cannot_enter_a_service_packet_or_snapshot(self):
+        login = self.root / 'account/login'
+        login.mkdir(parents=True)
+        (login / '.credentials.json').write_bytes(b'synthetic login canary')
+        preparation = self.root / 'preparation.json'
+        profile = {'schema': 'stewart.claude-code.profile/3',
+                   'launch': {'config_directory': str(login), 'executable': str(self.root / 'harness')}}
+        settings = {'family': 'open-inquiry', 'destination': str(self.root / 'returns'),
+                    'limits': {'max_placements': 1}, 'runtime': {'kind': 'claude-code/1',
+                    'profile_path': str(self.root / 'profile.json'), 'profile': c.p.compact(profile).decode()}}
+        c.save(preparation, {'operation': 'prepare', 'outcome': 'completed', 'data': {'settings': settings}})
+        archive, folder, output = (self.root / name for name in ('archive', 'submission', 'packet'))
+        for target, source, store in ((output, login.parent, archive), (output, folder, login.parent),
+                                      (login / 'packet', folder, archive)):
+            reference = 'stw1:a:s:' + str(store)
+            with self.subTest(target=target, source=source, store=store), patch.object(c, 'inventory') as inventory:
+                with self.assertRaisesRegex(ValueError, 'overlaps the harness login directory'):
+                    c.prepare(target, preparation, reference, source, self.root / 'writer')
+                inventory.assert_not_called()
+                self.assertFalse(target.exists())
+        # With disjoint locations, preflight reaches the missing audit reference.
+        with self.assertRaises(FileNotFoundError):
+            c.prepare(output, preparation, 'stw1:a:s:' + str(archive), folder, self.root / 'writer')
+
     def test_missing_or_inexact_authority_starts_nothing(self):
         manifest, raw = {'mode': 'real-harness'}, b'approved exact bytes'
         for digest, extra in [(None, False), ('wrong', True), (c.p.sha(raw), False)]:
@@ -389,7 +413,7 @@ class Controls(unittest.TestCase):
             self.assertEqual([call.args for call in probe.call_args_list], [(102,), (102,)])
 
     def test_superseded_commission_is_refused(self):
-        c.save(self.root / 'COMMISSION.json', {'schema': 'stewart.claude-code.service-commission/1'})
+        c.save(self.root / 'COMMISSION.json', {'schema': 'stewart.claude-code.service-commission/2'})
         with self.assertRaisesRegex(ValueError, 'unknown commission schema'):
             c.verify(self.root)
 

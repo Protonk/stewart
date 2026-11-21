@@ -1,11 +1,12 @@
 # Retained sanity sessions
 
 The launcher runs the sensor-reading specimen through a qualified native Linux
-binary. It requires Apple `container` 1.6.1 and the cached Python image named by
-the selected acceptance record. The binary must have passed the four independent
+binary. It uses rootless Podman 5.x and the Linux arm64 Python manifest preloaded
+from the registry index in the selected acceptance record. The binary must have passed the four independent
 credential cases; older qualification without those cases is refused.
 
-The host retains one named 512 MiB container per invocation. It stays running
+The launcher retains one named two-CPU, 512 MiB container and its guest-ext4
+work volume per invocation. The private archive and witnesses live on that volume. It stays running
 after the session so status and close remain available. Failed launches retain
 the same container and records. Nothing automatically repeats a placement,
 continues an interrupted audit, removes a container, or deletes evidence.
@@ -21,7 +22,8 @@ python3 -I -B apparatus/sanity/launch.py rehearse \
 python3 -I -B apparatus/sanity/review.py "$PWD/.scratch/sanity-launch-NN"
 ```
 
-The container has no network. The host generates a nonfunctional canary and
+The container has no network. The host generates a nonfunctional canary or reads an explicitly selected
+synthetic `--connection LABEL` beginning with `c10-NONFUNCTIONAL-`, and
 sends it through the same stdin/descriptor route used later for live entry.
 Scenarios cover auditor submission, ending without submission, provider
 rejection, interruption, reflected credentials, contaminated export and failed
@@ -76,7 +78,8 @@ See [the run sheet](RUN-SHEET.md) for the decisions and review sequence.
 
 ## Live launch, only after spending authorization
 
-Run from a real terminal that supports hidden input:
+Run from the dedicated launcher account after provisioning the bound connection
+through the non-echoing prompt. [Saved provider connections](../c10/README.md#saved-provider-connections)
 
 ```sh
 python3 -I -B apparatus/sanity/launch.py live \
@@ -87,9 +90,7 @@ python3 -I -B apparatus/sanity/launch.py live \
 
 The launcher checks the exact packet and binary before starting. Inside the
 container it commissions and verifies the question and material readback before
-writing `READY.json`. Only then does the host request the credential with
-Python's standard hidden-input component. If terminal echo cannot be disabled,
-entry fails. The key travels through container stdin and a one-use inherited
+writing `READY.json`. Only then does the host read the bound key with `keyctl pipe`. The key travels through container stdin and a one-use inherited
 descriptor into Stewart. It is never a command argument, environment value,
 container setting, mount or credential-input file. Host and container processes
 use minimal environments and no ambient provider/proxy selection.
@@ -100,7 +101,7 @@ this procedure makes no claim of complete memory erasure. Core dumps are disable
 The paid path uses the direct Anthropic endpoint; adding a proxy or a different
 route needs an explicitly changed launcher and reviewed commission.
 
-`host/operator.json` gives exact `container exec` commands for status and close.
+`host/operator.json` gives exact `podman exec` commands for status and close.
 The operator tool requires `stewart.reply/3`, prints an allowlisted state
 summary including authoring, seal observations and unknown usage with known
 limits, and retains the full reply
