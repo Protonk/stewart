@@ -21,7 +21,7 @@ pub struct Ctx<'a> {
     pub call: &'a Call<'a>,
     /// The log as read when the call began.
     pub state: LogState,
-    /// The gate the call's entry or seal links under, if any (6.8).
+    /// The gate the call's authoring record links under, if any (6.8).
     pub gate: Option<&'a dyn PublicationGate>,
 }
 
@@ -107,6 +107,24 @@ pub fn authoring_ended(ctx: &Ctx, state: &LogState) -> Option<Fail> {
         return None;
     }
     Some(ended_fail(ctx, state, end.by, end.record.n))
+}
+
+/// Check an auditor publication against the log order it is about to claim.
+pub fn live_author(ctx: &Ctx, state: &LogState) -> Result<(), Fail> {
+    if let Some(f) = authoring_ended(ctx, state) {
+        return Err(f);
+    }
+    let run = ctx.placement.run;
+    if !state
+        .latest_placement()
+        .is_some_and(|p| p.run == run && p.ended.is_none())
+    {
+        return Err(Fail::failed(
+            "record_failed",
+            format!("Placement {run} is no longer the live placement, so it cannot record."),
+        ));
+    }
+    Ok(())
 }
 
 pub fn ended_fail(ctx: &Ctx, state: &LogState, by: EndedBy, n: u64) -> Fail {

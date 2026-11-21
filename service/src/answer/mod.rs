@@ -7,7 +7,7 @@
 //! input bytes: the recorded result is resent without execution) itself, and
 //! records the result (`result-<c>.json`) from the returned [`Executed`]
 //! before the next block. This module owns everything a call does to the
-//! audit: payloads (`names::write_payload`), `entry` and `seal` records,
+//! audit: payloads (`names::write_payload`), `entry`, `answer_prepared` and `seal` records,
 //! auditor preparations, and the reply envelope (`Reply::auditor_j`) inside
 //! the content it returns.
 //!
@@ -106,7 +106,7 @@ pub struct Call<'a> {
 }
 
 impl Call<'_> {
-    /// The invocation an `entry` or `seal` record names.
+    /// The invocation an authoring record names.
     pub fn invocation(&self, run: u64) -> Invocation {
         Invocation {
             run,
@@ -147,7 +147,7 @@ pub struct Executed {
     pub reason: Option<String>,
     /// The answer revision after the call.
     pub revision: u64,
-    /// The `entry` or `seal` record the call published, `log/<n>.json`.
+    /// The authoring record the call published, `log/<n>.json`.
     pub log_record: Option<String>,
     /// The call published the seal, or repeated a submit whose seal was
     /// published earlier in this placement: the stop path no longer applies
@@ -237,7 +237,7 @@ fn finish(
 /// `effects` (a failed call also writes a diagnostic, 4.8). Mutations refuse
 /// `authoring_ended` once a seal or `close_requested` exists, and an
 /// in-progress mutation that loses its log slot to `close_requested`
-/// reports `authoring_ended` too (6.8). Under `gate`, an entry or seal links
+/// reports `authoring_ended` too (6.8). Under `gate`, an authoring record links
 /// only while the gate is open: a gate closed before the link refuses
 /// `placement_stopped`, unless authoring has ended, and links nothing. Reads
 /// are not gated; whether a call may start at all is the runtime's decision.
@@ -464,8 +464,7 @@ pub enum PrepareError {
 /// `prepared/<n>`: re-verify each selected payload's size and digest, claim
 /// `prepared/<n>` and write `answer.json` and `answer.md` (QUESTION-FORMS)
 /// as exclusive files (fault point `prepared.write`, via
-/// `names::write_prepared_file`). No log record names a preparation unless
-/// it is sealed.
+/// `names::write_prepared_file`). The auditor tool records the completed preparation before returning its handle.
 pub fn prepare(
     audit: &Audit,
     family: &Family,

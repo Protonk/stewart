@@ -221,6 +221,42 @@ impl Env {
         format!("{}/audits/{id}", self.archive)
     }
 
+    /// The recorded tool result points to this call's preparation of the empty
+    /// selection. Match its handle and both digests to the retained artifacts.
+    pub fn assert_empty_preparation(&self, r: &str, number: u64, call: u64, id: &str) -> String {
+        let dir = self.audit_dir(r);
+        let result =
+            json::parse(&std::fs::read(format!("{dir}/runs/1/result-{call}.json")).unwrap())
+                .unwrap();
+        let result = at(&result, &["body"]);
+        assert_eq!(s(result, &["outcome"]), "completed");
+        assert!(at(result, &["replay_of"]).is_null());
+        let reply = json::parse(s(result, &["content", "0", "text"]).as_bytes()).unwrap();
+        let handle = s(&reply, &["data", "prepared"]);
+        let event =
+            json::parse(&std::fs::read(format!("{dir}/{}", s(result, &["log_record"]))).unwrap())
+                .unwrap();
+        assert_eq!(s(&event, &["kind"]), "answer_prepared");
+        let body = at(&event, &["body"]);
+        assert_eq!(at(body, &["invocation", "run"]).as_u64(), Some(1));
+        assert_eq!(at(body, &["invocation", "call"]).as_u64(), Some(call));
+        assert_eq!(s(body, &["invocation", "tool_use_id"]), id);
+        assert_eq!(at(body, &["prepared"]).as_u64(), Some(number));
+        assert_eq!(s(body, &["handle"]), handle);
+        for key in ["entry_count", "revision"] {
+            assert_eq!(at(body, &[key]).as_u64(), Some(0));
+            assert_eq!(at(&reply, &["data", key]).as_u64(), Some(0));
+        }
+        for (file, key) in [
+            ("answer.json", "answer_sha256"),
+            ("answer.md", "rendering_sha256"),
+        ] {
+            let bytes = std::fs::read(format!("{dir}/prepared/{number}/{file}")).unwrap();
+            assert_eq!(s(body, &[key]), stewart::util::sha256_hex(&bytes));
+        }
+        handle.to_string()
+    }
+
     /// Kinds of the audit's log records, in order (read independently).
     pub fn log_kinds(&self, r: &str) -> Vec<String> {
         let dir = format!("{}/log", self.audit_dir(r));

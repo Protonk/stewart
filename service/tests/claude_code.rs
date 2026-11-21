@@ -48,13 +48,14 @@ fn candidates(live: &Live) -> usize {
 /// a fresh gate) is accepted, so the input itself was valid.
 #[test]
 fn a_closed_gate_refuses_a_call_before_its_tool_runs() {
-    for tool in ["record_account", "submit"] {
+    for tool in ["record_account", "prepare", "submit"] {
         for condition in ["cancel", "stop", "deadline"] {
             let case = format!("{tool} after {condition}");
             let mut live = Live::new();
             live.call("record_account", r#"{"text":"recorded before the stop"}"#)
                 .ok();
             let input = match tool {
+                "prepare" => "{}".to_string(),
                 "submit" => {
                     let prepared = live.call("prepare", "{}").str(&["prepared"]).to_string();
                     format!(r#"{{"prepared":"{prepared}","confirm":true}}"#)
@@ -97,6 +98,10 @@ fn a_closed_gate_refuses_a_call_before_its_tool_runs() {
             let accepted = dispatched(&mut live, &open, tool, &input);
             accepted.ok();
             match tool {
+                "prepare" => {
+                    assert!(accepted.ex.log_record.is_some());
+                    assert_eq!(live.state().revision(), revision);
+                }
                 "submit" => assert!(accepted.ex.sealed, "{case}"),
                 _ => assert_eq!(live.state().revision(), revision + 1, "{case}"),
             }
@@ -576,11 +581,10 @@ fn a_failed_start_leaves_the_harness_records_and_usage_checkpoint() {
 
 /// A synthetic harness that passes the authentication check, reads the
 /// question and starts its session, then, through Stewart's MCP relay at
-/// `writer`, initializes and makes two tool calls: `list`, which completes,
-/// and `nope`, which is not a tool of the arrangement. Once both replies
+/// `writer`, initializes and makes two named tool calls with empty inputs. Once both replies
 /// have arrived it closes its side of the relay, which stays to forward
 /// replies, and ends two turns as `two_turns` does.
-fn two_tool_calls(writer: &str) -> String {
+fn two_tool_calls(writer: &str, first: &str, second: &str) -> String {
     let mut s = String::from(AUTH_LEG);
     s += "IFS= read -r question\n";
     s += &emit(&init_event());
@@ -588,10 +592,13 @@ fn two_tool_calls(writer: &str) -> String {
     for frame in [
         r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{"tools":{}},"clientInfo":{"name":"fixture","version":"1"}}}"#,
         r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#,
-        r#"{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list","arguments":{}}}"#,
-        r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"nope","arguments":{}}}"#,
     ] {
         s += &emit(frame);
+    }
+    for (id, tool) in [(2, first), (3, second)] {
+        s += &emit(&format!(
+            r#"{{"jsonrpc":"2.0","id":{id},"method":"tools/call","params":{{"name":"{tool}","arguments":{{}}}}}}"#
+        ));
     }
     s += "  while ! grep -q '\"id\":3,' \"$HOME/mcp-out\" 2>/dev/null; do sleep 0.05; done\n";
     s += &format!("}} | '{writer}' __stewart-cc-relay m > \"$HOME/mcp-out\" &\n");
@@ -603,13 +610,31 @@ fn two_tool_calls(writer: &str) -> String {
     s
 }
 
+/// Two distinct MCP calls may prepare the same revision. Each is attributed
+/// to its received call, links its own files, and leaves the answer unsealed.
+#[test]
+fn mcp_preparations_record_each_execution() {
+    let p = commissioned(2, 60, &|_| {
+        two_tool_calls(common::bin(), "prepare", "prepare")
+    });
+    let reply = p.env.run(&["run", &p.reference, "--json"]).json();
+    assert_eq!(common::s(&reply, &["data", "ending"]), "ended_unsubmitted");
+    assert_eq!(common::s(&reply, &["effects", "answer"]), "unchanged");
+    assert_eq!(common::s(&reply, &["effects", "seal"]), "none");
+    let kinds = p.env.log_kinds(&p.reference);
+    assert_eq!(kinds.iter().filter(|k| *k == "answer_prepared").count(), 2);
+    let first = p.env.assert_empty_preparation(&p.reference, 1, 1, "mcp-1");
+    let second = p.env.assert_empty_preparation(&p.reference, 2, 2, "mcp-2");
+    assert_ne!(first, second);
+}
+
 /// The result records a harness placement writes for its MCP calls, and the
 /// replies it sends, byte for byte: request and attempt 1, the call number
 /// as the block, an `mcp-<call>` invocation ID, and the reply's content and
 /// error flag as the record states them.
 #[test]
 fn harness_tool_calls_keep_their_result_records_and_replies() {
-    let p = commissioned(2, 60, &|_| two_tool_calls(common::bin()));
+    let p = commissioned(2, 60, &|_| two_tool_calls(common::bin(), "list", "nope"));
     let reply = p.env.run(&["run", &p.reference, "--json"]).json();
     let kinds = p.env.log_kinds(&p.reference);
     let ended = p.env.log_record(&p.reference, kinds.len());

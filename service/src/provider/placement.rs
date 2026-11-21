@@ -58,7 +58,7 @@ pub struct Live<'a> {
     pub client: &'a Client,
     pub abort: &'a AbortHandle,
     pub flags: &'a Flags,
-    /// The publication gate a stop signal closes; each call's entry or seal
+    /// The publication gate a stop signal closes; each call's authoring record
     /// links under it (6.8).
     pub gate: &'a Gate,
     /// The pinned bytes each request splices (as sent).
@@ -900,12 +900,12 @@ impl State<'_, '_> {
 
     /// Take what an executed call changed.
     fn note(&mut self, ex: &Executed) {
-        self.revision = ex.revision;
         if ex.sealed {
             self.live.flags.set_sealed();
-        } else if ex.log_record.is_some() {
+        } else if ex.log_record.is_some() && ex.revision > self.revision {
             self.entries = true;
         }
+        self.revision = ex.revision;
     }
 
     /// Publish `result-<c>.json` for one block.

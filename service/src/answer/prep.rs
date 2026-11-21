@@ -3,13 +3,13 @@
 //! the auditor's `prepare` and `submit`, and the preparation and seal shared
 //! with close.
 
-use super::common::{Ctx, Item, Out, ended_fail, read_payload, refused, selection};
+use super::common::{Ctx, Item, Out, ended_fail, live_author, read_payload, refused, selection};
 use super::{
     DamagedEntry, End, PrepareError, PrepareNotice, Prepared, Preparer, SealError, Sealed, Sealer,
     input,
 };
 use crate::archive::{Audit, Fail};
-use crate::bodies::{ARTIFACT_TOOL, Actor, SealRec};
+use crate::bodies::{ARTIFACT_TOOL, Actor, AnswerPrepared, SealRec};
 use crate::forms::{Family, RENDERER_ID};
 use crate::ids;
 use crate::json::{self, J, Json};
@@ -517,18 +517,12 @@ fn notices_j(n: &[PrepareNotice]) -> J {
     )
 }
 
-fn ap_of(ctx: &Ctx, p: &Prepared) -> String {
-    ids::ap_handle(
-        ctx.store(),
-        ctx.audit_id(),
-        p.n,
-        &p.answer.sha256,
-        &p.rendering
-            .as_ref()
-            .map(|r| r.sha256.clone())
-            .unwrap_or_default(),
-        p.revision,
-    )
+fn preparation_refusal(failure: Fail) -> Out {
+    if failure.outcome == crate::reply::Outcome::Failed {
+        Out::fail(failure).end(End::ArchiveWriteFailed)
+    } else {
+        Out::fail(failure)
+    }
 }
 
 pub fn prepare_tool(ctx: &Ctx, v: &Json) -> Out {
@@ -541,6 +535,9 @@ pub fn prepare_tool(ctx: &Ctx, v: &Json) -> Out {
             "The pinned family is not one this release knows.",
         ));
     };
+    if let Err(f) = live_author(ctx, &ctx.state) {
+        return preparation_refusal(f);
+    }
     let items = selection(ctx.audit, &ctx.state, u64::MAX, Some(ctx.placement));
     if crate::sabotage!("block_incomplete") {
         // Sabotage control: an unfilled section blocks preparation.
@@ -560,7 +557,59 @@ pub fn prepare_tool(ctx: &Ctx, v: &Json) -> Out {
         Err(PrepareError::Damaged(d)) => return damaged_out(&d),
         Err(PrepareError::WriteFailed(c)) => return write_failed(c),
     };
-    let ap = ap_of(ctx, &p);
+    let rendering = p
+        .rendering
+        .as_ref()
+        .expect("auditor preparation verifies every selected entry");
+    let ap = ids::ap_handle(
+        ctx.store(),
+        ctx.audit_id(),
+        p.n,
+        &p.answer.sha256,
+        &rendering.sha256,
+        p.revision,
+    );
+    let record = AnswerPrepared {
+        invocation: ctx.call.invocation(ctx.placement.run),
+        prepared: p.n,
+        handle: ap.clone(),
+        revision: p.revision,
+        entry_count: p.entry_count,
+        answer_sha256: p.answer.sha256.clone(),
+        rendering_sha256: rendering.sha256.clone(),
+    };
+    let published = match log::publish_under(ctx.audit, "answer_prepared", ctx.gate, |st| {
+        live_author(ctx, st)?;
+        if st.revision() != p.revision {
+            return Err(refused(
+                "stale_preparation",
+                "The answer changed during preparation. Prepare its current revision.",
+            )
+            .data(J::obj().with("revision_now", st.revision())));
+        }
+        Ok(record.to_j())
+    }) {
+        Ok(published) => published,
+        Err(PubErr::Refused(f)) => return preparation_refusal(f),
+        Err(PubErr::Damaged(st)) => {
+            let message = format!(
+                "Could not record the preparation: the audit log is damaged ({}).",
+                st.bad_names()
+            );
+            return Out::fail(Fail::failed("log_damaged", message)).end(End::LogDamaged);
+        }
+        Err(PubErr::NotPublished(cause)) => {
+            let message = "The prepared files were written, but their audit log record could not be published.";
+            return Out::fail(Fail::failed("record_failed", message).cause(cause))
+                .end(End::ArchiveWriteFailed);
+        }
+        Err(PubErr::Uncertain { cause, .. }) => {
+            let message =
+                "The preparation record was linked, but Stewart could not confirm it is durable.";
+            return Out::fail(Fail::failed("record_failed", message).cause(cause))
+                .end(End::ArchiveWriteFailed);
+        }
+    };
     let mut counts = J::obj();
     for (t, c) in &p.counts {
         counts.push(t, *c);
@@ -576,7 +625,7 @@ pub fn prepare_tool(ctx: &Ctx, v: &Json) -> Out {
             "rendering",
             J::obj()
                 .with("source", format!("{ap}/rendering"))
-                .with("size", p.rendering.as_ref().map_or(0, |r| r.size)),
+                .with("size", rendering.size),
         )
         .with(
             "selection",
@@ -591,17 +640,18 @@ pub fn prepare_tool(ctx: &Ctx, v: &Json) -> Out {
             J::obj().with("state", "present").with("actor", "auditor"),
         );
     }
-    Out::done(data)
-        .next(ToolNext::new(
-            "read",
-            J::obj().with("source", format!("{ap}/rendering")),
-            "Read exactly what would be sealed.",
-        ))
-        .next(ToolNext::new(
-            "submit",
-            J::obj().with("prepared", ap.as_str()).with("confirm", true),
-            "Seal this candidate as your answer; it cannot be edited afterwards.",
-        ))
+    let mut out = Out::done(data);
+    out.log_record = Some(names::log_name(published.n));
+    out.next(ToolNext::new(
+        "read",
+        J::obj().with("source", format!("{ap}/rendering")),
+        "Read exactly what would be sealed.",
+    ))
+    .next(ToolNext::new(
+        "submit",
+        J::obj().with("prepared", ap.as_str()).with("confirm", true),
+        "Seal this candidate as your answer; it cannot be edited afterwards.",
+    ))
 }
 
 // ---------------------------------------------------------------------------

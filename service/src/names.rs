@@ -165,8 +165,11 @@ pub fn claim_prepared(audit: &Audit) -> Result<(u64, Dir), Cause> {
     let root = audit
         .sub("prepared")
         .map_err(|e| Cause::io("open prepared directory", &e).at(audit.abs("prepared")))?;
-    claim_dir(&root)
-        .map_err(|e| Cause::io("claim preparation of the answer", &e).at(audit.abs("prepared")))
+    let claimed = claim_dir(&root)
+        .map_err(|e| Cause::io("claim preparation of the answer", &e).at(audit.abs("prepared")))?;
+    root.sync()
+        .map_err(|e| Cause::io("sync prepared directory", &e).at(audit.abs("prepared")))?;
+    Ok(claimed)
 }
 
 /// Write one file of a claimed `prepared/<n>` exclusively (fault point

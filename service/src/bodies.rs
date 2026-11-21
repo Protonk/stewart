@@ -1,5 +1,5 @@
 //! Log record bodies after launch (INTERFACE 4.4, "Record bodies"):
-//! `run_started`, `run_ended`, `entry`, `seal`, `notice`, `delivery_planned`,
+//! `run_started`, `run_ended`, `entry`, `answer_prepared`, `seal`, `notice`, `delivery_planned`,
 //! `delivery_ended`, and `close_requested` and `closed` in every state.
 //!
 //! Each body type writes its members after `prev` in the order the interface
@@ -541,7 +541,7 @@ impl RunEnded {
 // ---------------------------------------------------------------------------
 // `entry`.
 
-/// The tool invocation behind an entry or a seal: the placement, the
+/// The tool invocation behind an entry, auditor preparation or seal: the placement, the
 /// `tool_use` block's ID and its call number in that placement (4.5).
 #[derive(Debug, Clone, PartialEq)]
 pub struct Invocation {
@@ -977,6 +977,68 @@ impl Actor {
         Ok(match o.one_of(k, &["auditor", "manager"])? {
             "auditor" => Actor::Auditor,
             _ => Actor::Manager,
+        })
+    }
+}
+
+/// The auditor's completed preparation and the files bound to its handle (7.6).
+#[derive(Debug, Clone, PartialEq)]
+pub struct AnswerPrepared {
+    pub invocation: Invocation,
+    pub prepared: u64,
+    pub handle: String,
+    pub revision: u64,
+    pub entry_count: u64,
+    pub answer_sha256: String,
+    pub rendering_sha256: String,
+}
+
+impl AnswerPrepared {
+    pub fn to_j(&self) -> J {
+        J::obj()
+            .with("invocation", self.invocation.to_j())
+            .with("prepared", self.prepared)
+            .with("handle", self.handle.as_str())
+            .with("revision", self.revision)
+            .with("entry_count", self.entry_count)
+            .with("answer_sha256", self.answer_sha256.as_str())
+            .with("rendering_sha256", self.rendering_sha256.as_str())
+    }
+
+    pub fn decode(b: &Obj, store: &str, audit: &str) -> Result<Self, JsonError> {
+        b.exactly(&[
+            "prev",
+            "invocation",
+            "prepared",
+            "handle",
+            "revision",
+            "entry_count",
+            "answer_sha256",
+            "rendering_sha256",
+        ])?;
+        let prepared = b.u64("prepared", NUM_MAX)?;
+        if prepared == 0 {
+            return Err(b.invalid("prepared", "expected a positive preparation number"));
+        }
+        let invocation = Invocation::decode(&b.obj("invocation")?)?;
+        let revision = b.u64("revision", NUM_MAX)?;
+        let answer = b.sha256("answer_sha256")?;
+        let rendering = b.sha256("rendering_sha256")?;
+        let handle = crate::ids::ap_handle(store, audit, prepared, answer, rendering, revision);
+        if b.str("handle")? != handle {
+            return Err(b.invalid(
+                "handle",
+                "does not bind this preparation, its files and revision",
+            ));
+        }
+        Ok(Self {
+            invocation,
+            prepared,
+            handle,
+            revision,
+            entry_count: b.u64("entry_count", NUM_MAX)?,
+            answer_sha256: answer.into(),
+            rendering_sha256: rendering.into(),
         })
     }
 }

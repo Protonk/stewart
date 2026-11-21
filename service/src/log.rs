@@ -15,8 +15,8 @@
 
 use crate::archive::{Audit, Fail, RECORD_LIMIT, decode_record};
 use crate::bodies::{
-    Action, CloseRequested, Closed, DeliveryEnded, DeliveryPlanned, EntryRec, Notice, RunEnded,
-    RunStarted, SealRec, Version,
+    Action, AnswerPrepared, CloseRequested, Closed, DeliveryEnded, DeliveryPlanned, EntryRec,
+    Notice, RunEnded, RunStarted, SealRec, Version,
 };
 use crate::fsx::Dir;
 use crate::json::{self, J, JsonError, Obj};
@@ -25,7 +25,7 @@ use crate::reply::Cause;
 use crate::usage::{Limits, Usage};
 use crate::util;
 
-pub const KINDS: [&str; 14] = [
+pub const KINDS: [&str; 15] = [
     "reference",
     "prepared",
     "intake_planned",
@@ -33,6 +33,7 @@ pub const KINDS: [&str; 14] = [
     "accepted",
     "run_started",
     "entry",
+    "answer_prepared",
     "seal",
     "run_ended",
     "delivery_planned",
@@ -84,6 +85,7 @@ pub enum Body {
     RunStarted(RunStarted),
     RunEnded(RunEnded),
     Entry(EntryRec),
+    AnswerPrepared(AnswerPrepared),
     Seal(SealRec),
     Notice(Notice),
     DeliveryPlanned(DeliveryPlanned),
@@ -627,7 +629,7 @@ impl LogState {
     }
 }
 
-fn decode_body(kind: &str, b: &Obj, audit: &str) -> Result<Body, JsonError> {
+fn decode_body(kind: &str, b: &Obj, store: &str, audit: &str) -> Result<Body, JsonError> {
     Ok(match kind {
         "reference" => {
             b.only(&["prev", "file", "file_sha256", "folder", "writer"])?;
@@ -752,6 +754,7 @@ fn decode_body(kind: &str, b: &Obj, audit: &str) -> Result<Body, JsonError> {
         "run_started" => Body::RunStarted(RunStarted::decode(b)?),
         "run_ended" => Body::RunEnded(RunEnded::decode(b)?),
         "entry" => Body::Entry(EntryRec::decode(b)?),
+        "answer_prepared" => Body::AnswerPrepared(AnswerPrepared::decode(b, store, audit)?),
         "seal" => Body::Seal(SealRec::decode(b)?),
         "notice" => Body::Notice(Notice::decode(b)?),
         "delivery_planned" => Body::DeliveryPlanned(DeliveryPlanned::decode(b, audit)?),
@@ -908,7 +911,8 @@ fn decode_log_record(
     if (n == 1) != (r.kind == "reference") {
         return Err("the log begins with exactly one reference record".into());
     }
-    let typed = decode_body(&r.kind, &body, &audit.id).map_err(|e| e.to_string())?;
+    let typed =
+        decode_body(&r.kind, &body, &audit.archive.store, &audit.id).map_err(|e| e.to_string())?;
     Ok((r.kind.clone(), r.at.clone(), typed, r.json))
 }
 

@@ -761,7 +761,7 @@ pub struct ToolResult {
     pub reason: Option<String>,
     /// The answer revision after the call.
     pub revision: u64,
-    /// The `entry` or `seal` record the call published, `log/<n>.json`.
+    /// The authoring record the call published, `log/<n>.json`.
     pub log_record: Option<String>,
     /// True exactly when the outcome is not `completed`.
     pub is_error: bool,

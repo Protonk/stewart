@@ -29,6 +29,11 @@ const CASES: &[(&str, &str)] = &[
     ("case_payload_write", "entry.payload_write=enospc"),
     ("case_manifest_write", "seal.manifest_write=eio"),
     ("case_prepared_write", "prepared.write=eio"),
+    (
+        "case_prepare_not_published",
+        "log.publish:answer_prepared=eio",
+    ),
+    ("case_prepare_uncertain", "log.dirsync:answer_prepared=eio"),
     ("case_entry_after_link", "entry.after_link=pause"),
 ];
 
@@ -153,6 +158,38 @@ fn case_prepared_write() {
     let r = l.call("prepare", "{}");
     assert_eq!((r.outcome(), r.reason()), ("failed", "record_failed"));
     assert_eq!(r.ex.end, Some(End::ArchiveWriteFailed));
+}
+
+/// Both prepared files survive a publication failure. A failed link leaves
+/// no log record; after a failed directory sync the link can already be seen.
+fn failed_preparation_publication(linked: bool) {
+    let mut l = Live::new();
+    let r = l.call("prepare", "{}");
+    assert_eq!((r.outcome(), r.reason()), ("failed", "record_failed"));
+    assert_eq!(s(&r.env, &["causes", "0", "error"]), "EIO");
+    assert_eq!(r.ex.end, Some(End::ArchiveWriteFailed));
+    assert!(r.ex.log_record.is_none());
+    let kinds = kinds(&l.audit_dir());
+    assert_eq!(
+        kinds.iter().filter(|k| *k == "answer_prepared").count(),
+        usize::from(linked)
+    );
+    assert!(!l.file("prepared/1/answer.json").is_empty());
+    assert!(!l.file("prepared/1/answer.md").is_empty());
+    assert_eq!(l.state().revision(), 0);
+    assert!(l.state().seal().is_none());
+}
+
+#[test]
+#[ignore]
+fn case_prepare_not_published() {
+    failed_preparation_publication(false);
+}
+
+#[test]
+#[ignore]
+fn case_prepare_uncertain() {
+    failed_preparation_publication(true);
 }
 
 /// The `entry.after_link` point lies after the entry's link and before the

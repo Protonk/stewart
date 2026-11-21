@@ -14,6 +14,44 @@ use common::{Env, s};
 use run_support::*;
 use std::time::{Duration, Instant};
 
+/// A second execution prepares the same empty selection again. A Messages
+/// replay returns the first result without preparing or changing the answer.
+#[test]
+fn executed_preparations_publish_once_and_a_replay_uses_the_original() {
+    let prepare = |id: &str| {
+        ok(
+            &format!(r#"[{{"type":"tool_use","id":"{id}","name":"prepare","input":{{}}}}]"#),
+            "tool_use",
+        )
+    };
+    let p = Provider::start(vec![
+        prepare("p1"),
+        prepare("p1"),
+        prepare("p2"),
+        text_turn("end_turn"),
+        text_turn("end_turn"),
+    ]);
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let o = run(&e, &r, &p, &[]);
+    assert_eq!(o.code, Some(0), "{}", o.stderr);
+    assert_eq!(s(&o.reply, &["effects", "answer"]), "unchanged");
+    assert_eq!(s(&o.reply, &["effects", "seal"]), "none");
+    let kinds = e.log_kinds(&r);
+    assert_eq!(kinds.iter().filter(|k| *k == "answer_prepared").count(), 2);
+    let first = e.assert_empty_preparation(&r, 1, 1, "p1");
+    let second = e.assert_empty_preparation(&r, 2, 3, "p2");
+    assert_ne!(first, second);
+    let original = record_body(&run_file(&e, &r, 1, "result-1.json"));
+    let replay = record_body(&run_file(&e, &r, 1, "result-2.json"));
+    assert_eq!(n(&replay, &["replay_of"]), 1);
+    assert!(is_null(&replay, &["log_record"]));
+    assert_eq!(
+        s(&original, &["content", "0", "text"]),
+        s(&replay, &["content", "0", "text"])
+    );
+}
+
 /// A close requested while a request is in flight aborts it: the attempt
 /// is charged an estimate, the placement ends `stopped_by_close` and run
 /// refuses afterwards.

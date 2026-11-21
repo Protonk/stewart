@@ -10,7 +10,8 @@
 //! refused `authoring_ended`.
 
 use super::common::{
-    Ctx, Item, Named, Out, authoring_ended, label_ok, lines, refused, resolve, selection,
+    Ctx, Item, Named, Out, authoring_ended, label_ok, lines, live_author, refused, resolve,
+    selection,
 };
 use super::{
     AMBIGUOUS_OCCURRENCES, CAPPED_EDIT_BYTES, CITATIONS_PER_ENTRY, ENTRIES, ENTRY_BYTES, End,
@@ -379,21 +380,9 @@ fn publish(ctx: &Ctx, action: Action, tool: &str, target: Option<&Item>, new: Op
         citations: n.citations.clone(),
     });
     let invocation = ctx.call.invocation(ctx.placement.run);
-    let run = ctx.placement.run;
     let mut revision = 0;
     let p = log::publish_under(ctx.audit, "entry", ctx.gate, |st| {
-        if let Some(f) = authoring_ended(ctx, st) {
-            return Err(f);
-        }
-        let live = st
-            .latest_placement()
-            .is_some_and(|p| p.run == run && p.ended.is_none());
-        if !live {
-            return Err(Fail::failed(
-                "record_failed",
-                format!("Placement {run} is no longer the live placement, so it cannot record."),
-            ));
-        }
+        live_author(ctx, st)?;
         if action == Action::Add {
             let id = &created.as_ref().expect("an add creates").id;
             if st.next_entry_id() != *id {

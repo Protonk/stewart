@@ -1545,7 +1545,7 @@ impl Waiting {
 /// Execute an MCP call as this runtime dispatches it, under its call gate. A
 /// call whose gate closed before it starts (the placement stopped, the call
 /// was cancelled or the deadline passed) is refused `placement_stopped`
-/// without entering a tool. A call that starts links its entry or seal only
+/// without entering a tool. A call that starts links its authoring record only
 /// while its gate stays open; the authoring-ended precondition still takes
 /// precedence at the link (runtime contract).
 pub fn dispatch(

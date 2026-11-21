@@ -600,10 +600,10 @@ advances to the next number. The log record that uses a claimed name names it.
 Stage files are created with `O_EXCL` under random names. Names in `runs/`
 follow 4.5.
 
-A preparation directory, receipt, manifest, delivery plan or payload file that
+A manager preparation directory, receipt, manifest, delivery plan or payload file that
 no log record names is reported by status as an unpublished candidate, never as
-a record. An auditor preparation is an inspection candidate by design: no log
-record names it unless it is sealed, and status does not report it.
+a record. Status omits answer preparation directories. The audit log records
+successful auditor preparations (4.4, 7.6).
 
 ### 4.4 The audit log
 
@@ -637,6 +637,7 @@ Log record kinds:
 | `accepted` | commission | Its `intake_planned` has no outcome; no `accepted`, no `close_requested` |
 | `run_started` | run | `accepted`; authoring not ended (5.7); no `close_requested`; every earlier `run_started` has its `run_ended` |
 | `entry` | auditor tools | The invocation's placement is the latest `run_started` and has no `run_ended`; no `seal`, no `close_requested` |
+| `answer_prepared` | auditor prepare | The invocation's placement is the latest `run_started` and has no `run_ended`; the preparation's revision is current; no `seal`, no `close_requested` |
 | `seal` | submit, close | No earlier `seal`; for submit, the preparation's revision is current and no `close_requested`; for close, after its `close_requested` |
 | `run_ended` | run; the next run's or close's reconciliation | Its `run_started` has no `run_ended` |
 | `delivery_planned` | run, close | A `seal`; every earlier `delivery_planned` has its `delivery_ended` |
@@ -752,6 +753,21 @@ time in clock ticks since boot.
 
 An entry version's handle binds the SHA-256 of the `entry` record that created
 it (2.3), so no record contains its own handle.
+
+**`answer_prepared`**
+
+```json
+{"prev": "…", "invocation": {"run": 2, "tool_use_id": "toolu_01B…", "call": 30},
+ "prepared": 3, "handle": "ap3.x6h2kq", "revision": 7, "entry_count": 5,
+ "answer_sha256": "…", "rendering_sha256": "…"}
+```
+
+`invocation` identifies the executing auditor call (4.5). Messages supplies the
+tool-use ID, and the runtime MCP route uses `mcp-<call>`. `prepared` is the
+positive directory number in `prepared/<n>`, `handle` is the returned
+`ap<n>.<check>`, and `revision` and `entry_count` describe that selection.
+The two lowercase SHA-256 digests cover the exact bytes of its `answer.json`
+and `answer.md`, respectively. Both files are durable before publication.
 
 **`seal`**
 
@@ -965,8 +981,9 @@ its `{` to its `}`.
 - `replay_of` is the call whose recorded result this one redelivers (6.3), or
   null.
 - `outcome` and `reason` are the reply envelope's, `reason` null when completed.
-  `revision` is the answer revision after the call. `log_record` is the `entry`
-  or `seal` record the call published, or null.
+  `revision` is the answer revision after the call. `log_record` is the `entry`,
+  `answer_prepared` or `seal` record the call published, or null. A replay
+  publishes nothing. Its `replay_of` names the call that supplied the result.
 - `is_error` and `content` are exactly what the `tool_result` block carries
   (7.1). The block sent is
   `{"type":"tool_result","tool_use_id":<ID>,"content":<content>,"is_error":<is_error>}`,
@@ -2288,10 +2305,10 @@ fails to claim its log slot and is reported to the model as `authoring_ended`.
 On SIGTERM, SIGINT or SIGHUP before a seal the adapter takes the same path
 (`aborted_by_signal`), records `interrupted` with cause `signal` and exits 5.
 The signal also closes the publication gate of the executing mutation. A
-mutation, including a confirmed submit, whose log record has not begun to link
+mutation, including prepare and confirmed submit, whose log record has not begun to link
 when the signal is observed is refused `placement_stopped` and links nothing.
-Its result record holds that refusal; a retained payload or stage file it left
-is neither an answer entry nor a seal. When a durable `close_requested` won
+Its result record holds that refusal. Any files left by the call remain
+candidates for an unpublished record. When a durable `close_requested` won
 the log order first, the mutation is refused `authoring_ended` as above
 instead. A mutation whose link had begun when the signal was observed
 completes it. If that mutation was the auditor's seal, the seal stands and the
@@ -2559,8 +2576,16 @@ false, a `what_am_i_working_with` call with the `pg.` cursor for the next page.
 
 `prepare()` re-verifies the size and digest of each payload in the current
 selection, claims `prepared/<n>` (4.3) and writes `answer.json` and `answer.md`
-(QUESTION-FORMS) in it as exclusive files. No log record names an auditor
-preparation unless it is sealed. It returns:
+(QUESTION-FORMS) in it as exclusive files. It publishes one `answer_prepared`
+record under the placement's publication gate (6.8) before returning success.
+Each executed prepare at the same revision claims a fresh directory and handle.
+A replay uses its original result. Preparation preserves the answer revision,
+current selection and seal state. A prepare stopped before publication can leave
+files in its claimed directory. If an intervening edit changes the revision
+before publication, prepare refuses `stale_preparation` with `revision_now`.
+An unconfirmed publication returns a failure.
+Manager close prepares for its own `seal` without an `answer_prepared` record.
+A successful auditor prepare returns:
 
 ```json
 {"prepared": "ap3.x6h2kq", "family": "open-inquiry/1", "revision": 7, "entry_count": 5,

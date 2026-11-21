@@ -232,6 +232,8 @@ fn damaged_answer_bytes_stop_the_auditor() {
     assert!(r.next_tools().is_empty());
     assert_eq!(r.ex.end, Some(End::AnswerDamaged));
     let r = l.call("prepare", "{}");
+    assert!(r.ex.log_record.is_none());
+    assert!(!l.state().recs.iter().any(|r| r.kind == "answer_prepared"));
     assert_eq!(r.reason(), "answer_damaged");
     assert_eq!(r.str(&["entries", "0", "failure"]), "damaged");
     assert_eq!(r.ex.end, Some(End::AnswerDamaged));
@@ -241,6 +243,46 @@ fn damaged_answer_bytes_stop_the_auditor() {
 
 // ---------------------------------------------------------------------------
 // Prepare, submit and seal.
+
+/// An executing prepare can finish both files and still lose publication
+/// to a stop. The next distinct invocation can prepare the same revision.
+#[test]
+fn a_stopped_preparation_keeps_its_files_and_publishes_no_record() {
+    use std::time::{Duration, Instant};
+    use stewart::gate::Gate;
+
+    let mut l = Live::new();
+    let gate = Gate::new(Instant::now() + Duration::from_secs(60));
+    gate.stop();
+    let stopped = l.call_by(
+        Some("prepare"),
+        Some(b"{}"),
+        |audit, world, placement, call| answer::execute(audit, world, placement, call, Some(&gate)),
+    );
+    assert_eq!(stopped.reason(), "placement_stopped");
+    assert!(stopped.ex.log_record.is_none());
+    assert!(!l.state().recs.iter().any(|r| r.kind == "answer_prepared"));
+
+    let prepared = l.call("prepare", "{}");
+    prepared.ok();
+    assert!(prepared.str(&["prepared"]).starts_with("ap2."));
+    assert_eq!(
+        l.file("prepared/1/answer.json"),
+        l.file("prepared/2/answer.json")
+    );
+    assert_eq!(
+        l.file("prepared/1/answer.md"),
+        l.file("prepared/2/answer.md")
+    );
+    assert_eq!(
+        l.state()
+            .recs
+            .iter()
+            .filter(|r| r.kind == "answer_prepared")
+            .count(),
+        1
+    );
+}
 
 /// A preparation's views keep the selection they fixed, even after an edit
 /// makes the preparation stale. Once a confirmed submit seals, repeating it
@@ -306,6 +348,10 @@ fn t6_close_first_ends_authoring_and_close_seals_as_manager() {
     }
     let ap = l.call("prepare", "{}").str(&["prepared"]).to_string();
     let close = l.request_close();
+    let after_close = l.call("prepare", "{}");
+    assert_eq!(after_close.reason(), "authoring_ended");
+    assert!(after_close.ex.log_record.is_none());
+    assert_eq!(l.state().recs.len() as u64, close);
     let submit = J::obj()
         .with("prepared", ap.as_str())
         .with("confirm", true)
