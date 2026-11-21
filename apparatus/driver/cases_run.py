@@ -1071,6 +1071,66 @@ def c_reentry(t):
 # C6: the record is honest.
 # ---------------------------------------------------------------------------
 
+@case("c6.answer-prepared", ["C3", "C5", "C6", "C20"],
+      "each executed auditor prepare binds its bytes and invocation before the reply, including at an unchanged revision",
+      needs=("loopback",))
+def c_answer_prepared(t):
+    """Prepare an empty selection twice, replay the original, refuse a malformed prepare,
+    then record an entry and prepare the changed selection. Close the unsubmitted answer as manager."""
+    sub = run_submission(t)
+    note = "A separately witnessed selection."
+    replies = {}
+
+    def body(p):
+        for label, identity, args, count in (("first", "toolu_first", {}, 1), ("repeat", "toolu_repeat", {}, 2),
+                                             ("replay", "toolu_first", {}, 2), ("invalid", "toolu_bad", {"extra": 1}, 2)):
+            turn = yield p.step([p.call("prepare", args, tid=identity)])
+            reply = turn.reply(0)
+            p.eq(label + ".outcome", reply.outcome, "refused" if label == "invalid" else "completed")
+            replies[label] = reply.data.get("prepared")
+            p.eq(label + ".events-at-reply", t.log_kinds(sub).count("answer_prepared"), count)
+        yield p.calls_step(("record_account", {"label": "note", "text": note}))
+        turn = yield p.step([p.call("prepare", {}, tid="toolu_changed")])
+        replies["changed"] = turn.reply(0).data.get("prepared")
+        p.eq("changed.events-at-reply", t.log_kinds(sub).count("answer_prepared"), 3)
+        yield from finish_ordinary(p)
+
+    procedure = proc(sub, body)
+    provider = rs.provider(t, procedure)
+    run = rs.run(t, sub, provider, name="preparations.run")
+    rs.check_procedure(t, procedure, "preparations", provider)
+    t.eq("preparations.ending", run.data.get("ending"), "ended_unsubmitted")
+    history = t.log_kinds(sub)
+    t.eq("preparations.ordered", [k for k in history if k in ("answer_prepared", "entry", "seal")],
+         ["answer_prepared", "answer_prepared", "entry", "answer_prepared"])
+    events = [n for n, kind in enumerate(history, 1) if kind == "answer_prepared"]
+    t.require("preparations.three-events", len(events) == 3, events)
+    entry = aw.Entry("e1", 1, "record_account", "note", note.encode())
+    for n, label, revision, entries in zip(events, ("first", "repeat", "changed"), (0, 0, 1), ([], [], [entry])):
+        tid = "toolu_" + label
+        row = rs.result_for(sub, tid, 0)
+        t.require("preparations." + label + ".result", row is not None, tid)
+        run_no, call, _, result = row
+        check_answer_prepared(t, "preparations." + label, sub.audit_dir, sub.ref, n,
+                              {"run": run_no, "tool_use_id": tid, "call": call}, replies[label], result, revision, entries)
+    t.check("preparations.distinct", len({replies[k] for k in ("first", "repeat", "changed")}) == 3, replies)
+    first, replay = (rs.result_for(sub, "toolu_first", i) for i in (0, 1))
+    bad = rs.result_for(sub, "toolu_bad")
+    t.require("preparations.replay-and-refusal-results", replay is not None and bad is not None)
+    t.eq("preparations.replay", (replies["replay"], replay[3].get("replay_of"), replay[3].get("content"),
+                                replay[3].get("log_record")), (replies["first"], first[1], first[3].get("content"), None))
+    t.eq("preparations.refusal-no-record", bad[3].get("log_record"), None)
+    status = t.status(sub, name="preparations.status")
+    t.eq("preparations.status-answer", status.data.get("answer"), {"revision": 1, "entries": 1})
+    t.eq("preparations.status-seal", status.data.get("seal"), seal_observation(None))
+    t.cmd(["close", sub.ref], name="preparations.close", expect="completed")
+    t.eq("preparations.close-no-event", t.log_kinds(sub).count("answer_prepared"), 3)
+    seals = t.log_bodies(sub, "seal")
+    t.eq("preparations.manager-seal", [s.get("actor") for s in seals], ["manager"])
+    t.check("preparations.separate-manager-candidate", bool(seals) and seals[0].get("prepared") not in
+            [b["prepared"] for b in t.log_bodies(sub, "answer_prepared")], seals)
+
+
 @case("c6.records", ["C6", "C14", "C18"],
       "the access log equals the auditor's calls, refused and replayed ones included; payloads are never removed",
       needs=("loopback",),

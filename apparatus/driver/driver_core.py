@@ -302,7 +302,7 @@ COMMANDS = ("new", "prepare", "commission", "receipt", "status", "run", "close",
 COMMAND_EFFECT_KINDS = {"read", "write", "process", "network", "credential", "transmit", "limit", "repeat", "interruption", "custody"}
 READ_ONLY_OPS = ("status", "receipt", "receipt-read", "help", "describe", "usage")
 LOG_KINDS = ("reference", "prepared", "intake_planned", "intake_ended", "accepted",
-             "run_started", "entry", "seal", "run_ended", "delivery_planned",
+             "run_started", "entry", "answer_prepared", "seal", "run_ended", "delivery_planned",
              "delivery_ended", "notice", "close_requested", "closed")
 INTAKE_ENDED_OUTCOMES = ("selection_changed", "source_unreadable", "capture_failed",
                          "capture_unverified", "receipt_record_failed", "closed",
@@ -758,6 +758,31 @@ def handle_check(store, audit, kind, obj, binding):
     parts = ["stewart.handle/1", store, audit, kind, obj] + [str(b) for b in binding]
     digest = hashlib.sha256("\0".join(parts).encode("utf-8")).digest()
     return base64.b32encode(digest).decode("ascii").lower()[:6]
+
+
+def check_answer_prepared(t, label, root, reference, number, invocation, handle, result, revision, entries):
+    """Compare an auditor's preparation event, files and tool reply with the supplied selection (4.4, 7.6)."""
+    import answer_witness as aw
+    audit = parse_reference(reference)
+    log = os.path.join(root, "log")
+    body = strict_loads(read_bytes(os.path.join(log, "%d.json" % number)))["body"]
+    n = body.get("prepared")
+    t.require(label + ".positive-directory", type(n) is int and n > 0, n)
+    answer, rendering = aw.answer_json(revision, entries), aw.render(entries)
+    digests = [sha256_hex(answer), sha256_hex(rendering)]
+    obj = "ap%d" % n
+    want_handle = obj + "." + handle_check(audit["store"], audit["audit"], "ap", obj, digests + [revision])
+    expected = {"prev": sha256_hex(read_bytes(os.path.join(log, "%d.json" % (number - 1)))),
+                "invocation": invocation, "prepared": n, "handle": want_handle, "revision": revision,
+                "entry_count": len(entries), "answer_sha256": digests[0], "rendering_sha256": digests[1]}
+    # Comparing the decoded JSON in member order also distinguishes numbers from booleans.
+    t.eq(label + ".body", json.dumps(body), json.dumps(expected))
+    t.eq(label + ".returned-handle", handle, want_handle)
+    t.eq(label + ".result-link", result.get("log_record"), "log/%d.json" % number)
+    for name, data in (("answer.json", answer), ("answer.md", rendering)):
+        path = os.path.join(root, "prepared", str(n), name)
+        t.require(label + "." + name + ".present", os.path.isfile(path), path)
+        t.eq(label + "." + name, read_bytes(path), data)
 
 
 def random_id(prefix):

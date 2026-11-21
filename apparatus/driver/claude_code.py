@@ -43,7 +43,7 @@ import traceback
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from driver_core import (CONTINUATION, FAMILY_TEXT, FAMILY_TOOLS, ORIENTATION, REMINDER, REPLY_SCHEMA,
-                         check_advice, check_commissioning, check_description, expected_tools, iter_values,
+                         check_advice, check_answer_prepared, check_commissioning, check_description, expected_tools, iter_values,
                          parse_reference, platform_name, reading_problem, strict_loads)
 from rawjson import compact, parse
 
@@ -162,6 +162,7 @@ CASES = (
     ("release-gate", "Optional featureless binary: runtime fields unknown, no topic or notice, same scaffold"),
     ("runtime-relay-forwarding", "Direct relay and hook helpers: arbitrary bytes before EOF, the 64 KiB hook reply bound, "
                                  "pipe observer control and bounded stopping"),
+    ("runtime-answer-prepared", "Unsubmitted, repeated and refused preparations, MCP identity, candidate bytes and manager close"),
     ("runtime-submit", "Actual MCP record/prepare/submit, faithful delivery and fresh-session invariance"),
     ("runtime-captured-authoring", "C4 field recovery and C5 full refusal, exact-version replacement and submit stop"),
     ("runtime-reply-fidelity", "Grounded pages, substitutions, error flattening and unknown echoes; explicit continuation"),
@@ -2577,6 +2578,84 @@ class Driver:
         self.eq(label + ".placement-confirmed", ddata.get("placement"), "confirmed")
         self.eq(label + ".package-unchanged", self.package_identity(package), delivered)
         self.eq(label + ".no-launch-during-close", self.launch_count(f), launches)
+
+    def runtime_answer_prepared(self):
+        import answer_witness as aw
+        label = "answer-prepared"
+        note = "A separately witnessed selection."
+        script = [script_step("first", "prepare", id="first"),
+                  script_step("duplicate", "prepare", id="first"),
+                  script_step("repeat", "prepare", id="repeat"),
+                  script_step("invalid", "prepare", {"extra": 1}, id="invalid"),
+                  script_step("entry", "record_account", {"label": "note", "text": note}, id="entry"),
+                  script_step("changed", "prepare", id="changed")]
+        f = self.scripted_fixture(label, script=script, end="exit")
+        self.accept(f)
+        run, _, steps = self.run_script(f)
+        self.eq(label + ".unsubmitted", run["data"].get("ending"), "interrupted")
+        self.require(label + ".witnessed-replies", all(len(steps.get(s["label"], [])) == 1 for s in script), list(steps))
+        self.reused_id_error(label + ".duplicate", steps["duplicate"][0]["response"], "first")
+        invalid = steps["invalid"][0]["core"]
+        self.eq(label + ".invalid", invalid.get("outcome"), "refused")
+        records = self.log_records(f)
+        order = [record["kind"] for _, record in records if record["kind"] in ("answer_prepared", "entry", "seal")]
+        self.eq(label + ".order", order, ["answer_prepared", "answer_prepared", "entry", "answer_prepared"])
+        events = [n for n, record in records if record["kind"] == "answer_prepared"]
+        self.require(label + ".three-events", len(events) == 3, events)
+        root = self.audit_path(f)
+        rundir = root / "runs" / "1"
+        def authored_calls(directory):
+            calls = []
+            for path in directory.glob("call-*.json"):
+                request = transport_loads(path.read_bytes())
+                if request["params"]["name"] in ("prepare", "record_account"):
+                    calls.append((int(path.stem.split("-")[1]), request["id"]))
+            return sorted(calls)
+
+        calls = authored_calls(rundir)
+        self.eq(label + ".captured-ids", [identity for _, identity in calls], ["first", "repeat", "invalid", "entry", "changed"])
+        by_id = {identity: number for number, identity in calls}
+        entry = aw.Entry("e1", 1, "record_account", "note", note.encode())
+        handles = []
+        for n, identity, revision, selection in zip(events, ("first", "repeat", "changed"), (0, 0, 1), ([], [], [entry])):
+            call = by_id[identity]
+            result = strict_loads((rundir / ("result-%d.json" % call)).read_bytes())["body"]
+            core = steps[identity][0]["core"]
+            self.eq(label + "." + identity + ".completed", core.get("outcome"), "completed")
+            handle = core["data"].get("prepared")
+            check_answer_prepared(self, label + "." + identity, root, f["reference"], n,
+                                  {"run": 1, "tool_use_id": "mcp-%d" % call, "call": call}, handle, result, revision, selection)
+            handles.append(handle)
+        self.eq(label + ".distinct", len(set(handles)), 3)
+        refused = strict_loads((rundir / ("result-%d.json" % by_id["invalid"])).read_bytes())["body"]
+        self.control(label + "-invalid-publishes-no-record", refused.get("outcome") == "refused"
+                     and refused.get("log_record") is None and len(events) == 3)
+        status = self.cmd(label + ".status", ["status", f["reference"]])["data"]
+        self.eq(label + ".status-answer", status.get("answer"), {"revision": 1, "entries": 1})
+        self.eq(label + ".status-seal", status.get("seal"), {"state": "absent", "actor": None})
+        # A new placement may use the same RPC ID again, without changing the selection.
+        self.change_scenario(f, script=[script_step("continued", "prepare", id="first")],
+                             script_end="exit", session=label + "-session-2")
+        continued, _, steps = self.run_script(f, "run-2", run=2)
+        self.eq(label + ".second-ending", continued["data"].get("ending"), "interrupted")
+        records = self.log_records(f)
+        all_events = [n for n, record in records if record["kind"] == "answer_prepared"]
+        self.require(label + ".one-new-event", len(all_events) == 4 and all_events[:-1] == events, all_events)
+        second = root / "runs" / "2"
+        calls = authored_calls(second)
+        self.require(label + ".fresh-invocation", [identity for _, identity in calls] == ["first"], calls)
+        call = calls[0][0]
+        result = strict_loads((second / ("result-%d.json" % call)).read_bytes())["body"]
+        handle = steps["continued"][0]["core"]["data"].get("prepared")
+        check_answer_prepared(self, label + ".continued", root, f["reference"], all_events[-1],
+                              {"run": 2, "tool_use_id": "mcp-%d" % call, "call": call}, handle, result, 1, [entry])
+        self.check(label + ".fresh-handle", handle not in handles, handle)
+        self.cmd(label + ".close", ["close", f["reference"]])
+        self.eq(label + ".close-no-event", self.log_kinds(f).count("answer_prepared"), 4)
+        seals = [record["body"] for _, record in self.log_records(f) if record["kind"] == "seal"]
+        self.eq(label + ".manager-seal", [seal.get("actor") for seal in seals], ["manager"])
+        self.check(label + ".separate-manager-candidate", bool(seals) and seals[0].get("prepared") not in
+                   [r["body"]["prepared"] for _, r in records if r["kind"] == "answer_prepared"], seals)
 
     def runtime_submit(self):
         for label in ("runtime-positive", "runtime-fresh-invariance"):
