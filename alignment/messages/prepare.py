@@ -1,4 +1,4 @@
-"""Prepare one unpaid single-placement Messages catalog comparison for each release model."""
+"""Prepare unpaid single-placement Messages catalog proposals for the selected release models."""
 import argparse
 import json
 import os
@@ -11,11 +11,14 @@ from billing import price_card, worst_case
 from common import FILE_SIZE_LIMIT, file_hash, proposal, validate_packet, write_json
 
 
-def prepare(output, case, effort, prices):
+RELEASE_MODELS = ('claude-haiku-5-5', 'claude-opus-5-5')
+
+
+def prepare(output, case, effort, prices, *, models=RELEASE_MODELS):
     rates = json.loads(prices.read_bytes())
     packets = []
-    for family in ('haiku', 'opus'):
-        model = f'claude-{family}-5-5'
+    for model in models:
+        family = model.split('-')[1]
         card = rates[model]
         price_card(card)
         packet = proposal(model, [case])
@@ -42,8 +45,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', type=Path, help='New output directory')
     parser.add_argument('--case', required=True, help='One C10 catalog specimen')
+    parser.add_argument('--model', choices=RELEASE_MODELS, help='Prepare a single model; default: both release models')
     parser.add_argument('--effort', choices=('low', 'medium', 'high', 'xhigh', 'max'),
                         help='Omit to leave the wire setting absent')
     parser.add_argument('--prices', required=True, type=Path, help='Dated Messages queue rate cards')
     args = parser.parse_args()
-    print(json.dumps(prepare(args.output, args.case, args.effort, args.prices), indent=2))
+    models = (args.model,) if args.model else RELEASE_MODELS
+    print(json.dumps(prepare(args.output, args.case, args.effort, args.prices, models=models), indent=2))

@@ -1,6 +1,6 @@
 # Messages endpoint comparisons
 
-Use the distributed release writer and record its qualification ID and binary digest. A catalog proposal specifies one model, one audit and one placement. The same specimen and effort can be proposed on two models so a mechanical comparison has the same inputs.
+Use the distributed release writer and record its qualification ID and binary digest. A catalog proposal specifies one model, one audit and one placement. Choose specimens for family and evidence coverage. A selected family audit can also exercise a manager-supplied effort. Live alignment checks its transmission and the endpoint response.
 
 ## Prepare unpaid proposals
 
@@ -11,7 +11,7 @@ python3 -I -B alignment/messages/prepare.py .scratch/open-pair \
   --case open-ordinary --prices alignment/messages/pricing-2026-11-21.json
 ```
 
-The two proposal files leave the account, spending authority and build bindings empty. `PROPOSALS.json` contains the hashes and the reservation calculated by the launcher's billing code for each placement. An omitted effort remains absent from the request. Use `--effort medium` to exercise the explicit setting. The short catalog limits leave room for an ordinary audit below the launcher's 150,000-token combined guard. Paid compaction needs a separate admission mechanism and rehearsal.
+Use `--model claude-haiku-5-5` or `--model claude-opus-5-5` to prepare a single proposal. The proposal files leave the account, spending authority and build bindings empty. `PROPOSALS.json` contains the hashes and the reservation calculated by the launcher's billing code for each placement. An omitted effort remains absent from the request. Use `--effort medium` to exercise the explicit setting. The short catalog limits leave room for an ordinary audit below the launcher's 150,000-token combined guard. Paid compaction needs a separate admission mechanism and rehearsal.
 
 The November 21, 2026 price card uses microdollars per million tokens, a one-million-token context window, the direct API's standard rates and the one-hour cache-write rate as the maximum write price. The launcher prices an observed five-minute write separately and reserves using the most expensive applicable band. Recheck the model IDs, settings, API version, compaction beta, rates and route when commissioning. [Models](https://platform.claude.com/docs/en/models/overview), [pricing](https://platform.claude.com/docs/en/about-claude/pricing), [effort](https://platform.claude.com/docs/en/build-with-claude/effort), [API versions](https://platform.claude.com/docs/en/api/versioning) and [on-demand compaction](https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand).
 

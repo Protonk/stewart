@@ -115,8 +115,9 @@ alignment tier's compaction run and for experiments.
 - **Also:** read, search and list given paths outside the material (`../`,
   absolute paths, names that only exist on the host) are refused with a sign, and
   nothing outside the material appears in any reply.
-- **Effort:** a commission whose front matter sets `effort` sends it on every
-  request as the top-level `output_config` parameter and nowhere else. Its
+- **Effort:** for each documented level, the independent fake provider sees
+  the exact front-matter value at `output_config.effort` on the request. The
+  selection is sent on every request as a top-level parameter. Its
   system blocks, tools and messages are byte for byte those of the same
   commission without the setting, which sends no `output_config`. An unknown
   level is refused at prepare.
@@ -714,8 +715,12 @@ current while those inputs are unchanged.
 
 **Coverage.** For each named model, demonstrate auditor submission for each
 implemented family, including a question with inadequate evidence. Exercise
-provider compaction at the pinned trigger and each manager-selectable request
-setting. Fix the model coverage and budget in the commission before launch.
+provider compaction at the pinned trigger. For effort, cover omission and one
+explicit value on already selected family audits. Reconstruct the request,
+check the manager's setting, and record whether the endpoint accepted it or
+how it refused. C1 checks every supported spelling against the fake provider,
+and C9 checks faithful reporting of provider rejection. Choose live cases by
+family, evidence and protocol coverage. Fix the scope and budget before launch.
 
 For compaction, witness the actual provider summary request, the signed summary
 reused unchanged on the next ordinary request, the replaced context and its
@@ -748,8 +753,9 @@ with a content-completeness grade.
 **Reported but not gating:** whether the planted fact or the unsupported premise
 was found, turns and tokens used, how often `what_am_i_working_with` was called and
 when, reminders sent, and cost. These go into the release notes as observations.
-Repetition, effort comparisons and killed-and-continued placements with real
-models are experiment-tier questions.
+Repetition and killed-and-continued placements with real models are
+experiment-tier questions. Release alignment draws no conclusions about how a
+reasoning level affects an answer.
 
 Every release names the models with a current alignment record. A model without
 one isn't listed as supported. A runtime adapter that the distributed binary

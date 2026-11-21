@@ -48,7 +48,7 @@ live captures already show.
 
 | # | Shape | Adapter assumes | Stand-ins replay | Witness | Seen live |
 | --- | --- | --- | --- | --- | --- |
-| A1 | Request acceptance: `anthropic-version: 2026-10-21`, `anthropic-beta: compact-2026-09-04`; `model`, `max_tokens`, `system`, `tools`, `messages`; `output_config.effort` at each level; `compaction` on summary requests | HTTP 200 | Both fakes check the headers and accept | `request-<n>.json`; attempt status and `request-id` | Haiku omitted (`c10-live-*`), Haiku `high` (`sanity-live-05`), Opus omitted (`opus-live-*`, `readiness-m4-live-01`) |
+| A1 | Request acceptance: `anthropic-version: 2026-10-21`, `anthropic-beta: compact-2026-09-04`; `model`, `max_tokens`, `system`, `tools`, `messages`; `output_config.effort` when the manager sets a level; `compaction` on summary requests | HTTP 200 | Both fakes check the headers and accept | `request-<n>.json`; attempt status and `request-id` | Haiku omitted (`c10-live-*`), Haiku `high` (`sanity-live-05`), Opus omitted (`opus-live-*`, `readiness-m4-live-01`) |
 | A2 | Message envelope | `content`, `stop_reason`, `usage` once each; `model` recorded; the rest raw | Driver: configurable members. C10 fake: minimal, no `container`, `diagnostics` or `stop_details` | `response-<r>-<a>.bin` | `id`, `type`, `role`, `stop_sequence`, `stop_details: null`, `container: null`, `diagnostics: null` (m2/m3/m4 fixtures) |
 | A3 | Content blocks | `tool_use` (`id`, `name`, `input`), `text`, signed `thinking`, unknown types echoed byte for byte | Driver: all, plus redacted and unknown blocks. C10 fake: tool use, text, one signed thinking cap | Response captures | Signed thinking with empty text; text; tool use |
 | A4 | Stop reasons | `tool_use`, `end_turn`, `max_tokens` with and without tool use, `compaction`, `refusal`, `model_context_window_exceeded`; others are `protocol_anomaly` | Driver: any. C10 fake: the scripted ones | Response captures; `run_ended` | `tool_use`, `end_turn`, thinking-only `max_tokens` (Haiku, M2/M3 fixtures), `compaction` (Opus m4). Not seen: `refusal`, window exhaustion, `pause_turn` |
@@ -59,7 +59,7 @@ live captures already show.
 | A9 | Errors | `{"type":"error","error":{"type","message"},"request_id"}`. 408/429/5xx/529 retried with `retry-after`; others are `provider_rejected` | Driver: every status and form. Sanity/C10 fake: 401 only | Response captures; `run_ended.provider` | 401 `authentication_error` (`sanity-live-03`, captured). Others are not inducible inside the commission: compared when observed, otherwise a stated limitation |
 | A10 | Transport | Framing by `content-length`, chunking or close; only `content-type`, `request-id` and `retry-after` retained; 600-second timeout | Driver: every framing (`testdata/wire`) | Attempt timing and three headers; framing itself is not retained | Durations only. Live framing is unwitnessed on the direct route |
 | A11 | Model identity | Response `model` equals the requested ID; no `fallbacks` parameter is sent | Fakes echo `rehearsal-only` | Response captures | Haiku and Opus IDs echoed |
-| A12 | Effort effect | Acceptance only: a provider that ignores a parameter goes unreported (INTERFACE 6.5) | Not modelled | Usage `thinking_tokens` and output per level, reported but not gated | `high` accepted on Haiku |
+| A12 | Manager effort passthrough | Omission leaves out `output_config`; an explicit level is sent verbatim (INTERFACE 6.5) | The scripted peer witnesses every supported spelling and exercises provider refusal | Manager's setting, reconstructed request and captured response | The ordinary open-inquiry trials exercised omission on both models |
 | A13 | Credential reflection | None; scanned as INTERFACE 6.1 states | Rehearsal reflection control | Stewart scan; launcher host scan | None seen |
 
 The [comparison procedure](alignment/messages/README.md) cites the provider documentation and dated model card used for the catalog packets. Reconfirm their currency on the commission date.
@@ -90,22 +90,19 @@ The [comparison procedure](alignment/messages/README.md) cites the provider docu
 
 ### 1.3 Messages run set and reservations
 
-Use the qualified release writer for every gate observation. Both model IDs,
-all three families, the six evidence variants and each selectable effort
-(including explicitly requested medium) are represented below. Omitted effort
-is a distinct request shape. Both models submitted and closed H1 and O1
-with verified deliveries. H2–H6 and O2–O6 need separate authorization.
-[Reviewed first pair](apparatus/qualified.md#alignment-pair-01)
+Use the qualified release writer for every gate observation. For each model,
+retain the completed open inquiry, select the framing case with inadequate
+evidence and the ordinary comparison case, and exercise provider compaction.
+The framing audit also checks one explicitly requested `medium` value. Use
+omitted effort for the remaining cases. These choices cover three families,
+inadequate evidence, and the two request forms. [Completed open inquiries](apparatus/qualified.md#alignment-pair-01)
 
-| Haiku | Opus | Catalog specimen | Requested effort | Placement reservation, Haiku / Opus |
+| Specimen | Models | Purpose | Effort | State |
 | --- | --- | --- | --- | --- |
-| H1 ✓ | O1 ✓ | open-ordinary | omitted | $1.24 / $9.88 |
-| H2 | O2 | open-inadequate | low | $1.24 / $9.88 |
-| H3 | O3 | framing-ordinary | medium | $1.24 / $9.88 |
-| H4 | O4 | framing-inadequate | high | $1.24 / $9.88 |
-| H5 | O5 | comparison-ordinary | xhigh | $1.24 / $9.88 |
-| H6 | O6 | comparison-inadequate | max | $1.24 / $9.88 |
-| H7 | O7 | compaction, ordinary open inquiry | omitted | Pending a separately rehearsed bound |
+| open-ordinary | Haiku and Opus | Open-inquiry submission | Omitted | H1 and O1 verified and closed |
+| framing-inadequate | Haiku and Opus | Framing submission with inadequate evidence and explicit wire setting | `medium` | Haiku proposed next; Opus needs separate authority |
+| comparison-ordinary | Haiku and Opus | Comparison submission | Omitted | Pending |
+| Compaction, ordinary open inquiry | Haiku and Opus | Signed summary, reset, accounting and entry continuity | Omitted | Pending a separately rehearsed bound |
 
 Catalog placements have 16 turns, 115,000 input tokens and 32,000 output
 tokens, a 900-second watchdog and a 131,072-byte per-file limit. Their
@@ -122,7 +119,7 @@ price, including cache writes, for the allowance and terminal overrun. It
 also reserves remaining output plus one request's maximum output and rounds
 up per placement. Settle each placement from its reviewed capture.
 
-H7 and O7 remain required for release. The current launcher refuses paid
+Both compaction observations remain required for release. The current launcher refuses paid
 packets that can enter server compaction. Establish and rehearse a separate
 bound for summary iterations, retries, large capture files and interrupted
 estimates before pricing or commissioning these two rows. Historical
@@ -140,7 +137,7 @@ One record per model per series. It holds:
 - the API version, compaction beta, compaction trigger and request, and output
   cap;
 - the requested model ID and the response `model` values;
-- the effort values covered;
+- whether effort was omitted or explicitly supplied and the exact supplied value;
 - the writer (qualification ID and release SHA-256), apparatus commit, image and
   catalog digest;
 - the commission and authorization digests;

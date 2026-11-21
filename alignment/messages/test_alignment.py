@@ -112,6 +112,19 @@ class InventoryChecks(unittest.TestCase):
 
 
 class PacketChecks(unittest.TestCase):
+    def test_single_explicit_effort_packet(self):
+        model = 'claude-haiku-5-5'
+        with tempfile.TemporaryDirectory() as td:
+            dest = Path(td) / 'draft'
+            manifest = prepare(dest, 'framing-inadequate', 'medium', HERE / 'pricing-2026-11-21.json',
+                               models=(model,))
+            row, = manifest['proposals']
+            packet = strict_json((dest / row['file']).read_bytes())
+            self.assertEqual((row['model'], packet['model'], packet['effort']), (model, model, 'medium'))
+            self.assertEqual(packet['runs'][0]['case'], 'framing-inadequate')
+            self.assertEqual(manifest['maximum_reserved_cents'], row['reserved_cents'])
+            self.assertIsNone(packet['spending_authority'])
+
     def test_distinct_unpaid_packets_and_real_queue_pricing(self):
         with tempfile.TemporaryDirectory() as td:
             dest = Path(td) / 'drafts'
