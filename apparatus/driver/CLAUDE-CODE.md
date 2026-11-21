@@ -311,6 +311,13 @@ The self-test runs the harness against a small specification-only peer only
 where no case can: the optional UTF-8 artifact used by the service procedure
 and a second relay attempt, which Stewart's stop usually forestalls.
 
+For the direct hook checks, the driver writes the complete fixture request to
+a pipe and closes its write end before starting the helper. With no socket
+owner, the helper may return before reading stdin. The driver checks exit 2,
+empty stdout through EOF, a diagnostic about the missing endpoint or connection
+failure, and the continued absence of the socket. The self-test exercises a
+helper that exits before the observer resumes and one that reads through EOF.
+
 Relay supervision checks begin with a normal raw-pipe exchange, then stall a
 worker on a blocking pipe read and check its timeout, group stop and partial
 byte witness. A separate worker leaves a signal-resistant descendant. After

@@ -1259,6 +1259,43 @@ HOOK_REPLIES = {"hook-exact": HOOK_REPLY, "hook-limit": bytes(range(256)) * (HOO
                 "hook-unserved": None}
 
 
+def unserved_hook_selftest(root, check):
+    """An unserved helper may exit before reading stdin or consume the request through EOF."""
+    for order in ("exit-first", "read-first", "wrong-result"):
+        name = "unserved-" + order
+        binary, consumed = root / (name + ".sh"), root / (name + ".received")
+        read = "/bin/cat > " + shlex.quote(str(consumed)) + "\n" if order == "read-first" else ""
+        response = "echo 'No owner serves this socket' >&2\nexit 2\n"
+        if order == "wrong-result":
+            response = ": > h\necho allowed\necho completed >&2\nexit 0\n"
+        binary.write_text("#!/bin/sh\n" + read + response)
+        binary.chmod(0o700)
+
+        def observe(witness):
+            if order == "exit-first":
+                journal = witness.event
+                def wait_after_spawn(stage, **details):
+                    journal(stage, **details)
+                    if stage == "after-popen":
+                        # Observe exit without reaping: hook_traffic still owns the child's status.
+                        os.waitid(os.P_PID, details["hook_pid"], os.WEXITED | os.WNOWAIT)
+                witness.event = wait_after_spawn
+            return hook_traffic(binary, "hook-unserved", {}, root / (name + ".work"), witness)
+
+        record = relay_supervised(root / name, observe)
+        if order == "wrong-result":
+            check(name + ".refusal-controls", record["result"]["checks"] == {
+                "stdout-eof": True, "exact-stdout": False, "helper-exit": False,
+                "diagnostic": False, "socket-absent": False} and not relay_success(record))
+        else:
+            check(name + ".verdict", relay_success(record))
+        captured = consumed.read_bytes() if consumed.exists() else None
+        check(name + ".consumption", captured == (HOOK_REQUEST if order == "read-first" else None))
+        if not record["group_stopped"]:
+            raise RuntimeError("self-test hook group stopping unresolved: %s" % record)
+
+
+
 def relay_pipe_control(witness):
     observer, checks = RelayObserver(witness), {}
     reader, writer = os.pipe()
@@ -1371,22 +1408,25 @@ def hook_traffic(binary, variant, env, workspace, witness):
             witness.event("before-listener-bind")
             listener.bind("h")
             listener.listen(1)
-        witness.event("before-popen", argv=[str(binary), "__stewart-cc-hook", "h"])
-        process = subprocess.Popen([str(binary), "__stewart-cc-hook", "h"], env=env,
-                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # An unserved helper may exit as soon as connect fails. Make the complete small
+        # request and EOF available before it runs, preserving the independent write witness.
+        read_fd, write_fd = os.pipe()
+        with os.fdopen(read_fd, "rb") as request:
+            with os.fdopen(write_fd, "wb") as feed:
+                os.set_blocking(write_fd, False)
+                observer.send(feed.fileno(), "stdin", HOOK_REQUEST)
+                witness.event("before-stdin-close")
+            witness.event("before-popen", argv=[str(binary), "__stewart-cc-hook", "h"])
+            process = subprocess.Popen([str(binary), "__stewart-cc-hook", "h"], env=env, stdin=request,
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         witness.event("after-popen", hook_pid=process.pid)
         if os.getpgid(process.pid) != os.getpgrp():
             stopping_uncertain = True
             process.kill()
             raise RuntimeError("hook helper escaped the owned worker group")
-        for stream in (process.stdin, process.stdout, process.stderr):
+        for stream in (process.stdout, process.stderr):
             os.set_blocking(stream.fileno(), False)
         out = process.stdout.fileno()
-        # The request fits the pipe whole, so this order holds whether the
-        # helper connects before or after reading its input.
-        observer.send(process.stdin.fileno(), "stdin", HOOK_REQUEST)
-        witness.event("before-stdin-close")
-        process.stdin.close()
         if variant == "hook-unserved":
             # No owner serves `h`: nothing on stdout, a reason on stderr, exit 2.
             stdout, stdout_eof = observer.read(out, "stdout", seconds=6)
@@ -1396,8 +1436,13 @@ def hook_traffic(binary, variant, env, workspace, witness):
             while process.poll() is None and time.monotonic() < end:
                 time.sleep(0.01)
             checks["helper-exit"] = process.poll() == 2
-            stderr, _ = observer.read(process.stderr.fileno(), "stderr", seconds=0.3)
-            checks["diagnostic"] = bool(stderr.strip())
+            stderr, stderr_eof = observer.read(process.stderr.fileno(), "stderr", seconds=0.3)
+            reason = stderr.decode("utf-8").strip()
+            checks["diagnostic"] = stderr_eof and bool(re.search(
+                r"no such file|not found|does not exist|missing|absent|enoent|no (?:owner|listener)|"
+                r"not (?:served|available|listening)|un(?:available|reachable|served)|"
+                r"(?:cannot|unable to|failed to) connect|connect(?:ion)? (?:failed|refused)|econnrefused", reason, re.I))
+            checks["socket-absent"] = not os.path.lexists("h")
             return {"checks": checks, "error": None}
         witness.event("before-accept")
         connection, _ = listener.accept()
@@ -7452,6 +7497,7 @@ def self_test():
             raise RuntimeError("self-test owned group stopping unknown: %s" % record)
         return record
 
+    unserved_hook_selftest(relay_root, check)
     record = supervised_control("pipe-reader", relay_pipe_control, 2)
     check("relay-owner.pipe-idle-open-bytes-eof", relay_success(record))
     journal = [json.loads(raw) for raw in (relay_root / "pipe-reader/controller-events.jsonl").read_bytes().splitlines()]
