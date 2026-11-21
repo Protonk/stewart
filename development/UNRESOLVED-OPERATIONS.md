@@ -51,7 +51,7 @@ The harness is launched with a pinned executable, profile and launch surface
 
 - **Known:** the contract wants a configuration check before the first message.
   Under the selected launch, `system/init` arrives only after input, as the
-  retained macOS harness encounters showed. Stewart checks the startup inventory
+  macOS and Linux harness captures showed. Stewart checks the startup inventory
   against the profile and stops on a mismatch.
 - **Unknown:** whether the question has already reached the provider when a
   mismatch is found. *Inaccessible:* only a provider or network witness could
@@ -93,15 +93,16 @@ The harness is launched with a pinned executable, profile and launch surface
   `tool_use` of a response, in order. The runtime executes calls one at a time
   in arrival order, queueing those that arrive while another is pending. Exact
   version handles make a stale edit refuse rather than overwrite.
-- **Unknown:** *behavior:* whether the harness sends a response's calls together
-  or in turn, and whether arrival order matches the model's order. The auditor
-  issues the calls and the harness chooses when to send them. Stewart executes
-  and records each one. The manager sees them only in the archive and the
-  answer's revision history.
+  On Linux with Claude Code 2.1.322 and Sonnet 5.5, 11 assistant messages
+  contained multiple calls. In every group, tool IDs arrived in assistant
+  stream order, with a reply captured before the next call arrived.
+  [Linux trial record](../apparatus/qualified.md#cc-trials-02)
+- **Unknown:** *behavior:* whether another harness pin dispatches grouped calls
+  in a different order or overlaps them.
 - **Elicited by:** any harness run in which an assistant message carries two or
   more tool calls.
-- **Next step:** a passive live observation. Correlate assistant frames with
-  MCP arrival; both sides are service-owned.
+- **Next step:** compare tool IDs passively when the harness pin changes.
+  Both the assistant stream and MCP arrival captures are service-owned.
 - **Outcomes:**
   - *Model order preserved:* narrow the question to the pinned harness version.
   - *Order differs, or calls overlap:* make the records expose both orders, and
@@ -182,14 +183,18 @@ for the runtime, in its
   `stopped_by_close`. The runtime's owner orders a close before a signal and a
   signal before the deadline. Close seals the
   selection current at its request. The scripted tier closes from every state.
-  In a [live Sonnet Messages audit](../apparatus/qualified.md#runtime-stages-01),
+  In a live Sonnet Messages audit,
   close at preparation stopped a fully written, unanswered request. Stewart
   estimated its usage, attributed the seal to the manager and verified delivery.
-  The exact writer then accepted ordinary close confirmation.
-- **Unknown:** *behavior:* the real harness's reaction to the stop, and the
-  timing of requests at other close points.
+  The exact writer then accepted ordinary close confirmation. At the same
+  point on Linux Claude Code, the manager's request stopped the placement.
+  Both delivered answer files matched the outside witness's prepared bytes.
+  Close confirmed, and a subsequent run was refused `reference_closed`.
+  [Paired trial record](../apparatus/qualified.md#cc-trials-02)
+- **Unknown:** *behavior:* the timing of requests at other close points.
 - **Elicited by:** close at a witnessed point during a placement.
-- **Next step:** a live test, which is an escalation.
+- **Next step:** investigate another close point only if its timing matters
+  to a custody decision.
 - **Outcomes:** a manager seal claiming auditor submission, or a mutation
   linked after the request, would be a defect. Otherwise, narrow to the points
   observed.
@@ -228,38 +233,6 @@ for the runtime, in its
 over the same ledger and limits. The runtime's rules are in
 [limits, usage and continuation](../docs/claude-code/CONTRACT.md#limits-usage-and-continuation).
 
-### Continuing between prepare and submit
-
-- **Known:**
-  - an interruption keeps the entries and the preparation, and nothing is
-    sealed;
-  - a completed auditor preparation publishes an `answer_prepared` record
-    identifying the invocation, selection revision and both prepared digests.
-  - the prepared handle stays valid while the revision is unchanged
-    ([INTERFACE 7.6](../docs/INTERFACE.md#76-prepare-and-submit));
-  - re-entry lists entries and recent edits but not preparations;
-  - the continuation notice tells the auditor to check before repeating its
-    last action.
-  - in a [live Sonnet Messages continuation](../apparatus/qualified.md#runtime-stages-01),
-    the auditor called `what_am_i_working_with`, `prepare` and `submit` in
-    that order. The three entries, selection revision, and answer and rendering
-    digests matched the interrupted preparation.
-- **Decision:** keep the present notice and re-entry text for the observed
-  Messages case. Whether a continuing auditor using the Claude Code harness
-  needs a preparation hint remains open.
-- **Elicited by:** a signal at the published preparation, followed by a
-  continuation. Whether the first auditor received the tool reply is a
-  separate observation.
-- **Next step:** compare a witnessed preparation and continuation on the
-  harness after a reviewed profile becomes available.
-- **Outcomes:**
-  - *The auditor prepares again and submits:* the current design suffices,
-    perhaps with clearer text.
-  - *It ends unsubmitted, or tries a handle it cannot know:* change the notice
-    or re-entry.
-- **Depends on:** a witnessed preparation followed by an eligible continuation.
-- **Closes when:** the decision is recorded and tested on both routes.
-
 ### Re-entry after total context loss
 
 - **Known:** the scripted tier checks recovery of recorded work (ACCEPTANCE C4
@@ -268,12 +241,14 @@ over the same ledger and limits. The runtime's rules are in
   corrected a refused edit to one entry, and submitted with the other two
   intact. The reminder had already been spent. See `INDEPENDENT-REVIEW.json`
   in the [reviewed continuation](../apparatus/qualified.md#readiness-m3-02-continue-reminder-p2-01).
-  In two [Sonnet Messages continuations](../apparatus/qualified.md#runtime-stages-01),
-  the auditor checked its work before editing an empty ledger and consulted
-  re-entry before preparing an existing three-entry selection without edits.
-- **Unknown:** *behavior:* whether a continuing auditor on the real harness
-  consults re-entry or duplicates a prior entry, and how a Sonnet Messages
-  auditor handles a populated ledger when it chooses to edit.
+  In two Sonnet Messages continuations the auditor checked its work before
+  editing an empty ledger and consulted re-entry before preparing an existing
+  three-entry selection without edits. All three Linux Claude Code continuations
+  consulted re-entry. One added entries to an empty ledger. The other two
+  submitted the existing selections of one and two entries without edits.
+  [Paired trial record](../apparatus/qualified.md#cc-trials-02)
+- **Unknown:** *behavior:* how a continuing Sonnet auditor on either route
+  handles a populated ledger when it chooses to edit.
 - **Elicited by:** any continuation; passive.
 - **Next step:** passive observation in continuation runs.
 - **Outcomes:** if repeats appear, consider the procedural texts, or a
@@ -308,9 +283,11 @@ over the same ledger and limits. The runtime's rules are in
 
 - **Known:** the contract keeps a separate series per session, and leaves a
   missing final result unknown rather than estimating it. The retained macOS encounters
-  captured partial usage, and the synthetic suite covers continuation.
-- **Unknown:** *behavior:* what result frames each real session emits across a
-  continuation.
+  captured partial usage. On Linux, all three continued audits counted both
+  placements and both unknown usage intervals. Across eight placements Stewart
+  captured no final result frame. [Linux trial record](../apparatus/qualified.md#cc-trials-02)
+- **Unknown:** *behavior:* how often a real continuation supplies a usable
+  final result frame.
 - **Elicited by:** any continued harness audit; passive.
 - **Outcomes:**
   - *Each session reports a final result:* the series rules suffice.
@@ -318,8 +295,9 @@ over the same ledger and limits. The runtime's rules are in
 
 ### The final interval of a submitting placement
 
-- **Known:** the placement stops after the auditor's seal. A result frame may
-  arrive later, or never.
+- **Known:** the placement stops after the auditor's seal. In the four
+  auditor-submitted Linux trials, Stewart captured no final result frame
+  before stopping. A later arrival lies outside these observations.
 - **Unknown:** *behavior:* whether and when that frame arrives. *Decision:*
   whether to wait for it.
 - **Elicited by:** any auditor-submitted harness placement; passive.

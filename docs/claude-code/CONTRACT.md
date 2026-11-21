@@ -39,10 +39,13 @@ positive effects, denial and invariance, publication after closure, startup
 mismatch, owner/relay loss, unknown usage, cumulative placement limits and
 continuation. An independent author derives driver cases from this contract.
 Native checks support iteration. Container qualification applies to
-the recorded synthetic comparisons; separately commissioned real-harness
-compaction, submission and stopping comparisons remain necessary for the claims
-they exercise. Endpoint alignment for the harness is a reviewed check of the
-pinned version, recorded as the profile's `check`, with the documented facts
+the recorded synthetic comparisons. On Linux aarch64, Claude Code 2.1.322
+with Sonnet 5.5 exercised auditor submission, deadline and signal interruption,
+continuation, and manager close at a witnessed preparation. Each delivered
+selection verified, and all five audits closed.
+[Linux trial record](../../apparatus/qualified.md#cc-trials-02)
+
+Endpoint alignment for the harness is a reviewed check of the pinned version, recorded as the profile's `check`, with the documented facts
 below rechecked; a changed pin needs its own. Messages API results do not
 qualify the harness profile. The common
 [rules every check follows](../../ACCEPTANCE.md#rules-every-check-follows) apply.
@@ -57,9 +60,6 @@ Not yet demonstrated with the real harness under the selected launch:
   compaction with re-entry, its notice and the one-reminder policy; the
   synthetic suite exercises each against the actual core, which says nothing
   about how the real harness issues calls, reports usage or delivers a notice;
-- how the harness issues several tool calls of one model response (the runtime
-  executes them one at a time in arrival order, queueing those that arrive
-  while another is pending);
 - whether `--max-turns` gates a model call before consumption or detects an
   excess afterwards, and whether a crash result's zeroed totals leave lost
   internal-call consumption boundable;
@@ -286,6 +286,14 @@ recording `interrupted` with cause `process_gone`, and then refuses
 `data.record`.
 Harness-native resume/fork/clear and automatic restart are excluded.
 
+The continuation notice directs the auditor to check its work. Re-entry shows
+the recorded entries and recent edits. A continuing auditor can prepare the
+current selection again to obtain a handle for submission. In the witnessed
+Sonnet 5.5 trials on Messages and Claude Code, the auditor consulted re-entry
+and prepared again. The revision and both prepared digests matched the first
+preparation on each route. These cases support the existing notice and
+re-entry text. [Paired trial record](../../apparatus/qualified.md#cc-trials-02)
+
 Harness-managed compaction within a placement does not grant a new slot, reset
 the deadline or replace ledger state. Record exposed boundaries and summaries
 without claiming to capture every internal exchange. Re-entry supplies recorded
@@ -339,7 +347,7 @@ check is proposed. Recheck after an observable input changes or a startup mismat
 show the check's date and scope without assigning an unsupported expiry period.
 
 A prior check cannot freeze server-managed policy or prove the next session's
-configuration. The macOS comparison saw `system/init` only after input. Validate
+configuration. The macOS and Linux comparisons saw `system/init` only after input. Validate
 each actual startup and keep the MCP data/authoring gate closed until it matches,
 but acknowledge that its system prompt and first question may already have
 reached the harness/provider before a mismatch is reported. Do not describe this

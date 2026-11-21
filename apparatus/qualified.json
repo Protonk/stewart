@@ -2379,22 +2379,22 @@
       }
     },
     {
-      "id": "runtime-stages-01",
+      "id": "cc-trials-02",
       "kind": "experiment",
-      "date": "2026-11-21T20:00:12Z",
+      "date": "2026-11-21T20:34:59Z",
       "date_from": "EXIT-LEDGER.json field at",
-      "summary": "Sonnet Messages preserved the ledger across signals at start and after preparation, then verified manager close after preparation. The Linux Claude Code surface check stopped at an allowance warning before service startup.",
+      "summary": "Five Sonnet 5.5 audits on Linux Claude Code 2.1.322 closed with verified returns. The exit ledger compares the witnessed preparation and re-entry with the earlier Messages trial.",
       "result": {
         "path": "EXIT-LEDGER.json",
-        "sha256": "e2ec4bf9c7abe2603e89f7f9c5e256dee12a7ebccbfadde5609e039d7ad0b78a"
+        "sha256": "4725f099fa9b2cca8c332d905de7717876bb3808a482d958c14e07e2a684af17"
       },
       "evidence": {
-        "path": ".scratch/runtime-stages-01",
+        "path": ".scratch/cc-trials-02",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Compare the witnessed preparation and subsequent tool sequence with the outstanding harness re-entry case",
-        "until": "the cross-route preparation decision is resolved or retired and the witnesses have had their review"
+        "reason": "Inspect the paired interruption witnesses, prepared and delivered bytes, closed returns and partial usage with the campaign report.",
+        "until": "The maintainer has reviewed these comparisons and no unresolved inspection requires the originals."
       }
     }
   ]

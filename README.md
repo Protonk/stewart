@@ -110,12 +110,14 @@ through real provider compaction, revised it and submitted a verified return.
 The [qualification record](apparatus/qualified.md)
 identifies those builds and results.
 
-A default-off development adapter, included only in source builds, has
-completed open inquiries on macOS through an agent harness with auditor
-submission, verified delivery and close. Its captured usage remains partial and
-live continuation unexercised. Full 64 KiB material pages arrived whole in one
-bounded encounter. The Linux port passed its offline rehearsals with a synthetic
-peer. Its real-harness behavior on Linux remains unverified.
+The default-off Claude Code adapter is available in source builds. On Linux
+aarch64, Sonnet 5.5 on Claude Code 2.1.322 completed five open inquiries with
+verified returns. Three audits continued after a deadline or signal. In one,
+the auditor prepared the same two entries again and submitted them. In another
+audit the manager closed at preparation and received those prepared bytes with
+manager attribution. All eight service placements ended with an unknown usage
+interval. A bounded macOS encounter also delivered full 64 KiB material pages
+whole. [Linux trial record](apparatus/qualified.md#cc-trials-02)
 
 Stewart is a single Rust binary, supported on Linux x86_64 and aarch64. See [building and testing](development/DEVELOPMENT.md), the
 [crate guide](service/README.md) and [contributing](AGENTS.md), or read the [design](DESIGN.md),
