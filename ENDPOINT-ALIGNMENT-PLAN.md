@@ -334,12 +334,6 @@ maintainer's decisions D1–D5.
   bounded launch, and the surface and service checks. The independent observer,
   peer, surface fixture and service witness stay in `apparatus/driver/` under
   the independence rule; changes to them need a specification-only author.
-- [ ] Add a Linux route for the harness. Today `pin.py` and `profile.py` verify an
-  Apple code signature against a native macOS pin; Linux binaries have none, and
-  the signed manifest is their integrity check. Pin a Linux executable against
-  the manifest, prepare a profile for the selected Linux executable and run its
-  check on Linux, rehearsing offline first. Keep the route short enough for a
-  person outside this checkout to follow.
 - [ ] Feed captures back as stand-in fixtures with provenance, as
   `apparatus/driver/testdata/messages/` already does, with independently
   expected values and firing controls added by a specification-only author.

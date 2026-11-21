@@ -1,8 +1,8 @@
 # Release and work plan
 
-The manager interface's scripted stages are complete and qualified. The next
-step is the coverage and acceptance-policy review, then the release
-documentation and source package.
+The manager interface's scripted stages and the coverage review are complete
+apart from endpoint alignment. The next step is moving development into one
+Linux VM, then the runtime trials.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
@@ -14,8 +14,8 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Review driver coverage against every acceptance claim, then prepare the release documentation and source package. | [The requirements below](#coverage-and-acceptance-policy-review) |
-| Delegated campaign | Runtime trials: two live waves on interruption, continuation and close, with the real harness and the Messages route, under one commission envelope, with implementation between and after them. A real-service result is not an entry gate for the release. | [Runtime trials](RUNTIME-TRIALS-PLAN.md) |
+| Current | Move development into one Lima-managed Linux VM: Podman in place of Apple `container`, no macOS build target, secrets kept out of the tooling. | [Linux development](LINUX-DEVELOPMENT-PLAN.md) |
+| Next, as a delegated campaign | Runtime trials: two live waves on interruption, continuation and close, with the real harness and the Messages route, under one commission envelope, with implementation between and after them. A real-service result is not an entry gate for the release. | [Runtime trials](RUNTIME-TRIALS-PLAN.md) |
 | Separate release work | Specify and build endpoint alignment offline; align the endpoints the release names under a commission. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |
 | After the first release | Investigate shortening test and suite wall-clock time. | [Test wall-clock](development/TEST-WALL-CLOCK-PLAN.md) |
@@ -134,8 +134,8 @@ signed by the maintainer with `ssh-keygen -Y sign -n file` and checked with
 `ssh-keygen -Y verify` against an `allowed_signers` file in the repository. This
 needs only OpenSSH. The maintainer signs; the release build is reproducible
 (`step2.sh` builds twice and compares), so a reader can also rebuild from the
-source archive and compare digests. Qualification stays on the development
-Mac's container suites; supporting other development hosts is not a goal.
+source archive and compare digests. Qualification runs in the container suites
+of the Linux development VM; supporting other development hosts is not a goal.
 
 Needs: the archive recipe, the signing procedure in the README, and a final
 outside-reader pass.

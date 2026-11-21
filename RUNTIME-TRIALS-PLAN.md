@@ -70,7 +70,7 @@ outside these bounds and no exemption from any apparatus control.
 
 | Bound | Envelope |
 | --- | --- |
-| Routes | **Harness:** native on the development Mac through the service procedure, with subscription login, included usage only and paid extra usage disabled. **Messages:** direct TLS to `api.anthropic.com` through C10 and its [host queue](apparatus/c10/HOST-QUEUE.md), on the `stewart-haiku` key. |
+| Routes | **Harness:** in the Linux development VM through the service procedure, with subscription login, included usage only and paid extra usage disabled. **Messages:** direct TLS to `api.anthropic.com` through C10 and its [host queue](apparatus/c10/HOST-QUEUE.md), on the `stewart-haiku` key. |
 | Models | **Harness:** `claude-sonnet-5-5` under the profile S0 produces, for the harness version S0 pins. **Messages:** `claude-sonnet-5-5`, and `claude-haiku-5-5` for wave 2 diagnostics. |
 | Starts and placements | **Harness:** S0's check sessions and at most 16 service starts, at most 9 of them in wave 1. **Messages:** at most 12 placements, at most 6 of them in wave 1. |
 | Cost | **Messages:** worst-case reservations of at most USD 10 across both waves. Each placement's worst case is reserved before launch, and actual reported usage is recorded after review. The key's external cap is shared with other commissions, so the Console headroom must cover the next reservation. **Harness:** included subscription usage only. |
@@ -150,9 +150,9 @@ never provoked.
   signal. Its live packets accept only the reminder notice today. Rehearse each.
 - [ ] Encode the mechanical criteria below in the procedure's and C10's
   reviews, so that an outcome is computed rather than judged.
-- [ ] Build a native gated writer from a commit whose runtime suite passed, and
-  pin the release writer for the Messages runs. Keep each writer until its
-  audits close.
+- [ ] Build a gated writer in the development VM from a commit whose runtime
+  suite passed, and pin the release writer for the Messages runs. Keep each
+  writer until its audits close.
 
 ### 2. Wave 1
 
