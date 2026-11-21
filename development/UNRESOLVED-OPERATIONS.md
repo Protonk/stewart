@@ -137,7 +137,9 @@ for the runtime, in its
 
 - **Known:** Stewart's publication gate refuses a late effect. A mutation whose
   log link had begun completes; others are refused `placement_stopped`. The
-  synthetic suite exercises cancellation. On the Messages route, a macOS
+  synthetic suite exercises cancellation. Outside observers on both routes can
+  act on a published placement start or auditor preparation and compare the
+  stopped ledger with the witnessed records. On the Messages route, a macOS
   control against a fake provider produced all four timings of a witnessed
   signal.
 - **Unknown:** *behavior:*
@@ -153,7 +155,7 @@ for the runtime, in its
   - *No call arrives after the stop:* narrow the question.
   - *A call arrives after the stop:* confirm it was refused and recorded.
   - *A cancellation never wins:* record it as unexercised, not as safe.
-- **Depends on:** a witnessed-interruption trigger on the harness route.
+- **Depends on:** a reviewed profile for the commissioned harness and model.
 - **Closes when:** the pinned version's post-stop traffic has been observed at
   each point the triggers reach.
 
@@ -227,6 +229,8 @@ over the same ledger and limits. The runtime's rules are in
 - **Known:**
   - an interruption keeps the entries and the preparation, and nothing is
     sealed;
+  - a completed auditor preparation publishes an `answer_prepared` record
+    identifying the invocation, selection revision and both prepared digests.
   - the prepared handle stays valid while the revision is unchanged
     ([INTERFACE 7.6](../docs/INTERFACE.md#76-prepare-and-submit));
   - re-entry lists entries and recent edits but not preparations;
@@ -235,15 +239,16 @@ over the same ledger and limits. The runtime's rules are in
 - **Unknown:** *decision*, informed by *behavior:* should the notice or
   re-entry tell a continuing auditor that a still-current preparation exists,
   or tell it to prepare again before submitting?
-- **Elicited by:** a signal after `prepare`'s result is recorded, then a
-  continuation.
+- **Elicited by:** a signal at the published preparation, followed by a
+  continuation. Whether the first auditor received the tool reply is a
+  separate observation.
 - **Next step:** a live observation, then a decision; implement and test it.
 - **Outcomes:**
   - *The auditor prepares again and submits:* the current design suffices,
     perhaps with clearer text.
   - *It ends unsubmitted, or tries a handle it cannot know:* change the notice
     or re-entry.
-- **Depends on:** a trigger at the `prepare` result, which writes no log record.
+- **Depends on:** a witnessed preparation followed by an eligible continuation.
 - **Closes when:** the decision is recorded and tested on both routes.
 
 ### Re-entry after total context loss

@@ -85,6 +85,15 @@ interrupted audit's output allowance as the
 describes. Otherwise the continuation ends `limit_reached` before it sends
 anything.
 
+Include Stewart's full estimate for an interrupted request in the cutoff.
+The model's context window bounds tokens it can process. Stewart can charge
+an estimate based on the serialized request's byte count even when the
+provider supplies no usage. If a reservation relies on a maximum request
+size, establish that bound before the first billable write. Exercise it with
+an oversized capture, an ordinary request under the bound and the same
+oversized request without the bound. Record any effect the guard can have on
+the writer or its evidence.
+
 ## Envelope
 
 Every live test runs under a plan that states its envelope: routes, models,
@@ -106,6 +115,12 @@ The Messages route's controls are technical:
 A test whose card fits the envelope runs without further approval. A test
 outside it, such as one using another model, the harness or a larger budget,
 needs a plan whose envelope covers it ([writing a campaign plan](#writing-a-campaign-plan)).
+
+Scan the private audit evidence and the host's export inputs before publication.
+When the commission sets a campaign-wide credential stop, a match ends every
+route. Keep the originals and
+exact writer under restricted custody, block exports, and report only the
+scan counts and verified exposure scope. Leave unsettled reservations in place.
 
 Authority to launch never bypasses a control. Packets stay frozen and approved
 by digest, rehearsals and bindings stay current, and nothing continues an audit
@@ -208,6 +223,42 @@ incomplete for an instrument reason.
   experiment. Alignment is the release's model gate, and the scripted tier
   qualifies Stewart's behavior.
 - Record the platform, executable and runtime profile for each live encounter. The container suites own release and runtime qualification.
+
+## When routes give different results
+
+Trace the difference to the first observation where the routes diverge. Record
+the layer, its evidence and its disposition on the card.
+
+| Layer | Disposition |
+| --- | --- |
+| Ledger, attribution, continuation, reminder or delivery | The same events must yield the same custody facts for a manager. Reproduce the discrepancy and fix the affected route with a scripted regression. |
+| Transport or endpoint | Map batching, cancellation and partial usage in the adapter. Document the limits of what the adapter can observe when a complete mapping is impossible. |
+| Instructions the auditor sees | Keep the common texts, tools and notices consistent. Test changes on both routes. A harness-motivated change to the shared core needs evidence on Messages. |
+| Choices the model makes | Record the sequence, model and conditions. One encounter can supply a question for a later comparison. |
+| Observer or reviewer | Compare the original traffic and an independent witness. Fix the instrument and run its positive, negative and invariance controls. A signal before the first request can leave an empty run directory. Checking a directory's existence and checking its files answer different questions. |
+
+## Changing the conditions of a test
+
+Name what the trial measures, what action changes its timing or inputs, and
+which claims that change excludes. A signal or manager close after a published
+record can exercise ordinary stopping. If submission wins the race, record the
+point as overtaken. Keep the first outcome when selecting a follow-up.
+
+- For custody, use the least intrusive means of reaching the state. Scripted
+  peers can establish the response to a known event. A live endpoint can show
+  whether the event occurs under the commissioned conditions.
+- For endpoint behavior, keep the actual endpoint and its replies intact.
+  For model behavior, preserve the question, materials and auditor-facing
+  text. Record any changes to timing, credentials, routes, limits, binaries
+  or instrumentation. An observer that adopts orphan processes must reap them
+  while Stewart checks its groups. Otherwise the observer can manufacture a
+  stopping failure.
+- Prefer an ordinary reference with the same writer, harness pin and model.
+  Reach a missed condition with the smallest additional intervention. A fault
+  that defines the question, such as loss of a relay, can be introduced on the
+  first run. A single behavioral difference between runs leaves causation open.
+- Give a product change its own custody or participant-facing reason. Keep a
+  test-only hook in a test build and describe what that build demonstrates.
 
 ## Escalation
 
