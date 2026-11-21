@@ -260,8 +260,9 @@ be reproducible from the tracked template alone.
       `/private/tmp`, and the "native service comparison procedure" section
       name and its links.
 
-  Where "native" described evidence gathered on macOS, keep that provenance
-  accurate.
+  Write the replacements as if Stewart had always been developed on Linux.
+  Where "native" described evidence gathered on macOS, the documentation
+  states what was shown and leaves the platform to the evidence record.
 
 ### 4. Qualify
 

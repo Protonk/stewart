@@ -124,8 +124,13 @@ guidance for the people who supply material and use Stewart. Prefer direct
 statements of behavior, reasons and limits. Distinguish a design commitment, an
 implemented path and a demonstrated result. Keep each fact with its owner and
 link to it rather than duplicating detail. Delete obsolete explanations; Git
-keeps history. Preserve provenance needed to interpret or retrieve evidence, and
-never rewrite historical receipts or run records as editorial cleanup.
+keeps history. Write documentation and comments as if the present design had
+always been so; provenance belongs in evidence records. Preserve provenance
+needed to interpret or retrieve evidence, and never rewrite historical receipts
+or run records as editorial cleanup.
+
+Each directory's agent guidance is its `AGENTS.md`; a `CLAUDE.md` beside it is
+a symbolic link to that file, so every agent reads the same guidance.
 
 Keep durable guidance stateless: maintained AGENTS and README files must not
 route readers to particular plans, and product code and tests must stand without
