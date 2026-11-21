@@ -248,12 +248,15 @@ over the same ledger and limits. The runtime's rules are in
 
 ### Re-entry after total context loss
 
-- **Known:** live Messages continuations preserved recorded work. The notice
-  and `what_am_i_working_with` exist, and the scripted tier pins re-entry
-  (ACCEPTANCE C4 and C13).
-- **Unknown:** *behavior:* whether the auditor calls re-entry before editing
-  again, and whether it re-adds text equal to an earlier entry. This is
-  unobserved on the harness and for Sonnet.
+- **Known:** the scripted tier checks recovery of recorded work (ACCEPTANCE C4
+  and C13). After a witnessed interruption, a Haiku 5.5 Messages continuation
+  called `what_am_i_working_with` first. It recovered all three entry handles,
+  corrected a refused edit to one entry, and submitted with the other two
+  intact. The reminder had already been spent. See `INDEPENDENT-REVIEW.json`
+  in the [reviewed continuation](../apparatus/qualified.md#readiness-m3-02-continue-reminder-p2-01).
+- **Unknown:** *behavior:* on the real harness and for Sonnet, whether the auditor looks up
+  prior work before editing and whether it adds an exact copy of an existing
+  entry. The Haiku observation establishes one recovery under those conditions.
 - **Elicited by:** any continuation; passive.
 - **Next step:** passive observation in continuation runs.
 - **Outcomes:** if repeats appear, consider the procedural texts, or a
