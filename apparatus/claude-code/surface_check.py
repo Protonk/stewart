@@ -27,6 +27,7 @@ def sibling(name):
 
 
 p, bounded = sibling('profile'), sibling('bounded')
+campaign = sibling('campaign')
 sys.path.insert(0, str(HERE.parent / 'driver'))
 import claude_code_surface as surface
 import claude_code_observer as observer
@@ -34,7 +35,7 @@ import claude_code_observer as observer
 KINDS = observer.KINDS
 SCHEMA = 'stewart.claude-code.surface-commission/1'
 CONTROLLER = 'sources/apparatus/claude-code/surface_check.py'
-SOURCE_FILES = ('claude-code/surface_check.py', 'claude-code/bounded.py', 'claude-code/profile.py', 'claude-code/pin.py',
+SOURCE_FILES = ('claude-code/surface_check.py', 'claude-code/campaign.py', 'claude-code/bounded.py', 'claude-code/profile.py', 'claude-code/pin.py',
                 'driver/claude_code_observer.py', 'driver/claude_code_surface.py', 'driver/claude_code.py',
                 'driver/driver_core.py', 'driver/rawjson.py', 'driver/claude_code_peer.py',
                 'driver/fixture_expectations.py')
@@ -255,7 +256,7 @@ def accept_case(assessment, entry, bindings, workspaces, sessions):
     sessions.add(assessment['session_id'])
 
 
-def run_packet(packet, approved=None, extra_usage_disabled=False, rehearsal=False):
+def run_packet(packet, approved=None, extra_usage_disabled=False, rehearsal=False, envelope=None, envelope_sha256=None):
     packet = p.absolute(packet)
     commission, raw = verify_packet(packet)
     if Path(__file__).resolve() != packet / CONTROLLER:
@@ -268,6 +269,14 @@ def run_packet(packet, approved=None, extra_usage_disabled=False, rehearsal=Fals
             raise ValueError('rehearsal accepts only its synthetic packet, without live approval')
     elif mode != 'real-harness' or approved != p.sha(raw) or extra_usage_disabled is not True:
         raise ValueError('live comparison needs the principal-approved exact commission digest and paid extra usage disabled')
+    allowance = None
+    if envelope is not None or envelope_sha256 is not None:
+        if rehearsal or envelope is None or envelope_sha256 is None:
+            raise ValueError('a subscription campaign requires its exact envelope and digest')
+        launch = p.decode(p.read_file(packet / 'installation/launch.json'))
+        campaign.reserve(envelope, envelope_sha256, 1, 'S0', packet, p.sha(raw), 0,
+                         commission['bindings']['model'], launch['version'])
+        allowance = campaign.AllowanceObserver(envelope)
     out = packet / 'observation'
     cases, failures, attempted = [], [], []
     workspaces, sessions = set(), set()
@@ -301,6 +310,8 @@ def run_packet(packet, approved=None, extra_usage_disabled=False, rehearsal=Fals
                     'files_sha256': {name: digest_file(workspace / name) for name in ('settings.json', 'mcp.json', 'system.txt')}})
 
                 def feed(chunk):
+                    if allowance:
+                        allowance.feed('stdout', chunk)
                     case.feed(chunk)
                     if rehearsal and case.valid_init:
                         # This only schedules the synthetic peer; it is not a
@@ -309,7 +320,12 @@ def run_packet(packet, approved=None, extra_usage_disabled=False, rehearsal=Fals
                         if not marker.exists():
                             publish_ack(marker, case.init['session_id'])
 
-                result = book.execute(identity + '-model', on_stdout=feed, on_stderr=case.feed_stderr,
+                def stderr(chunk):
+                    if allowance:
+                        allowance.feed('stderr', chunk)
+                    case.feed_stderr(chunk)
+
+                result = book.execute(identity + '-model', on_stdout=feed, on_stderr=stderr,
                                       check_stop=case.check_stop)
                 for channel in ('stdout', 'stderr'):
                     if result['stream_eof'][channel]:
@@ -416,6 +432,8 @@ def main():
         if action == 'run':
             command.add_argument('--approved-commission', required=True)
             command.add_argument('--extra-usage-disabled', action='store_true')
+            command.add_argument('--campaign-envelope', type=p.absolute)
+            command.add_argument('--campaign-sha256')
         if action == 'attest':
             command.add_argument('--reviewed-observation', required=True)
             command.add_argument('--reviewer', required=True)
@@ -440,7 +458,8 @@ def main():
             attest(args.packet, args.reviewed_observation, args.reviewer, args.output)
             return 0
         return run_packet(args.packet, getattr(args, 'approved_commission', None),
-                          getattr(args, 'extra_usage_disabled', False), rehearsal=args.action == 'run-rehearsal')
+                          getattr(args, 'extra_usage_disabled', False), rehearsal=args.action == 'run-rehearsal',
+                          envelope=getattr(args, 'campaign_envelope', None), envelope_sha256=getattr(args, 'campaign_sha256', None))
     except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
         parser.exit(1, 'surface comparison refused: ' + str(error) + '\n')
 

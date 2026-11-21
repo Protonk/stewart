@@ -35,6 +35,44 @@ class ControllerControls(unittest.TestCase):
         self.writer.chmod(0o700)
         self.packet = self.root / 'packet'
 
+    def test_campaign_spending_stop_across_chunks(self):
+        ledger = self.root / 'harness-reservations'
+        ledger.mkdir()
+        observer = c.campaign.AllowanceObserver(self.root / 'envelope.json')
+        observer.feed('stdout', b'{"type":"assistant","message":{"content":"a rate_limit_event"}}\n')
+        self.assertFalse((ledger / 'STOP').exists())
+        observer.feed('stdout', b'{"type":"rate_lim')
+        with self.assertRaisesRegex(ValueError, 'rate-limit event'):
+            observer.feed('stdout', b'it_event","rate_limit_info":{"status":"allowed"}}\n')
+        self.assertTrue((ledger / 'STOP').is_file())
+
+    def test_ledger_accounts_one_campaign_across_packets(self):
+        ledger = self.root / 'harness-reservations'
+        ledger.mkdir()
+        env = self.root / 'envelope.json'
+        data = {'schema': 'stewart.runtime-trials.envelope/1', 'waves': 2, 'harness': {
+            'model': 'test', 'version': 'pin', 'service_starts': 2, 'wave_one_service_starts': 1,
+            'extra_usage_allowed': False, 'billing': 'included-subscription-only'}}
+        c.save(env, data)
+        digest = c.digest_file(env)
+        def slot(wave, name, number):
+            return c.campaign.reserve(env, digest, wave, name, self.root / name, 'a' * 64, number, 'test', 'pin')
+        def reviewed(path):
+            c.save(path.with_suffix('.review.json'), {'reservation_sha256': c.digest_file(path),
+                                                      'safe_to_continue': True})
+        reviewed(slot(1, 'S0', 0))
+        with self.assertRaisesRegex(ValueError, 'already reserved'):
+            slot(1, 'S0', 0)
+        first = slot(1, 'R1', 1)
+        with self.assertRaisesRegex(ValueError, 'reviewed disposition'):
+            slot(2, 'adaptive', 1)
+        reviewed(first)
+        with self.assertRaisesRegex(ValueError, 'exhausted'):
+            slot(1, 'R2', 1)
+        reviewed(slot(2, 'adaptive', 1))
+        with self.assertRaisesRegex(ValueError, 'exhausted'):
+            slot(2, 'adaptive', 2)
+
     def synthetic(self, family='open-inquiry', scenario='normal'):
         return c.prepare_packet(self.packet, self.writer, 'synthetic-control-model', family, scenario=scenario)
 

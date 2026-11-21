@@ -1,0 +1,121 @@
+"""Shared reservations for commissioned subscription checks and service placements."""
+import fcntl
+import hashlib
+import json
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def load(path, digest):
+    path = Path(path)
+    if path.is_symlink() or not path.is_file():
+        raise ValueError('campaign envelope must be a regular file')
+    raw = path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != digest:
+        raise ValueError('campaign envelope digest differs')
+    data = json.loads(raw)
+    if (data['schema'] != 'stewart.runtime-trials.envelope/1' or data['waves'] != 2
+            or data['harness']['extra_usage_allowed'] is not False
+            or data['harness']['billing'] != 'included-subscription-only'):
+        raise ValueError('unsupported campaign billing or wave scope')
+    return data
+
+
+def reserve(path, digest, wave, trial, packet, commission, placement, model, version):
+    """Reserve before any invocation. A crash consumes the slot and blocks another launch."""
+    scope = load(path, digest)['harness']
+    if wave not in (1, 2) or model != scope['model'] or version != scope['version']:
+        raise ValueError('harness trial differs from the granted bindings')
+    if wave == 1 and trial not in ('S0', 'R1', 'R2', 'R3a', 'R3b', 'R4'):
+        raise ValueError('unknown first-wave harness trial')
+    root = Path(path).parent / 'harness-reservations'
+    with (root / 'lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        rows = sorted(root.glob('[0-9][0-9][0-9].json'))
+        prior = [json.loads(row.read_bytes()) for row in rows]
+        if any(row['envelope'] != digest for row in prior):
+            raise ValueError('reservation belongs to a different envelope')
+        if (root / 'STOP').exists() or any(row['wave'] > wave for row in prior):
+            raise ValueError('campaign stopped or wave already completed')
+        if rows:
+            last = prior[-1]
+            receipt = root / (rows[-1].stem + '.review.json')
+            if not receipt.is_file():
+                raise ValueError('previous reservation needs a reviewed disposition')
+            disposition = json.loads(receipt.read_bytes())
+            if (disposition['reservation_sha256'] != hashlib.sha256(rows[-1].read_bytes()).hexdigest()
+                    or disposition['safe_to_continue'] is not True):
+                raise ValueError('previous reservation has no positive disposition')
+        if any((r['packet'], r['placement']) == (str(packet), placement)
+               or (r['wave'], r['trial'], r['placement']) == (wave, trial, placement) for r in prior):
+            raise ValueError('harness slot already reserved')
+        slots = [row for row in prior if row['trial'] != 'S0']
+        if trial == 'S0':
+            if wave != 1 or placement != 0 or any(r['trial'] == 'S0' for r in prior):
+                raise ValueError('surface allowance exhausted')
+        elif (not 1 <= placement <= 3 or len(slots) >= scope['service_starts']
+                or (wave == 1 and sum(r['wave'] == 1 for r in slots) >= scope['wave_one_service_starts'])):
+            raise ValueError('service start allowance exhausted')
+        dest = root / ('%03d.json' % (len(rows) + 1))
+        record = dict(envelope=digest, wave=wave, trial=trial, packet=str(packet),
+                      commission_sha256=commission, placement=placement, model=model,
+                      reserved_utc=datetime.now(timezone.utc).isoformat())
+        with dest.open('x') as output:
+            json.dump(record, output, sort_keys=True)
+            output.write('\n')
+            output.flush()
+            os.fsync(output.fileno())
+        fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        return dest
+
+
+class AllowanceObserver:
+    """Inspect complete native messages while retaining only the stop reason in the ledger."""
+    def __init__(self, envelope):
+        self.directory = Path(envelope).parent / 'harness-reservations'
+        self.buffers = {'stdout': bytearray(), 'stderr': bytearray()}
+
+    def feed(self, channel, chunk):
+        buffer = self.buffers[channel]
+        buffer.extend(chunk)
+        while b'\n' in buffer:
+            line, _, tail = buffer.partition(b'\n')
+            buffer[:] = tail
+            if channel == 'stdout':
+                try:
+                    row = json.loads(line)
+                except (ValueError, UnicodeError):
+                    continue  # The stream observer checks framing independently.
+                if not isinstance(row, dict):
+                    continue
+                if row.get('type') == 'rate_limit_event':
+                    self.stop('rate-limit event')
+                if row.get('type') == 'system' and row.get('subtype') in ('rate_limit', 'usage_limit', 'overage'):
+                    self.stop('allowance event')
+                if row.get('is_error') and self.billing_text(str(row.get('result', ''))):
+                    self.stop('allowance error')
+            elif self.billing_text(line.decode('utf-8', 'replace')):
+                self.stop('allowance diagnostic')
+        if len(buffer) > 4 * 1024 * 1024:
+            raise ValueError('billing monitor frame exceeded observation bound')
+
+    @staticmethod
+    def billing_text(text):
+        return any(token in text.lower() for token in (
+            'rate limit', 'rate_limit', 'rate-limit', 'usage limit', 'usage allowance',
+            'usage credit', 'extra usage', 'quota exceeded', 'using overage', 'using credits'))
+
+    def stop(self, reason):
+        try:
+            with (self.directory / 'STOP').open('x') as out:
+                out.write(reason + '\n')
+                out.flush()
+                os.fsync(out.fileno())
+        except FileExistsError:
+            pass
+        raise ValueError('campaign harness stop: ' + reason)
