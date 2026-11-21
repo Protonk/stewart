@@ -360,19 +360,20 @@ reproducible defect belongs in a regression test, not an indefinite old run.
 
 ### Selected evaluations
 
-At the end of a study, ask what someone working on Stewart would do
-differently with its result. Put that finding where they will make the
-decision. A repeatable failure belongs in a regression test, a useful way to
-read a return in the reader's guide, and a narrowed uncertainty in the
-existing question or plan. Include the conditions that matter and point to
-the exact capture or attributed review. If a comparison settles whether to
-pursue a change, record why where that choice would come up again. An outcome
-with no bearing on current work can stay in the study.
+A study can finish with an account of what it tested, what happened and what
+its evidence could establish. Its implications for work on Stewart may go
+unexamined. For a retained encounter, describe the question, conditions and
+observation in the existing index entry so someone can find it by what happened.
 
-When revisiting older work, start with a current question. Use the
-[qualification index](../apparatus/qualified.md) to locate a relevant
-comparison, check the original that supports the claim, and update the same
-place a new study would have changed.
+When a finding bears on a current decision, put it where someone will make
+that decision. A repeatable failure belongs in a regression test, a useful way
+to read a return in the reader's guide, and a narrowed uncertainty in the
+existing question or plan. Include the conditions that matter and point to the
+exact capture or attributed review.
+
+When a later question gives an older observation a use, locate it through the
+[qualification index](../apparatus/qualified.md) and check the original before
+drawing the new conclusion.
 
 Archive originals only when they have a present inspection purpose and would
 be costly or impossible to reproduce. A particular model encounter or human

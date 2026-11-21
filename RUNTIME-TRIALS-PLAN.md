@@ -43,8 +43,10 @@ launched.
 
 The campaign is finished when:
 
-- each in-scope defect it found is fixed with a scripted regression test, and
-  each in-scope design question it raised is decided, implemented and tested;
+- each in-scope defect it found is fixed with a scripted regression test.
+  Design questions the evidence settles have recorded decisions and any
+  resulting changes are implemented and tested. A campaign that cannot
+  distinguish the design alternatives can finish with that question open.
 - the changed source has passed its development checks and the container
   suites its rows require;
 - each live trial has an outcome (pass, fail, incomplete or unexercised) tied
@@ -177,15 +179,16 @@ own work, not a request for approval.
 ### 3. Diagnose and change
 
 Classify each outcome as [live testing](development/LIVE-TESTING.md#from-observation-to-the-next-step)
-describes. Reproduce defects as failing scripted tests and fix them. Decide the
-in-scope design questions and implement them, using the synthetic peer and fake
-provider to test. Qualify the changed source.
+describes. Reproduce defects as failing scripted tests and fix them. When
+there are grounds for an in-scope design decision, make it and test any change
+with the synthetic peer and fake provider. Qualify changed source.
 
 The auditor-facing half of the P2 question falls here: whether the
 continuation notice or re-entry should tell a continuing auditor about a
 still-current preparation. R3b and M2b observe the auditor without that hint
-first. Close the wave-1 audits with their own writers. Wave 2 starts when the
-agent judges its candidates ready.
+first. If neither wave reaches P2, the interruption is unexercised and the
+value of a hint remains unknown. Close the wave-1 audits with their own
+writers. Wave 2 starts when the agent judges its candidates ready.
 
 ### 4. Wave 2, at most once
 

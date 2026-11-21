@@ -183,8 +183,8 @@ inspection purpose.
 | --- | --- |
 | A Stewart defect | Reproduce it as a failing scripted test, fix it, and run the change's checks |
 | A stand-in assumption is wrong | Update the fake provider or synthetic harness from the capture, with its provenance |
-| A design question | Decide it within the envelope, implement and test it. A decision beyond the envelope is recorded as such, with its precise boundary |
-| The model used the procedure in an unexpected way | Consider the procedural texts and tools. One observation is an anecdote, and nothing may depend on answer content |
+| A design question | Decide it within the envelope when there are grounds, and test any change. The question can stay open if the trial leaves the alternatives indistinguishable. Record the boundary for decisions beyond the envelope |
+| The model used the procedure in an unexpected way | Record what it did and under which conditions. That observation can stand on its own |
 | An apparatus defect, or an unexercised condition | Fix the instrument and rehearse it |
 | Nothing new | Record the outcome and move on |
 
