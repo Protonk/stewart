@@ -345,6 +345,20 @@ python3 -I -B apparatus/claude-code/pin.py /absolute/new-pin-evidence --source "
 With an existing installation at `~/.local/share/claude/versions/2.1.322`,
 omit `--source`. Use the resulting `pin.json` with `profile.py prepare`.
 
+## Maintainer sign-in
+
+After verifying the executable, sign in from a private terminal in the
+development guest. Open the sign-in URL on the Mac and complete the prompt
+in the guest. Pass the same configuration directory to `profile.py prepare`.
+The harness owns the login files. Keep this directory outside evidence and
+archives.
+
+```sh
+install -d -m 0700 "$HOME/.config/stewart-harness"
+CLAUDE_CONFIG_DIR="$HOME/.config/stewart-harness" \
+  "$HOME/.local/share/stewart-claude-code/2.1.322/claude" auth login
+```
+
 ## Checks
 
 Run these offline checks from the repository root:

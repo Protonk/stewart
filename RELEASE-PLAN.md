@@ -10,7 +10,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Move development into one Lima-managed Linux VM: Podman in place of Apple `container`, no macOS build target, secrets kept out of the tooling. | [Linux development](LINUX-DEVELOPMENT-PLAN.md) |
+| Current | Complete the maintainer logins in the Linux development guest. | [Linux development](LINUX-DEVELOPMENT-PLAN.md) |
 | Next, as a delegated campaign | Runtime trials: two live waves on interruption, continuation and close, with the real harness and the Messages route, under one commission envelope, with implementation between and after them. A real-service result is not an entry gate for the release. | [Runtime trials](RUNTIME-TRIALS-PLAN.md) |
 | Separate release work | Specify and build endpoint alignment offline; align the endpoints the release names under a commission. Its design proceeds now. Its build follows the Linux move and the runtime trials, which use the apparatus it reorganizes. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |

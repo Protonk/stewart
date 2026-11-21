@@ -56,18 +56,28 @@ unset token
 gh auth status --hostname github.com
 ```
 
-Inspect the reported location
-for keyring storage. Stop if it reports a plaintext file. Run `gh auth setup-git`
-and verify push access with `git push --dry-run origin HEAD:main`. Leave secrets
-out of shell history, command arguments and evidence.
+Check that the reported location is the keyring. Stop if it reports a plaintext
+file. From `~/stewart`, run `gh auth setup-git` and verify push access with
+`git push --dry-run origin HEAD:main`. Leave secrets out of shell history,
+command arguments and evidence.
 
 For SSH, use a separate Mac agent holding exactly the repository's push key.
 In that agent's shell, compare `ssh-add -l -E sha256` to the expected single
 public fingerprint. Add `-A` to the development login above and repeat the
 fingerprint check inside the guest before using the SSH remote. Agent forwarding
-is off for ordinary logins. Keep the release signing key on the Mac. Compare both
-release binaries to the qualification record before signing the reviewed
-`SHA256SUMS`, then return the signature and public key to the guest.
+is off for ordinary logins.
+
+## Release signing
+
+Keep the release signing key on the Mac. Compare both digests in `SHA256SUMS`
+with the release qualification record. In the Mac directory holding both
+binaries, verify the checksum file, then sign it with the release key. Return
+the signature and public verification material to the guest.
+
+```sh
+shasum -a 256 -c SHA256SUMS
+ssh-keygen -Y sign -f "$RELEASE_KEY" -n file SHA256SUMS
+```
 
 ## Guest checks and accounts
 
@@ -96,8 +106,8 @@ user. Launches use the launcher's private Linux keyring. See the
 [C10 instructions](../c10/README.md) for loading a provider connection and
 the [queue guide](../c10/HOST-QUEUE.md) for placing requests. Enter the
 dedicated harness login with the pinned Linux executable as its intended
-user. Follow the [harness guide](../claude-code/README.md) for its separate
-configuration directory and commissioning procedure.
+user. Follow the [maintainer sign-in procedure](../claude-code/README.md#maintainer-sign-in)
+for its dedicated configuration directory.
 
 See [Building and testing](../../development/DEVELOPMENT.md) for the
 offline Cargo matrix, two-architecture suites and evidence retention.

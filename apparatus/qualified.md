@@ -20,179 +20,24 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [coverage-release-01](#coverage-release-01) | 2026-11-20T16:49:03Z | `913fdf6` | qualified | latest |
-| acceptance | linux-x86_64 | [coverage-release-01](#coverage-release-01) | 2026-11-20T16:49:03Z | `913fdf6` | qualified | latest |
-| runtime | linux-aarch64 | [coverage-runtime-01](#coverage-runtime-01) | 2026-11-20T17:33:01Z | `913fdf6` | qualified | latest |
-| runtime | linux-x86_64 | [coverage-runtime-01](#coverage-runtime-01) | 2026-11-20T17:33:01Z | `913fdf6` | qualified | latest |
-| toolchain | linux-aarch64 | [toolchain-runtime-01](#toolchain-runtime-01) | 2026-11-12T03:48:38Z | `31bced7` | qualified | latest |
-| toolchain | linux-x86_64 | [toolchain-runtime-01](#toolchain-runtime-01) | 2026-11-12T03:48:38Z | `31bced7` | qualified | latest |
+| acceptance | linux-aarch64 | [linux-move-release-02](#linux-move-release-02) | 2026-11-21T03:54:58Z | `f68780d` | qualified | latest |
+| acceptance | linux-x86_64 | [linux-move-release-02](#linux-move-release-02) | 2026-11-21T03:54:58Z | `f68780d` | qualified | latest |
+| runtime | linux-aarch64 | [linux-move-runtime-02](#linux-move-runtime-02) | 2026-11-21T04:31:41Z | `f68780d` | qualified | latest |
+| runtime | linux-x86_64 | [linux-move-runtime-02](#linux-move-runtime-02) | 2026-11-21T04:31:41Z | `f68780d` | qualified | latest |
+| toolchain | linux-aarch64 | [linux-move-toolchain-02](#linux-move-toolchain-02) | 2026-11-21T02:43:49Z | `9e84464` | qualified | latest |
+| toolchain | linux-x86_64 | [linux-move-toolchain-02](#linux-move-toolchain-02) | 2026-11-21T02:43:49Z | `9e84464` | qualified | latest |
 
 ## Records
 
-### acceptance-readiness-02
-
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `4088d3dab41a8b090348010c20c4b4f12282d08379c315bbdf102a6708f0774d` at the source commit)
-- Source commit: `0fdac9450aa0d1a72d1465b17b7e3e5038796c71`; archive SHA-256 `01950e1519912fc717728218c645d72b012c09de1f95cdcf74cd3af8a5610b82`
-- Finished: 2026-11-13T16:52:45Z
-- Outcome: **qualified**
-- Run-level failures: none
-- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-readiness-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the exact qualified ARM writer for selected Messages encounters, pending comparisons and their fixture reviews; the M2 and M4 audits have reviewed closure.; until No open audit or pending comparison requires this writer, and the selected fixture reviews no longer need it.
-
-| | linux-aarch64 | linux-x86_64 |
-| --- | --- | --- |
-| Execution | native | emulated (Rosetta) |
-| Outcome | **qualified** | **qualified** |
-| Failures | none | none |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
-| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 41/41, controls 11/11 | 41/41, controls 11/11 |
-| Driver self-test | 403/403 | 403/403 |
-| Cases passed | 133/133 | 131/131 |
-| Cases | selected 133, ran 133, passed 133, failed 0, skipped 0 | selected 131, ran 131, passed 131, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 245, passed 166, failed 79, skipped 0 | ran 245, passed 166, failed 79, skipped 0 |
-| Checks | passed 180258, failed outside controls 0, failed inside controls 1213 | passed 180258, failed outside controls 0, failed inside controls 1213 |
-| Sabotage control variants fired (INTERFACE C.2) | 79/79 | 79/79 |
-| Driver controls fired | 21/21 | 21/21 |
-| Timing gate | on, passed: commands worst 2.857 ms (threshold 100.0 ms); protocol worst 98.4 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 35.575 ms (threshold 100.0 ms); protocol worst 167.3 ms (threshold 200.0 ms) |
-| End to end (`e2e.reacting-audit`) | pass, 872/872 checks | pass, 872/872 checks |
-| Release binary SHA-256 | `12587c3783a33b6505bf2708698ef861b6f3d833e260c03e82b0ca91575eb86f` | `67515fb492a57dceabd129d0bb668c01cad05cb8a8d1f2b6ec4f2516d1b1eb32` |
-| Test binary SHA-256 | `0fae5886abcafeb2f616b56bf9ba76840a85d0537b092167dd5bdff1843712be` | `deeb1e127f223dd6931eb3962df64faf4b8c559db38aa6bdfe7029d07bedcbb6` |
-| RESULT.json SHA-256 | `d3be1252e1869ad48a70969906697889f708d08053138a35bd548f6025bc40e0` | `b9da0b487e48de690998d7a0995e35d1a3d348f08e14fe3fbe361fb54ecc756f` |
-| Synthetic runtime cases | cases 25, passed 25, failed 0, skipped 0 | cases 25, passed 25, failed 0, skipped 0 |
-| Synthetic runtime checks | checks 12972, checks passed 12972, checks failed 0 | checks 12972, checks passed 12972, checks failed 0 |
-| Synthetic runtime controls | 81/81 | 81/81 |
-| Synthetic runtime self-test | passed 229, failed 0, skipped 0 | passed 229, failed 0, skipped 0 |
-| Development binary SHA-256 | `9eac764a2926dff1d4754b05fc19865e9e2327ba6bcfacf46fe8972cfcee3310` | `1244aca8f905c004c33c1dbcbe65c0d50f97c0a795250719b89898a8dcf3d392` |
-| Second development binary SHA-256 | `65f5b1798003ef588567deb51c6d00f1e9d3bfde1e5798c97a3aff363b536dad` | `5f4fd67ddaaea51b1325dc576104a5c34293216b705f0dfe902eb274e389dd98` |
-| Synthetic runtime RESULT.json SHA-256 | `fa7157e656a21f12ceadcd3120e628889a3ef47a96ab563d69e342e0bd860f61` | `2c6cf25174a5b2b41940adae916091b267cd97c320bd776db10122357624a4cf` |
-| Synthetic runtime evidence listing SHA-256 | `397d1f62622af60e2da3f2c73c7e504dd9a449dd00900f13e0f02fbaf3f21aed` | `feaa791df0f4eb40d9f6a55c8271ea23d4dd2979896a4fe50e291a3284a2e09e` |
-| Synthetic runtime work archive SHA-256 | `da8b7ce065664827a0525d5f098092b48d99aac8d30445b4d01504e7a5fc6e3a` | `654e7d12904d4b688d096b49cb500a3e39937e3b25b8761f8a730c4d7995f551` |
-
-### acceptance-readiness-04
-
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `4088d3dab41a8b090348010c20c4b4f12282d08379c315bbdf102a6708f0774d` at the source commit)
-- Source commit: `ba551c6bd5d290c2005c207e6a9dad062fea745d`; archive SHA-256 `8fd7588eeca816b0a0b1c49895590d0c588a17b4da02527ed040d927102269b8`
-- Finished: 2026-11-18T18:29:19Z
-- Outcome: **qualified**
-- Run-level failures: none
-- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-readiness-04` (local: only on the machine that ran it; clones do not carry it)
-- Pin: The retained c10-readiness-04 container mounts this qualification’s aarch64 binary as the sole writer for its synthetic audits.; until The C10 rehearsal and its private archives are released or another retained copy satisfies their exact-writer obligation.
-
-| | linux-aarch64 | linux-x86_64 |
-| --- | --- | --- |
-| Execution | native | emulated (Rosetta) |
-| Outcome | **qualified** | **qualified** |
-| Failures | none | none |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
-| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 41/41, controls 11/11 | 41/41, controls 11/11 |
-| Driver self-test | 573/573 | 573/573 |
-| Cases passed | 148/148 | 146/146 |
-| Cases | selected 148, ran 148, passed 148, failed 0, skipped 0 | selected 146, ran 146, passed 146, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 285, passed 188, failed 97, skipped 0 | ran 285, passed 188, failed 97, skipped 0 |
-| Checks | passed 246576, failed outside controls 0, failed inside controls 1396 | passed 246576, failed outside controls 0, failed inside controls 1396 |
-| Sabotage control variants fired (INTERFACE C.2) | 97/97 | 97/97 |
-| Driver controls fired | 21/21 | 21/21 |
-| Timing gate | on, passed: commands worst 3.019 ms (threshold 100.0 ms); protocol worst 122.111 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 40.452 ms (threshold 100.0 ms); protocol worst 315.729 ms (threshold 200.0 ms) |
-| End to end (`e2e.reacting-audit`) | pass, 872/872 checks | pass, 872/872 checks |
-| Release binary SHA-256 | `f309cd21f69a425cf4e3ee09438e7677bd8c0811a7de55a75f0dfde582ec0a1e` | `8fc8c6c80762bc5e656e619fca8e1acb80682173cf3dcfef464f84f1f2a6cba5` |
-| Test binary SHA-256 | `8ddfd94e95eaaca3dcfe47a63985a129a99280b7ec7ed888519a5e6db393adf9` | `943739f328a9d909bffedddac30d869c68583e9dabfbe8517044530a380f6f33` |
-| RESULT.json SHA-256 | `d3de9aef0d2dcdfe773ef35d4f068096ba3b87cf87122965f99d280e28bb1271` | `ade12b029ffd57226cd5d9e3a65ca96948170101eb218815aae31fc9d5fab208` |
-| Synthetic runtime cases | cases 48, passed 48, failed 0, skipped 0 | cases 48, passed 48, failed 0, skipped 0 |
-| Synthetic runtime checks | checks 105207, checks passed 105207, checks failed 0 | checks 105207, checks passed 105207, checks failed 0 |
-| Synthetic runtime controls | 124/124 | 124/124 |
-| Synthetic runtime self-test | passed 499, failed 0, skipped 0 | passed 499, failed 0, skipped 0 |
-| Development binary SHA-256 | `18e7fe294c113d98695ed746d0a7d516d1f448f6e4e6bc6fb523775e67776242` | `0c58d9c4f4f8c00b334b396de8e8eb45a57b79463c0547c98fa348d74cd25b7d` |
-| Second development binary SHA-256 | `f6f262f9dadcc24d939e8b6f1042cb905fc3e19380430ea9bf3749e74a2e9254` | `e995f1e60131af08f4ce93b9ecbdf21a16fca74415b9271e0a9f6baf6e35022c` |
-| Synthetic runtime RESULT.json SHA-256 | `314eee461e611eff869d8ed352946a3f3579b2334ef1b86ec71baa107b3c6ca8` | `7d6b4bd86598c571115d6bcaa07f34013ea504becb9051fdac5bf26d06609eac` |
-| Synthetic runtime evidence listing SHA-256 | `5b1312cd63922b2b2d19c563c9293e0afd8af27d13ccec959ed6097e29dbd609` | `fb741eb500acc66d8fc577af14f8c19d01f22160d69ad589e7439df6fbe7d868` |
-| Synthetic runtime work archive SHA-256 | `f9c291cd54c44d890aaed222a9a5370efc64df5131893553c96899056d861f50` | `64637301cc475523f012b606803eac6b13d2c003c4f51caca095b7e89a2b35bb` |
-
-### acceptance-question2-01
-
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `4088d3dab41a8b090348010c20c4b4f12282d08379c315bbdf102a6708f0774d` at the source commit)
-- Source commit: `6edd9114c924f09d4f4f6e3149cc13c2f9e04da2`; archive SHA-256 `ca3eadbeb40486b2d410b232ee6475d2ac0e94090c817089149cb02caff2ab88`
-- Finished: 2026-11-19T03:18:24Z
-- Outcome: **qualified**
-- Run-level failures: none
-- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-question2-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Preserve the exact aarch64 writer for the retained question/2 sanity audits (sanity-q2-01).; until The retained sanity-q2-01 audits are disposed of or their exact writer is preserved with them elsewhere.
-
-| | linux-aarch64 | linux-x86_64 |
-| --- | --- | --- |
-| Execution | native | emulated (Rosetta) |
-| Outcome | **qualified** | **qualified** |
-| Failures | none | none |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
-| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 41/41, controls 11/11 | 41/41, controls 11/11 |
-| Driver self-test | 573/573 | 573/573 |
-| Cases passed | 152/152 | 150/150 |
-| Cases | selected 152, ran 152, passed 152, failed 0, skipped 0 | selected 150, ran 150, passed 150, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 289, passed 192, failed 97, skipped 0 | ran 289, passed 192, failed 97, skipped 0 |
-| Checks | passed 251036, failed outside controls 0, failed inside controls 1396 | passed 251036, failed outside controls 0, failed inside controls 1396 |
-| Sabotage control variants fired (INTERFACE C.2) | 97/97 | 97/97 |
-| Driver controls fired | 21/21 | 21/21 |
-| Timing gate | on, passed: commands worst 2.176 ms (threshold 100.0 ms); protocol worst 100.677 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 45.681 ms (threshold 100.0 ms); protocol worst 151.083 ms (threshold 200.0 ms) |
-| End to end (`e2e.reacting-audit`) | pass, 872/872 checks | pass, 872/872 checks |
-| Release binary SHA-256 | `55cf407ea688671d975bc0067b81ba630716d6cba55602e87eb7a39ba9507700` | `63d8be7b73014df19b1e6bc1123af187f5b99d1b588fe552087b093305d4dfca` |
-| Test binary SHA-256 | `dcc034a2315133862ff75a89565337d2b72f426adcd3475b399e32b5e91acbec` | `1208ffbeb593c61a41074d492907770f1e20098f145d5305ba274d50c0bc061e` |
-| RESULT.json SHA-256 | `ce5d53d69bd8470ffe8a1f212537d59017fc206f16c230d308295f7aca3fd99b` | `1eae57a6a72e655cd76ca3d548e02707b267ba1e9b49b4186bec04e36aeb1aeb` |
-| Synthetic runtime cases | cases 48, passed 48, failed 0, skipped 0 | cases 48, passed 48, failed 0, skipped 0 |
-| Synthetic runtime checks | checks 108575, checks passed 108575, checks failed 0 | checks 108575, checks passed 108575, checks failed 0 |
-| Synthetic runtime controls | 125/125 | 125/125 |
-| Synthetic runtime self-test | passed 500, failed 0, skipped 0 | passed 500, failed 0, skipped 0 |
-| Development binary SHA-256 | `aef3698170b3a7b6ce010b9821d3e37e98dfff8f4d012391efaf8761fd0b07e6` | `9fdd6c80497fd5904ae2be0bcc9e35d951f84fa9f5ee9ca5b7c3444df07a3ed9` |
-| Second development binary SHA-256 | `071035dd9c4f7277e4dfaa6e9f0ed13618c72b60240b727d52d6dfb63a1aa997` | `87cbe1909dc579777419e6d2c465e84c2432dd60e7cfb8ccc4a5ebec6e0a0deb` |
-| Synthetic runtime RESULT.json SHA-256 | `57504c5b59f70b4e419d57988f454ae185fd0a7ad613c1c986df123851fdaa87` | `a4ac554144d47ce412afa90ad48ec7f1e7cff612573e4acc682a908c54e265e1` |
-| Synthetic runtime evidence listing SHA-256 | `189f5ce74fdd042b80014102530a5f8a5b69c8c55efaca35c0c1d129fe71043e` | `f74c9140924a3990a0d589669bbb806b94f56ae2593eb9cba3282d30aa950ca5` |
-| Synthetic runtime work archive SHA-256 | `302f6c89d1d119dc581771d362d6272828e27b414625808a405abfae215e229c` | `df641fc90d84050c10f555ed67953c7bfcf4ed4906da328f74db2aac8753044c` |
-
-### one-owner-release-02
+### linux-move-release-02
 
 - Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `8c6babd9b3e52f39f3e9013d623c4c86df899ab9e0faf084ee9ba66f1c837975` at the source commit)
-- Source commit: `c752c6f4c30d72c64dfdb80925f781c4d0116dc8`; archive SHA-256 `d99ae1caa380bf4ffb39e61e96b9db18f2c60f8e49e5d2cf14b779097c6d8da9`
-- Finished: 2026-11-20T02:31:33Z
+- Source commit: `f68780dfea49dce9b9cb816139e8084bf314dd3e`; archive SHA-256 `b4da51ee4c543e570eb0328aa5ee5e47c60db890beb8c82c41ae38b62966430a`
+- Finished: 2026-11-21T03:54:58Z
 - Outcome: **qualified**
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/one-owner-release-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: The C10 rehearsal of the committed apparatus uses this run's aarch64 release binary as the exact writer for its synthetic audits.; until The rehearsal's audits are closed or disposed of and no live commission or comparison binds this writer.
-
-| | linux-aarch64 | linux-x86_64 |
-| --- | --- | --- |
-| Execution | native | emulated (Rosetta) |
-| Outcome | **qualified** | **qualified** |
-| Failures | none | none |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
-| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 12/12, controls 1/1 | 12/12, controls 1/1 |
-| Driver self-test | 583/583 | 583/583 |
-| Cases passed | 157/157 | 157/157 |
-| Cases | selected 157, ran 157, passed 157, failed 0, skipped 0 | selected 157, ran 157, passed 157, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 280, passed 194, failed 86, skipped 0 | ran 280, passed 194, failed 86, skipped 0 |
-| Checks | passed 177104, failed outside controls 0, failed inside controls 768 | passed 177104, failed outside controls 0, failed inside controls 768 |
-| Sabotage control variants fired (INTERFACE C.2) | 86/86 | 86/86 |
-| Driver controls fired | 26/26 | 26/26 |
-| Timing samples | 3636 command, 1886 protocol | 3636 command, 1886 protocol |
-| End to end (`e2e.reacting-audit`) | pass, 854/854 checks | pass, 854/854 checks |
-| Release binary SHA-256 | `259c5d7056348e84e5ea2954de8dfb09b64af69d10a37d00b29d1a064bcd3122` | `b72e8a393536005d3b8c785598de80eb49010034f9f1ff76d1ea14705aa70b93` |
-| Test binary SHA-256 | `7f0427b83c613c710e9fd30c1dd1ab6066dad4ceab6ee5db1e9404ce7eb98aa0` | `aa52fa525ebdd59a47fce937ce5e13fd00c94084752aae530b710a53586198ff` |
-| RESULT.json SHA-256 | `25c58f15260cadf5f613b50ea934e27f8497d0fbc10fcc89508abecc0b825aa9` | `753b81a3cdd98612938381fe869eb9ccbf5273b80b1415b7f58fb3f33ecfaf0c` |
-
-### coverage-release-01
-
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `8c6babd9b3e52f39f3e9013d623c4c86df899ab9e0faf084ee9ba66f1c837975` at the source commit)
-- Source commit: `913fdf6661ec0ab50e6814f3ff615e721edb7d63`; archive SHA-256 `43d655de10031f3bca51ff436636c17a06dc37b3b63825aacc90e9a55a557fee`
-- Finished: 2026-11-20T16:49:03Z
-- Outcome: **qualified**
-- Run-level failures: none
-- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/coverage-release-01` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/linux-move-release-02` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -200,10 +45,11 @@ not carry them.
 | Execution | native | emulated (Rosetta) |
 | Outcome | **qualified** | **qualified** |
 | Failures | none | none |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
+| Toolchain image | `sha256:e99d40aafba5d8a5bac10cf7ff7bb787d00d5e3714bd6d83086df571787f6548` | `sha256:45e388c67f16a6c32d950e03a9c980bdae395911ce3572c2488031d4bf7babda` |
 | rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
+| Python platform manifest | `sha256:dc354b0c18b5192842bc6800d22e624461383b149cdbbd9646fec78a28340721` | `sha256:b3ae2372f3c9b7f0a80ec21d1ae931002ea056509e04c5072f144efe9694732f` |
 | Script checks (exit records) | 12/12, controls 1/1 | 12/12, controls 1/1 |
-| Driver self-test | 607/607 | 607/607 |
+| Driver self-test | 613/613 | 613/613 |
 | Cases passed | 174/174 | 174/174 |
 | Cases | selected 174, ran 174, passed 174, failed 0, skipped 0 | selected 174, ran 174, passed 174, failed 0, skipped 0 |
 | Variants (a fired control's variant fails) | ran 313, passed 216, failed 97, skipped 0 | ran 313, passed 216, failed 97, skipped 0 |
@@ -212,19 +58,19 @@ not carry them.
 | Driver controls fired | 29/29 | 29/29 |
 | Timing samples | 4025 command, 1914 protocol | 4025 command, 1914 protocol |
 | End to end (`e2e.reacting-audit`) | pass, 854/854 checks | pass, 854/854 checks |
-| Release binary SHA-256 | `c88999d85840254a00a0c8e19226c4203189adfd1b74fa23f56c06edf75dbad6` | `c7de75295d20476d384b92fcf37ee1e875470d42b1f3b01d954d4df7eb85ffa0` |
-| Test binary SHA-256 | `139665246af07fa4427fd75778c8c9f43ff60a11ccd3635c1c96ad916e79f7ba` | `1b5be5041d6203ea1bff00f8516fef561a40e3f7c7b6d68898870760b412b7ed` |
-| RESULT.json SHA-256 | `756bf6c7c2840c321b6455e8d13f38c38b38ae3db008e7a698b6532cd2959fcd` | `46a8615bd407858d8b0ac2da696f799e1a5ed7c8911bdd61cb8c59fbf9d26b15` |
+| Release binary SHA-256 | `6624b41f5c02438b18f88b24674eded4e6d7389ada170261aa77839bf5d052ef` | `7aee3d255ca52260f6cc0387c76947b01baf7ea220976f29c8ac336524cccdbc` |
+| Test binary SHA-256 | `6e2598ea862ce1722ce974d1e30dc7c2d3769fd234c5960f3015f03c14769235` | `c11467cf9edf1580fe4ad07ca20481db31f8a0bfc990122e8037d7766697e1c3` |
+| RESULT.json SHA-256 | `eb850b152cbbc09fc8cbd8dcd3aa78ba60fcacb1242858eb4f798fbefc2246c0` | `31666a8bc85e2756b99694e70709d37144d39ec7c0659bdd415c2fac724e5e9e` |
 
-### coverage-runtime-01
+### linux-move-runtime-02
 
 - Suite: runtime, `apparatus/runtime-acceptance.sh` (SHA-256 `55677bf16c1c2ee30b44f96d236dc8d25a8d250deafa7c067ba3974d24681524` at the source commit)
-- Source commit: `913fdf6661ec0ab50e6814f3ff615e721edb7d63`; archive SHA-256 `43d655de10031f3bca51ff436636c17a06dc37b3b63825aacc90e9a55a557fee`
-- Finished: 2026-11-20T17:33:01Z
+- Source commit: `f68780dfea49dce9b9cb816139e8084bf314dd3e`; archive SHA-256 `b4da51ee4c543e570eb0328aa5ee5e47c60db890beb8c82c41ae38b62966430a`
+- Finished: 2026-11-21T04:31:41Z
 - Outcome: **qualified**
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/coverage-runtime-01` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/linux-move-runtime-02` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -232,27 +78,28 @@ not carry them.
 | Execution | native | emulated (Rosetta) |
 | Outcome | **qualified** | **qualified** |
 | Failures | none | none |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
+| Toolchain image | `sha256:e99d40aafba5d8a5bac10cf7ff7bb787d00d5e3714bd6d83086df571787f6548` | `sha256:45e388c67f16a6c32d950e03a9c980bdae395911ce3572c2488031d4bf7babda` |
 | rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
+| Python platform manifest | `sha256:dc354b0c18b5192842bc6800d22e624461383b149cdbbd9646fec78a28340721` | `sha256:b3ae2372f3c9b7f0a80ec21d1ae931002ea056509e04c5072f144efe9694732f` |
 | Synthetic runtime cases | cases 53, passed 53, failed 0, skipped 0 | cases 53, passed 53, failed 0, skipped 0 |
-| Synthetic runtime checks | checks 125307, checks passed 125307, checks failed 0 | checks 125307, checks passed 125307, checks failed 0 |
+| Synthetic runtime checks | checks 125308, checks passed 125308, checks failed 0 | checks 125308, checks passed 125308, checks failed 0 |
 | Synthetic runtime controls | 132/132 | 132/132 |
-| Synthetic runtime self-test | passed 402, failed 0, skipped 0 | passed 402, failed 0, skipped 0 |
-| Development binary SHA-256 | `b66c3982a4792eba9276350cda071ef1c69da88249f8275ed764092cc648de43` | `34bba231f787b911d0cc8567fb1b1bc92e406b570ae6ae7a4b83b05445cdf3bd` |
-| Second development binary SHA-256 | `db37cb18f0e2b030ae5c4d7ec54f8a735b12fc3a7d3e59322968abf59f791f11` | `e9699f73039e4b95aa2f04e8986c048efc207e0149991b447b39ad937568f41e` |
-| Synthetic runtime RESULT.json SHA-256 | `d4f59ef840412863a27ed8f45d27fbf3bd2759f90648c7d775b37c94ed041924` | `06528ab6c721d9bd53252bbf663ce89804a92883488cb1ca5dc921bc8081829f` |
-| Synthetic runtime evidence listing SHA-256 | `94b459fa1749516f15baee54b1c04a00ae3bcea20964ae74bab099cdbfbc2178` | `8273717d1f2578860b36e12f18de28410e21edab90d4c57462b928d1e6044fbc` |
-| Synthetic runtime work archive SHA-256 | `73ebe4d6f1d354c2e2f498d68ddd5ace1763d10ce327e5280e4d858bd826783d` | `229b2b360d2eb16c31edc2ce871b1fbb0213110a2a6a8398c48733e269ed77dc` |
+| Synthetic runtime self-test | passed 406, failed 0, skipped 0 | passed 406, failed 0, skipped 0 |
+| Development binary SHA-256 | `b3a1c4f5bcf8f9d88c00fd1c0d77bf4d8b05efbb13dec54e188b61620d1b1d41` | `fbf1ed1f090d3c8f3eb68730b75826f8d8c6126c9263373acbf3070718bf4a21` |
+| Second development binary SHA-256 | `55af295ad1ec78cf4b9bd003094d66f459a1982bdd0defb73a7b81d25120ff18` | `1dc803f1ced15f683b47827757bd033d901724f9fb045d711ef0c2914bf43c0a` |
+| Synthetic runtime RESULT.json SHA-256 | `f0c769ff1f3aebfaf2c3b3f684f2f7511d9ea79d287e2659de214228df14992f` | `0590730685eb853ed6f99800b7770a2847a8b0b8e85834d1e59b0b236d7fab0e` |
+| Synthetic runtime evidence listing SHA-256 | `4cf5c749166d30f0711d3be2a8ca79f017e0b488a1dba9cb32123863f95634b1` | `6281b10e77af02a1f8c4dc023d89fee0ecc1c88cb97e3d944c27aa6d3bbe064d` |
+| Synthetic runtime work archive SHA-256 | `66e8025a96d765129b304a20176b449770bf769ef9ad004b7513b6128bae8f6e` | `9646c06202b4d9a50b2937741b66a8ad7f70023154ec20c8f252f36659f6367c` |
 
-### toolchain-runtime-01
+### linux-move-toolchain-02
 
-- Suite: toolchain, `apparatus/step2.sh` (SHA-256 `f3b059ccfc72e9fafddb9f930e6c0d2a11892d623c990e0b0bbe3ed2fd855e0a` at the source commit)
-- Source commit: `31bced7287bd1cab8488c30916df1bc829fe2eca`; archive SHA-256 `02caf83d775bf2775a33e992e33fa5f5b414f3e582b9217b440c2ef82e3f280c`
-- Finished: 2026-11-12T03:48:38Z
+- Suite: toolchain, `apparatus/step2.sh` (SHA-256 `d626187cd143f0e4045190c02f4ccae1d0b1defcbc4b0d2830ad438790b90a88` at the source commit)
+- Source commit: `9e84464cf786ca524bb6a598faec5081c76a67e2`; archive SHA-256 `3032ed5930aa9eb262fa1c312fe70c57f3d00f1dc3f9d09d884a58feb147db21`
+- Finished: 2026-11-21T02:43:49Z
 - Outcome: **qualified**
 - Run-level failures: none
 - Vendored crates: 1617 files, listing SHA-256 `e4baa31837339022fe586ec42a551ae4df3c3efa56d145840f1c23478c357680`
-- Evidence: `.scratch/toolchain-runtime-01` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/linux-move-toolchain-02` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -260,12 +107,14 @@ not carry them.
 | Execution | not recorded by the suite | not recorded by the suite |
 | Outcome | **qualified** | **qualified** |
 | Failures | none | none |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
+| Toolchain image | `sha256:e99d40aafba5d8a5bac10cf7ff7bb787d00d5e3714bd6d83086df571787f6548` | `sha256:45e388c67f16a6c32d950e03a9c980bdae395911ce3572c2488031d4bf7babda` |
 | rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Build 1 | `build-arm64-1`: 9/9 steps; static yes; offline yes; run exit 0; `3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023` | `build-amd64-1`: 9/9 steps; static yes; offline yes; run exit 0; `9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973` |
-| Build 2 | `build-arm64-2`: 9/9 steps; static yes; offline yes; run exit 0; `3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023` | `build-amd64-2`: 9/9 steps; static yes; offline yes; run exit 0; `9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973` |
+| Rust platform manifest | `sha256:585dced3da590f4f7dc2719172ead5b39ea781bd8b698c092112da8ef3be0659` | `sha256:d3ba1ad5d5b5a180ca8428b4fab8543a1b3933b32a8a7ad90a7ebbaf5497203a` |
+| Alpine platform manifest | `sha256:e311ae748be7f56ae5cba304bc488f0786df68ee507513f654a5cc8597cffb42` | `sha256:c26612752c78b18faacd63c7d50f4592c2e7b0f25e0e20e82bd74e465c57ab0d` |
+| Build 1 | `build-arm64-1`: 9/9 steps; static yes; offline yes; run exit 0; `6624b41f5c02438b18f88b24674eded4e6d7389ada170261aa77839bf5d052ef` | `build-amd64-1`: 9/9 steps; static yes; offline yes; run exit 0; `7aee3d255ca52260f6cc0387c76947b01baf7ea220976f29c8ac336524cccdbc` |
+| Build 2 | `build-arm64-2`: 9/9 steps; static yes; offline yes; run exit 0; `6624b41f5c02438b18f88b24674eded4e6d7389ada170261aa77839bf5d052ef` | `build-amd64-2`: 9/9 steps; static yes; offline yes; run exit 0; `7aee3d255ca52260f6cc0387c76947b01baf7ea220976f29c8ac336524cccdbc` |
 | Reproducible | yes | yes |
-| Binary SHA-256 (both builds) | `3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023` | `9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973` |
+| Binary SHA-256 (both builds) | `6624b41f5c02438b18f88b24674eded4e6d7389ada170261aa77839bf5d052ef` | `7aee3d255ca52260f6cc0387c76947b01baf7ea220976f29c8ac336524cccdbc` |
 | Alpine run exit | 0 | 0 |
 
 ### sanity-live-01
@@ -798,7 +647,7 @@ M2 5sgh default effort: 24 tool-use turns, eight-entry auditor submission and ve
 M2 sw3z default: three capped placements exhausted 64000 output with one partial account. Approved manager close sealed, delivered and confirmed that unchanged account; audit closed without auditor submission. Originals retained for fixture/cap-setting review.
 
 - Evidence: `.scratch/readiness-m2-live-sw3z-default-01/.` (recorded 2026-11-13T20:11:00Z).
-- Retained purpose: Inspect the exact capped encounters, preserved partial account, replacement refusal and manager-attributed return for grounded fixtures and cap-setting review; retain the selected private archive and exact writer.; until The assigned continuation, refusal, return and cap-setting fixture reviews finish and no current inspection purpose needs these originals.
+- Retained purpose: Inspect the original capped encounters, partial account, replacement refusal and manager-attributed return. The selected private archive and the recorded writer identity support continuation, refusal and cap-setting review.; until The assigned continuation, refusal, return and cap-setting fixture reviews finish and no current inspection purpose needs these originals.
 
 ### readiness-m2-live-5sgh-low-01
 
@@ -848,6 +697,13 @@ C4 reviewed: short audit covered 16 of 48 cases and long audit covered all 48; b
 
 - Evidence: `.scratch/readiness-c4-01/.` (recorded 2026-11-14T01:27:57Z).
 - Retained purpose: Inspect both original encounters and the authored content inconsistency; ground near-limit/partial-submission, required-field recovery and submit-to-stop/partial-usage fixtures.; until Selected fixture and accounting reviews finish, and no unresolved finding needs the original encounters.
+
+### m3-rehearsal-01
+
+Selected public originals from the M3 rehearsal, including six continuation receipt pairs, exact packets and the preceding export bindings.
+
+- Evidence: `.scratch/m3-rehearsal-01/.` (recorded 2026-11-14T14:46:02Z).
+- Retained purpose: The endpoint-alignment comparison needs the original continuation records and their bindings. The launcher retains the selected private witnesses.; until Endpoint alignment has reviewed its continuation fixtures and has no remaining use for these original comparisons.
 
 ### readiness-m3-live-reminder-01
 
@@ -905,6 +761,13 @@ M3 custody disposition: approved manager close, loss-free verified delivery and 
 - Evidence: `.scratch/readiness-m3-close-01/.` (recorded 2026-11-15T15:52:28Z).
 - Retained purpose: Inspect the exact approval, manager-attributed partial return, delivery/confirmation reviews and preserved custody chain for return, continuation, refusal and cap-setting fixtures.; until The assigned fixture and cap-setting reviews finish and no current inspection purpose needs these original custody records.
 
+### readiness-m4-rehearsal-02
+
+Selected public originals and the original review from the three-arm, full-size M4 compaction rehearsal.
+
+- Evidence: `.scratch/readiness-m4-rehearsal-02/.` (recorded 2026-11-15T19:15:41Z).
+- Retained purpose: The endpoint-alignment comparison needs the full-size compaction control and its reviewed source and input bindings. The launcher retains the selected private witnesses.; until Endpoint alignment has reviewed the compaction control and no remaining comparison needs these original arms.
+
 ### readiness-m4-01
 
 M4 approved one Opus 5.5 placement: exact packet, specimen, dated cost basis, principal authorization, launch and post-return collectors. The placement completed with real compaction and verified closure; calculated reported-token cost USD 3.037196 and no remaining launch authority.
@@ -924,14 +787,14 @@ M4: Opus 5.5 crossed the real compaction trigger, reused its signed summary, rec
 Three native C5 placements reviewed and closed: harness-reported cap recovery; requested long-entry boundary and ordinary-ending reminder unexercised; final usage unknown
 
 - Evidence: `.scratch/readiness-c5-01/.` (recorded 2026-11-15T20:31:30Z).
-- Retained purpose: Inspect the exact C5 approval and all three original encounters, outside input/package witnesses, cap message and following authoring, preserved error text and exact-version replacement, unknown usage and independently reviewed closure. Ground the assigned runtime fixtures without rewriting historical records.; until Assigned cap/reminder, conversation-fidelity, error-reply and usage fixture reviews are complete and no unresolved finding requires these original encounters or their exact writer
+- Retained purpose: Inspect the exact C5 approval and all three original encounters, outside input/package witnesses, cap message and following authoring, preserved error text and exact-version replacement, unknown usage and independently reviewed closure. Ground the assigned runtime fixtures without rewriting historical records.; until The cap/reminder, conversation-fidelity, error-reply and usage fixture reviews finish and no unresolved finding needs these original encounters.
 
 ### readiness-pages-surface-01
 
-Native annotated-tool compatibility: three cases, 30 checks observed, denial control fired; six invocations stopped; reviewed profile; page fidelity and Linux qualification unexercised
+Original macOS annotated-tool compatibility encounter. Three cases recorded 30 successful observations, the denial control fired and all six invocations stopped. The 259 selected original files preserve the approval, profile, streams and review.
 
 - Evidence: `.scratch/readiness-pages-surface-01/.` (recorded 2026-11-15T22:59:39Z).
-- Retained purpose: The exact annotated-tool profile, original streams, approval and review support the pending page-delivery comparison and grounded runtime fixtures.; until No pending service comparison or fixture review depends on this profile and its original compatibility captures
+- Retained purpose: The profile and original tool streams ground the completed page comparison and its fidelity fixtures. The two approved manifests identify the retired 2,822,912-byte writer.; until The paired tool-surface and page-fidelity originals have no remaining comparison or fixture-review use.
 
 ### readiness-pages-service-01
 
@@ -947,107 +810,23 @@ Approved removal of two C3 spill files after exact comparison with original MCP 
 - Evidence: `.scratch/readiness-c3-disposition-01/.` (recorded 2026-11-16T00:51:22Z).
 - Retained purpose: Retain the originals needed to inspect the C3 external-copy finding and its authorized disposition during readiness reassessment.; until The C3 fixture and custody reassessment no longer needs the original external-copy witnesses or disposition receipts.
 
-### c10-readiness-04
+### claude-code-pin-linux-01
 
-Offline Linux C10 rehearsal on the aarch64 writer from acceptance-readiness-04. All 22 audits and six continuations produced their expected outcomes.
+The installed Linux arm64 Claude Code 2.1.322 executable matched the signed release manifest. Independent readback verified its bytes and signer offline.
 
-- Evidence: `.scratch/c10-readiness-04/.` (recorded 2026-11-18T18:33:55Z).
-- Retained purpose: Retain the verified C10 source, writer binding, private container and six continuation records for offline comparison while the manager and endpoint apparatus are developed.; until A reviewed rehearsal supersedes these bindings and no pending comparison or custody obligation needs these originals.
+- Evidence: `.scratch/claude-code-pin-linux-01/.` (recorded 2026-11-21T03:27:29Z).
+- Retained purpose: Keep the public manifest, signature and verification receipt for the installed harness used in commissioning.; until A reviewed replacement pin supersedes this installation and no current profile or comparison binds it.
 
-### c10-readiness-04-control-continue-cap-p2
+### linux-c10-f68780d-01
 
-Second placement of control-continue-cap in the retained offline C10 rehearsal.
+Offline Linux arm64 C10 rehearsal under rootless Podman with the qualified release. The review binds the 22 first placements, six continuations, original receipt pairs and launcher admission.
 
-- Evidence: `.scratch/c10-readiness-04-control-continue-cap-p2/host/RESULT.json` (recorded 2026-11-18T18:37:08Z).
-- Retained purpose: The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.; until The c10-readiness-04 rehearsal is released.
+- Evidence: `.scratch/linux-c10-f68780d-01/.` (recorded 2026-11-21T04:34:34Z).
+- Retained purpose: The reviewed request, response and continuation records support admission by the two-account launcher. The launcher account holds its private archive, originals and qualified writer.; until A reviewed rehearsal supersedes these bindings and all remaining custody and comparison uses have a disposition.
 
-### c10-readiness-04-control-continue-entries-p2
+### linux-sanity-f68780d-01
 
-Second placement of control-continue-entries in the retained offline C10 rehearsal.
+Standalone offline Linux arm64 sanity rehearsal under rootless Podman with the qualified release. The review binds the seven verdicts and independent witnesses.
 
-- Evidence: `.scratch/c10-readiness-04-control-continue-entries-p2/host/RESULT.json` (recorded 2026-11-18T18:37:08Z).
-- Retained purpose: The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.; until The c10-readiness-04 rehearsal is released.
-
-### c10-readiness-04-control-reminder-spent-p2
-
-Second placement of control-reminder-spent in the retained offline C10 rehearsal.
-
-- Evidence: `.scratch/c10-readiness-04-control-reminder-spent-p2/host/RESULT.json` (recorded 2026-11-18T18:37:08Z).
-- Retained purpose: The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.; until The c10-readiness-04 rehearsal is released.
-
-### c10-readiness-04-control-reminder-spent-unheld-p2
-
-Second placement of control-reminder-spent-unheld in the retained offline C10 rehearsal.
-
-- Evidence: `.scratch/c10-readiness-04-control-reminder-spent-unheld-p2/host/RESULT.json` (recorded 2026-11-18T18:37:08Z).
-- Retained purpose: The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.; until The c10-readiness-04 rehearsal is released.
-
-### c10-readiness-04-control-reminder-spent-submits-p2
-
-Second placement of control-reminder-spent-submits in the retained offline C10 rehearsal.
-
-- Evidence: `.scratch/c10-readiness-04-control-reminder-spent-submits-p2/host/RESULT.json` (recorded 2026-11-18T18:37:09Z).
-- Retained purpose: The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.; until The c10-readiness-04 rehearsal is released.
-
-### c10-readiness-04-control-reminder-unused-p2
-
-Second placement of control-reminder-unused in the retained offline C10 rehearsal.
-
-- Evidence: `.scratch/c10-readiness-04-control-reminder-unused-p2/host/RESULT.json` (recorded 2026-11-18T18:37:09Z).
-- Retained purpose: The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.; until The c10-readiness-04 rehearsal is released.
-
-### sanity-q2-01
-
-Seven offline question/2 scenarios passed. Four exports verified, two were withheld and one failed as their controls required.
-
-- Evidence: `.scratch/sanity-q2-01/.` (recorded 2026-11-19T03:25:20Z).
-- Retained purpose: Preserve the launcher comparison, the independent witness and private originals for the retained file-only commissioning rehearsal.; until A reviewed successor covers the launcher comparison and remaining private custody is resolved.
-
-### c10-owner-01
-
-Offline Linux aarch64 C10 rehearsal of the committed apparatus with the one-owner-release-02 writer: 22 first placements, 6 continuations, admission passed.
-
-- Evidence: `.scratch/c10-owner-01/REVIEW.json` (recorded 2026-11-20T04:38:47Z).
-- Retained purpose: Retain the current C10 rehearsal, its retained container and private originals for manager-interface work and any live launch it admits.; until A reviewed successor rehearsal replaces it and its retained audits are closed or disposed of.
-
-### c10-owner-01-control-continue-cap-p2
-
-Verified the original second-placement receipt for control-continue-cap.
-
-- Evidence: `.scratch/c10-owner-01-control-continue-cap-p2/host/RESULT.json` (recorded 2026-11-20T04:39:32Z).
-- Retained purpose: The retained c10-owner-01 rehearsal checks this host receipt against its placement export.; until The c10-owner-01 rehearsal is released.
-
-### c10-owner-01-control-continue-entries-p2
-
-Verified the original second-placement receipt for control-continue-entries.
-
-- Evidence: `.scratch/c10-owner-01-control-continue-entries-p2/host/RESULT.json` (recorded 2026-11-20T04:39:32Z).
-- Retained purpose: The retained c10-owner-01 rehearsal checks this host receipt against its placement export.; until The c10-owner-01 rehearsal is released.
-
-### c10-owner-01-control-reminder-spent-p2
-
-Verified the original second-placement receipt for control-reminder-spent.
-
-- Evidence: `.scratch/c10-owner-01-control-reminder-spent-p2/host/RESULT.json` (recorded 2026-11-20T04:39:32Z).
-- Retained purpose: The retained c10-owner-01 rehearsal checks this host receipt against its placement export.; until The c10-owner-01 rehearsal is released.
-
-### c10-owner-01-control-reminder-spent-submits-p2
-
-Verified the original second-placement receipt for control-reminder-spent-submits.
-
-- Evidence: `.scratch/c10-owner-01-control-reminder-spent-submits-p2/host/RESULT.json` (recorded 2026-11-20T04:39:32Z).
-- Retained purpose: The retained c10-owner-01 rehearsal checks this host receipt against its placement export.; until The c10-owner-01 rehearsal is released.
-
-### c10-owner-01-control-reminder-spent-unheld-p2
-
-Verified the original second-placement receipt for control-reminder-spent-unheld.
-
-- Evidence: `.scratch/c10-owner-01-control-reminder-spent-unheld-p2/host/RESULT.json` (recorded 2026-11-20T04:39:32Z).
-- Retained purpose: The retained c10-owner-01 rehearsal checks this host receipt against its placement export.; until The c10-owner-01 rehearsal is released.
-
-### c10-owner-01-control-reminder-unused-p2
-
-Verified the original second-placement receipt for control-reminder-unused.
-
-- Evidence: `.scratch/c10-owner-01-control-reminder-unused-p2/host/RESULT.json` (recorded 2026-11-20T04:39:32Z).
-- Retained purpose: The retained c10-owner-01 rehearsal checks this host receipt against its placement export.; until The c10-owner-01 rehearsal is released.
+- Evidence: `.scratch/linux-sanity-f68780d-01/.` (recorded 2026-11-21T04:34:35Z).
+- Retained purpose: Keep the published comparison, independent witness identities and launcher-owned originals for the current file-only commissioning rehearsal.; until A reviewed successor covers the comparison and the private audits have a custody disposition.

@@ -335,8 +335,8 @@ Inputs worth reusing: the full-size synthetic compaction rehearsal
 (`.scratch/readiness-m4-rehearsal-02/REVIEW.json`), the bounded live compaction
 encounter (`.scratch/readiness-m4-live-01/REVIEW.json`), the continuation
 records in `.scratch/m3-rehearsal-01`, and the interaction findings
-(`apparatus/studies/interaction/RESULTS.md` at `77375f1`). Recheck source,
-writer, image, input and saved-connection bindings before using any of them.
+(`apparatus/studies/interaction/RESULTS.md` at `77375f1`). Recheck the recorded source,
+writer, image, input and saved-connection identities against the retained receipts before reusing an observation.
 
 **Done when:** the mechanism lives in `alignment/` with its checks in DEVELOPMENT,
 its offline controls fire, and the retired apparatus is gone.

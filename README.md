@@ -96,8 +96,9 @@ empty folder to close, with files only and with the preparation server.
 ## Status
 
 **Version 0.0.2 — experimental.** Small live commissions have returned answers
-with verified delivery across all three forms. The release acceptance suite
-passed on Linux aarch64 and x86_64 for the builds in the qualification record.
+with verified delivery across all three forms. The release and synthetic runtime
+suites passed on native Linux aarch64 and on x86_64 under Rosetta. Both used
+the same aarch64 guest kernel.
 Endpoint alignment for the models a release will name remains outstanding.
 Bounded Messages continuations preserved recorded work; one audit
 submitted and another exhausted its allowance with a partial account later
@@ -110,7 +111,8 @@ A default-off development adapter, included only in source builds, has
 completed open inquiries on macOS through an agent harness with auditor
 submission, verified delivery and close. Its captured usage remains partial and
 live continuation unexercised. Full 64 KiB material pages arrived whole in one
-bounded encounter. Those encounters predate the Linux harness port. Its Linux live behavior remains unverified.
+bounded encounter. The Linux port passed its offline rehearsals with a synthetic
+peer. Its real-harness behavior on Linux remains unverified.
 
 Stewart is a single Rust binary, supported on Linux x86_64 and aarch64. See [building and testing](development/DEVELOPMENT.md), the
 [crate guide](service/README.md) and [contributing](AGENTS.md), or read the [design](DESIGN.md),

@@ -2,643 +2,16 @@
   "schema": "stewart.qualified/1",
   "entries": [
     {
-      "id": "acceptance-readiness-02",
-      "kind": "suite",
-      "suite": "acceptance",
-      "script": {
-        "path": "apparatus/acceptance.sh",
-        "sha256": "4088d3dab41a8b090348010c20c4b4f12282d08379c315bbdf102a6708f0774d"
-      },
-      "source_commit": "0fdac9450aa0d1a72d1465b17b7e3e5038796c71",
-      "source_archive_sha256": "01950e1519912fc717728218c645d72b012c09de1f95cdcf74cd3af8a5610b82",
-      "date": "2026-11-13T16:52:45Z",
-      "outcome": "qualified",
-      "failures": [],
-      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
-      "platforms": {
-        "linux-aarch64": {
-          "execution": "native",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 41,
-            "total": 41,
-            "controls_fired": 11,
-            "controls_total": 11
-          },
-          "self_test": {
-            "checks": 403,
-            "passed": 403,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 133,
-            "ran": 133,
-            "passed": 133,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 245,
-            "passed": 166,
-            "failed": 79,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 180258,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 1213
-          },
-          "controls": {
-            "fired": 79,
-            "total": 79
-          },
-          "driver_controls": {
-            "fired": 21,
-            "total": 21
-          },
-          "timing_gate": {
-            "enabled": true,
-            "passed": true,
-            "threshold_ms": 100.0,
-            "worst_ms": 2.857,
-            "protocol_passed": true,
-            "protocol_worst_ms": 98.4,
-            "protocol_threshold_ms": 200.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 872,
-            "checks_failed": 0
-          },
-          "release_sha256": "12587c3783a33b6505bf2708698ef861b6f3d833e260c03e82b0ca91575eb86f",
-          "test_sha256": "0fae5886abcafeb2f616b56bf9ba76840a85d0537b092167dd5bdff1843712be",
-          "result_sha256": "d3be1252e1869ad48a70969906697889f708d08053138a35bd548f6025bc40e0",
-          "runtime": {
-            "self_test": {
-              "passed": 229,
-              "failed": 0,
-              "skipped": 0
-            },
-            "counts": {
-              "cases": 25,
-              "passed": 25,
-              "failed": 0,
-              "skipped": 0,
-              "checks": 12972,
-              "checks_passed": 12972,
-              "checks_failed": 0,
-              "controls": 81,
-              "controls_fired": 81
-            },
-            "result_sha256": "fa7157e656a21f12ceadcd3120e628889a3ef47a96ab563d69e342e0bd860f61",
-            "environment_sha256": "e0ca37bad060849a714ba86b3e90516a61a00fb1f1b7dc5039a065cf542fb54b",
-            "work_sha256": "da8b7ce065664827a0525d5f098092b48d99aac8d30445b4d01504e7a5fc6e3a",
-            "evidence": {
-              "files": 1768,
-              "listing_sha256": "397d1f62622af60e2da3f2c73c7e504dd9a449dd00900f13e0f02fbaf3f21aed"
-            },
-            "development_sha256": "9eac764a2926dff1d4754b05fc19865e9e2327ba6bcfacf46fe8972cfcee3310",
-            "release_sha256": "12587c3783a33b6505bf2708698ef861b6f3d833e260c03e82b0ca91575eb86f",
-            "variant_sha256": "65f5b1798003ef588567deb51c6d00f1e9d3bfde1e5798c97a3aff363b536dad",
-            "driver_sha256": "896d46ea180fa0b87e2f39e35c9d7dc58cb258a8a1101716ef5012a813a512d1"
-          }
-        },
-        "linux-x86_64": {
-          "execution": "emulated (Rosetta)",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 41,
-            "total": 41,
-            "controls_fired": 11,
-            "controls_total": 11
-          },
-          "self_test": {
-            "checks": 403,
-            "passed": 403,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 131,
-            "ran": 131,
-            "passed": 131,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 245,
-            "passed": 166,
-            "failed": 79,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 180258,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 1213
-          },
-          "controls": {
-            "fired": 79,
-            "total": 79
-          },
-          "driver_controls": {
-            "fired": 21,
-            "total": 21
-          },
-          "timing_gate": {
-            "enabled": false,
-            "passed": null,
-            "threshold_ms": 100.0,
-            "worst_ms": 35.575,
-            "protocol_passed": null,
-            "protocol_worst_ms": 167.3,
-            "protocol_threshold_ms": 200.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 872,
-            "checks_failed": 0
-          },
-          "release_sha256": "67515fb492a57dceabd129d0bb668c01cad05cb8a8d1f2b6ec4f2516d1b1eb32",
-          "test_sha256": "deeb1e127f223dd6931eb3962df64faf4b8c559db38aa6bdfe7029d07bedcbb6",
-          "result_sha256": "b9da0b487e48de690998d7a0995e35d1a3d348f08e14fe3fbe361fb54ecc756f",
-          "runtime": {
-            "self_test": {
-              "passed": 229,
-              "failed": 0,
-              "skipped": 0
-            },
-            "counts": {
-              "cases": 25,
-              "passed": 25,
-              "failed": 0,
-              "skipped": 0,
-              "checks": 12972,
-              "checks_passed": 12972,
-              "checks_failed": 0,
-              "controls": 81,
-              "controls_fired": 81
-            },
-            "result_sha256": "2c6cf25174a5b2b41940adae916091b267cd97c320bd776db10122357624a4cf",
-            "environment_sha256": "4349d88419ce7987af5d95222a494945050b4baa585f7d07ad3dafb734efb017",
-            "work_sha256": "654e7d12904d4b688d096b49cb500a3e39937e3b25b8761f8a730c4d7995f551",
-            "evidence": {
-              "files": 1768,
-              "listing_sha256": "feaa791df0f4eb40d9f6a55c8271ea23d4dd2979896a4fe50e291a3284a2e09e"
-            },
-            "development_sha256": "1244aca8f905c004c33c1dbcbe65c0d50f97c0a795250719b89898a8dcf3d392",
-            "release_sha256": "67515fb492a57dceabd129d0bb668c01cad05cb8a8d1f2b6ec4f2516d1b1eb32",
-            "variant_sha256": "5f4fd67ddaaea51b1325dc576104a5c34293216b705f0dfe902eb274e389dd98",
-            "driver_sha256": "896d46ea180fa0b87e2f39e35c9d7dc58cb258a8a1101716ef5012a813a512d1"
-          }
-        }
-      },
-      "evidence": {
-        "path": ".scratch/acceptance-readiness-02",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the exact qualified ARM writer for selected Messages encounters, pending comparisons and their fixture reviews; the M2 and M4 audits have reviewed closure.",
-        "until": "No open audit or pending comparison requires this writer, and the selected fixture reviews no longer need it."
-      }
-    },
-    {
-      "id": "acceptance-readiness-04",
-      "kind": "suite",
-      "suite": "acceptance",
-      "script": {
-        "path": "apparatus/acceptance.sh",
-        "sha256": "4088d3dab41a8b090348010c20c4b4f12282d08379c315bbdf102a6708f0774d"
-      },
-      "source_commit": "ba551c6bd5d290c2005c207e6a9dad062fea745d",
-      "source_archive_sha256": "8fd7588eeca816b0a0b1c49895590d0c588a17b4da02527ed040d927102269b8",
-      "date": "2026-11-18T18:29:19Z",
-      "outcome": "qualified",
-      "failures": [],
-      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
-      "platforms": {
-        "linux-aarch64": {
-          "execution": "native",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 41,
-            "total": 41,
-            "controls_fired": 11,
-            "controls_total": 11
-          },
-          "self_test": {
-            "checks": 573,
-            "passed": 573,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 148,
-            "ran": 148,
-            "passed": 148,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 285,
-            "passed": 188,
-            "failed": 97,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 246576,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 1396
-          },
-          "controls": {
-            "fired": 97,
-            "total": 97
-          },
-          "driver_controls": {
-            "fired": 21,
-            "total": 21
-          },
-          "timing_gate": {
-            "enabled": true,
-            "passed": true,
-            "threshold_ms": 100.0,
-            "worst_ms": 3.019,
-            "protocol_passed": true,
-            "protocol_worst_ms": 122.111,
-            "protocol_threshold_ms": 200.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 872,
-            "checks_failed": 0
-          },
-          "release_sha256": "f309cd21f69a425cf4e3ee09438e7677bd8c0811a7de55a75f0dfde582ec0a1e",
-          "test_sha256": "8ddfd94e95eaaca3dcfe47a63985a129a99280b7ec7ed888519a5e6db393adf9",
-          "result_sha256": "d3de9aef0d2dcdfe773ef35d4f068096ba3b87cf87122965f99d280e28bb1271",
-          "runtime": {
-            "self_test": {
-              "passed": 499,
-              "failed": 0,
-              "skipped": 0
-            },
-            "counts": {
-              "cases": 48,
-              "passed": 48,
-              "failed": 0,
-              "skipped": 0,
-              "checks": 105207,
-              "checks_passed": 105207,
-              "checks_failed": 0,
-              "controls": 124,
-              "controls_fired": 124
-            },
-            "result_sha256": "314eee461e611eff869d8ed352946a3f3579b2334ef1b86ec71baa107b3c6ca8",
-            "environment_sha256": "8c3aa561fae96f8b00246761973c2f3ae02b4d0dd4aabdbed69bc226bd6cbfc9",
-            "work_sha256": "f9c291cd54c44d890aaed222a9a5370efc64df5131893553c96899056d861f50",
-            "evidence": {
-              "files": 6474,
-              "listing_sha256": "5b1312cd63922b2b2d19c563c9293e0afd8af27d13ccec959ed6097e29dbd609"
-            },
-            "development_sha256": "18e7fe294c113d98695ed746d0a7d516d1f448f6e4e6bc6fb523775e67776242",
-            "release_sha256": "f309cd21f69a425cf4e3ee09438e7677bd8c0811a7de55a75f0dfde582ec0a1e",
-            "variant_sha256": "f6f262f9dadcc24d939e8b6f1042cb905fc3e19380430ea9bf3749e74a2e9254",
-            "driver_sha256": "df7c2d55305072a432d93a658e88bf8b326074583b886b59aa15ae6f6aa7857e"
-          }
-        },
-        "linux-x86_64": {
-          "execution": "emulated (Rosetta)",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 41,
-            "total": 41,
-            "controls_fired": 11,
-            "controls_total": 11
-          },
-          "self_test": {
-            "checks": 573,
-            "passed": 573,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 146,
-            "ran": 146,
-            "passed": 146,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 285,
-            "passed": 188,
-            "failed": 97,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 246576,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 1396
-          },
-          "controls": {
-            "fired": 97,
-            "total": 97
-          },
-          "driver_controls": {
-            "fired": 21,
-            "total": 21
-          },
-          "timing_gate": {
-            "enabled": false,
-            "passed": null,
-            "threshold_ms": 100.0,
-            "worst_ms": 40.452,
-            "protocol_passed": null,
-            "protocol_worst_ms": 315.729,
-            "protocol_threshold_ms": 200.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 872,
-            "checks_failed": 0
-          },
-          "release_sha256": "8fc8c6c80762bc5e656e619fca8e1acb80682173cf3dcfef464f84f1f2a6cba5",
-          "test_sha256": "943739f328a9d909bffedddac30d869c68583e9dabfbe8517044530a380f6f33",
-          "result_sha256": "ade12b029ffd57226cd5d9e3a65ca96948170101eb218815aae31fc9d5fab208",
-          "runtime": {
-            "self_test": {
-              "passed": 499,
-              "failed": 0,
-              "skipped": 0
-            },
-            "counts": {
-              "cases": 48,
-              "passed": 48,
-              "failed": 0,
-              "skipped": 0,
-              "checks": 105207,
-              "checks_passed": 105207,
-              "checks_failed": 0,
-              "controls": 124,
-              "controls_fired": 124
-            },
-            "result_sha256": "7d6b4bd86598c571115d6bcaa07f34013ea504becb9051fdac5bf26d06609eac",
-            "environment_sha256": "e2af87e1d09f07ee1129bead6de6c7dc03f317e035475ec5f820dd944018534e",
-            "work_sha256": "64637301cc475523f012b606803eac6b13d2c003c4f51caca095b7e89a2b35bb",
-            "evidence": {
-              "files": 6474,
-              "listing_sha256": "fb741eb500acc66d8fc577af14f8c19d01f22160d69ad589e7439df6fbe7d868"
-            },
-            "development_sha256": "0c58d9c4f4f8c00b334b396de8e8eb45a57b79463c0547c98fa348d74cd25b7d",
-            "release_sha256": "8fc8c6c80762bc5e656e619fca8e1acb80682173cf3dcfef464f84f1f2a6cba5",
-            "variant_sha256": "e995f1e60131af08f4ce93b9ecbdf21a16fca74415b9271e0a9f6baf6e35022c",
-            "driver_sha256": "df7c2d55305072a432d93a658e88bf8b326074583b886b59aa15ae6f6aa7857e"
-          }
-        }
-      },
-      "evidence": {
-        "path": ".scratch/acceptance-readiness-04",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-readiness-04 container mounts this qualification’s aarch64 binary as the sole writer for its synthetic audits.",
-        "until": "The C10 rehearsal and its private archives are released or another retained copy satisfies their exact-writer obligation."
-      }
-    },
-    {
-      "id": "acceptance-question2-01",
-      "kind": "suite",
-      "suite": "acceptance",
-      "script": {
-        "path": "apparatus/acceptance.sh",
-        "sha256": "4088d3dab41a8b090348010c20c4b4f12282d08379c315bbdf102a6708f0774d"
-      },
-      "source_commit": "6edd9114c924f09d4f4f6e3149cc13c2f9e04da2",
-      "source_archive_sha256": "ca3eadbeb40486b2d410b232ee6475d2ac0e94090c817089149cb02caff2ab88",
-      "date": "2026-11-19T03:18:24Z",
-      "outcome": "qualified",
-      "failures": [],
-      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
-      "platforms": {
-        "linux-aarch64": {
-          "execution": "native",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 41,
-            "total": 41,
-            "controls_fired": 11,
-            "controls_total": 11
-          },
-          "self_test": {
-            "checks": 573,
-            "passed": 573,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 152,
-            "ran": 152,
-            "passed": 152,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 289,
-            "passed": 192,
-            "failed": 97,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 251036,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 1396
-          },
-          "controls": {
-            "fired": 97,
-            "total": 97
-          },
-          "driver_controls": {
-            "fired": 21,
-            "total": 21
-          },
-          "timing_gate": {
-            "enabled": true,
-            "passed": true,
-            "threshold_ms": 100.0,
-            "worst_ms": 2.176,
-            "protocol_passed": true,
-            "protocol_worst_ms": 100.677,
-            "protocol_threshold_ms": 200.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 872,
-            "checks_failed": 0
-          },
-          "release_sha256": "55cf407ea688671d975bc0067b81ba630716d6cba55602e87eb7a39ba9507700",
-          "test_sha256": "dcc034a2315133862ff75a89565337d2b72f426adcd3475b399e32b5e91acbec",
-          "result_sha256": "ce5d53d69bd8470ffe8a1f212537d59017fc206f16c230d308295f7aca3fd99b",
-          "runtime": {
-            "self_test": {
-              "passed": 500,
-              "failed": 0,
-              "skipped": 0
-            },
-            "counts": {
-              "cases": 48,
-              "passed": 48,
-              "failed": 0,
-              "skipped": 0,
-              "checks": 108575,
-              "checks_passed": 108575,
-              "checks_failed": 0,
-              "controls": 125,
-              "controls_fired": 125
-            },
-            "result_sha256": "57504c5b59f70b4e419d57988f454ae185fd0a7ad613c1c986df123851fdaa87",
-            "environment_sha256": "364a3bf3ce4dbbe880fa62ffd0c6ac82475b4ae765f3b6eae4eb8242fa69b5c4",
-            "work_sha256": "302f6c89d1d119dc581771d362d6272828e27b414625808a405abfae215e229c",
-            "evidence": {
-              "files": 6478,
-              "listing_sha256": "189f5ce74fdd042b80014102530a5f8a5b69c8c55efaca35c0c1d129fe71043e"
-            },
-            "development_sha256": "aef3698170b3a7b6ce010b9821d3e37e98dfff8f4d012391efaf8761fd0b07e6",
-            "release_sha256": "55cf407ea688671d975bc0067b81ba630716d6cba55602e87eb7a39ba9507700",
-            "variant_sha256": "071035dd9c4f7277e4dfaa6e9f0ed13618c72b60240b727d52d6dfb63a1aa997",
-            "driver_sha256": "e1dd5e68d794d0d2a0e1b77f70787db8c1577819c7cf9eaaf658293b9f44dedb"
-          }
-        },
-        "linux-x86_64": {
-          "execution": "emulated (Rosetta)",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 41,
-            "total": 41,
-            "controls_fired": 11,
-            "controls_total": 11
-          },
-          "self_test": {
-            "checks": 573,
-            "passed": 573,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 150,
-            "ran": 150,
-            "passed": 150,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 289,
-            "passed": 192,
-            "failed": 97,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 251036,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 1396
-          },
-          "controls": {
-            "fired": 97,
-            "total": 97
-          },
-          "driver_controls": {
-            "fired": 21,
-            "total": 21
-          },
-          "timing_gate": {
-            "enabled": false,
-            "passed": null,
-            "threshold_ms": 100.0,
-            "worst_ms": 45.681,
-            "protocol_passed": null,
-            "protocol_worst_ms": 151.083,
-            "protocol_threshold_ms": 200.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 872,
-            "checks_failed": 0
-          },
-          "release_sha256": "63d8be7b73014df19b1e6bc1123af187f5b99d1b588fe552087b093305d4dfca",
-          "test_sha256": "1208ffbeb593c61a41074d492907770f1e20098f145d5305ba274d50c0bc061e",
-          "result_sha256": "1eae57a6a72e655cd76ca3d548e02707b267ba1e9b49b4186bec04e36aeb1aeb",
-          "runtime": {
-            "self_test": {
-              "passed": 500,
-              "failed": 0,
-              "skipped": 0
-            },
-            "counts": {
-              "cases": 48,
-              "passed": 48,
-              "failed": 0,
-              "skipped": 0,
-              "checks": 108575,
-              "checks_passed": 108575,
-              "checks_failed": 0,
-              "controls": 125,
-              "controls_fired": 125
-            },
-            "result_sha256": "a4ac554144d47ce412afa90ad48ec7f1e7cff612573e4acc682a908c54e265e1",
-            "environment_sha256": "f87a9ddefdde60777e2a17a99dc2d785a1b774c8c37310d7fdc2348159d9b87d",
-            "work_sha256": "df641fc90d84050c10f555ed67953c7bfcf4ed4906da328f74db2aac8753044c",
-            "evidence": {
-              "files": 6478,
-              "listing_sha256": "f74c9140924a3990a0d589669bbb806b94f56ae2593eb9cba3282d30aa950ca5"
-            },
-            "development_sha256": "9fdd6c80497fd5904ae2be0bcc9e35d951f84fa9f5ee9ca5b7c3444df07a3ed9",
-            "release_sha256": "63d8be7b73014df19b1e6bc1123af187f5b99d1b588fe552087b093305d4dfca",
-            "variant_sha256": "87cbe1909dc579777419e6d2c465e84c2432dd60e7cfb8ccc4a5ebec6e0a0deb",
-            "driver_sha256": "e1dd5e68d794d0d2a0e1b77f70787db8c1577819c7cf9eaaf658293b9f44dedb"
-          }
-        }
-      },
-      "evidence": {
-        "path": ".scratch/acceptance-question2-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Preserve the exact aarch64 writer for the retained question/2 sanity audits (sanity-q2-01).",
-        "until": "The retained sanity-q2-01 audits are disposed of or their exact writer is preserved with them elsewhere."
-      }
-    },
-    {
-      "id": "one-owner-release-02",
+      "id": "linux-move-release-02",
       "kind": "suite",
       "suite": "acceptance",
       "script": {
         "path": "apparatus/acceptance.sh",
         "sha256": "8c6babd9b3e52f39f3e9013d623c4c86df899ab9e0faf084ee9ba66f1c837975"
       },
-      "source_commit": "c752c6f4c30d72c64dfdb80925f781c4d0116dc8",
-      "source_archive_sha256": "d99ae1caa380bf4ffb39e61e96b9db18f2c60f8e49e5d2cf14b779097c6d8da9",
-      "date": "2026-11-20T02:31:33Z",
+      "source_commit": "f68780dfea49dce9b9cb816139e8084bf314dd3e",
+      "source_archive_sha256": "b4da51ee4c543e570eb0328aa5ee5e47c60db890beb8c82c41ae38b62966430a",
+      "date": "2026-11-21T03:54:58Z",
       "outcome": "qualified",
       "failures": [],
       "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
@@ -647,7 +20,7 @@
           "execution": "native",
           "outcome": "qualified",
           "failures": [],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
+          "toolchain_image": "sha256:e99d40aafba5d8a5bac10cf7ff7bb787d00d5e3714bd6d83086df571787f6548",
           "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
           "script_checks": {
             "passed": 12,
@@ -656,149 +29,8 @@
             "controls_total": 1
           },
           "self_test": {
-            "checks": 583,
-            "passed": 583,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 157,
-            "ran": 157,
-            "passed": 157,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 280,
-            "passed": 194,
-            "failed": 86,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 177104,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 768
-          },
-          "controls": {
-            "fired": 86,
-            "total": 86
-          },
-          "driver_controls": {
-            "fired": 26,
-            "total": 26
-          },
-          "timing_samples": {
-            "commands": 3636,
-            "protocol": 1886
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 854,
-            "checks_failed": 0
-          },
-          "release_sha256": "259c5d7056348e84e5ea2954de8dfb09b64af69d10a37d00b29d1a064bcd3122",
-          "test_sha256": "7f0427b83c613c710e9fd30c1dd1ab6066dad4ceab6ee5db1e9404ce7eb98aa0",
-          "result_sha256": "25c58f15260cadf5f613b50ea934e27f8497d0fbc10fcc89508abecc0b825aa9"
-        },
-        "linux-x86_64": {
-          "execution": "emulated (Rosetta)",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 12,
-            "total": 12,
-            "controls_fired": 1,
-            "controls_total": 1
-          },
-          "self_test": {
-            "checks": 583,
-            "passed": 583,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 157,
-            "ran": 157,
-            "passed": 157,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 280,
-            "passed": 194,
-            "failed": 86,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 177104,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 768
-          },
-          "controls": {
-            "fired": 86,
-            "total": 86
-          },
-          "driver_controls": {
-            "fired": 26,
-            "total": 26
-          },
-          "timing_samples": {
-            "commands": 3636,
-            "protocol": 1886
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 854,
-            "checks_failed": 0
-          },
-          "release_sha256": "b72e8a393536005d3b8c785598de80eb49010034f9f1ff76d1ea14705aa70b93",
-          "test_sha256": "aa52fa525ebdd59a47fce937ce5e13fd00c94084752aae530b710a53586198ff",
-          "result_sha256": "753b81a3cdd98612938381fe869eb9ccbf5273b80b1415b7f58fb3f33ecfaf0c"
-        }
-      },
-      "evidence": {
-        "path": ".scratch/one-owner-release-02",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The C10 rehearsal of the committed apparatus uses this run's aarch64 release binary as the exact writer for its synthetic audits.",
-        "until": "The rehearsal's audits are closed or disposed of and no live commission or comparison binds this writer."
-      }
-    },
-    {
-      "id": "coverage-release-01",
-      "kind": "suite",
-      "suite": "acceptance",
-      "script": {
-        "path": "apparatus/acceptance.sh",
-        "sha256": "8c6babd9b3e52f39f3e9013d623c4c86df899ab9e0faf084ee9ba66f1c837975"
-      },
-      "source_commit": "913fdf6661ec0ab50e6814f3ff615e721edb7d63",
-      "source_archive_sha256": "43d655de10031f3bca51ff436636c17a06dc37b3b63825aacc90e9a55a557fee",
-      "date": "2026-11-20T16:49:03Z",
-      "outcome": "qualified",
-      "failures": [],
-      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
-      "platforms": {
-        "linux-aarch64": {
-          "execution": "native",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 12,
-            "total": 12,
-            "controls_fired": 1,
-            "controls_total": 1
-          },
-          "self_test": {
-            "checks": 607,
-            "passed": 607,
+            "checks": 613,
+            "passed": 613,
             "failed": 0,
             "skipped": 0
           },
@@ -838,15 +70,16 @@
             "checks_passed": 854,
             "checks_failed": 0
           },
-          "release_sha256": "c88999d85840254a00a0c8e19226c4203189adfd1b74fa23f56c06edf75dbad6",
-          "test_sha256": "139665246af07fa4427fd75778c8c9f43ff60a11ccd3635c1c96ad916e79f7ba",
-          "result_sha256": "756bf6c7c2840c321b6455e8d13f38c38b38ae3db008e7a698b6532cd2959fcd"
+          "release_sha256": "6624b41f5c02438b18f88b24674eded4e6d7389ada170261aa77839bf5d052ef",
+          "test_sha256": "6e2598ea862ce1722ce974d1e30dc7c2d3769fd234c5960f3015f03c14769235",
+          "result_sha256": "eb850b152cbbc09fc8cbd8dcd3aa78ba60fcacb1242858eb4f798fbefc2246c0",
+          "python_manifest": "sha256:dc354b0c18b5192842bc6800d22e624461383b149cdbbd9646fec78a28340721"
         },
         "linux-x86_64": {
           "execution": "emulated (Rosetta)",
           "outcome": "qualified",
           "failures": [],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
+          "toolchain_image": "sha256:45e388c67f16a6c32d950e03a9c980bdae395911ce3572c2488031d4bf7babda",
           "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
           "script_checks": {
             "passed": 12,
@@ -855,8 +88,8 @@
             "controls_total": 1
           },
           "self_test": {
-            "checks": 607,
-            "passed": 607,
+            "checks": 613,
+            "passed": 613,
             "failed": 0,
             "skipped": 0
           },
@@ -896,28 +129,29 @@
             "checks_passed": 854,
             "checks_failed": 0
           },
-          "release_sha256": "c7de75295d20476d384b92fcf37ee1e875470d42b1f3b01d954d4df7eb85ffa0",
-          "test_sha256": "1b5be5041d6203ea1bff00f8516fef561a40e3f7c7b6d68898870760b412b7ed",
-          "result_sha256": "46a8615bd407858d8b0ac2da696f799e1a5ed7c8911bdd61cb8c59fbf9d26b15"
+          "release_sha256": "7aee3d255ca52260f6cc0387c76947b01baf7ea220976f29c8ac336524cccdbc",
+          "test_sha256": "c11467cf9edf1580fe4ad07ca20481db31f8a0bfc990122e8037d7766697e1c3",
+          "result_sha256": "31666a8bc85e2756b99694e70709d37144d39ec7c0659bdd415c2fac724e5e9e",
+          "python_manifest": "sha256:b3ae2372f3c9b7f0a80ec21d1ae931002ea056509e04c5072f144efe9694732f"
         }
       },
       "evidence": {
-        "path": ".scratch/coverage-release-01",
+        "path": ".scratch/linux-move-release-02",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": null
     },
     {
-      "id": "coverage-runtime-01",
+      "id": "linux-move-runtime-02",
       "kind": "suite",
       "suite": "runtime",
       "script": {
         "path": "apparatus/runtime-acceptance.sh",
         "sha256": "55677bf16c1c2ee30b44f96d236dc8d25a8d250deafa7c067ba3974d24681524"
       },
-      "source_commit": "913fdf6661ec0ab50e6814f3ff615e721edb7d63",
-      "source_archive_sha256": "43d655de10031f3bca51ff436636c17a06dc37b3b63825aacc90e9a55a557fee",
-      "date": "2026-11-20T17:33:01Z",
+      "source_commit": "f68780dfea49dce9b9cb816139e8084bf314dd3e",
+      "source_archive_sha256": "b4da51ee4c543e570eb0328aa5ee5e47c60db890beb8c82c41ae38b62966430a",
+      "date": "2026-11-21T04:31:41Z",
       "outcome": "qualified",
       "failures": [],
       "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
@@ -926,7 +160,7 @@
           "execution": "native",
           "outcome": "qualified",
           "failures": [],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
+          "toolchain_image": "sha256:e99d40aafba5d8a5bac10cf7ff7bb787d00d5e3714bd6d83086df571787f6548",
           "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
           "script_checks": {
             "passed": 11,
@@ -936,7 +170,7 @@
           },
           "runtime": {
             "self_test": {
-              "passed": 402,
+              "passed": 406,
               "failed": 0,
               "skipped": 0
             },
@@ -945,30 +179,31 @@
               "passed": 53,
               "failed": 0,
               "skipped": 0,
-              "checks": 125307,
-              "checks_passed": 125307,
+              "checks": 125308,
+              "checks_passed": 125308,
               "checks_failed": 0,
               "controls": 132,
               "controls_fired": 132
             },
-            "result_sha256": "d4f59ef840412863a27ed8f45d27fbf3bd2759f90648c7d775b37c94ed041924",
-            "environment_sha256": "35111afd75e67de81ed0ebdb768d70fbb15e820291eb70fbbe0b7d8dac6cc0b7",
-            "work_sha256": "73ebe4d6f1d354c2e2f498d68ddd5ace1763d10ce327e5280e4d858bd826783d",
+            "result_sha256": "f0c769ff1f3aebfaf2c3b3f684f2f7511d9ea79d287e2659de214228df14992f",
+            "environment_sha256": "ecf8fcf4d564013b09de3b6c7e5fe365100c5becaffcbc967ef8a20e90561a85",
+            "work_sha256": "66e8025a96d765129b304a20176b449770bf769ef9ad004b7513b6128bae8f6e",
             "evidence": {
               "files": 6977,
-              "listing_sha256": "94b459fa1749516f15baee54b1c04a00ae3bcea20964ae74bab099cdbfbc2178"
+              "listing_sha256": "4cf5c749166d30f0711d3be2a8ca79f017e0b488a1dba9cb32123863f95634b1"
             },
-            "development_sha256": "b66c3982a4792eba9276350cda071ef1c69da88249f8275ed764092cc648de43",
-            "release_sha256": "c88999d85840254a00a0c8e19226c4203189adfd1b74fa23f56c06edf75dbad6",
-            "variant_sha256": "db37cb18f0e2b030ae5c4d7ec54f8a735b12fc3a7d3e59322968abf59f791f11",
-            "driver_sha256": "5df143e7180f5cd0952375e564a84d7cfe4eb59281e21aed79c123d66b9cd7a6"
-          }
+            "development_sha256": "b3a1c4f5bcf8f9d88c00fd1c0d77bf4d8b05efbb13dec54e188b61620d1b1d41",
+            "release_sha256": "6624b41f5c02438b18f88b24674eded4e6d7389ada170261aa77839bf5d052ef",
+            "variant_sha256": "55af295ad1ec78cf4b9bd003094d66f459a1982bdd0defb73a7b81d25120ff18",
+            "driver_sha256": "87d7940fb333095bbecb90c9088df9759d638884aa8154d719fb134860b784a3"
+          },
+          "python_manifest": "sha256:dc354b0c18b5192842bc6800d22e624461383b149cdbbd9646fec78a28340721"
         },
         "linux-x86_64": {
           "execution": "emulated (Rosetta)",
           "outcome": "qualified",
           "failures": [],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
+          "toolchain_image": "sha256:45e388c67f16a6c32d950e03a9c980bdae395911ce3572c2488031d4bf7babda",
           "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
           "script_checks": {
             "passed": 11,
@@ -978,7 +213,7 @@
           },
           "runtime": {
             "self_test": {
-              "passed": 402,
+              "passed": 406,
               "failed": 0,
               "skipped": 0
             },
@@ -987,43 +222,44 @@
               "passed": 53,
               "failed": 0,
               "skipped": 0,
-              "checks": 125307,
-              "checks_passed": 125307,
+              "checks": 125308,
+              "checks_passed": 125308,
               "checks_failed": 0,
               "controls": 132,
               "controls_fired": 132
             },
-            "result_sha256": "06528ab6c721d9bd53252bbf663ce89804a92883488cb1ca5dc921bc8081829f",
-            "environment_sha256": "e520a3b24796b2bae0a92a450f3c266d165b052e9e49f1a4b857f76b4f146d76",
-            "work_sha256": "229b2b360d2eb16c31edc2ce871b1fbb0213110a2a6a8398c48733e269ed77dc",
+            "result_sha256": "0590730685eb853ed6f99800b7770a2847a8b0b8e85834d1e59b0b236d7fab0e",
+            "environment_sha256": "62773aa091673c8f470d140057b5d5851735da180c6b09761be8b76467bce93a",
+            "work_sha256": "9646c06202b4d9a50b2937741b66a8ad7f70023154ec20c8f252f36659f6367c",
             "evidence": {
               "files": 6977,
-              "listing_sha256": "8273717d1f2578860b36e12f18de28410e21edab90d4c57462b928d1e6044fbc"
+              "listing_sha256": "6281b10e77af02a1f8c4dc023d89fee0ecc1c88cb97e3d944c27aa6d3bbe064d"
             },
-            "development_sha256": "34bba231f787b911d0cc8567fb1b1bc92e406b570ae6ae7a4b83b05445cdf3bd",
-            "release_sha256": "c7de75295d20476d384b92fcf37ee1e875470d42b1f3b01d954d4df7eb85ffa0",
-            "variant_sha256": "e9699f73039e4b95aa2f04e8986c048efc207e0149991b447b39ad937568f41e",
-            "driver_sha256": "5df143e7180f5cd0952375e564a84d7cfe4eb59281e21aed79c123d66b9cd7a6"
-          }
+            "development_sha256": "fbf1ed1f090d3c8f3eb68730b75826f8d8c6126c9263373acbf3070718bf4a21",
+            "release_sha256": "7aee3d255ca52260f6cc0387c76947b01baf7ea220976f29c8ac336524cccdbc",
+            "variant_sha256": "1dc803f1ced15f683b47827757bd033d901724f9fb045d711ef0c2914bf43c0a",
+            "driver_sha256": "87d7940fb333095bbecb90c9088df9759d638884aa8154d719fb134860b784a3"
+          },
+          "python_manifest": "sha256:b3ae2372f3c9b7f0a80ec21d1ae931002ea056509e04c5072f144efe9694732f"
         }
       },
       "evidence": {
-        "path": ".scratch/coverage-runtime-01",
+        "path": ".scratch/linux-move-runtime-02",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": null
     },
     {
-      "id": "toolchain-runtime-01",
+      "id": "linux-move-toolchain-02",
       "kind": "suite",
       "suite": "toolchain",
       "script": {
         "path": "apparatus/step2.sh",
-        "sha256": "f3b059ccfc72e9fafddb9f930e6c0d2a11892d623c990e0b0bbe3ed2fd855e0a"
+        "sha256": "d626187cd143f0e4045190c02f4ccae1d0b1defcbc4b0d2830ad438790b90a88"
       },
-      "source_commit": "31bced7287bd1cab8488c30916df1bc829fe2eca",
-      "source_archive_sha256": "02caf83d775bf2775a33e992e33fa5f5b414f3e582b9217b440c2ef82e3f280c",
-      "date": "2026-11-12T03:48:38Z",
+      "source_commit": "9e84464cf786ca524bb6a598faec5081c76a67e2",
+      "source_archive_sha256": "3032ed5930aa9eb262fa1c312fe70c57f3d00f1dc3f9d09d884a58feb147db21",
+      "date": "2026-11-21T02:43:49Z",
       "outcome": "qualified",
       "failures": [],
       "vendor": {
@@ -1035,7 +271,7 @@
           "execution": null,
           "outcome": "qualified",
           "failures": [],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
+          "toolchain_image": "sha256:e99d40aafba5d8a5bac10cf7ff7bb787d00d5e3714bd6d83086df571787f6548",
           "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
           "builds": [
             {
@@ -1045,7 +281,7 @@
               "static": true,
               "run_exit": 0,
               "offline": true,
-              "sha256": "3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023"
+              "sha256": "6624b41f5c02438b18f88b24674eded4e6d7389ada170261aa77839bf5d052ef"
             },
             {
               "name": "build-arm64-2",
@@ -1054,18 +290,20 @@
               "static": true,
               "run_exit": 0,
               "offline": true,
-              "sha256": "3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023"
+              "sha256": "6624b41f5c02438b18f88b24674eded4e6d7389ada170261aa77839bf5d052ef"
             }
           ],
           "reproducible": true,
-          "release_sha256": "3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023",
-          "alpine_run_exit": 0
+          "release_sha256": "6624b41f5c02438b18f88b24674eded4e6d7389ada170261aa77839bf5d052ef",
+          "alpine_run_exit": 0,
+          "rust_manifest": "sha256:585dced3da590f4f7dc2719172ead5b39ea781bd8b698c092112da8ef3be0659",
+          "alpine_manifest": "sha256:e311ae748be7f56ae5cba304bc488f0786df68ee507513f654a5cc8597cffb42"
         },
         "linux-x86_64": {
           "execution": null,
           "outcome": "qualified",
           "failures": [],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
+          "toolchain_image": "sha256:45e388c67f16a6c32d950e03a9c980bdae395911ce3572c2488031d4bf7babda",
           "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
           "builds": [
             {
@@ -1075,7 +313,7 @@
               "static": true,
               "run_exit": 0,
               "offline": true,
-              "sha256": "9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973"
+              "sha256": "7aee3d255ca52260f6cc0387c76947b01baf7ea220976f29c8ac336524cccdbc"
             },
             {
               "name": "build-amd64-2",
@@ -1084,16 +322,18 @@
               "static": true,
               "run_exit": 0,
               "offline": true,
-              "sha256": "9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973"
+              "sha256": "7aee3d255ca52260f6cc0387c76947b01baf7ea220976f29c8ac336524cccdbc"
             }
           ],
           "reproducible": true,
-          "release_sha256": "9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973",
-          "alpine_run_exit": 0
+          "release_sha256": "7aee3d255ca52260f6cc0387c76947b01baf7ea220976f29c8ac336524cccdbc",
+          "alpine_run_exit": 0,
+          "rust_manifest": "sha256:d3ba1ad5d5b5a180ca8428b4fab8543a1b3933b32a8a7ad90a7ebbaf5497203a",
+          "alpine_manifest": "sha256:c26612752c78b18faacd63c7d50f4592c2e7b0f25e0e20e82bd74e465c57ab0d"
         }
       },
       "evidence": {
-        "path": ".scratch/toolchain-runtime-01",
+        "path": ".scratch/linux-move-toolchain-02",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": null
@@ -2614,7 +1854,7 @@
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Inspect the exact capped encounters, preserved partial account, replacement refusal and manager-attributed return for grounded fixtures and cap-setting review; retain the selected private archive and exact writer.",
+        "reason": "Inspect the original capped encounters, partial account, replacement refusal and manager-attributed return. The selected private archive and the recorded writer identity support continuation, refusal and cap-setting review.",
         "until": "The assigned continuation, refusal, return and cap-setting fixture reviews finish and no current inspection purpose needs these originals."
       }
     },
@@ -2756,6 +1996,26 @@
       "pin": {
         "reason": "Inspect both original encounters and the authored content inconsistency; ground near-limit/partial-submission, required-field recovery and submit-to-stop/partial-usage fixtures.",
         "until": "Selected fixture and accounting reviews finish, and no unresolved finding needs the original encounters."
+      }
+    },
+    {
+      "id": "m3-rehearsal-01",
+      "kind": "experiment",
+      "date": "2026-11-14T14:46:02Z",
+      "date_from": "SELECTION.json field at",
+      "summary": "Selected public originals from the M3 rehearsal, including six continuation receipt pairs, exact packets and the preceding export bindings.",
+      "result": {
+        "path": ".",
+        "files": 61,
+        "sha256": "cf13d7d83bbb30aa81c558cd6ae7fcc36c3323ac8d9d80da68223b67cc36260f"
+      },
+      "evidence": {
+        "path": ".scratch/m3-rehearsal-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The endpoint-alignment comparison needs the original continuation records and their bindings. The launcher retains the selected private witnesses.",
+        "until": "Endpoint alignment has reviewed its continuation fixtures and has no remaining use for these original comparisons."
       }
     },
     {
@@ -2919,6 +2179,26 @@
       }
     },
     {
+      "id": "readiness-m4-rehearsal-02",
+      "kind": "experiment",
+      "date": "2026-11-15T19:15:41Z",
+      "date_from": "SELECTION.json field at",
+      "summary": "Selected public originals and the original review from the three-arm, full-size M4 compaction rehearsal.",
+      "result": {
+        "path": ".",
+        "files": 15,
+        "sha256": "fac4cb75caad5ef263217cb608e91d3984a6533447940cddfd26c615d04256f7"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m4-rehearsal-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The endpoint-alignment comparison needs the full-size compaction control and its reviewed source and input bindings. The launcher retains the selected private witnesses.",
+        "until": "Endpoint alignment has reviewed the compaction control and no remaining comparison needs these original arms."
+      }
+    },
+    {
       "id": "readiness-m4-01",
       "kind": "experiment",
       "date": "2026-11-15T19:34:59Z",
@@ -2975,7 +2255,7 @@
       },
       "pin": {
         "reason": "Inspect the exact C5 approval and all three original encounters, outside input/package witnesses, cap message and following authoring, preserved error text and exact-version replacement, unknown usage and independently reviewed closure. Ground the assigned runtime fixtures without rewriting historical records.",
-        "until": "Assigned cap/reminder, conversation-fidelity, error-reply and usage fixture reviews are complete and no unresolved finding requires these original encounters or their exact writer"
+        "until": "The cap/reminder, conversation-fidelity, error-reply and usage fixture reviews finish and no unresolved finding needs these original encounters."
       }
     },
     {
@@ -2983,19 +2263,19 @@
       "kind": "experiment",
       "date": "2026-11-15T22:59:39Z",
       "date_from": "REVIEW.json field finished_at",
-      "summary": "Native annotated-tool compatibility: three cases, 30 checks observed, denial control fired; six invocations stopped; reviewed profile; page fidelity and Linux qualification unexercised",
+      "summary": "Original macOS annotated-tool compatibility encounter. Three cases recorded 30 successful observations, the denial control fired and all six invocations stopped. The 259 selected original files preserve the approval, profile, streams and review.",
       "result": {
         "path": ".",
-        "files": 260,
-        "sha256": "c19d47fb6734a045c6e8671b831b8ca72c29131ec3def84a9ef0ebbcb1eb3683"
+        "files": 259,
+        "sha256": "c1c654244d85a3aeb62838f31eec140802085db43480279ca0b6b44cfcff9ce4"
       },
       "evidence": {
         "path": ".scratch/readiness-pages-surface-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "The exact annotated-tool profile, original streams, approval and review support the pending page-delivery comparison and grounded runtime fixtures.",
-        "until": "No pending service comparison or fixture review depends on this profile and its original compatibility captures"
+        "reason": "The profile and original tool streams ground the completed page comparison and its fidelity fixtures. The two approved manifests identify the retired 2,822,912-byte writer.",
+        "until": "The paired tool-surface and page-fidelity originals have no remaining comparison or fixture-review use."
       }
     },
     {
@@ -3039,290 +2319,63 @@
       }
     },
     {
-      "id": "c10-readiness-04",
+      "id": "claude-code-pin-linux-01",
       "kind": "experiment",
-      "date": "2026-11-18T18:33:55Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Offline Linux C10 rehearsal on the aarch64 writer from acceptance-readiness-04. All 22 audits and six continuations produced their expected outcomes.",
+      "date": "2026-11-21T03:27:29Z",
+      "date_from": "linux-review.json field at",
+      "summary": "The installed Linux arm64 Claude Code 2.1.322 executable matched the signed release manifest. Independent readback verified its bytes and signer offline.",
       "result": {
         "path": ".",
-        "files": 826,
-        "sha256": "a72a45f93bc2a80b3e8fb95b4753ad78f525359c49074a3860ae7ad496735063"
+        "files": 21,
+        "sha256": "48540a716fda0202789ece498805ef5873c12183f1c5364aa376dc45926539ca"
       },
       "evidence": {
-        "path": ".scratch/c10-readiness-04",
+        "path": ".scratch/claude-code-pin-linux-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the verified C10 source, writer binding, private container and six continuation records for offline comparison while the manager and endpoint apparatus are developed.",
-        "until": "A reviewed rehearsal supersedes these bindings and no pending comparison or custody obligation needs these originals."
+        "reason": "Keep the public manifest, signature and verification receipt for the installed harness used in commissioning.",
+        "until": "A reviewed replacement pin supersedes this installation and no current profile or comparison binds it."
       }
     },
     {
-      "id": "c10-readiness-04-control-continue-cap-p2",
+      "id": "linux-c10-f68780d-01",
       "kind": "experiment",
-      "date": "2026-11-18T18:37:08Z",
+      "date": "2026-11-21T04:34:34Z",
       "date_from": "REVIEW.json field at",
-      "summary": "Second placement of control-continue-cap in the retained offline C10 rehearsal.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "a0c75fa6e1f4420f0ccafa59fc50384c6823d82bee3c27f6fa09e55ac236fc25"
-      },
-      "evidence": {
-        "path": ".scratch/c10-readiness-04-control-continue-cap-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.",
-        "until": "The c10-readiness-04 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-readiness-04-control-continue-entries-p2",
-      "kind": "experiment",
-      "date": "2026-11-18T18:37:08Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Second placement of control-continue-entries in the retained offline C10 rehearsal.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "8c6708618711e3acf2ce9760fd4e2f4bf1305546dbb55cc9d83135743a9efe2f"
-      },
-      "evidence": {
-        "path": ".scratch/c10-readiness-04-control-continue-entries-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.",
-        "until": "The c10-readiness-04 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-readiness-04-control-reminder-spent-p2",
-      "kind": "experiment",
-      "date": "2026-11-18T18:37:08Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Second placement of control-reminder-spent in the retained offline C10 rehearsal.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "470185dff139963929c70c8bf812e50af73c40ff6ce329f0252c8117973d1f36"
-      },
-      "evidence": {
-        "path": ".scratch/c10-readiness-04-control-reminder-spent-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.",
-        "until": "The c10-readiness-04 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-readiness-04-control-reminder-spent-unheld-p2",
-      "kind": "experiment",
-      "date": "2026-11-18T18:37:08Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Second placement of control-reminder-spent-unheld in the retained offline C10 rehearsal.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "771c9fc882633d81bbd0e8fbc47ea767e029a3ef55f6e0ae1a3af60d4c784288"
-      },
-      "evidence": {
-        "path": ".scratch/c10-readiness-04-control-reminder-spent-unheld-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.",
-        "until": "The c10-readiness-04 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-readiness-04-control-reminder-spent-submits-p2",
-      "kind": "experiment",
-      "date": "2026-11-18T18:37:09Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Second placement of control-reminder-spent-submits in the retained offline C10 rehearsal.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "4ffed9c5c15cd62295bc7cc44b5e1b57ab7062f697f495338bf82fe520a486e0"
-      },
-      "evidence": {
-        "path": ".scratch/c10-readiness-04-control-reminder-spent-submits-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.",
-        "until": "The c10-readiness-04 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-readiness-04-control-reminder-unused-p2",
-      "kind": "experiment",
-      "date": "2026-11-18T18:37:09Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Second placement of control-reminder-unused in the retained offline C10 rehearsal.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "985d89bad29ecdcd5cc4468aaf149ab9f8f3073a2f4247e79263fce7f038645b"
-      },
-      "evidence": {
-        "path": ".scratch/c10-readiness-04-control-reminder-unused-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The c10-readiness-04 rehearsal verifies this original host receipt against its placement export.",
-        "until": "The c10-readiness-04 rehearsal is released."
-      }
-    },
-    {
-      "id": "sanity-q2-01",
-      "kind": "experiment",
-      "date": "2026-11-19T03:25:20Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Seven offline question/2 scenarios passed. Four exports verified, two were withheld and one failed as their controls required.",
+      "summary": "Offline Linux arm64 C10 rehearsal under rootless Podman with the qualified release. The review binds the 22 first placements, six continuations, original receipt pairs and launcher admission.",
       "result": {
         "path": ".",
-        "files": 44,
-        "sha256": "9c7feacb9a3a851f40e9e9956c60cd73092bc3b48453e903a5e96b3a9eeebc52"
+        "files": 84,
+        "sha256": "8358eec21a6696f9aa80ec3913d4c137a75cf93687946c96739630038ee2a302"
       },
       "evidence": {
-        "path": ".scratch/sanity-q2-01",
+        "path": ".scratch/linux-c10-f68780d-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Preserve the launcher comparison, the independent witness and private originals for the retained file-only commissioning rehearsal.",
-        "until": "A reviewed successor covers the launcher comparison and remaining private custody is resolved."
+        "reason": "The reviewed request, response and continuation records support admission by the two-account launcher. The launcher account holds its private archive, originals and qualified writer.",
+        "until": "A reviewed rehearsal supersedes these bindings and all remaining custody and comparison uses have a disposition."
       }
     },
     {
-      "id": "c10-owner-01",
+      "id": "linux-sanity-f68780d-01",
       "kind": "experiment",
-      "date": "2026-11-20T04:38:47Z",
+      "date": "2026-11-21T04:34:35Z",
       "date_from": "REVIEW.json field at",
-      "summary": "Offline Linux aarch64 C10 rehearsal of the committed apparatus with the one-owner-release-02 writer: 22 first placements, 6 continuations, admission passed.",
+      "summary": "Standalone offline Linux arm64 sanity rehearsal under rootless Podman with the qualified release. The review binds the seven verdicts and independent witnesses.",
       "result": {
-        "path": "REVIEW.json",
-        "sha256": "8b9e99edb3c33bccca9456defcea471ef0aad44c13340c6228fa6ad926fa1483"
+        "path": ".",
+        "files": 7,
+        "sha256": "92f3984f6d8e6e870da0a71982dd88c17129ea1a346e7ba2e082d4d5f340eec8"
       },
       "evidence": {
-        "path": ".scratch/c10-owner-01",
+        "path": ".scratch/linux-sanity-f68780d-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the current C10 rehearsal, its retained container and private originals for manager-interface work and any live launch it admits.",
-        "until": "A reviewed successor rehearsal replaces it and its retained audits are closed or disposed of."
-      }
-    },
-    {
-      "id": "c10-owner-01-control-continue-cap-p2",
-      "kind": "experiment",
-      "date": "2026-11-20T04:39:32Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Verified the original second-placement receipt for control-continue-cap.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "53edd7f5fc8a1cb040050df04c00eb337bf83afdbecb10f1b986455107679416"
-      },
-      "evidence": {
-        "path": ".scratch/c10-owner-01-control-continue-cap-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-owner-01 rehearsal checks this host receipt against its placement export.",
-        "until": "The c10-owner-01 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-owner-01-control-continue-entries-p2",
-      "kind": "experiment",
-      "date": "2026-11-20T04:39:32Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Verified the original second-placement receipt for control-continue-entries.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "7dd6ccea8b405aa863c8fc6f14810a8356e5161796f5f6585abb3fa972d07eed"
-      },
-      "evidence": {
-        "path": ".scratch/c10-owner-01-control-continue-entries-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-owner-01 rehearsal checks this host receipt against its placement export.",
-        "until": "The c10-owner-01 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-owner-01-control-reminder-spent-p2",
-      "kind": "experiment",
-      "date": "2026-11-20T04:39:32Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Verified the original second-placement receipt for control-reminder-spent.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "578ab5836544171309de42911af97393bcb832e46aabe7752300b23c68299ee7"
-      },
-      "evidence": {
-        "path": ".scratch/c10-owner-01-control-reminder-spent-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-owner-01 rehearsal checks this host receipt against its placement export.",
-        "until": "The c10-owner-01 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-owner-01-control-reminder-spent-submits-p2",
-      "kind": "experiment",
-      "date": "2026-11-20T04:39:32Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Verified the original second-placement receipt for control-reminder-spent-submits.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "bc23a71d49963b6f74c1371d95e2839feba76a33a6c5877f8353ff47a61b46ae"
-      },
-      "evidence": {
-        "path": ".scratch/c10-owner-01-control-reminder-spent-submits-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-owner-01 rehearsal checks this host receipt against its placement export.",
-        "until": "The c10-owner-01 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-owner-01-control-reminder-spent-unheld-p2",
-      "kind": "experiment",
-      "date": "2026-11-20T04:39:32Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Verified the original second-placement receipt for control-reminder-spent-unheld.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "aeb1466706a357ff9b0bbd8ddf42b8e3c2f5e246b9001347e87e9212f22dade2"
-      },
-      "evidence": {
-        "path": ".scratch/c10-owner-01-control-reminder-spent-unheld-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-owner-01 rehearsal checks this host receipt against its placement export.",
-        "until": "The c10-owner-01 rehearsal is released."
-      }
-    },
-    {
-      "id": "c10-owner-01-control-reminder-unused-p2",
-      "kind": "experiment",
-      "date": "2026-11-20T04:39:32Z",
-      "date_from": "REVIEW.json field at",
-      "summary": "Verified the original second-placement receipt for control-reminder-unused.",
-      "result": {
-        "path": "host/RESULT.json",
-        "sha256": "fd263388db7f8f86aa39ca6b89d391f5569dd6d374ad9e39554282899884de03"
-      },
-      "evidence": {
-        "path": ".scratch/c10-owner-01-control-reminder-unused-p2",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The retained c10-owner-01 rehearsal checks this host receipt against its placement export.",
-        "until": "The c10-owner-01 rehearsal is released."
+        "reason": "Keep the published comparison, independent witness identities and launcher-owned originals for the current file-only commissioning rehearsal.",
+        "until": "A reviewed successor covers the comparison and the private audits have a custody disposition."
       }
     }
   ]
