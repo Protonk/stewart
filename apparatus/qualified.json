@@ -2396,6 +2396,25 @@
         "reason": "Inspect the paired interruption witnesses, prepared and delivered bytes, closed returns and partial usage with the campaign report.",
         "until": "The maintainer has reviewed these comparisons and no unresolved inspection requires the originals."
       }
+    },
+    {
+      "id": "alignment-preparation-01",
+      "kind": "experiment",
+      "date": "2026-11-21T21:00:38Z",
+      "date_from": "READINESS.json field at",
+      "summary": "Offline comparison of 202 retained Messages attempts and protected admission rehearsal for one Haiku and one Opus open inquiry.",
+      "result": {
+        "path": "READINESS.json",
+        "sha256": "6b5ebb39dc38a05d3696e6d1528c4695b72ebcf1e5d2bc40222109ec46083799"
+      },
+      "evidence": {
+        "path": ".scratch/alignment-preparation-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Verify the proposed pair, its captured-shape comparisons and the qualified-writer rehearsal at commissioning.",
+        "until": "The first pair is completed or retired and its relevant inputs and evidence have been reviewed."
+      }
     }
   ]
 }

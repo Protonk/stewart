@@ -837,3 +837,10 @@ Five Sonnet 5.5 audits on Linux Claude Code 2.1.322 closed with verified returns
 
 - Evidence: `.scratch/cc-trials-02/EXIT-LEDGER.json` (recorded 2026-11-21T20:34:59Z).
 - Retained purpose: Inspect the paired interruption witnesses, prepared and delivered bytes, closed returns and partial usage with the campaign report.; until The maintainer has reviewed these comparisons and no unresolved inspection requires the originals.
+
+### alignment-preparation-01
+
+Offline comparison of 202 retained Messages attempts and protected admission rehearsal for one Haiku and one Opus open inquiry.
+
+- Evidence: `.scratch/alignment-preparation-01/READINESS.json` (recorded 2026-11-21T21:00:38Z).
+- Retained purpose: Verify the proposed pair, its captured-shape comparisons and the qualified-writer rehearsal at commissioning.; until The first pair is completed or retired and its relevant inputs and evidence have been reviewed.
