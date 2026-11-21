@@ -2596,6 +2596,25 @@
         "reason": "Compare the original Haiku framing responses, citation handling and explicit request against the per-model release alignment record.",
         "until": "The Haiku release alignment record is reviewed or the model is retired and these originals have no further inspection purpose."
       }
+    },
+    {
+      "id": "opus-framing-medium-01",
+      "kind": "experiment",
+      "date": "2026-11-21T22:30:55Z",
+      "date_from": "OBSERVATION.json field at",
+      "summary": "Opus framing audit with inadequate evidence and explicit medium. Six HTTP 200 responses, verified submission, delivery, closure and settlement.",
+      "result": {
+        "path": "OBSERVATION.json",
+        "sha256": "416b0b3a56961ce2121ad9c08980f879a8196df4322a6c6349a285656c398aae"
+      },
+      "evidence": {
+        "path": ".scratch/opus-framing-medium-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Compare the original Opus framing requests, response shapes and citation evidence when reviewing the per-model release alignment record.",
+        "until": "The Opus release alignment record is reviewed or the model is retired and these originals have no further inspection purpose."
+      }
     }
   ]
 }

@@ -891,3 +891,10 @@ Haiku framing audit with inadequate evidence and explicit medium: nine reported 
 
 - Evidence: `.scratch/framing-medium-01/OBSERVATION.json` (recorded 2026-11-21T22:10:53Z).
 - Retained purpose: Compare the original Haiku framing responses, citation handling and explicit request against the per-model release alignment record.; until The Haiku release alignment record is reviewed or the model is retired and these originals have no further inspection purpose.
+
+### opus-framing-medium-01
+
+Opus framing audit with inadequate evidence and explicit medium. Six HTTP 200 responses, verified submission, delivery, closure and settlement.
+
+- Evidence: `.scratch/opus-framing-medium-01/OBSERVATION.json` (recorded 2026-11-21T22:30:55Z).
+- Retained purpose: Compare the original Opus framing requests, response shapes and citation evidence when reviewing the per-model release alignment record.; until The Opus release alignment record is reviewed or the model is retired and these originals have no further inspection purpose.
