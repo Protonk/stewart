@@ -2073,7 +2073,7 @@ class T:
         return out
 
     def check_retained(self, rep, sub, name, before, outside=()):
-        """1.3 (as amended in 2c927ab): `retained` on a refused or failed manager reply lists
+        """1.3: `retained` on a refused or failed manager reply lists
         every location this invocation created and kept: each directory it created (a capture
         attempt, a preparation, a run directory runs/<n>, a delivery package) and each file it
         created in a directory it did not create (an entry payload, a seal manifest, a delivery

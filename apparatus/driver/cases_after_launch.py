@@ -439,7 +439,7 @@ def close_cmd(t, a, name, opts=(), *, expect="completed", reason=None, fault=Non
 
 
 # ---------------------------------------------------------------------------
-# Retained locations (INTERFACE 1.3 as amended): a failed or refused manager reply lists every
+# Retained locations (INTERFACE 1.3): a failed or refused manager reply lists every
 # location the invocation created and kept. Judged by driver_core's T.check_retained against the
 # driver's own listings taken around the command; packages new at a destination are passed as
 # `outside`.
@@ -1568,7 +1568,7 @@ def _close_failures(t, a):
         t.eq(name + ".effects.run", eff.get("run"), "ended")
         t.eq(name + ".effects.seal", eff.get("seal"), "none")
         t.eq(name + ".effects.delivery", eff.get("delivery"), "none")
-        # 1.4 as amended: requested when this invocation published close_requested and its reply is
+        # 1.4: requested when this invocation published close_requested and its reply is
         # failed, whatever else it established; a later failing close reports unfinished.
         t.eq(name + ".effects.closure", eff.get("closure"), closure)
         t.eq(name + ".effects.diagnostic", eff.get("diagnostic"), diag)
@@ -1579,7 +1579,7 @@ def _close_failures(t, a):
             t.check(name + ".causes.diagnostic-second", isinstance(causes, list) and len(causes) >= 2
                     and not mentions(causes[0], "diagnostic") and mentions(causes[-1], "diagnostic")
                     and causes[-1].get("error") == "EIO", causes)
-        # retained (1.3 as amended) is checked exactly by close_cmd against the locations the
+        # retained (1.3) is checked exactly by close_cmd against the locations the
         # inventories show this close created: its claimed preparation, any seal manifest it
         # claimed and its diagnostic when that was written.
         ret = rep.obj.get("retained") if isinstance(rep.obj, dict) else None
@@ -2205,7 +2205,7 @@ def _t13(t, a):
                       allowances=fp.allowances(a.fx.totals(upto=1), rs.limits_of(a.sub)),
                       next_cmds=("close", "status"))
     t.eq("c8.t13.status-held.holder", (st.data.get("runs") or {}).get("holder"), obs)
-    # 5.6, 6.4 (a1515e7): a live placement counts only its attempt records; the request still in
+    # 5.6, 6.4: a live placement counts only its attempt records; the request still in
     # flight has none yet, so the expected allowances above leave it out. Witness that it has none.
     t.check("c8.t13.status-held.in-flight-unrecorded", attempt_unrecorded(a.sub, 1, 2), sorted(
         os.listdir(os.path.join(a.sub.audit_dir, "runs", "1"))))
@@ -2294,7 +2294,7 @@ def _stopped_close_reply(t, a, rep):
     t.eq("c8.t13-stopped.status.holder", (st.data.get("runs") or {}).get("holder"),
          _started_observations(t, a.sub))
     # The stopped run still holds the lock (status: held, run_still_held), so its placement is
-    # live and its in-flight request has no attempt record yet (5.6, 6.4 as amended in a1515e7):
+    # live and its in-flight request has no attempt record yet (5.6, 6.4):
     # the expected allowances are zero. The aborted_by_close estimate is charged only when the
     # attempt ends, after SIGCONT. Witness the missing record at the time of the status.
     t.check("c8.t13-stopped.status.in-flight-unrecorded", attempt_unrecorded(a.sub, 1, 1), sorted(

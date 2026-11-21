@@ -173,7 +173,7 @@ pub(super) struct Snapshot {
 
 /// Assess a question, guidance and inventory. `bytes_checked` says every
 /// supplied material byte was actually read and checked, so
-/// `material_bytes` is no longer unchecked.
+/// `material_bytes` is left out of what remains unchecked.
 pub(super) fn snapshot(
     question: &str,
     guidance: Option<&str>,

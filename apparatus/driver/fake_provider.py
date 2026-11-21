@@ -375,7 +375,7 @@ class HttpError(Step):
 class Drop(Step):
     """Close the connection after the request: 'before_response' (no status line),
     'after_status' (status line only) or 'mid_body' (headers announcing the whole body of
-    `message`, then half of it). Request bytes were written. Under 6.6 as amended, a cut-off
+    `message`, then half of it). Request bytes were written. Under 6.6, a cut-off
     200 is connection_lost (retried, charged an estimate, 6.4); a cut-off answer with another
     status is http_error (charged nothing), so `message` may also be an HttpError."""
     kind = "drop"

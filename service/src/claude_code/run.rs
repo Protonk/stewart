@@ -1963,10 +1963,9 @@ mod tests {
 
     /// The agent owner's recorded ending: the ending the first stopping
     /// condition decided, changed afterwards only by this placement's seal
-    /// and by a reply mismatch first observed in the drain. Two rows of the
-    /// earlier derivation flipped with this rule: a signal received after an
-    /// ordinary ending, and the deadline passing after an unexplained stop,
-    /// no longer reach the ending at all, so `Later` has no field for them.
+    /// and by a reply mismatch first observed in the drain. A signal received
+    /// after an ordinary ending, and the deadline passing after an unexplained
+    /// stop, never reach the ending, so `Later` has no field for them.
     /// The independent runtime driver checks both through the binary.
     #[test]
     fn a_decided_ending_changes_only_for_its_seal_or_a_drained_mismatch() {

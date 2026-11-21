@@ -302,7 +302,7 @@ def c_tls_proxy(t):
       "invalid test variables refuse run on the test build before any request; the release build ignores them",
       mode="both", needs=("loopback",))
 def c_test_variables(t):
-    """Appendix C (as amended): on the test build an out-of-range or malformed
+    """Appendix C: on the test build an out-of-range or malformed
     STEWART_TEST_PROVIDER_TIMEOUT, STEWART_TEST_RETRY_DELAYS or STEWART_TEST_RETAINED_LIMITS
     (one, three, zero, over 1 GiB, signed, spaced or fractional) refuses test_variable_invalid,
     and a missing, relative, empty, certificate-free or over-1-MiB STEWART_TEST_TLS_ROOT
@@ -1704,7 +1704,7 @@ def c_provider_shapes(t):
         atts = [rd.attempts[k] for k in sorted(rd.attempts)]
         bodies = [(a or {}).get("body") or {} for a in atts]
         t.eq(pre + ".attempt-outcomes", [b.get("outcome") for b in bodies], outcomes)
-        # 4.5 (amended): then is the decision about the attempt; a decoded response that is acted
+        # 4.5: then is the decision about the attempt; a decoded response that is acted
         # on is use even when the placement then ends; end means no response is used.
         t.eq(pre + ".last-then", bodies[-1].get("then") if bodies else None,
              "use" if outcomes[-1] == "response" else "end")
@@ -2089,7 +2089,7 @@ def c_tool_inputs(t):
     p2 = proc(sub2, unc)
     fx2 = rs.provider(t, p2, label="uncertain")
     rep = rs.run(t, sub2, fx2, name="c20.uncertain.run", fault="log.dirsync:seal=eio")
-    # 6.3 (amended): whether a seal was recorded is read from the log after the blocks run; the
+    # 6.3: whether a seal was recorded is read from the log after the blocks run; the
     # seal was linked, so the run delivers and ends sealed, and no request or reminder follows.
     t.eq("c20.uncertain.ending", rep.data.get("ending"), "sealed")
     t.eq("c20.uncertain.seal-actor", [b.get("actor") for b in t.log_bodies(sub2, "seal") if isinstance(b, dict)],

@@ -555,7 +555,7 @@ class ReactingAuditor:
         self._take_page(call, env, page_text, verify=self.sources.get(call["source"]))
 
     def _reply_read_entry(self, call, env, page_text, ex):
-        # 7.2 (amended): kind stays "entry"; entry_kind names the recording tool, an artifact adds
+        # 7.2: kind stays "entry"; entry_kind names the recording tool, an artifact adds
         # artifact_encoding; a base64 page is marked only by data.base64.
         d = env.get("data") if isinstance(env.get("data"), dict) else {}
         if env.get("outcome") == "completed":
