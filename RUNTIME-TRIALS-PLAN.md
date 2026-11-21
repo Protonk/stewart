@@ -77,9 +77,9 @@ remains.
 | Routes | **Harness:** in the Linux development VM through the service procedure, with subscription login, included usage only and paid extra usage disabled. **Messages:** direct TLS to `api.anthropic.com` through C10 and its [host queue](apparatus/c10/HOST-QUEUE.md), on the `stewart-haiku` key. |
 | Models | **Harness:** `claude-sonnet-5-5` under the profile S0 produces, for the harness version S0 pins. **Messages:** `claude-sonnet-5-5`, and `claude-haiku-5-5` for wave 2 diagnostics. |
 | Starts and placements | **Harness:** S0's check sessions and at most 16 service starts, at most 9 of them in wave 1. **Messages:** at most 12 placements, at most 6 of them in wave 1. |
-| Cost | **Messages:** a cutoff the maintainer sets at the grant, proposed at USD 10, with USD 8.25 kept aside on the same key for endpoint alignment. The agent tracks spend from Stewart's reported and estimated usage at list prices, and reserves each placement's worst case before launch. The maintainer may state the remaining budget at any time; the agent never asks. The key's provider-side cap is a backstop. **Harness:** included subscription usage only. |
+| Cost | **Messages:** a cutoff the maintainer sets at the grant, proposed at USD 10, excluding what the maintainer reserves on the same key for endpoint alignment. The agent tracks spend from Stewart's reported and estimated usage at list prices, and reserves each placement's worst case before launch. The maintainer may state the remaining budget at any time; the agent never asks. The key's provider-side cap is a backstop. **Harness:** included subscription usage only. |
 | Time | The service procedure's bounds of 600 seconds per placement and 900 seconds per packet, and C10's watchdog per audit. |
-| Bindings | Each packet binds its writer, apparatus commit, inputs, model, limits, interruption point or close, and its starts or placements. A harness packet also binds the profile, harness executable and interpreter. Writers come from commits whose required container suite passed. Each launch path has a current rehearsal of the committed apparatus with that writer. |
+| Bindings | The provider key is present in the VM's keyring at the grant, with an expiry beyond the campaign. Each packet binds its writer, apparatus commit, inputs, model, limits, interruption point or close, and its starts or placements. A harness packet also binds the profile, harness executable and interpreter. Writers come from commits whose required container suite passed. Each launch path has a current rehearsal of the committed apparatus with that writer. |
 | Waves | Wave 1 below, then at most one wave 2 within the remaining bounds. |
 
 **Permitted work:**
@@ -126,6 +126,7 @@ mid-campaign.
 | A custody failure: criterion 2, 4 or 9 below, or a manager seal claiming auditor submission | Launches with that writer | Reproduce it as a failing scripted test, fix and qualify; continue only with the fixed writer. |
 | Unsafe spending on the harness: any rate-limit or allowance message in the harness's output, paid extra usage appearing enabled, or a harness version differing from the pin | Harness work for the campaign | Harness live work ends for the campaign; the other route and offline work continue. |
 | Unsafe spending on Messages: the remaining cutoff below the next placement's worst case | Messages work for the campaign | Messages live work ends for the campaign; the other route and offline work continue. |
+| The provider key missing from the keyring, for example after a VM restart | Messages work for the campaign | Messages live work ends for the campaign; nobody is asked to enter the key again. |
 
 An allowance that runs out mid-placement is recorded as an interruption and is
 never provoked.
@@ -282,8 +283,10 @@ Reminders for whoever prepares the packets:
 
 ### Wave 1 cost
 
-The Messages runs use `claude-sonnet-5-5` at USD 2 per million input tokens
-and USD 10 per million output tokens. A worst case is the input limit, plus one
+The Messages runs use `claude-sonnet-5-5` at its list prices as checked on
+2026-11-03: USD 2 per million input tokens and USD 10 per million output
+tokens. Stewart takes the model string as given and keeps no price table, so
+these figures serve only the campaign's own accounting. A worst case is the input limit, plus one
 more request whose size is known only afterwards (INTERFACE 6.4), plus the
 whole output limit. With 12 turns, 90,000 input and 16,000 output tokens, M1
 comes to about USD 0.50. M2a, M2b and M3 are about USD 1 each, with 24 turns,

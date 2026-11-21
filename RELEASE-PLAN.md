@@ -16,7 +16,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 | --- | --- | --- |
 | Current | Move development into one Lima-managed Linux VM: Podman in place of Apple `container`, no macOS build target, secrets kept out of the tooling. | [Linux development](LINUX-DEVELOPMENT-PLAN.md) |
 | Next, as a delegated campaign | Runtime trials: two live waves on interruption, continuation and close, with the real harness and the Messages route, under one commission envelope, with implementation between and after them. A real-service result is not an entry gate for the release. | [Runtime trials](RUNTIME-TRIALS-PLAN.md) |
-| Separate release work | Specify and build endpoint alignment offline; align the endpoints the release names under a commission. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
+| Separate release work | Specify and build endpoint alignment offline; align the endpoints the release names under a commission. Its design proceeds now. Its build follows the Linux move and the runtime trials, which use the apparatus it reorganizes. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |
 | After the first release | Investigate shortening test and suite wall-clock time. | [Test wall-clock](development/TEST-WALL-CLOCK-PLAN.md) |
 | Unselected | Broader blinded evaluation and family dogfooding. | [Deferred studies](#deferred-studies) |
@@ -27,7 +27,6 @@ processes or effects before reusing them. Build only the prerequisites needed
 for the selected comparison. Endpoint alignment is separate from the bounded
 readiness observations. Live starts require a bounded commission.
 
-Use the specified manager schemas for dependent implementation.
 Arrange independent driver authorship where service and driver changes are both
 needed. Give residual work one owner in place; do not create a turnover document.
 
@@ -87,14 +86,14 @@ when a form changes.
   binding refusal `runtime_profile_invalid` carries no `data.surface`, which
   the contract requires only of `prepare`.
 
-Family-descriptor candidates belong to the manager interface's registry stage.
+Family-descriptor candidates remain unselected.
 
 ## First-release requirements
 
 | Requirement | Remaining work |
 | --- | --- |
 | Linux container qualification | Qualify the binaries to be shipped against the [scripted acceptance claims](ACCEPTANCE.md#the-scripted-tier). |
-| Endpoint alignment | A current [alignment record](ENDPOINT-ALIGNMENT-PLAN.md) for each model the release names, each run under an authorized budget. |
+| Endpoint alignment | A current [alignment record](ACCEPTANCE.md#the-endpoint-alignment-tier) for each model the release names, each run under an authorized budget. |
 | Release documentation and source package | Define and build the source archive and finish the outside-reader documentation pass ([below](#release-documentation-and-source-package)). |
 | Public release gate | The maintainer decides when to publish the qualified binaries. |
 

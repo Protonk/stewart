@@ -38,7 +38,9 @@ each tool call, then `delivery/` and `ops/close.rs`.
   explicit inputs and applies the refusal order. `workspace.rs` admits the
   launcher's `--workspace DIR`, reads named sources under `sources/` through
   descriptors and creates one candidate folder exclusively, reporting its
-  writes. `rpc.rs` decodes the protocol envelope and leaves metadata opaque.
+  writes. `tools.rs` defines the four tools, and `mod.rs` serves the session.
+- `rpc.rs`: the JSON-RPC envelope shared by the preparation server and the
+  development runtime's auditor transport; it leaves metadata opaque.
 - `help.rs`: `stewart help` and its topics, printed exactly (5.9). The
   development build adds one topic, `runtime`, whose text is in
   `claude_code.rs`.
@@ -92,6 +94,8 @@ each tool call, then `delivery/` and `ops/close.rs`.
   `provider/url.rs`: one attempt over a fresh connection, HTTP/1.1 framing, TLS
   against the built-in web PKI roots, and the base URL and proxy grammar.
 - `provider/stop.rs`: the stop path: the close watcher and signals (6.8).
+- `gate.rs`: a placement's publication gate. A stop closes it, ordering the
+  stop against a mutation's log link on either runtime (6.8).
 - `runs.rs`: each placement's `runs/<n>` directory, raw captures and linked
   records (4.5); `runs::request_body`, which splices each request body from
   the arrangement's pinned bytes and captured messages, honoring recorded

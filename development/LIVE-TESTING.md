@@ -123,7 +123,7 @@ automatically.
    the [service procedure](../apparatus/claude-code/README.md#native-service-comparison-procedure).
    Today, qualifying the changed source is the main cost of a Messages test.
 3. Propose, packet and launch as the apparatus guide describes, through the
-   host queue under the grant.
+   host queue under the plan's envelope.
 4. Review with the apparatus reviewer, and record the outcome on the card
    before anyone reads an answer.
 5. Close the audit with its own writer, or keep both the audit and the writer

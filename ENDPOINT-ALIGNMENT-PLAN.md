@@ -261,7 +261,7 @@ re-verifies its evidence digests as `check` does for experiments. Historical
 
 ### 1.5 What is reused now and what section 2 adds
 
-**Reused as it stands:**
+**Reused, in the form the apparatus has when section 2 starts:**
 - C10 packet preparation, binding and approval, including the catalog's
   inadequate variants and the `effort` front matter.
 - The saved-connection live launch and the host queue's dollar budget.
@@ -361,6 +361,6 @@ Complete this plan when the mechanism is built, each model the first release
 names and the harness pin have current alignment records, and the enduring
 procedure is documented in `alignment/`. Then delete the plan.
 
-The Messages launcher in step 2 can use a saved connection directly. With
-host access through the harness, alignment needs neither a delegated queue
-nor a manual handoff just to reach Apple `container`.
+The Messages launcher in step 2 can use a saved connection directly. Run from
+the development VM, alignment needs neither a delegated queue nor a manual
+handoff to reach the container runtime.
