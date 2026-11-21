@@ -884,3 +884,10 @@ Prepared single Haiku framing-inadequate commission, exact medium on seven loopb
 
 - Evidence: `.scratch/framing-medium-preparation-01/READINESS.json` (recorded 2026-11-21T21:57:46Z).
 - Retained purpose: Review the exact packet, protected rehearsal and cost bound for the next live framing commission.; until The proposed commission has been settled, superseded or declined and its preparation originals have no further inspection purpose.
+
+### framing-medium-01
+
+Haiku framing audit with inadequate evidence and explicit medium: nine reported HTTP 200 responses, verified submission, delivery, closure and settlement.
+
+- Evidence: `.scratch/framing-medium-01/OBSERVATION.json` (recorded 2026-11-21T22:10:53Z).
+- Retained purpose: Compare the original Haiku framing responses, citation handling and explicit request against the per-model release alignment record.; until The Haiku release alignment record is reviewed or the model is retired and these originals have no further inspection purpose.

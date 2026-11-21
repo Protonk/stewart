@@ -2577,6 +2577,25 @@
         "reason": "Review the exact packet, protected rehearsal and cost bound for the next live framing commission.",
         "until": "The proposed commission has been settled, superseded or declined and its preparation originals have no further inspection purpose."
       }
+    },
+    {
+      "id": "framing-medium-01",
+      "kind": "experiment",
+      "date": "2026-11-21T22:10:53Z",
+      "date_from": "OBSERVATION.json field at",
+      "summary": "Haiku framing audit with inadequate evidence and explicit medium: nine reported HTTP 200 responses, verified submission, delivery, closure and settlement.",
+      "result": {
+        "path": "OBSERVATION.json",
+        "sha256": "ff9575fe80b4dfa870c7cf481e45f0625031cbe7f68c2a5f09dc3c9398fd73ee"
+      },
+      "evidence": {
+        "path": ".scratch/framing-medium-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Compare the original Haiku framing responses, citation handling and explicit request against the per-model release alignment record.",
+        "until": "The Haiku release alignment record is reviewed or the model is retired and these originals have no further inspection purpose."
+      }
     }
   ]
 }

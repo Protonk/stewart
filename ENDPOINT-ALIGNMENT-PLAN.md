@@ -48,7 +48,7 @@ live captures already show.
 
 | # | Shape | Adapter assumes | Stand-ins replay | Witness | Seen live |
 | --- | --- | --- | --- | --- | --- |
-| A1 | Request acceptance: `anthropic-version: 2026-10-21`, `anthropic-beta: compact-2026-09-04`; `model`, `max_tokens`, `system`, `tools`, `messages`; `output_config.effort` when the manager sets a level; `compaction` on summary requests | HTTP 200 | Both fakes check the headers and accept | `request-<n>.json`; attempt status and `request-id` | Haiku omitted (`c10-live-*`), Haiku `high` (`sanity-live-05`), Opus omitted (`opus-live-*`, `readiness-m4-live-01`) |
+| A1 | Request acceptance: `anthropic-version: 2026-10-21`, `anthropic-beta: compact-2026-09-04`; `model`, `max_tokens`, `system`, `tools`, `messages`; `output_config.effort` when the manager sets a level; `compaction` on summary requests | HTTP 200 | Both fakes check the headers and accept | `request-<n>.json`; attempt status and `request-id` | Haiku `medium` ([framing audit](apparatus/qualified.md#framing-medium-01)), Haiku omitted (`c10-live-*`), Haiku `high` (`sanity-live-05`), Opus omitted (`opus-live-*`, `readiness-m4-live-01`) |
 | A2 | Message envelope | `content`, `stop_reason`, `usage` once each; `model` recorded; the rest raw | Driver: configurable members. C10 fake: minimal, no `container`, `diagnostics` or `stop_details` | `response-<r>-<a>.bin` | `id`, `type`, `role`, `stop_sequence`, `stop_details: null`, `container: null`, `diagnostics: null` (m2/m3/m4 fixtures) |
 | A3 | Content blocks | `tool_use` (`id`, `name`, `input`), `text`, signed `thinking`, unknown types echoed byte for byte | Driver: all, plus redacted and unknown blocks. C10 fake: tool use, text, one signed thinking cap | Response captures | Signed thinking with empty text; text; tool use |
 | A4 | Stop reasons | `tool_use`, `end_turn`, `max_tokens` with and without tool use, `compaction`, `refusal`, `model_context_window_exceeded`; others are `protocol_anomaly` | Driver: any. C10 fake: the scripted ones | Response captures; `run_ended` | `tool_use`, `end_turn`, thinking-only `max_tokens` (Haiku, M2/M3 fixtures), `compaction` (Opus m4). Not seen: `refusal`, window exhaustion, `pause_turn` |
@@ -59,7 +59,7 @@ live captures already show.
 | A9 | Errors | `{"type":"error","error":{"type","message"},"request_id"}`. 408/429/5xx/529 retried with `retry-after`; others are `provider_rejected` | Driver: every status and form. Sanity/C10 fake: 401 only | Response captures; `run_ended.provider` | 401 `authentication_error` (`sanity-live-03`, captured). Others are not inducible inside the commission: compared when observed, otherwise a stated limitation |
 | A10 | Transport | Framing by `content-length`, chunking or close; only `content-type`, `request-id` and `retry-after` retained; 600-second timeout | Driver: every framing (`testdata/wire`) | Attempt timing and three headers; framing itself is not retained | Durations only. Live framing is unwitnessed on the direct route |
 | A11 | Model identity | Response `model` equals the requested ID; no `fallbacks` parameter is sent | Fakes echo `rehearsal-only` | Response captures | Haiku and Opus IDs echoed |
-| A12 | Manager effort passthrough | Omission leaves out `output_config`; an explicit level is sent verbatim (INTERFACE 6.5) | The scripted peer witnesses every supported spelling and exercises provider refusal | Manager's setting, reconstructed request and captured response | The ordinary open-inquiry trials exercised omission on both models |
+| A12 | Manager effort passthrough | Omission leaves out `output_config`; an explicit level is sent verbatim (INTERFACE 6.5) | The scripted peer witnesses every supported spelling and exercises provider refusal | Manager's setting, reconstructed request and captured response | Both open inquiries exercised omission. Haiku accepted all nine reconstructed framing requests with explicit `medium`. |
 | A13 | Credential reflection | None; scanned as INTERFACE 6.1 states | Rehearsal reflection control | Stewart scan; launcher host scan | None seen |
 
 The [comparison procedure](alignment/messages/README.md) cites the provider documentation and dated model card used for the catalog packets. Reconfirm their currency on the commission date.
@@ -100,7 +100,7 @@ inadequate evidence, and the two request forms. [Completed open inquiries](appar
 | Specimen | Models | Purpose | Effort | State |
 | --- | --- | --- | --- | --- |
 | open-ordinary | Haiku and Opus | Open-inquiry submission | Omitted | H1 and O1 verified and closed |
-| framing-inadequate | Haiku and Opus | Framing submission with inadequate evidence and explicit wire setting | `medium` | [Haiku prepared for approval](apparatus/qualified.md#framing-medium-preparation-01) at $1.24; Opus needs separate authority |
+| framing-inadequate | Haiku and Opus | Framing submission with inadequate evidence and explicit wire setting | `medium` | [Haiku verified and closed](apparatus/qualified.md#framing-medium-01), settled at $0.02. Opus needs separate authority. |
 | comparison-ordinary | Haiku and Opus | Comparison submission | Omitted | Pending |
 | Compaction, ordinary open inquiry | Haiku and Opus | Signed summary, reset, accounting and entry continuity | Omitted | Pending a separately rehearsed bound |
 
