@@ -9,6 +9,7 @@ import tarfile
 
 from common import (MAX_FILE, LIMITS, compact, digest, file_hash, inventory, limit_exhausted,
                     question_file, read_file, relative, require, strict_json)
+from billing import five_minute_writes, request_body_bound
 from session_support import signal_timing
 import answer_witness as answer
 import driver_core as spec
@@ -74,6 +75,12 @@ def serial_names(names, prefix, pattern):
     matches.sort()
     require([n for n, _ in matches] == list(range(1, len(matches) + 1)), 'noncontiguous_records')
     return [name for _, name in matches]
+
+
+def run_directories(e, base):
+    prefix=base+'runs/'
+    # An early P1 stop can leave only the numbered directory and empty stage.
+    return {name[len(prefix):].split('/')[0] for name in e.names | e.directories if name.startswith(prefix)}
 
 
 def usage_counts(value):
@@ -149,7 +156,7 @@ def compaction_cause(response):
 
 def verify(evidence):
     """Conservative small-commission report. Unsupported mechanisms stay incomplete."""
-    report = {'schema': 'stewart.c10-review/3', 'outcome': 'incomplete',
+    report = {'schema': 'stewart.c10-review/4', 'outcome': 'incomplete',
         'checks': [], 'failures': [], 'coverage': None, 'model_qualified': False,
         'unassessed': ['full C10 repetition matrix',
                        'a placement reconciled after its process died (process_gone)',
@@ -167,6 +174,10 @@ def verify(evidence):
         code = str(error) if type(error) is ValueError and re.fullmatch(r'[a-z_]{1,80}', str(error)) else 'unreadable_or_unsupported_evidence'
         report['failures'].append(code)
         report['outcome'] = 'incomplete'
+        custody = {'outside_log_prefix','outside_preparation_bytes','manager_close_attribution','auditor_prepared_bytes',
+                   'close_preserves_auditor_preparation','interrupted_entries_accounted','signal_ended_placement',
+                   'close_ended_placement','preparation_attribution','notice_once_per_audit','manager_return_verified'}
+        report['trial']={'outcome':'fail' if code in custody else 'incomplete', 'criteria':{'failed_check':code}}
         # Partial checks are diagnostic, not a current custody or coverage finding.
         for field in ['coverage', 'usage', 'ending', 'cause', 'placements', 'auditor_submitted',
                       'seal_actor', 'delivery_verified', 'closed', 'guidance']:
@@ -279,8 +290,8 @@ def _verify(e, report, check):
         report['study_build'] = packet['study_build']
     specimen = e.json('evidence/specimen.json')
     if run.get('submission_folder') is not None:
-        check(packet['schema'] in ['stewart.study-commission/1', 'stewart.interface-commission/1',
-                                   'stewart.interruption-commission/1']
+        check(packet['schema'] in ['stewart.study-commission/2', 'stewart.interface-commission/2',
+                                   'stewart.interruption-commission/3']
               and run in packet['runs'], 'study_packet_binding')
         template = tree_inventory_from_evidence(e, 'evidence/submission-template/')
         check(digest(compact(template)) == run['submission_sha256'], 'study_template_binding')
@@ -408,7 +419,7 @@ def _verify(e, report, check):
         # what it found. This reviewer does not reconstruct that accounting.
         check(ended['recorded_by'] == 'run' and ended['cause'] != 'process_gone',
               'process_gone_placement_unassessed')
-    check({name[len(base + 'runs/'):].split('/')[0] for name in e.names if name.startswith(base + 'runs/')}
+    check(run_directories(e,base)
           == {str(n) for n in range(1, count + 1)}, 'run_membership')
     # The launcher's own record of each start and of the status it then observed.
     commands = serial_commands(e.names, r'evidence/[0-9]{2,}-run\.json')
@@ -434,6 +445,8 @@ def _verify(e, report, check):
         return {key: sum(total[key].values()) for key in LIMITS}
     responses, response_blocks, used_blocks = {}, {}, set()
     request_bodies, response_names = {}, set()
+    preparation_records = {name: r['body'] for name,r in by_name.items() if r['kind']=='answer_prepared'}
+    prepared_calls = set()
     entry_records = {name: record for name, record in by_name.items() if record['kind'] == 'entry'}
     selected, handles, prepared, consumed = {}, {}, {}, set()
     version_handles, receipts, refusals_by_tool = {}, [], {}
@@ -445,6 +458,7 @@ def _verify(e, report, check):
     near_expected, near_done = None, False
     additions, repeated_payloads = {}, 0
     rows = []
+    retained_entries, deleted_entries = set(), set()
     compactions = dict(summary_requests=0, successful_summaries=0, failed_summaries=0,
                        context_resets=0, reentries_after_reset=0)
     for placement, ((opened, started), (closed_at, ended)) in enumerate(zip(starts, ends), 1):
@@ -458,6 +472,17 @@ def _verify(e, report, check):
               and intent['automatic_continuation'] is False, 'placement_launch_intent')
         command = e.json(commands[placement-1])
         check(command['argv'][1:3] == ['run', receipt['reference']], 'placement_command_identity')
+        if packet['file_size_limit'] is not None:
+            cap = packet['file_size_limit']
+            guard = e.json(folder+'file-bound.json')
+            result = e.json(folder+'file-bound-result.json')
+            check(guard['pid']==command['pid'] and guard['soft']==guard['hard']==cap
+                  and guard['supervisor_soft']!=cap and guard['observed_before_key_handoff'] is True
+                  and guard['sigxfsz']=='default-unblocked' and guard['writer_sha256']==binding['binary_sha256']
+                  and guard['arrangement_bytes']==len(arrangement_raw)<=cap
+                  and guard['arrangement_sha256']==digest(arrangement_raw), 'placement_file_bound')
+            check(result['clear'] is True and result['files_at_limit']==[] and result['sigxfsz'] is False
+                  and result['exit']==command['exit'], 'placement_file_bound_exercised')
         state = e.json(observed[placement-1])['data']['runs']
         check(state['held'] is False and state['count'] == placement and state['last']['number'] == placement
               and [state['last'][key] for key in ['ending', 'cause', 'recorded_by']]
@@ -480,11 +505,14 @@ def _verify(e, report, check):
         active, taken, stops, written, after, facts = [], {}, {}, {}, {}, {}
         summaries, resets = {}, set()
         attempts_seen = []
+        billing = []
         fake_exchange = 0
         for number, name in enumerate(requests, 1):
             raw = e.read(name)
             reqnode = rawjson.parse(raw)
             req = reqnode.value()
+            check(set(req)=={'request','max_tokens','body_bytes','body_sha256','compaction','reset','appended'},
+                  'request_capture_omits_headers')
             check(raw.endswith(b'\n') and req['request'] == number and type(req['compaction']) is bool
                   and type(req['reset']) is bool, 'request_capture')
             summary, reset = False, False
@@ -509,6 +537,9 @@ def _verify(e, report, check):
             # A placement's conversation starts empty: no earlier one is replayed (INTERFACE 6.7).
             active.extend(appended)
             body = ordinary_body(arrnode, req['max_tokens'], active, summary)
+            if packet['file_size_limit'] is not None:
+                check(len(body)<=request_body_bound(number) and len(raw)<=packet['file_size_limit'],
+                      'request_exceeds_file_bound')
             check(len(body) == req['body_bytes'] and digest(body) == req['body_sha256'], 'request_body_binding')
             request_bodies[placement, number] = body
             opening = [{'type':'text','text':qbody.decode()}]
@@ -564,6 +595,8 @@ def _verify(e, report, check):
                 a = attempt_record['body']
                 check(attempt_record['kind'] == 'provider_attempt' and a['request'] == number
                       and a['attempt'] == attempt_number and a['timeout_seconds'] == 600, 'attempt_identity')
+                check(set(a['headers'])=={'content-type','request-id','retry-after'}
+                      and all(isinstance(v,list) for v in a['headers'].values()), 'response_header_allowlist')
                 check(a['credential_reflection'] == {'body': False, 'headers': []}, 'clean_reflection_marker')
                 check(a['outcome'] in spec.ATTEMPT_OUTCOMES and a['request_written'] in ['none', 'partial', 'complete']
                       and a['then'] in ['use', 'retry', 'end'], 'attempt_vocabulary')
@@ -618,6 +651,12 @@ def _verify(e, report, check):
                     charge = {'basis': 'estimated', 'turns': 1, 'input_tokens': (len(body) + 2)//3,
                               'output_tokens': req['max_tokens']}
                 check(a['charged'] == charge, 'attempt_charge')
+                if charge['basis'] == 'reported':
+                    billing.append({'request':number,'attempt':attempt_number,'basis':'reported','five_minute_cache_writes':five_minute_writes(value['usage']),**counts})
+                elif charge['basis'] == 'estimated':
+                    billing.append({'request':number,'attempt':attempt_number,'basis':'estimated',
+                        'input_tokens':charge['input_tokens'],'output_tokens':charge['output_tokens'],
+                        'cache_creation_input_tokens':0,'cache_read_input_tokens':0})
                 if attempt_number < len(attempt_names):
                     check(a['then'] == 'retry' and (a['outcome'] in ['timeout','connection_failed','connection_lost']
                           or a['outcome']=='http_error' and a['status'] in [408,429,500,502,503,504,529]), 'retry_policy')
@@ -658,6 +697,7 @@ def _verify(e, report, check):
 
         check([n[len(runbase):] for n in results] == [f'result-{i}.json' for i in range(1,len(results)+1)], 'result_membership')
         check({n for n in e.names if n.startswith(runbase + 'call-')} == {runbase + f'call-{i}.json' for i in range(1,len(results)+1)}, 'call_membership')
+        first_edit, first_reentry = None, None
         previous_results, sealed_in = {}, None
         for call_number, name in enumerate(results, 1):
             result_record = e.json(name)
@@ -693,9 +733,13 @@ def _verify(e, report, check):
                 # A replay is a repeated block of the same placement (INTERFACE 6.3).
                 check(type(result['replay_of']) is int and 0 < result['replay_of'] < call_number, 'invocation_replay')
                 old = previous_results[result['replay_of']]
-                check(all(result[field] == old[field] for field in ['content','is_error','outcome','log_record']), 'replayed_outcome_unchanged')
+                check(all(result[field] == old[field] for field in ['content','is_error','outcome']) and result['log_record'] is None, 'replayed_outcome_unchanged')
                 continue
             data, inp = reply['data'], strict_json(operands.raw)
+            if tool == 'what_am_i_working_with' and first_reentry is None:
+                first_reentry = call_number
+            if (tool in ('replace','delete') or tool.startswith('record_')) and first_edit is None:
+                first_edit = call_number
             if tool == 'what_am_i_working_with' and 'page' not in inp:
                 if resets and result['request'] >= min(resets):
                     compactions['reentries_after_reset'] += 1
@@ -744,6 +788,7 @@ def _verify(e, report, check):
                     target = handles.get(inp['entry'])
                     check(target is not None and record['target']['id'] == target[0]
                           and record['target']['version'] == target[1] and target[0] in selected, 'delete_target')
+                    deleted_entries.add(target[0])
                     del selected[target[0]]
                     receipt_row['target'] = inp['entry']
                 else:
@@ -779,7 +824,21 @@ def _verify(e, report, check):
             if tool == 'prepare':
                 check(data['family'] == versioned_family, 'preparation_captured_family')
                 check(data['revision'] == revision and data['entry_count'] == len(selected), 'preparation_counts')
-                prepared[data['prepared']] = (revision, answer.answer_json(revision, list(selected.values())), answer.render(list(selected.values())))
+                authored = answer.answer_json(revision, list(selected.values()))
+                rendered = answer.render(list(selected.values()))
+                check(log_name in preparation_records and log_name not in prepared_calls, 'preparation_event')
+                event = preparation_records[log_name]
+                check(type(event['prepared']) is int and event['prepared'] >= 1
+                      and event['invocation'] == {'run':placement,'tool_use_id':call['id'],'call':call_number}
+                      and (event['revision'],event['entry_count'],event['handle']) ==
+                          (revision,len(selected),data['prepared'])
+                      and opened < index[log_name] < closed_at, 'preparation_attribution')
+                directory = base + f"prepared/{event['prepared']}/"
+                check(e.read(directory+'answer.json') == authored and e.read(directory+'answer.md') == rendered
+                      and event['answer_sha256'] == digest(authored) and event['rendering_sha256'] == digest(rendered),
+                      'auditor_prepared_bytes')
+                prepared_calls.add(log_name)
+                prepared[data['prepared']] = (revision, authored, rendered)
             if tool == 'submit' and inp.get('confirm') is True:
                 check(inp['prepared'] in prepared and prepared[inp['prepared']][0] == revision
                       and data['seal']['state'] == 'present' and data['seal']['actor'] == 'auditor', 'confirmed_submission')
@@ -821,13 +880,17 @@ def _verify(e, report, check):
               and opened < seal_position < closed_at else None), 'run_ended_seal')
         row = {'run': placement, 'continuing': started['continuing'], 'ending': ended['ending'],
                'cause': ended['cause'] if ended['cause'] in CAUSES else 'unknown', 'recorded_by': ended['recorded_by'],
-               'requests': ended['requests'], 'attempts': ended['attempts'], 'usage': charged,
+               'requests': ended['requests'], 'attempts': ended['attempts'], 'usage': charged,'billing':billing,
                'notices': [{'type': item['type'], 'sent': item['sent']} for item in ended['notices']],
+               'reentered_before_editing': None if first_edit is None else first_reentry is not None and first_reentry<first_edit,
                'unexecuted_tool_blocks': unexecuted, 'exit': command['exit'], 'interruption': None}
         if intent.get('interruption') is not None:
             row['interruption'] = interruption_witness(e, check, folder + 'interruption/', intent['interruption'],
                 placement, base, by_name, index, (opened, closed_at), started, ended, command, len(requests), facts)
+            if row['interruption'].get('outcome')=='pass' and row['interruption']['state']=='signalled':
+                retained_entries.update(selected)
         rows.append(row)
+    check(retained_entries <= set(selected)|deleted_entries,'interrupted_entries_accounted')
     # INTERFACE 6.4: published when triggered, naming the next request, with the remaining amounts.
     check(next(({key: body[key] for key in ['type', 'run', 'request', 'text', 'remaining']}
                 for _, body in notices if body['type'] == 'near_limit'), None) == near_expected,
@@ -840,6 +903,7 @@ def _verify(e, report, check):
     if any(row['interruption'] is not None for row in rows):
         report['witness_scope']['interruption'] = ('launcher observation of the log record, process identity, signal and exit, '
             'kept outside the archive; the stop path and its charge are Stewart-recorded')
+    check(prepared_calls == set(preparation_records), 'all_preparations_accounted')
     check(consumed == set(entry_records), 'all_entry_effects_accounted')
     report['coverage'] = {'operations': dict(operations), 'refused_or_failed_calls': refusals,
         'compaction': compactions,
@@ -889,6 +953,32 @@ def _verify(e, report, check):
                 check(e.read(package + name) == content, 'exact_delivered_bytes')
             report['delivery_verified'] = True
         report['auditor_submitted'] = submitted and seal['actor'] == 'auditor'
+    for row in rows:
+        interruption = row.get('interruption')
+        if interruption and interruption['state']=='close_requested' and interruption.get('outcome')=='pass':
+            check(report['delivery_verified'] and not report['auditor_submitted'],'manager_return_verified')
+    first = rows[0]['interruption']
+    if first is None:
+        outcome = 'pass' if report['closed'] and report['delivery_verified'] else 'incomplete'
+        criteria = {'verified_close':report['closed'] and report['delivery_verified']}
+    elif first['state']=='unexercised' or first.get('outcome')=='unexercised':
+        outcome,criteria = 'unexercised',{'witness':first['state']}
+    elif first.get('outcome')=='pass':
+        close = first['state']=='close_requested'
+        awaiting = (e.json(observed[0])['data'].get('condition')=='awaiting_confirmation')
+        criteria = {'outside_ledger':True,'preparation_and_attribution':True,
+                    'original_entries_accounted':retained_entries<=set(selected)|deleted_entries,
+                    'at_most_one_reminder':sum(b['type']=='reminder' for _,b in notices)<=1,
+                    'usage_and_placement_totals':True,'point_action':True,
+                    'continuation_input':None if close else len(rows)>1 and rows[1]['requests']>0,
+                    'honest_ending':report['auditor_submitted'] or report['seal_actor']=='manager' and
+                         (close or rows[-1]['ending'] in ('ended_unsubmitted','limit_reached')),
+                    'verified_delivery':report['delivery_verified'],
+                    'close':report['closed'] or close and awaiting}
+        outcome='pass' if all(x is None or x for x in criteria.values()) else 'incomplete'
+    else:
+        outcome,criteria = None,{}
+    report['trial'] = {'outcome':outcome,'criteria':criteria}
     report['outcome'] = 'checked'
 
 
@@ -907,27 +997,73 @@ def interruption_witness(e, check, folder, planned, placement, base, by_name, in
     seal recorded first still ends `sealed` (INTERFACE 6.8).
     """
     chosen = e.json(folder + 'selected.json')
-    check(chosen['point'] == planned['after'] and chosen['signal'] == planned['signal'] == 'SIGTERM', 'interruption_witness')
-    matching = [name for name, record in by_name.items() if bounds[0] < index[name] < bounds[1] and (
-        record['kind'] == 'notice' and record['body']['type'] == 'reminder' if planned['after'] == 'reminder_notice'
-        else record['kind'] == 'entry')]
+    action = planned['action']
+    check(chosen['point'] == planned['after'] and chosen['action'] == action, 'interruption_witness')
+    point_kind = {'reminder_notice':'notice','entry_record':'entry',
+                  'run_started':'run_started','answer_prepared':'answer_prepared'}[planned['after']]
+    matching = [name for name, record in by_name.items() if bounds[0] <= index[name] < bounds[1]
+                and record['kind']==point_kind and (point_kind!='notice' or record['body']['type']=='reminder')]
     if folder + 'unexercised.json' in e.names:
         missed = e.json(folder + 'unexercised.json')
-        check(missed['signal_sent'] is False and folder + 'signal.json' not in e.names
-              and missed['reason'] in ['placement_ended_first', 'watchdog_expired_first', 'placement_ended_at_the_point'],
+        check(missed['signal_sent'] is False and all(folder+f not in e.names for f in ('signal.json','close.json'))
+              and missed['reason'] in ['placement_ended_first', 'watchdog_expired_first', 'placement_ended_at_the_point','point_overtaken'],
               'interruption_witness')
-        return {'point': planned['after'], 'state': 'unexercised', 'reason': missed['reason'], 'record': None,
+        if point_kind in ('run_started','answer_prepared'):
+            stopped=e.json(folder+'termination.json')
+            check(stopped['exit']==command['exit'] and not stopped['timed_out'] and stopped['process_group_gone'] is True,
+                  'unexercised_termination')
+            if missed['reason']=='point_overtaken':
+                check(matching and any(index[matching[0]]<index[n]<=bounds[1]
+                      and r['kind'] in ('entry','seal','answer_prepared','close_requested','run_ended')
+                      for n,r in by_name.items()), 'overtaken_point')
+        return {'point': planned['after'], 'state': 'unexercised', 'outcome':'unexercised','reason': missed['reason'], 'record': None,
                 'point_record_published': bool(matching), 'followed_by_signal_ending': False}
-    point, sent, stopped = [e.json(folder + name + '.json') for name in ['point', 'signal', 'termination']]
-    # The first such record of this placement, by name and bytes.
+    point, sent, stopped = [e.json(folder + name + '.json') for name in ['point', action, 'termination']]
     check(point['point'] == planned['after'] and matching and point['record'] == matching[0]
           and digest(e.read(base + point['record'])) == point['sha256'], 'interruption_witness')
     seen, recorded = point['process'], started['observations']
     check(seen['pid'] == recorded['pid'] == command['pid'] == sent['process_group']
-          and (seen['start_ticks'] is None or recorded['start_ticks'] is None or seen['start_ticks'] == recorded['start_ticks'])
-          and (seen['uid'] is None or seen['uid'] == recorded['uid']), 'interruption_witness')
-    check(sent['signal'] == 'SIGTERM' and sent['number'] == 15 and point['observed_at'] <= sent['sent_at'] <= stopped['observed_at']
-          and stopped['exit'] == command['exit'] and stopped['timed_out'] is False, 'interruption_witness')
+          and all(seen.get(k) is None or recorded.get(k) is None or seen[k]==recorded[k]
+                  for k in ('start_ticks','uid','boot_id')), 'interruption_witness')
+    when = sent['requested_at'] if action=='close' else sent['sent_at']
+    check(point['observed_at'] <= when <= stopped['observed_at'] and stopped['exit'] == command['exit']
+          and stopped['timed_out'] is False and stopped['process_group_gone'] is True, 'interruption_termination')
+    if action=='signal':
+        check(sent['signal']=='SIGTERM' and sent['number']==15,'interruption_witness')
+    trial_outcome = None
+    if point_kind in ('run_started','answer_prepared'):
+        last = index[point['record']]
+        for number in range(1,last+1):
+            check(e.read(folder+f'at-point/{number}.json')==e.read(base+f'log/{number}.json'),'outside_log_prefix')
+        if point_kind=='answer_prepared':
+            event=by_name[point['record']]['body']
+            for name,member in [('answer.json','answer_sha256'),('answer.md','rendering_sha256')]:
+                copied=e.read(folder+'at-point/'+name)
+                check(digest(copied)==event[member] and copied==e.read(base+f"prepared/{event['prepared']}/"+name),
+                      'outside_preparation_bytes')
+        stop_at = bounds[1]
+        if action=='close':
+            requested = [index[n] for n,r in by_name.items() if r['kind']=='close_requested']
+            check(sent['exit']==0 and sent['timed_out'] is False and sent['outcome']=='completed'
+                  and len(requested)==1 and last<requested[0], 'close_command_observed')
+            stop_at = min(stop_at,requested[0])
+        overtaken = any(last<index[n]<stop_at and r['kind'] in ('seal','entry','answer_prepared')
+                        for n,r in by_name.items())
+        if overtaken:
+            trial_outcome='unexercised'
+        elif action=='signal':
+            check(ended['ending']=='interrupted' and ended['cause']=='signal', 'signal_ended_placement')
+            trial_outcome='pass'
+        else:
+            check(ended['ending']=='stopped_by_close' and requested[0]<bounds[1], 'close_ended_placement')
+            seals=[r['body'] for r in by_name.values() if r['kind']=='seal']
+            check(len(seals)==1 and seals[0]['actor']=='manager','manager_close_attribution')
+            if point_kind=='answer_prepared':
+                check(all(seals[0][k]==event[k] for k in ('answer_sha256','rendering_sha256','revision')),
+                      'close_preserves_auditor_preparation')
+            probes=serial_commands(e.names,r'evidence/[0-9]{2,}-closed-run-probe\.stdout')
+            check(len(probes)==1 and e.json(probes[0]).get('reason')=='reference_closed','closed_reference_refuses_run')
+            trial_outcome='pass'
     # What the signal found. No timing is required; the witness's account must be
     # the one the placement's own records give, and for the reminder it must
     # agree with the `sent` state INTERFACE 6.4 derives from the same records.
@@ -948,7 +1084,8 @@ def interruption_witness(e, check, folder, planned, placement, base, by_name, in
         sent_state = next(item['sent'] for item in ended['notices'] if item['record'] == point['record'])
         check(sent_state == {'not_captured': 'not_sent', 'captured_not_written': 'unknown',
                              'written_unanswered': 'sent', 'answered': 'sent'}[timing], 'interruption_timing')
-    return {'point': planned['after'], 'state': 'signalled', 'record': point['record'],
+    return {'point': planned['after'], 'state': 'close_requested' if action=='close' else 'signalled',
+            'outcome':trial_outcome, 'record': point['record'],
             'timing': timing, 'request': request,
             'request_written': [row['request_written'] for row in rows],
             'charge_basis': [row['charge_basis'] for row in rows],

@@ -16,7 +16,7 @@ from common import (compact, digest, fields, file_hash, identifier,
 from launch import credential_cases_qualified, host_environment
 import driver_core as spec
 
-SCHEMA = 'stewart.interface-commission/1'
+SCHEMA = 'stewart.interface-commission/2'
 ARCHES = ('arm64', 'amd64')
 
 

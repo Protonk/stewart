@@ -54,15 +54,17 @@ CONTINUED_CONTROLS = {
     'reminder-spent-unheld': ('reminder_notice', [['interrupted', 'signal'], ['ended_unsubmitted', None]]),
     'reminder-spent-submits': ('reminder_notice', [['interrupted', 'signal'], ['sealed', None]]),
     'reminder-unused': ('entry_record', [['interrupted', 'signal'], ['sealed', None]]),
+    'p1-signal':('run_started',[['interrupted','signal'],['sealed',None]]),
+    'p2-signal':('answer_prepared',[['interrupted','signal'],['sealed',None]]),
 }
 # Whether the rehearsal provider holds the request in flight until the signal has been sent. Only
 # the unheld control is signalled on sight, as a live placement is; the two capped ones are not signalled.
-HELD_CONTROLS = {'continue-cap': None, 'continue-entries': None, 'reminder-spent': True,
+HELD_CONTROLS = {'p1-signal':True,'p2-signal':True,'continue-cap': None, 'continue-entries': None, 'reminder-spent': True,
                  'reminder-spent-unheld': False, 'reminder-spent-submits': True, 'reminder-unused': True}
 # Comparisons on each continued control after its final placement: reviewer (cases run, controls
 # fired, controls without a subject), report comparisons, operator comparisons or None. The unheld
 # control has a subject for the request-cap control only when its signal found a written request.
-CONTINUED_COMPARISONS = {
+CONTINUED_COMPARISONS = {'p1-signal': ([(13,12,1)],14,None), 'p2-signal': ([(14,13,0)],14,None),
     'continue-cap': ([(11, 10, 3)], 14, None),
     'continue-entries': ([(12, 11, 2)], 14, None),
     'reminder-spent': ([(14, 13, 0)], 14, 8),
@@ -82,8 +84,9 @@ def control_counts(scenario, shape=0):
     return {'review': {**family(run), 'skipped': 0, 'controls': fired, 'controls_fired': fired,
                        'not_applicable': [f'control-without-subject-{n}' for n in range(absent)]},
             'reporting': family(reporting), 'operations': None if operations is None else family(operations)}
+TRIAL_SCENARIOS = ["p1-close","p2-close","p2-missed"]
 REHEARSAL_AUDITS = ([name + '-r1' for name in FIXED_CASES]
-                    + ['control-' + name for name in SINGLE_PLACEMENT_CONTROLS + list(CONTINUED_CONTROLS)])
+                    + ['control-' + name for name in SINGLE_PLACEMENT_CONTROLS + list(CONTINUED_CONTROLS) + TRIAL_SCENARIOS])
 
 FAKE_KEYCTL = '''import json, os, pathlib, sys, time
 root=pathlib.Path(__file__).parent
@@ -536,11 +539,11 @@ class StudyTests(unittest.TestCase):
 
     def test_packet_separates_studies_and_keeps_full_rehearsal(self):
         packet=study_proposal('example-model',[('problem-a',self.folder)])
-        self.assertEqual(packet['schema'],'stewart.study-commission/1')
+        self.assertEqual(packet['schema'],'stewart.study-commission/2')
         self.assertEqual(packet['runs'][0]['submission_sha256'],tree_hash(self.folder))
         rehearsed=study_proposal('rehearsal-only',[('problem-a',self.folder)],rehearsal=True)
         self.assertEqual([run['id'] for run in rehearsed['runs']],REHEARSAL_AUDITS+['problem-a'])
-        packet['schema']='stewart.c10-commission/1'
+        packet['schema']='stewart.c10-commission/2'
         with self.assertRaises(ValueError):validate_packet(packet)
 
     def test_supplied_compaction_scenarios_remain_offline_and_bind_exact_inputs(self):
@@ -564,14 +567,14 @@ class StudyTests(unittest.TestCase):
         study=study_proposal('example-model',[('problem-a',self.folder)])
         packet=validate_packet(c10.interrupted_study(study,'reminder_notice',3))
         self.assertEqual((packet['schema'],packet['max_placements'],packet['interruption'],packet['automatic_continuation']),
-                         ('stewart.interruption-commission/1',3,{'after':'reminder_notice','signal':'SIGTERM'},False))
+                         ('stewart.interruption-commission/3',3,{'after':'reminder_notice','action':'signal'},False))
         self.assertEqual(study['max_placements'],1)
         # Its rehearsal is the ordinary one that includes the same template.
         rehearsed=study_proposal('rehearsal-only',[('problem-a',self.folder)],rehearsal=True)
         c10.check_rehearsal_inputs(rehearsed,packet)
         for reason,value in [('one placement per launch',c10.interrupted_study(study,'reminder_notice',1)),
                              ('one placement per launch',c10.interrupted_study(study,'reminder_notice',5)),
-                             ('unsupported interruption point or signal',c10.interrupted_study(study,'entry_record',2)),
+                             ('unsupported interruption point or action',c10.interrupted_study(study,'entry_record',2)),
                              ('an interrupted study names exactly one audit',
                               c10.interrupted_study(study_proposal('example-model',[('problem-a',self.folder),('problem-b',self.folder)]),'reminder_notice',2))]:
             with self.subTest(reason=reason),self.assertRaisesRegex(ValueError,reason):
@@ -586,7 +589,7 @@ class StudyTests(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stderr)
         packet=strict_json(read_file(output))
         self.assertEqual((packet['schema'],packet['max_placements'],packet['spending_authority'],packet['bindings']['binary_sha256']),
-                         ('stewart.interruption-commission/1',2,None,None))
+                         ('stewart.interruption-commission/3',2,None,None))
         # The default 12,000-token output allowance cannot absorb one estimated request and leave 1,024.
         estimate=json.loads(result.stdout.decode().rsplit('Unbound proposal',1)[0])['allowances']['planned_interruption']
         self.assertEqual((estimate['output_charge_if_one_request_is_aborted_in_flight'],
@@ -753,11 +756,11 @@ class PacketTests(unittest.TestCase):
         packet=rehearsal_packet()
         self.assertEqual([run['id'] for run in packet['runs']],REHEARSAL_AUDITS)
         self.assertEqual([run['scenario'] for run in packet['runs']],
-                         ['submitted']*6+SINGLE_PLACEMENT_CONTROLS+list(CONTINUED_CONTROLS))
+                         ['submitted']*6+SINGLE_PLACEMENT_CONTROLS+list(CONTINUED_CONTROLS)+TRIAL_SCENARIOS)
         self.assertEqual({name:(value['interruption'],value['endings']) for name,value in common.CONTINUED.items()},
                          CONTINUED_CONTROLS)
         self.assertEqual({name:value['held'] for name,value in common.CONTINUED.items()},HELD_CONTROLS)
-        self.assertEqual((len(packet['runs']),len(common.CONTINUED)),(22,6))
+        self.assertEqual((len(packet['runs']),len(common.CONTINUED)),(27,8))
         # Every first launch is one placement; a later one is never implied by the packet.
         self.assertEqual((packet['max_placements'],packet['automatic_continuation']),(1,False))
         # INTERFACE 6.4: an interrupted in-flight request is charged its whole
@@ -1296,21 +1299,32 @@ class HostQueueTests(unittest.TestCase):
         (self.root / '.scratch').mkdir()
         patch = mock.patch.object(host_queue, 'REPO', self.root)
         patch.start(); self.addCleanup(patch.stop)
-        self.config = {'schema': 'stewart.c10-campaign/2',
-            'envelope': {'cases': list(catalog()), 'submissions': {}, 'efforts':[None],
-                         'limits':{'turns':12,'input_tokens':160000,'output_tokens':30000},
-                         'max_placements':2,'watchdog_seconds':900,'study_build_sha256':None,
-                         'pricing':{'max_input_per_attempt':1000000,'max_output_per_attempt':16000,
-                                    'input_cents_per_million':1,'output_cents_per_million':5}},
-            'campaign': 'test-campaign', 'authority': 'bounded test authority',
-            'model': 'test-model', 'qualification': 'test-qualified',
-            'account': {'account_label': 'test', 'workspace_id': 'test-workspace', 'credential_label': 'test-key'},
-            'synthetic_connection': 'test-synthetic', 'placement_ceiling': 2, 'budget_usd': 50,
-            'console': {'scope': 'test workspace', 'month': host_queue.datetime.now(host_queue.timezone.utc).strftime('%Y-%m'),
-                'limit_usd': 60, 'starting_spend_usd': 10, 'recorded_by': 'test operator',
-                'recorded_at': 'test time', 'credential_binding': 'test-key belongs to this workspace'}}
+        price = {'context_tokens':1000000, 'bands':[{'through_input_tokens':1000000,
+            'input_tokens':10000,'cache_creation_input_tokens':10000,
+            'cache_read_input_tokens':10000,'output_tokens':50000}]}
+        self.config = {'schema':'stewart.c10-campaign/3',
+            'envelope':{'cases':list(catalog()),'submissions':{},'efforts':[None],
+                        'limits':{'turns':12,'input_tokens':160000,'output_tokens':30000},
+                        'max_placements':2,'watchdog_seconds':900,'study_build_sha256':None,
+                        'pricing':{'test-model':price,'test-diagnostic':price}},
+            'campaign':'test-campaign','authority':'bounded test authority','qualification':'test-qualified',
+            'account':{'account_label':'test','workspace_id':'test-workspace','credential_label':'test-key'},
+            'synthetic_connection':'test-synthetic','placement_ceiling':2,'budget_usd':50,
+            'wave':1,'wave_one_ceiling':2,'wave_one_model':'test-model',
+            'cards':str(self.root/'cards'),'grant_path':str(self.root/'grant.json')}
+        self.grant(self.config)
+        self.real_exposure=host_queue.exposure_review
+        safe_exposure=mock.patch.object(host_queue,'exposure_review',return_value=True)
+        safe_exposure.start();self.addCleanup(safe_exposure.stop)
+        self.real_card=host_queue.frozen_card
+        card_patch=mock.patch.object(host_queue,'frozen_card',return_value=('test-slot',b'{}'))
+        card_patch.start();self.addCleanup(card_patch.stop)
+        settlement=mock.patch.object(host_queue,'priced_export',return_value=True)
+        settlement.start();self.addCleanup(settlement.stop)
         self.packet = proposal('test-model', ['open-ordinary'])
+        self.packet['limits']['input_tokens']=90000
         self.packet['account'] = self.config['account'].copy()
+        self.packet['file_size_limit'] = 131072
         self.packet['spending_authority'] = self.config['authority']
         self.packet['bindings'] = dict.fromkeys(self.packet['bindings'], 'test-binding')
         self.packet['bindings']['qualification_id'] = 'test-qualified'
@@ -1338,21 +1352,87 @@ class HostQueueTests(unittest.TestCase):
         if hasattr(self, 'request'):
             self.request['sha256'] = digest(read_file(self.path))
 
-    def test_live_needs_explicit_enable_and_current_console_record(self):
-        with self.assertRaisesRegex(ValueError, 'offline'):
-            host_queue.command(self.request, self.config, False)
-        for console in [None, {**self.config['console'], 'month': '2000-01'},
-                        {**self.config['console'], 'limit_usd': 10}]:
-            with self.subTest(console=console), self.assertRaises(ValueError):
-                host_queue.configuration({**self.config, 'console': console}, True)
-        host_queue.configuration({**self.config, 'console': None}, False)
+    def grant(self, config):
+        record={'schema':'stewart.runtime-trials.envelope/1','waves':2,'campaign':config['campaign'],
+                'grant':config['authority'],'messages':{'endpoint':'https://api.anthropic.com',
+                'models':list(config['envelope']['pricing']),'wave_one_model':config['wave_one_model'],
+                'credential_label':config['account']['credential_label'],'placements':config['placement_ceiling'],
+                'wave_one_placements':config['wave_one_ceiling'],'cap_usd_cents':host_queue.cents(config['budget_usd'])}}
+        raw=json.dumps(record).encode()
+        Path(config['grant_path']).write_bytes(raw)
+        config['grant_sha256']=digest(raw)
+        return config
 
-    def test_console_headroom_does_not_change_the_campaign_budget(self):
-        config = {**self.config, 'console': {**self.config['console'],
-                  'limit_usd': 54, 'starting_spend_usd': 3.91}}
-        self.assertIs(host_queue.configuration(config, True), config)
-        self.assertEqual(config['budget_usd'], 50)
-        self.assertEqual(config['console']['starting_spend_usd'], 3.91)
+    def test_live_needs_explicit_enable_and_exact_protected_grant(self):
+        with self.assertRaisesRegex(ValueError,'offline'):
+            host_queue.command(self.request,self.config,False)
+        for change in [{'grant_sha256':'f'*64},{'placement_ceiling':3},{'budget_usd':51},
+                       {'authority':'another commission'}]:
+            with self.subTest(change=change),self.assertRaises(ValueError):
+                host_queue.configuration({**self.config,**change},True)
+
+    def test_both_models_share_nonrenewing_allowance_and_wave_one_is_sonnet_only(self):
+        self.assertFalse(host_queue.model_allowed(self.config,'test-diagnostic'))
+        wave_two={**self.config,'wave':2}
+        self.assertTrue(host_queue.model_allowed(host_queue.configuration(wave_two,True),'test-diagnostic'))
+        self.assertEqual(wave_two['budget_usd'],self.config['budget_usd'])
+
+    def test_frozen_card_binds_packet_and_refuses_duplicate_slot_on_restart(self):
+        d=Path(self.config['cards']);d.mkdir()
+        name=self.packet['runs'][0]['id']
+        card={'campaign':self.config['campaign'],'wave':1,'trial':name,'placement':1,
+            'question':'fixture open inquiry','reason':'uninterrupted reference',
+            'packet_sha256':self.request['sha256'],'model':self.packet['model'],
+            'qualification':self.packet['bindings']['qualification_id'],'apparatus_sha256':'test-binding',
+            'writer_sha256':'test-binding','grant_sha256':self.config['grant_sha256'],'file_size_limit':131072}
+        slot=name+'-p1'
+        write_json(d/(slot+'.json'),card)
+        self.assertEqual(self.real_card(self.config,self.packet,self.request,[]),(slot,read_file(d/(slot+'.json'))))
+        claim=self.root/'earlier-claim';claim.mkdir()
+        write_json(claim/'command.json',{'slot':slot})
+        with self.assertRaisesRegex(ValueError,'already claimed'):
+            self.real_card(self.config,self.packet,self.request,[claim])
+        with self.assertRaisesRegex(ValueError,'differs'):
+            self.real_card(self.config,self.packet,{**self.request,'sha256':'0'*64},[])
+
+    def test_positive_exposure_count_stops_before_publishing_and_contains_only_counts(self):
+        d=Path(self.request['evidence'])
+        (d/'host').mkdir(parents=True)
+        write_json(d/'host/RESULT.json',{'host_scan':{'files':3,'errors':0,'files_with_matches':1}})
+        queue=self.root/'queue';(queue/'claims/exposure').mkdir(parents=True)
+        self.assertFalse(self.real_exposure(queue,'exposure',self.request,self.packet))
+        self.assertTrue((queue/'STOP').is_file())
+        self.assertEqual(strict_json(read_file(queue/'claims/exposure/exposure.json')),
+                         {'scans':1,'files_examined':3,'files_with_matches':1,'errors':0,'credential_printed':False})
+
+    def test_price_bands_known_cache_and_unknown_usage(self):
+        from billing import charge,worst_case
+        def band(n, rate):
+            return dict(through_input_tokens=n,input_tokens=rate,cache_creation_input_tokens=2*rate,
+                        cache_read_input_tokens=rate//10,output_tokens=5*rate)
+        card={'context_tokens':1000000,'bands':[band(100000,100000),band(1000000,500000)]}
+        rows=[{'basis':'reported','input_tokens':100000,'cache_creation_input_tokens':0,
+               'cache_read_input_tokens':1,'output_tokens':200},
+              {'basis':'estimated','input_tokens':20,'cache_creation_input_tokens':0,
+               'cache_read_input_tokens':0,'output_tokens':16000}]
+        usage={'turns':{'reported':1,'estimated':1},'input_tokens':{'reported':100001,'estimated':20},
+               'output_tokens':{'reported':200,'estimated':16000}}
+        actual=charge(card,{'billing':rows,'usage':usage})
+        self.assertEqual(actual['microdollars_times_million'],100000*500000+50000+200*2500000+20*1000000+16000*2500000)
+        with self.assertRaisesRegex(ValueError,'does not equal'):
+            charge(card,{'billing':rows[:-1],'usage':usage})
+        with self.assertRaisesRegex(ValueError,'compaction'):
+            worst_case(card,{'input_tokens':150000,'output_tokens':1024})
+
+    def test_pre_send_estimate_can_exceed_context_and_guard_is_mandatory(self):
+        from billing import worst_case
+        rate=dict(through_input_tokens=1000000,input_tokens=2000000,cache_creation_input_tokens=4000000,
+                  cache_read_input_tokens=100000,output_tokens=10000000)
+        card={'context_tokens':1000000,'bands':[rate]}
+        self.assertEqual(worst_case(card,{'turns':12,'input_tokens':90000,'output_tokens':16000}),468)
+        self.assertEqual(worst_case(card,{'turns':24,'input_tokens':100000,'output_tokens':48000}),542)
+        with self.assertRaisesRegex(ValueError, '128 KiB'):
+            host_queue.check_envelope({**self.packet,'file_size_limit':None},self.config,None)
 
     def test_valid_live_command_retains_launcher_checks_and_account(self):
         argv, charge = host_queue.command(self.request, self.config, True)
@@ -1385,13 +1465,13 @@ class HostQueueTests(unittest.TestCase):
     def continuation(self,**changes):
         evidence=self.root/'.scratch/earlier-01'
         evidence.mkdir(exist_ok=True)
-        packet={'schema':'stewart.c10-continuation/1','evidence':str(evidence),'audit':'case-a',
+        packet={'schema':'stewart.c10-continuation/3','evidence':str(evidence),'audit':'case-a',
             'container':'stewart-c10-1-2','reference':'stw1:'+'a'*17+':'+'b'*17+':/work/c10-private/case-a/archive',
             'placement':2,'max_placements':2,
             'prior':{'runs':1,'last_ending':'interrupted','last_cause':'max_tokens','log_head_sha256':None,'usage':None},
-            'model':'test-model','limits':{'turns':12,'input_tokens':160000,'output_tokens':30000},
+            'model':'test-model','limits':{'turns':12,'input_tokens':90000,'output_tokens':30000},
             'endpoint':'https://api.anthropic.com','proxy':None,'interruption':None,'permitted_request_attempts':4,
-            'automatic_continuation':False,'stop_after_seconds':900,'spending_authority':self.config['authority'],
+            'automatic_continuation':False,'file_size_limit':131072,'stop_after_seconds':900,'spending_authority':self.config['authority'],
             'account':self.config['account'].copy(),
             'bindings':{**dict.fromkeys(common.BINDINGS,'test-binding'),'qualification_id':'test-qualified'},**changes}
         path=self.packets/'continuation.json'
@@ -1457,6 +1537,8 @@ class HostQueueTests(unittest.TestCase):
             'evidence':[{'path':str(witness),'sha256':digest(read_file(witness))}]})
         write_json(queue/'requests/reconciled.json', self.continuation())
         self.assertEqual(serve(),(0,1))
+        write_json(queue/'claims/reconciled/settlement.json',{'schema':'stewart.c10-settlement/1',
+            'reserved_cents':2,'cents':1})
         command=strict_json(read_file(queue/'claims/reconciled/command.json'))
         self.assertEqual((command['placement_charge'],command['argv'][4:6]),(1,['continue','live']))
         # The claimed request is never dispatched again, and both slots stay charged.
@@ -1554,8 +1636,9 @@ class HostQueueTests(unittest.TestCase):
 
     def test_budget_gate_withholds_dispatch_for_one_cent_over_and_unknown_cost(self):
         # The recorded price and full attempt bounds are operator inputs.
-        self.assertEqual(host_queue.reservation(self.config,1),52)
-        for name,headroom,prior in [('within',52,None),('over',51,None),('after',103,52),('unknown',5000,None)]:
+        unit=host_queue.reservation(self.config,1,self.packet)
+        self.assertEqual(unit,2)
+        for name,headroom,prior in [('within',unit,None),('over',unit-1,None),('after',2*unit-1,unit),('unknown',5000,None)]:
             with self.subTest(name=name):
                 queue=self.root/name
                 for directory in ['requests','packets','claims']:
@@ -1568,7 +1651,7 @@ class HostQueueTests(unittest.TestCase):
                     if prior:
                         write_json(claim/'command.json',{'placement_charge':1,'reserved_cents':prior})
                 config=self.root/(name+'.json')
-                write_json(config,{**self.config,'budget_usd':headroom/100,'placement_ceiling':10})
+                write_json(config,self.grant({**self.config,'budget_usd':headroom/100,'placement_ceiling':10}))
                 with mock.patch.object(host_queue.subprocess,'check_output',return_value=b''), \
                         mock.patch.object(host_queue,'source_hash',return_value='source'), \
                         mock.patch.object(host_queue.subprocess,'run',return_value=subprocess.CompletedProcess([],0)) as invoked:
@@ -1621,7 +1704,7 @@ class HostQueueTests(unittest.TestCase):
         request={'operation':'rehearse','evidence':str(self.root/'.scratch/queue-boundary'),'submissions':[]}
         argv,slots=host_queue.command(request,config,False)
         self.assertIn('rehearse',argv)
-        self.assertEqual(slots,28)
+        self.assertEqual(slots,35)
         self.assertEqual(host_queue.reservation(config,slots),host_queue.cents(config['budget_usd']))
         self.assertEqual(config['placement_ceiling'],2*slots)
 
@@ -1838,6 +1921,13 @@ class ContinuationTests(unittest.TestCase):
         self.reviews[audit,name]={'outcome':'checked','ending':None if endings[-1] is None else endings[-1][0],
                                   'auditor_submitted':sealed,'delivery_verified':sealed}
 
+        scenario=audit.removeprefix('control-')
+        if scenario in common.TRIAL_CONTROLS:
+            point,action=common.TRIAL_CONTROLS[scenario]
+            outcome='unexercised' if scenario=='p2-missed' else 'pass'
+            self.reviews[audit,name].update(placements=[{'interruption':{'point':point,'outcome':outcome}}],
+                trial={'outcome':'pass' if action=='close' or len(endings)>1 else outcome})
+
     def review(self,folder):
         """What the reviewer reports for the fixture's exports; the archives themselves are read for real."""
         rows=[]
@@ -1901,7 +1991,7 @@ class ContinuationTests(unittest.TestCase):
 
     def packet(self,of=None,name='packet.json',**changes):
         """A bound, paid packet for an audit's next placement, with the named members changed."""
-        study=strict_json(read_file(self.evidence/'staging/commission.json'))['schema']=='stewart.interruption-commission/1'
+        study=strict_json(read_file(self.evidence/'staging/commission.json'))['schema']=='stewart.interruption-commission/3'
         value=c10.continuation_proposal(self.evidence,of or self.first,
                                         max_placements=None if study else common.MAX_PLACEMENTS)
         value.update(max_placements=2,spending_authority=self.original['spending_authority'],
@@ -2093,8 +2183,8 @@ class ContinuationTests(unittest.TestCase):
             self.args(self.packet(placement=5,max_placements=5,prior={'runs':4})))
         # A packet cannot raise the ceiling an interrupted study was commissioned with.
         raw=read_file(self.evidence/'staging/commission.json')
-        commissioned={**strict_json(raw),'schema':'stewart.interruption-commission/1','max_placements':3,
-                      'interruption':{'after':'reminder_notice','signal':'SIGTERM'}}
+        commissioned={**strict_json(raw),'schema':'stewart.interruption-commission/3','max_placements':3,
+                      'interruption':{'after':'reminder_notice','action':'signal'}}
         changed=json.dumps(commissioned).encode()
         (self.evidence/'staging/commission.json').write_bytes(changed)
         launch=strict_json(read_file(self.evidence/'host/RESULT.json'))
@@ -2422,13 +2512,13 @@ class ContinuationTests(unittest.TestCase):
                              (audits[2],[None]),(audits[3],[['interrupted','process_gone']])))
         value=c10.continuation_proposal(self.evidence,audits[0],max_placements=3,interruption='reminder_notice',
                                         stop_after_seconds=120)
-        self.assertEqual(value,{'schema':'stewart.c10-continuation/1','evidence':str(self.evidence),'audit':audits[0],
+        self.assertEqual(value,{'schema':'stewart.c10-continuation/3','evidence':str(self.evidence),'audit':audits[0],
             'container':self.container,'reference':self.reference_for(audits[0]),'placement':2,'max_placements':3,
             'prior':{'runs':1,'last_ending':'interrupted','last_cause':'max_tokens',
                      'log_head_sha256':self.heads[audits[0]],'usage':self.used},
             'model':'rehearsal-only','limits':self.original['limits'],'endpoint':'loopback-fake','proxy':None,
-            'interruption':{'after':'reminder_notice','signal':'SIGTERM'},'permitted_request_attempts':4,
-            'automatic_continuation':False,'stop_after_seconds':120,'spending_authority':None,
+            'interruption':{'after':'reminder_notice','action':'signal'},'permitted_request_attempts':4,
+            'automatic_continuation':False,'file_size_limit':None,'stop_after_seconds':120,'spending_authority':None,
             'account':{'account_label':None,'workspace_id':None,'credential_label':None},
             'bindings':dict.fromkeys(common.BINDINGS)})
         with self.assertRaises(ValueError):
@@ -2478,7 +2568,7 @@ class ContinuationTests(unittest.TestCase):
         usage={'turns':3,'input_tokens':110,'output_tokens':55}
         allowances={key:{'limit':limits[key],'used':usage[key]} for key in limits}
         self.assertEqual(c10.allowance_outlook(limits,usage,'reminder_notice'),
-                         c10.allowance_facts(allowances,{'after':'reminder_notice','signal':'SIGTERM'}))
+                         c10.allowance_facts(allowances,{'after':'reminder_notice','action':'signal'}))
         plain=c10.allowance_outlook(limits,usage,None)
         self.assertEqual((plain['remaining'],plain['planned_interruption']),
                          ({'turns':9,'input_tokens':159890,'output_tokens':11945},None))
@@ -2519,7 +2609,7 @@ class ContinuationTests(unittest.TestCase):
         failed,record=self.continue_controls()
         self.assertFalse(failed)
         audits=['control-'+name for name in CONTINUED_CONTROLS]
-        self.assertEqual((record['planned'],record['completed'],record['failed'],record['not_started']),(6,6,0,0))
+        self.assertEqual((record['planned'],record['completed'],record['failed'],record['not_started']),(8,8,0,0))
         self.assertEqual([(row['audit'],row['record'],row['started'],row['failed']) for row in record['continuations']],
                          [(audit,str(self.scratch/('earlier-01-'+audit+'-p2')),True,False) for audit in audits])
         # One placement start per control, each with the rehearsal's own key; source delivered once.
@@ -2527,7 +2617,7 @@ class ContinuationTests(unittest.TestCase):
                          [(audit,digest(self.key.encode())) for audit in audits])
         created=[strict_json(read_file(self.scratch/('earlier-01-'+audit+'-p2')/'host/RESULT.json'))['code']['created']
                  for audit in audits]
-        self.assertEqual(created,[True,False,False,False,False,False])
+        self.assertEqual(created,[True]+[False]*7)
         for audit in audits:
             packet=strict_json(read_file(self.evidence/'host'/('continuation-'+audit+'.json')))
             self.assertEqual((packet['model'],packet['endpoint'],packet['placement'],packet['max_placements'],
@@ -2596,7 +2686,7 @@ class ContinuationTests(unittest.TestCase):
         # Supplied scenarios require their own template controls and must still
         # leave the whole inventory available for the later admission checks.
         supplied=copy.deepcopy(self.original)
-        supplied['schema']='stewart.study-commission/1'
+        supplied['schema']='stewart.study-commission/2'
         for run in supplied['runs']:
             run['submission_folder']=None
         extended=copy.deepcopy(session)
@@ -2654,9 +2744,9 @@ class ContinuationTests(unittest.TestCase):
         self.configure()
         failed,record=self.continue_controls()
         self.assertTrue(failed)
-        self.assertEqual((record['planned'],record['completed'],record['failed'],record['not_started']),(6,1,1,4))
+        self.assertEqual((record['planned'],record['completed'],record['failed'],record['not_started']),(8,1,1,6))
         self.assertEqual([(row['started'],row['failed']) for row in record['continuations']],
-                         [(True,False),(True,True)]+[(False,None)]*4)
+                         [(True,False),(True,True)]+[(False,None)]*6)
         self.assertEqual([row['audit'] for row in self.calls('placement-stdin.jsonl')],['control-continue-cap',failing])
         self.assertEqual(sorted(path.name for path in self.scratch.iterdir()),
                          ['earlier-01','earlier-01-control-continue-cap-p2','earlier-01-'+failing+'-p2'])
@@ -2672,7 +2762,7 @@ class ContinuationTests(unittest.TestCase):
         failed,record=self.continue_controls()
         self.assertTrue(failed)
         row=record['continuations'][0]
-        self.assertEqual((record['completed'],record['failed'],record['not_started']),(0,1,5))
+        self.assertEqual((record['completed'],record['failed'],record['not_started']),(0,1,7))
         self.assertEqual((row['audit'],row['started'],row['failed'],row['reason']),
                          (audit,False,True,'the first placement did not end as this control specifies'))
         self.assertEqual((self.calls(),self.calls('placement-stdin.jsonl')),([],[]))

@@ -23,67 +23,96 @@ mode 2750. Its launcher-owned subdirectories are:
 | `results/` | 2750 | Agents read result JSON and successful, credential-scanned exports. |
 | `claims/`, `sessions/`, `submissions/` | 0700 | The launcher retains its allowances, snapshots and reviewed study inputs. |
 
-Use one queue for the whole campaign. The immutable scope includes the
-authority, account, model, envelope and ceilings. The example below is a
-**synthetic** campaign with simulated rates and dollar amounts.
+Use the same queue for both waves and all authorized models. The private
+configuration binds the exact bytes of the commission. Put the signed-off
+envelope in a launcher-owned file and compare its SHA-256 with the grant.
+Each live session checks the account's credential label, endpoint, models,
+wave allocation, authority, total slots and dollar ceiling against that file.
+The following offline example uses simulated rates in microdollars per million
+tokens. A million microdollars is one dollar.
 
 ```json
 {
-  "schema": "stewart.c10-campaign/2",
+  "schema": "stewart.c10-campaign/3",
   "campaign": "queue-rehearsal",
   "authority": "Synthetic queue comparison only",
-  "model": "rehearsal-only",
+  "grant_path": "/home/stewart-launch/commission/envelope.json",
+  "grant_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "qualification": "ACCEPTANCE-ID",
   "synthetic_connection": "stewart-synthetic",
   "account": {"account_label": "offline", "workspace_id": "offline", "credential_label": "stewart-synthetic"},
-  "placement_ceiling": 56,
-  "budget_usd": 14.52,
-  "console": null,
+  "cards": "/home/stewart-launch/commission/cards",
+  "wave": 1, "wave_one_model": "rehearsal-only", "wave_one_ceiling": 70,
+  "placement_ceiling": 70, "budget_usd": 0.70,
   "envelope": {
-    "cases": ["open-ordinary", "open-inadequate", "framing-ordinary", "framing-inadequate", "comparison-ordinary", "comparison-inadequate"],
-    "submissions": {},
-    "efforts": [null],
+    "cases": ["open-ordinary","open-inadequate","framing-ordinary","framing-inadequate","comparison-ordinary","comparison-inadequate"],
+    "submissions": {}, "efforts": [null],
     "limits": {"turns": 12, "input_tokens": 160000, "output_tokens": 30000},
-    "max_placements": 2,
-    "watchdog_seconds": 900,
-    "study_build_sha256": null,
-    "pricing": {"input_cents_per_million": 1, "output_cents_per_million": 5, "max_input_per_attempt": 1000000, "max_output_per_attempt": 16000}
+    "max_placements": 2, "watchdog_seconds": 900, "study_build_sha256": null,
+    "pricing": {"rehearsal-only": {"context_tokens":1000000,"bands":[{
+      "through_input_tokens":1000000, "input_tokens":10000, "cache_creation_input_tokens":10000,
+      "cache_read_input_tokens":10000, "output_tokens":50000
+    }]}}
   }
 }
 ```
 
-The runner reserves the placement ceiling in whole cents, rounded up, before
-dispatch. For each slot it prices four attempts per allowed turn. Each attempt
-uses the maximum billable input and output and most expensive applicable rate
-bands for the commissioned model and route. Establish those bounds and the
-rate card when commissioning, including cache charges, summary iterations
-and the final request that can exceed the remaining input allowance. Fixed
-cases, submitted content hashes, effort, cumulative tokens and turns, per-audit
-placement count, watchdog and writer must fit the envelope. A null study-build
-digest permits the qualified writer. A specified digest additionally permits
-that reviewed build, identified by SHA-256 of its compact JSON descriptor
-in packet member order. For a study, map its ID to the exact tree hash in
-`envelope.submissions` and install the reviewed template in
-`queue/submissions/ID`. Its packet must name that launcher-owned path.
+Freeze per-model rate bands with the commission, including discounts, cache
+charges and the maximum input that can overrun the cumulative limit in the
+last request. The campaign admits only ordinary client-tool packets whose
+cumulative input plus output limits do not exceed the 150,000-token compaction
+threshold. This excludes a new server summarization iteration from the cost
+bound. Every request and retry checks remaining allowances. Before the child
+starts, the runner reserves the unused input allowance plus the greater of the
+model context window and the largest terminal estimate, at the highest input
+rate. It also reserves the unused output allowance plus one request's maximum
+output (at most 16,000 tokens) at the highest output rate. Settlement counts
+the full Stewart estimate and rounds up to the next cent per placement.
 
-A paid configuration names the exact commissioned model and bound account,
-workspace and credential. The current attributed `console` observation
-contains `scope`, `month` (`YYYY-MM` UTC), `limit_usd`,
-`starting_spend_usd`, `recorded_by`, `recorded_at` and
-`credential_binding`. Each reservation must fit both remaining authorization
-and remaining Console headroom after all prior reservations. The runner
-does not query billing. Failed and interrupted dispatches retain their full
-reservations. Missing charge metadata holds the whole allowance.
+Each paid packet, including a continuation, specifies `file_size_limit` of
+131072 bytes. An unprivileged helper lowers both file-size limits, arms the
+default SIGXFSZ action and execs the release writer. Before putting the key
+in its pipe, the launcher reads the waiting child's actual kernel limits and
+checks the accepted arrangement fits. The writer completely records every
+request's newly appended messages before its first network attempt. A retry
+uses the same body, and the next new request requires a charged turn. The
+maximum pre-send body in bytes is therefore 131072 for fixed arrangement
+members, plus 131073 per remaining turn (one capture and its delimiter), plus
+1024 for JSON framing. Stewart charges the ceiling of body bytes divided by
+three for an estimated input. Rehearsal includes the same oversized question
+with and without enforcement and a smaller question with enforcement.
+
+The limit covers every regular file the placement writes, including captures,
+prepared answers, generated artifacts, seal files and output streams. Intake,
+the manager's close, the fake endpoint, review and the queue run separately.
+An over-limit write can terminate the writer with SIGXFSZ, cut off a capture
+and leave a started run without its ending. Earlier requests may already have
+been billed. A signalled child, a changed file at the threshold or any
+incomplete custody record requires reconciliation. The claim retains its full
+reservation and blocks subsequent placements. Only a clear, unexercised
+limit supports interpretation as an ordinary reference or selection.
+
+After a complete export, the runner reconstructs the placement from the
+digest-verified archive. Its settlement prices the recorded reported input,
+cache creation, cache reads and output per attempt at the matching tier.
+Known five-minute writes use their listed lifetime rate. Estimates and unspecified cache creation lifetimes use the highest applicable
+rates. The new claim carries both the original reservation and that placement's
+settlement. Continuations charge just their new placement. An unreviewed or
+uncertain placement keeps its reservation and blocks further starts; the
+custody operations remain available. Keep the same ledger across restarts and
+waves. Once wave two begins, wave one cannot resume. Endpoint billing and the
+account-wide provider cap are separate from this campaign meter.
 
 ```sh
 python3 -I -B apparatus/c10/host_queue.py /var/lib/stewart/queue \
   --config "$HOME/commission/queue.json" --once
 ```
 
-For a paid campaign the maintainer adds `--live`. Omitting `--once` runs
-until `queue/STOP` or a failed child. An exclusive lock covers admission,
-allowance checks and execution. A session checks committed apparatus, snapshots
-the configuration and persists claims before spawning the launcher.
+Add `--live` only to dispatch a granted paid operation. A protected commission
+also pins approved input tree hashes, effort, maximum per-audit limits,
+watchdog and maximum placements. For study inputs place the reviewed template
+under `queue/submissions/ID`, and enter its tree hash under `envelope.submissions`.
+The launcher snapshots each exact approved packet before dispatch.
 [Saved provider connections](README.md#saved-provider-connections)
 
 ## Exercise the two accounts
@@ -97,10 +126,10 @@ socket to distinguish permission denial from an absent socket. Compare key
 presence from a launcher login before and after a guest reboot.
 
 As `stewart-dev` publish one `rehearse` request with no supplied cases. The
-base rehearsal reserves 28 simulated slots and 1,452 cents. Inspect its fake
+base rehearsal reserves 35 simulated slots and 70 cents. Inspect its fake
 request witnesses, result, scans and exported snapshots. Submit a second
 request with a fresh name and evidence path. Its placement count fits
-the 56-slot ceiling while its projected spend exceeds the budget. Its
+the 70-slot ceiling while its projected spend exceeds the budget. Its
 refusal leaves no new claim, container or provider calls. Preserve both
 operations, the independent fake witness and negative access checks through
 review. A paid campaign's offline preparation rehearsal uses the synthetic
@@ -128,7 +157,7 @@ credential-scanned, digest-verified exports by filename. Examples, with absolute
 
 `status` has the same shape as `inspect`. Only ordinary close is supported; there
 is no surrender or disposal command. A live request names exactly
-one audit and must match the campaign's model, account, authority and base
+one audit and must match the campaign's permitted model, account, authority and base
 qualification. The existing launcher checks its exact packet digest, clean
 committed apparatus, declared binary, input hashes and complete rehearsal before
 credential access. A packet's authority text records the delegation; it does not
@@ -137,9 +166,8 @@ prove permission. Follow-ups get new packets and evidence folders.
 `continue` starts one [later placement](README.md#continue-a-retained-audit) of
 a retained audit. `evidence` is the original launch's folder, which the packet
 must name; `record` is a new folder for this placement's host records; `packet`
-is a `stewart.c10-continuation/1` packet with its exact digest. It has the same
-guarantees as `live`: it needs a live-enabled session and current Console
-record, must match the campaign's model, account, authority and base
+is a `stewart.c10-continuation/3` packet with its exact digest. It has the same
+guarantees as `live`: it needs a live-enabled session and protected commission, must match the campaign's permitted model, account, authority and base
 qualification, charges one slot when claimed, is never dispatched twice, and
 waits behind any unreconciled claim. The launcher then repeats those checks and
 adds its own against the retained records, the audit's prior state, its writer
@@ -150,18 +178,16 @@ record folder as `evidence`. Nothing here selects or starts a continuation by
 itself; each one is a request the experimenter publishes after reviewing the
 placement before it.
 
-A `continue` launch whose host record says `not_started` stopped before any
-model process, for example on a denied keyring lookup or a different key. It
-still exits nonzero, keeps its charged slot and blocks paid dispatch until its
-claim is reconciled. A further attempt of the same placement is a new request
-with a new `record` folder and its own slot. The launcher permits it only while
-every earlier attempt is recorded as not started; a placement that started or
-may have started is never dispatched again.
-
-`claims/NAME/` is created exclusively before subprocess execution. It retains the
-request, command, streams and result. A claimed name is never dispatched twice,
-including after a crash. The queue process's exit is not the audit's outcome.
-Use C10's host/session/export records to establish actual effects and custody.
+Each paid placement uses a frozen card named `AUDIT-pN.json` in the protected
+`cards` directory. The operating agent records the grant digest, campaign,
+wave, trial, placement, question, reason, packet digest, model, file-size limit, qualification,
+apparatus digest and writer digest before offering its request to the queue.
+Use fields `campaign`, `wave`, `trial`, `placement`, `question`, `reason`,
+`packet_sha256`, `model`, `qualification`, `apparatus_sha256`, `writer_sha256`
+and `grant_sha256`. A claimed trial slot cannot be reused with another request
+name or evidence directory. A paid child may have spent money even when its
+call timed out. Inspect its exact receipts and keep the slot and original
+reservation until reconciliation.
 
 ## Failed or interrupted operations
 

@@ -49,6 +49,10 @@ SCRIPTS = {
     'submitted': [SUBMITS], 'lost-run-reply': [SUBMITS],
     'export-contamination': [SUBMITS], 'export-failure': [SUBMITS],
     'empty': [['prepare', 'submit']],
+    'p1-signal': [['hold'], SUBMITS], 'p1-close': [['hold']],
+    'p2-signal': [['orient','read','record','prepare','hold'], ['orient','prepare','submit']],
+    'p2-close': [['orient','read','record','prepare','hold']],
+    'p2-missed': [['prose','prose']],
     'unsubmitted': [['orient', 'read', 'record', 'revise', 'prose', 'prose']],
     'compaction': [COMPACT_SUBMITS], 'compaction-below': [COMPACT_SUBMITS],
     'compaction-invalid': [COMPACT_SUBMITS],
@@ -72,7 +76,7 @@ SCRIPTS = {
 # What re-entry must show a continuing placement, from the script alone:
 # answer revision, selected entries, reminder used, estimated turns so far.
 # An unheld interruption estimates one turn only if a request was on the wire.
-REENTRY = {'continue-cap': (0, 0, False, [0]), 'continue-entries': (2, 2, False, [0]),
+REENTRY = {'p1-signal':(0,0,False,[1]),'p2-signal':(2,2,False,[1]),'continue-cap': (0, 0, False, [0]), 'continue-entries': (2, 2, False, [0]),
            'reminder-spent': (2, 2, True, [1]), 'reminder-spent-submits': (2, 2, True, [1]),
            'reminder-spent-unheld': (2, 2, True, [0, 1]), 'reminder-unused': (2, 2, False, [1])}
 

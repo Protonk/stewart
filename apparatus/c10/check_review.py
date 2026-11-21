@@ -171,9 +171,10 @@ def continued_cases(original,baseline,base,case,absent):
     limits=receipt['settings']['limits']
     captures=sorted(n for n in original.names if n.startswith(run))
     requests=len([n for n in captures if n.startswith(run+'request-')])
-    case('omitted-placement-captures',lambda v:v.removed.update(captures),'run_membership')
+    case('omitted-placement-captures',lambda v:v.removed.update(captures),'request_membership')
     def omit_records(view):
         view.removed.update(captures)
+        view.removed.update(d for d in original.directories if d==run.rstrip('/') or d.startswith(run))
         view.removed.update(names[names.index(started[-1]):])
     case('omitted-placement-records',omit_records,'placement_command_count')
     def changed_notice(raw):
@@ -305,7 +306,7 @@ def exercise(root,out):
     case('invalid-citation-metadata',bad_citation,'entry_fields_and_citations')
     payload=original.json(entry)['body']['payload']['file']
     case('changed-authored-payload',lambda v:v.changes.update({base+payload:b'changed'}),'payload_matches_authored_bytes')
-    case('changed-preparation',lambda v:v.changes.update({base+f"prepared/{seal['prepared']}/answer.json":b'{}\n'}),'prepared_answer_and_rendering')
+    case('changed-preparation',lambda v:v.changes.update({base+f"prepared/{seal['prepared']}/answer.json":b'{}\n'}),'auditor_prepared_bytes')
     case('changed-return',lambda v:v.changes.update({delivered:v.read(delivered)+b'changed'}),'exact_delivered_bytes')
     def false_actor(view):
         name=next(n for n in view.names if n.startswith(base+'log/') and view.json(n)['kind']=='seal')

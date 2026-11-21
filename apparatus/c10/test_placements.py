@@ -153,6 +153,14 @@ class LogPointTests(unittest.TestCase):
         self.assertEqual(point.summary()['unexercised']['reason'], 'placement_ended_first')
         self.assertIsNone(point.summary()['signal'])
 
+    def test_an_empty_run_directory_witnesses_a_zero_request_start(self):
+        base='archive/audits/fixture/'
+        run=self.root/base/'runs/1'
+        (run/'stage').mkdir(parents=True)
+        self.assertEqual(verify.run_directories(verify.Evidence(self.root),base),{'1'})
+        (run/'stage').rmdir();run.rmdir()
+        self.assertEqual(verify.run_directories(verify.Evidence(self.root),base),set())
+
     def test_elapsed_time_only_ends_the_watch(self):
         point = LogPoint(self.log, 'reminder_notice', self.root / 'interruption')
         child = subprocess.Popen([sys.executable, '-I', '-B', '-c', 'import time; time.sleep(60)'], start_new_session=True)
@@ -206,7 +214,7 @@ class ArithmeticTests(unittest.TestCase):
                 'output_tokens': {'used': output_used, 'limit': output_limit}}
 
     def test_planned_interruption_under_a_small_allowance_ends_the_next_placement(self):
-        point = {'after': 'reminder_notice', 'signal': 'SIGTERM'}
+        point = {'after': 'reminder_notice', 'action':'signal'}
         small = allowance_facts(self.allowances(0, 12000), point)['planned_interruption']
         # min(16000, 12000) is the whole allowance: nothing remains, under 1,024.
         self.assertEqual((small['output_charge_if_one_request_is_aborted_in_flight'], small['output_remaining_after_that_charge']), (12000, 0))
@@ -270,11 +278,11 @@ class ControlInventoryTests(unittest.TestCase):
         runs = {run['scenario']: run for run in packet['runs']}
         self.assertIsNone(first_interruption(packet, runs['submitted'], 'rehearse'))
         self.assertIsNone(first_interruption(packet, runs['continue-cap'], 'rehearse'))
-        self.assertEqual(first_interruption(packet, runs['reminder-spent'], 'rehearse'), {'after': 'reminder_notice', 'signal': 'SIGTERM'})
-        self.assertEqual(first_interruption(packet, runs['reminder-unused'], 'rehearse'), {'after': 'entry_record', 'signal': 'SIGTERM'})
+        self.assertEqual(first_interruption(packet, runs['reminder-spent'], 'rehearse'), {'after': 'reminder_notice', 'action':'signal'})
+        self.assertEqual(first_interruption(packet, runs['reminder-unused'], 'rehearse'), {'after': 'entry_record', 'action':'signal'})
         # A live ordinary packet never acquires an interruption from a scenario name.
         self.assertIsNone(first_interruption(packet, runs['reminder-spent'], 'live'))
-        study = {'schema': 'stewart.interruption-commission/1', 'interruption': {'after': 'reminder_notice', 'signal': 'SIGTERM'}}
+        study = {'schema': 'stewart.interruption-commission/3', 'interruption': {'after': 'reminder_notice', 'action':'signal'}}
         self.assertEqual(first_interruption(study, runs['submitted'], 'live'), study['interruption'])
 
     def test_supplied_study_rehearsal_follows_the_matching_fixed_script(self):
@@ -282,10 +290,10 @@ class ControlInventoryTests(unittest.TestCase):
         runs = {run['scenario']: run for run in packet['runs']}
         self.assertEqual(rehearsal_script(packet, runs['submitted']), 'submitted')
         for after, script in [('reminder_notice', 'reminder-spent-submits'), ('entry_record', 'reminder-unused')]:
-            study = {'schema': 'stewart.interruption-commission/1', 'interruption': {'after': after, 'signal': 'SIGTERM'}}
+            study = {'schema': 'stewart.interruption-commission/3', 'interruption': {'after': after, 'action':'signal'}}
             self.assertEqual(rehearsal_script(study, runs['submitted']), script)
             self.assertEqual(CONTINUED[script]['interruption'], after)
-        study = {'schema': 'stewart.interruption-commission/1', 'interruption': {'after': 'entry_record', 'signal': 'SIGTERM'}}
+        study = {'schema': 'stewart.interruption-commission/3', 'interruption': {'after': 'entry_record', 'action':'signal'}}
         self.assertEqual(rehearsal_script(study, runs['reminder-unused']), 'reminder-unused')
         with self.assertRaises(ValueError):
             rehearsal_script(study, runs['reminder-spent'])
@@ -332,7 +340,7 @@ class ControlInventoryTests(unittest.TestCase):
         self.assertEqual([script for script, entry in CONTINUED.items() if entry['held'] is False], ['reminder-spent-unheld'])
         # The supplied-study mapping names held controls only.
         for after in ['reminder_notice', 'entry_record']:
-            study = {'schema': 'stewart.interruption-commission/1', 'interruption': {'after': after, 'signal': 'SIGTERM'}}
+            study = {'schema': 'stewart.interruption-commission/3', 'interruption': {'after': after, 'action':'signal'}}
             self.assertIs(CONTINUED[rehearsal_script(study, {'scenario': 'submitted'})]['held'], True)
 
     def test_request_cap_control_has_a_subject_only_after_enough_earlier_output(self):
@@ -655,13 +663,13 @@ class ContinuationTests(unittest.TestCase):
                            'input_tokens': {'used': 1000, 'reported': 1000, 'estimated': 0, 'limit': 160000},
                            'output_tokens': {'used': 16000, 'reported': 16000, 'estimated': 0, 'limit': 30000}},
             'closure': None}}
-        self.packet = {'schema': 'stewart.c10-continuation/1', 'evidence': '/retained/evidence', 'audit': AUDIT,
+        self.packet = {'schema': 'stewart.c10-continuation/3', 'evidence': '/retained/evidence', 'audit': AUDIT,
             'container': 'stewart-c10-1-1', 'reference': REFERENCE, 'placement': 2, 'max_placements': 2,
             'prior': {'runs': 1, 'last_ending': 'interrupted', 'last_cause': 'max_tokens', 'log_head_sha256': self.head,
                       'usage': {'turns': 1, 'input_tokens': 1000, 'output_tokens': 16000}},
             'model': 'rehearsal-only', 'limits': commission['limits'], 'endpoint': 'loopback-fake', 'proxy': None,
             'interruption': None, 'permitted_request_attempts': 4, 'automatic_continuation': False,
-            'stop_after_seconds': 60, 'spending_authority': 'Offline fakes only.',
+            'stop_after_seconds': 60, 'file_size_limit': None, 'spending_authority': 'Offline fakes only.',
             'account': {'account_label': None, 'workspace_id': None, 'credential_label': None},
             'bindings': {'qualification_id': None, 'binary_sha256': file_hash(self.binary), 'source_commit': None,
                          'apparatus_sha256': APPARATUS, 'image': None, 'catalog_sha256': None}}
@@ -769,7 +777,7 @@ class ContinuationTests(unittest.TestCase):
             ('preflight.apparatus_binding', packet(lambda p: p['bindings'].update(apparatus_sha256='0' * 64))),
             ('preflight.audit_binding', packet(lambda p: p.update(reference=REFERENCE + 'x'))),
             ('preflight.audit_binding', packet(lambda p: p['limits'].update(turns=13))),
-            ('preflight.rehearsal_inventory', packet(lambda p: p.update(interruption={'after': 'reminder_notice', 'signal': 'SIGTERM'}))),
+            ('preflight.rehearsal_inventory', packet(lambda p: p.update(interruption={'after': 'reminder_notice', 'action':'signal'}))),
             ('preflight.prior_runs', status(lambda d: d['runs'].update(count=2))),
             ('preflight.prior_runs', status(lambda d: d['runs']['last'].update(number=2))),
             ('preflight.audit_state', status(lambda d: d['headline'].update(authoring={'state': 'ended', 'ended_by': 'limit'}))),

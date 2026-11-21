@@ -76,7 +76,7 @@ reviewer comparisons, plus the 26 compaction comparisons. A saved connection als
 later-collection and continuation checks.
 
 Use `packet --study-build /absolute/study-build.json` to bind an unpaid proposal.
-It produces `stewart.interface-commission/1`; its `study_build` member is part of
+It produces `stewart.interface-commission/2`; its `study_build` member is part of
 the exact packet submitted for authorization. Live launch takes the build from
 that approved packet, requires its matching successful rehearsal, and never
 accepts a replacement `--study-build` argument. Historical packet schemas and
@@ -173,8 +173,8 @@ account. The Linux process-access checks use the launcher's same-user and
 different-user controls. Environment, filesystem observations and process
 RSS high-water marks are retained; these do not qualify full-size C10 workloads.
 
-The rehearsal contains 22 audits and 28 placements: the six fixed cases, ten
-single-placement controls and six continued controls of two placements each.
+The rehearsal contains 27 audits and 35 placements: the six fixed cases, thirteen
+single-placement controls and eight continued controls of two placements each.
 Its output allowance is 30,000 tokens, not the proposal default, so that an
 interrupted control can absorb one estimated request and still start again
 ([the reason](#continue-a-retained-audit)).
@@ -212,7 +212,7 @@ original process streams. It does not claim to test a killed launcher or auditor
 | `reminder-spent-submits` | As `reminder-spent` | Submits unprompted; sealed |
 | `reminder-unused` | Signalled after its recorded entries, before any reminder, with the request held | Prose draws the audit's one reminder; sealed |
 
-The four signalled controls show the [interruption witness](#interrupt-a-first-placement-at-a-witnessed-point)
+The signalled controls show the [interruption witness](#interrupt-a-first-placement-at-a-witnessed-point)
 and, between them, that a reminder is spent once for the whole audit. The three
 held ones make the aborted-in-flight estimate certain. The unheld one leaves the
 timing to chance, as a live interruption does; its endings are the same either
@@ -277,10 +277,10 @@ found a written request, which charges the estimate; hence its two shapes.
 
 Live launch and live continuation require all of this from one retained
 rehearsal made by the same committed apparatus, binary, image and catalog:
-22 planned and observed first placements with none failed, skipped or not
+27 planned and observed first placements with none failed, skipped or not
 started; the 14, seven and eleven first-placement comparisons with every
 control fired and originals unchanged; all 26 compaction comparisons passed,
-all 19 controls fired and the selected answers equal; six continuations planned and completed
+all 19 controls fired and the selected answers equal; eight continuations planned and completed
 through the host path at their first attempt, each with its own host record
 bound to the rehearsal's container and bindings and to the digest of the
 container's result; the second start refused at the placement count each time;
@@ -306,7 +306,7 @@ python3 -I -B apparatus/c10/c10.py packet \
   --qualification QUALIFICATION_ID
 ```
 
-The `stewart.c10-commission/1` packet fixes every audit ID, case, repetition,
+The `stewart.c10-commission/2` packet fixes every audit ID, case, repetition,
 specimen hash, model, effort, cumulative limits, watchdog, endpoint, retry policy
 and executable/source/image binding. Unknown fields, duplicate JSON keys and
 duplicate identities are refused. `effort: null` omits effort. The route is
@@ -370,7 +370,7 @@ An explicit `--connection LABEL` must match. Supply a separate rehearsal
 connection whose payload begins with `c10-NONFUNCTIONAL-` followed by fresh
 random characters. The synthetic witness stays outside the archive and exports.
 A complete saved-connection rehearsal uses a new process for follow-up
-collection and for each of the six continuation controls.
+collection and for each of the eight continuation controls.
 
 ```sh
 python3 -I -B apparatus/c10/c10.py connection store stewart-synthetic
@@ -387,8 +387,8 @@ operations.
 
 ## Study submissions
 
-Study packets use `stewart.study-commission/1`; the six-case catalog and
-`stewart.c10-commission/1` retain their existing meanings. Supply a folder with
+Study packets use `stewart.study-commission/2`; the six-case catalog and
+`stewart.c10-commission/2` retain their existing meanings. Supply a folder with
 `question.md` and `materials/`, plus `guidance.md` when explicitly selected by
 `guidance: guidance.md` for open inquiry. It is a hashed template: family, `inquiry`,
 optional `varies` and `guidance`, exact question body, selected guidance and
@@ -430,7 +430,7 @@ python3 -I -B apparatus/c10/c10.py rehearse "$PWD/.scratch/c10-launch-NN" \
   --submission problem-b /absolute/submission-b
 ```
 
-This runs all 22 fixed audits plus one audit per template. The rehearsal
+This runs all 27 fixed audits plus one audit per template. The rehearsal
 auditor follows the ready `next` read when a material exceeds one 65,536-byte
 page and requires the reassembled pages to equal the witnessed bytes. The ordinary 14
 reviewer comparisons and seven operator comparisons remain required. Each study
@@ -486,7 +486,7 @@ limits. It applies only when the audit's last placement is recorded
 `provider_rejected`, `context_exhausted`, `provider_refusal` or
 `protocol_anomaly`, and only up to four placements per audit. A sealed or ended
 audit goes to custody completion instead. Each continuation has its own packet,
-`stewart.c10-continuation/1`, approved by exact digest; completing one
+`stewart.c10-continuation/3`, approved by exact digest; completing one
 authorizes nothing further.
 
 ### Interrupt a first placement at a witnessed point
@@ -501,25 +501,26 @@ python3 -I -B apparatus/c10/c10.py propose --model EXACT_MODEL_ID \
   --output "$PWD/.scratch/interrupted-proposal.json"
 ```
 
-This writes `stewart.interruption-commission/1`: one audit, `interruption`
-`{"after": "reminder_notice", "signal": "SIGTERM"}` and the placement ceiling
-commissioned for that audit (2–4). `packet`, approval and `live` are unchanged,
-and its rehearsal is the ordinary one that includes the same template. A live
-packet can select only `reminder_notice`; rehearsal controls also use
-`entry_record`.
+This writes `stewart.interruption-commission/3`: one audit, `interruption`
+`{"after": "reminder_notice", "action": "signal"}` and the placement ceiling
+commissioned for that audit (2–4 for a signal, 1–4 for close). `packet`, approval and `live` are unchanged,
+and its rehearsal is the ordinary one that includes the same template. Live packets can select the reminder notice, the first linked `run_started`
+(P1), or the auditor's linked `answer_prepared` (P2). `--action close` issues
+ordinary close at P1 or P2 and permits a single-placement ceiling. Rehearsal
+also exercises a first entry. The witness begins before the new placement,
+compares process identities, and copies the linked ledger through the trigger
+outside the archive. At P2 it copies both prepared files. A finished placement
+or an overtaken point is recorded as unexercised. The witness records its
+action, the observed termination, and whether the process group is gone.
 
-The point is a record the running placement publishes in its own audit log:
-the reminder notice. The launcher watches the log from outside the service
-process and considers only records numbered after those present before the
-placement started, so an earlier placement's record never selects it. Elapsed
-time never selects the point. On seeing the record it sends one SIGTERM to the
-placement's process group. Outside Stewart's archive it keeps the selected
-point, the record's name and digest, the process identity and the run
-directory's captures as seen at that moment, the signal, and the observed
-termination. If the placement ends or its watchdog expires first, or the
-process has gone when the record is seen, nothing is signalled and the
-interruption is recorded as unexercised; that is an outcome to report, not
-permission for another audit.
+Both P1/P2 signal controls continue through the retained launcher. The
+reviewer replays the cumulative ledger and usage, checks the continuation
+input, and compares the witnessed files with the archived originals and the
+manager's sealed return. The close controls check the actual refused later
+run on the closed reference. A fake that never prepares exercises the missed
+trigger, with no manager action. Report the computed trial outcome alongside
+its placement outcomes. A pending continuation or outstanding confirmation
+can require a later verified collection.
 
 A live placement is signalled as soon as the record is seen, whatever the
 request that carries the reminder has reached. After the process has stopped,
@@ -591,7 +592,7 @@ with the `credential_label` of the original placement's key.
 ### Rehearse and run
 
 A live continuation needs a retained Linux [rehearsal](#run-the-offline-checks)
-made by the same committed apparatus, with all six continuation controls
+made by the same committed apparatus, with all eight continuation controls
 passed. When the audit came from a study template or a study build, the
 rehearsal must include that template and build, as its first launch did. With
 `--connection`, the rehearsal must have used a saved synthetic connection too.

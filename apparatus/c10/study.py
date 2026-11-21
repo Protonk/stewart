@@ -107,7 +107,7 @@ def study_proposal(model, submissions, *, rehearsal=False, scenarios=None):
         selected[name] = scenario
     require(set(selected) <= {name for name, _ in submissions}, 'study scenario names an absent submission')
     packet = rehearsal_packet() if rehearsal else proposal(model)
-    packet['schema'] = 'stewart.study-commission/1'
+    packet['schema'] = 'stewart.study-commission/2'
     packet['runs'] = ([{**run, 'submission_folder': None} for run in packet['runs']]
                       if rehearsal else [])
     for name, folder in submissions:

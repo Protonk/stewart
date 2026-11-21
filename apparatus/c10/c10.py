@@ -18,7 +18,7 @@ import sys
 import time
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from common import (BINDINGS,CONTINUED,HERE,LIMITS,MAX_PLACEMENTS,REPO,SOURCE_PATHS,AttemptsUnsettled,catalog,
+from common import (BINDINGS,CONTINUED,TRIAL_CONTROLS,HERE,LIMITS,MAX_PLACEMENTS,REPO,SOURCE_PATHS,AttemptsUnsettled,catalog,
     compact,digest,file_hash,identifier,proposal,read_file,rehearsal_packet,require,scan_tree,settled_attempts,
     source_hash,strict_json,validate_continuation,validate_packet,write_json)
 import podman
@@ -179,7 +179,7 @@ def continuation_session(path,mode,audit,placement):
 # subject in that control's evidence); one of the cases is an invariance. The
 # unheld control's signal may or may not find a request on the wire, and only
 # then has the request-cap control a subject, so it has two admissible shapes.
-CONTINUED_REVIEW={'continue-cap':[(11,10,3)],'continue-entries':[(12,11,2)],'reminder-spent':[(14,13,0)],
+CONTINUED_REVIEW={'p1-signal':[(13,12,1)], 'p2-signal':[(14,13,0)],'continue-cap':[(11,10,3)],'continue-entries':[(12,11,2)],'reminder-spent':[(14,13,0)],
     'reminder-spent-unheld':[(13,12,1),(14,13,0)],'reminder-spent-submits':[(14,13,0)],
     'reminder-unused':[(14,13,0)]}
 CONTINUED_REPORT=14
@@ -292,9 +292,10 @@ def check_retained(packet,retained,evidence):
     refuse(packet['evidence']==str(evidence),'packet names another evidence folder')
     refuse(packet['container']==operator['container'],'packet names another container')
     refuse(packet['audit'] in operator['audits'],'packet names an audit this launch did not retain')
+    refuse(packet['file_size_limit']==original['file_size_limit'], 'placement file-size limit differs from the retained commission')
     refuse(packet['model']==original['model'] and packet['limits']==original['limits'],
            'model or cumulative limits differ from the retained commission')
-    refuse(original['schema']!='stewart.interruption-commission/1'
+    refuse(original['schema']!='stewart.interruption-commission/3'
            or packet['max_placements']==original['max_placements'],
            'placement ceiling differs from the one commissioned for this audit')
 
@@ -315,10 +316,10 @@ def allowance_outlook(limits,usage,interruption):
     Sizing advice for whoever commissions the packet. Nothing is refused on it.
     """
     return allowance_facts({key:{'limit':limits[key],'used':usage[key]} for key in LIMITS},
-                           None if interruption is None else {'after':interruption,'signal':'SIGTERM'})
+                           None if interruption is None else {'after':interruption,'action':'signal'})
 
 
-def continuation_proposal(evidence,audit=None,*,max_placements=None,interruption=None,stop_after_seconds=None):
+def continuation_proposal(evidence,audit=None,*,max_placements=None,interruption=None,stop_after_seconds=None,action='signal'):
     """An unpaid, unbound packet for the audit's next placement, from retained records alone."""
     retained=retained_launch(evidence)
     original,audits=retained['packet'],retained['operator']['audits']
@@ -328,15 +329,15 @@ def continuation_proposal(evidence,audit=None,*,max_placements=None,interruption
     refuse(audit in audits and identifier(audit),'this launch did not retain that audit')
     observed=observed_prior(evidence,audit)
     if max_placements is None:
-        refuse(original['schema']=='stewart.interruption-commission/1',
+        refuse(original['schema']=='stewart.interruption-commission/3',
                'the retained commission allowed one placement; state the newly commissioned ceiling with --max-placements')
         max_placements=original['max_placements']
-    packet={'schema':'stewart.c10-continuation/1','evidence':str(evidence),'audit':audit,
+    packet={'schema':'stewart.c10-continuation/3','evidence':str(evidence),'audit':audit,
         'container':retained['operator']['container'],'reference':observed['reference'],
         'placement':observed['runs']+1,'max_placements':max_placements,
         'prior':{key:observed[key] for key in ['runs','last_ending','last_cause','log_head_sha256','usage']},
-        'model':original['model'],'limits':original['limits'],'endpoint':original['endpoint'],'proxy':None,
-        'interruption':None if interruption is None else {'after':interruption,'signal':'SIGTERM'},
+        'file_size_limit':original['file_size_limit'],'model':original['model'],'limits':original['limits'],'endpoint':original['endpoint'],'proxy':None,
+        'interruption':None if interruption is None else {'after':interruption,'action':action},
         'permitted_request_attempts':4,'automatic_continuation':False,
         'stop_after_seconds':original['stop_after_seconds'] if stop_after_seconds is None else stop_after_seconds,
         'spending_authority':None,'account':dict.fromkeys(['account_label','workspace_id','credential_label']),
@@ -346,10 +347,10 @@ def continuation_proposal(evidence,audit=None,*,max_placements=None,interruption
     return packet
 
 
-def interrupted_study(packet,point,max_placements):
+def interrupted_study(packet,point,max_placements,action="signal"):
     """A study whose first placement is signalled at a witnessed point; common validates it."""
-    return {**packet,'schema':'stewart.interruption-commission/1','max_placements':max_placements,
-            'interruption':{'after':point,'signal':'SIGTERM'}}
+    return {**packet,'schema':'stewart.interruption-commission/3','max_placements':max_placements,
+            'interruption':{'after':point,'action':action}}
 
 
 def bind_continuation(value,qualification):
@@ -487,6 +488,7 @@ def check_rehearsal_inputs(rehearsed,packet=None):
     fixed=[{k:v for k,v in run.items() if k!='submission_folder'} for run in expected if run.get('submission_folder') is None]
     require(fixed==rehearsal_packet()['runs'],'rehearsal omitted or changed fixed conformance controls')
     if packet is not None:
+        require(rehearsed['file_size_limit']==packet['file_size_limit'],'placement file-size limit differs from rehearsal')
         require(rehearsed.get('study_build')==packet.get('study_build'),
                 'study build differs from rehearsal')
         coverage={run['submission_sha256'] for run in supplied_runs(rehearsed)}
@@ -506,6 +508,9 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
         require(host['bindings'][key]==bound[key],'rehearsal source, binary, image or catalog differs')
     rehearsed=strict_json(read_file(path/'container/PLAN.json'))['commission']
     expected=check_rehearsal_inputs(rehearsed,packet)
+    if rehearsed['file_size_limit'] is not None:
+        from check_file_bound import verify_result
+        verify_result(strict_json(read_file(path/'container/FILE-BOUND-CONTROLS.json')), bound['binary_sha256'])
     if connection:
         require(host.get('credential_source',{}).get('kind')=='persistent-keyring'
                 and read_file(path/'host/connection-collect.exit')==b'0\n',
@@ -545,6 +550,15 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
                 'study template controls missing or incomplete')
     for row,item in zip(report['audits'],expected):
         latest=row['snapshots'][0]
+        if item['scenario'] in TRIAL_CONTROLS:
+            reviewed=latest.get('review') or {}
+            point,action=TRIAL_CONTROLS[item['scenario']]
+            observed=((reviewed.get('placements') or [{}])[0].get('interruption') or {})
+            expected_outcome='unexercised' if item['scenario']=='p2-missed' else 'pass'
+            require(reviewed.get('outcome')=='checked' and observed.get('point')==point
+                    and observed.get('outcome')==expected_outcome
+                    and (action!='close' or reviewed.get('trial',{}).get('outcome')=='pass'),
+                    'witnessed rehearsal control differs')
         if item['scenario'] in ['submitted','empty','lost-run-reply','compaction','compaction-below']:
             require(latest.get('review') is not None and ordinary_submission(latest['review']),'rehearsal submission review failed')
     if connection:
@@ -586,6 +600,7 @@ def launch_batch(args):
         packet=(study_proposal('rehearsal-only',args.submission,rehearsal=True,
                               scenarios=getattr(args,'study_scenario',None))
                 if getattr(args,'submission',None) else rehearsal_packet())
+        packet['file_size_limit']=getattr(args,'file_size_limit',None)
         if getattr(args,'study_build',None) is not None:
             require(not getattr(args,'study_scenario',None),
                     'compaction study scenarios cannot be combined with a guidance override')
@@ -1011,6 +1026,9 @@ def check_rehearsed_continuations(path,host,expected,report,*,connection=False):
             reader.close()
         require(history['complete'] and history['endings']==endings,
                 'continued audit did not end as its control specifies')
+        if run['scenario'] in TRIAL_CONTROLS:
+            require(latest['review'].get('trial',{}).get('outcome')=='pass',
+                    'witnessed continuation trial did not pass')
         require(ordinary_submission(latest['review']) is (endings[-1][0]=='sealed'),
                 'continued audit submission differs from its control')
 
@@ -1077,14 +1095,17 @@ def main():
     subs=parser.add_subparsers(dest='command',required=True)
     subs.add_parser('list',help='List fixed cases and the full C10 planning count')
     p=subs.add_parser('propose',help='Write an unbound, unpaid small-batch proposal')
+    p.add_argument('--file-size-limit',type=int,choices=[131072],help='Per-file limit for the Stewart placement process, in bytes')
     p.add_argument('--model',required=True)
     p.add_argument('--case',action='append',dest='cases')
     p.add_argument('--repetitions',type=int,default=1)
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--submission',action='append',nargs=2,metavar=('ID','FOLDER'),
                    help='Study submission template; packet settings replace model/effort/limits/destination, preserving body/materials')
-    p.add_argument('--interrupt-after',choices=['reminder_notice'],
+    p.add_argument('--interrupt-after',choices=['reminder_notice','run_started','answer_prepared'],
                    help='One study submission only: signal its first placement after this witnessed log record; later placements need continuation packets')
+    p.add_argument('--action', choices=['signal','close'], default='signal',
+                   help='Signal the process group or issue ordinary close at the selected point')
     p.add_argument('--max-placements',type=int,
                    help='With --interrupt-after: the ceiling commissioned for the audit, 2-%d'%MAX_PLACEMENTS)
     p=subs.add_parser('propose-continuation',help='Write an unbound, unpaid proposal for the next placement of a retained audit; reads its latest reviewed export and runs nothing')
@@ -1092,8 +1113,9 @@ def main():
     p.add_argument('--audit',help='Needed when that launch retained more than one audit')
     p.add_argument('--max-placements',type=int,
                    help='Ceiling commissioned for this audit, 2-%d; defaults to an interrupted study\'s own ceiling'%MAX_PLACEMENTS)
-    p.add_argument('--interrupt-after',choices=['reminder_notice'],
+    p.add_argument('--interrupt-after',choices=['reminder_notice','run_started','answer_prepared'],
                    help='Signal this placement too, after its recorded reminder notice')
+    p.add_argument('--action',choices=['signal','close'],default='signal',help='Manager action at the selected point')
     p.add_argument('--stop-after-seconds',type=int,help='Watchdog for this placement; defaults to the retained commission\'s')
     p.add_argument('--output',type=Path,required=True)
     p=subs.add_parser('packet',help='Bind an unpaid proposal to committed apparatus and a qualified or declared study binary; a continuation proposal is bound to its retained audit\'s writer')
@@ -1111,7 +1133,7 @@ def main():
     p.add_argument('mode',choices=['rehearse','live'],help='Must match the audit\'s original launch; rehearse uses only synthetic credentials and fakes')
     p.add_argument('evidence',type=Path,help='Retained evidence folder of the audit\'s original launch; its container publishes there, the host writes nothing to it')
     p.add_argument('record',type=Path,help='New folder directly under .scratch for this placement\'s host records')
-    p.add_argument('--packet',type=Path,required=True,help='stewart.c10-continuation/1 packet from propose-continuation and packet')
+    p.add_argument('--packet',type=Path,required=True,help='stewart.c10-continuation/3 packet from propose-continuation and packet')
     p.add_argument('--approved-packet',metavar='SHA256',help='Live: the exact packet digest the principal approved')
     p.add_argument('--rehearsal',type=Path,help='Live: retained Linux rehearsal made by this committed apparatus, with every continuation control passed')
     p.add_argument('--qualification',required=True,help='Qualification whose writer the retained audit already uses')
@@ -1130,6 +1152,7 @@ def main():
         p.add_argument('--submission',action='append',nargs=2,metavar=('ID','FOLDER'),
                        help='Rehearsal only: include these study inputs alongside all conformance controls')
         if mode=='rehearse':
+            p.add_argument('--file-size-limit',type=int,choices=[131072],help='Rehearse the paid placement process bound')
             p.add_argument('--study-scenario',action='append',nargs=2,metavar=('ID','SCENARIO'),
                            help='For a supplied ID: compaction, compaction-below or compaction-invalid; synthetic usage, no live token estimate')
     p=subs.add_parser('review',help='Read all immutable exports without extracting or launching')
@@ -1162,19 +1185,22 @@ def main():
                     'study submissions cannot select catalog cases or implicit repetitions')
             require((args.interrupt_after is None)==(args.max_placements is None),
                     'an interrupted study needs both --interrupt-after and --max-placements')
+            require(args.action == 'signal' or args.interrupt_after is not None, 'close needs a witnessed point')
             value=(study_proposal(args.model,args.submission) if args.submission
                    else proposal(args.model,args.cases,args.repetitions))
+            value['file_size_limit']=args.file_size_limit
             if args.interrupt_after is not None:
                 require(bool(args.submission),'only a study submission can be interrupted at a witnessed point')
-                value=validate_packet(interrupted_study(value,args.interrupt_after,args.max_placements))
+                value=validate_packet(interrupted_study(value,args.interrupt_after,args.max_placements,args.action))
                 print(json.dumps({'allowances':allowance_outlook(value['limits'],dict.fromkeys(LIMITS,0),
                                                                   args.interrupt_after)},indent=2))
             write_json(args.output,value)
             print('Unbound proposal written; no spending authority.')
         elif args.command=='propose-continuation':
             require(args.output.is_absolute(),'proposal output must be absolute')
+            require(args.action=='signal' or args.interrupt_after is not None,'close needs a witnessed point')
             value=continuation_proposal(args.evidence,args.audit,max_placements=args.max_placements,
-                interruption=args.interrupt_after,stop_after_seconds=args.stop_after_seconds)
+                interruption=args.interrupt_after,stop_after_seconds=args.stop_after_seconds,action=args.action)
             write_json(args.output,value)
             print(json.dumps({'proposal':str(args.output),'audit':value['audit'],'placement':value['placement'],
                 'prior':value['prior'],'allowances':allowance_outlook(value['limits'],value['prior']['usage'],
@@ -1184,14 +1210,14 @@ def main():
         elif args.command=='packet':
             value=strict_json(read_file(args.proposal))
             require(args.output.is_absolute(),'packet output must be absolute')
-            if isinstance(value,dict) and value.get('schema')=='stewart.c10-continuation/1':
+            if isinstance(value,dict) and value.get('schema')=='stewart.c10-continuation/3':
                 refuse(args.study_build is None,'a continuation keeps the build its retained audit was launched with')
                 value=bind_continuation(value,args.qualification)
             else:
                 value=validate_packet(value)
                 require(value['spending_authority'] is None and all(v is None for v in value['account'].values()),'bind an unpaid proposal with null account fields')
                 if args.study_build:
-                    require(value['schema']!='stewart.interruption-commission/1',
+                    require(value['schema']!='stewart.interruption-commission/3',
                             'an interrupted study uses a qualified binary; no study build')
                     value=study_build.attach(value,strict_json(read_file(args.study_build)))
                 value['bindings'],_,_,_=bindings(args.qualification,value.get('study_build'))

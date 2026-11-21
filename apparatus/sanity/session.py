@@ -122,6 +122,8 @@ def process_identity(pid):
 
 LOG_POINTS = {'reminder_notice': lambda record: record.get('kind') == 'notice'
                   and record['body'].get('type') == 'reminder',
+              'run_started': lambda record: record.get('kind') == 'run_started',
+              'answer_prepared': lambda record: record.get('kind') == 'answer_prepared',
               'entry_record': lambda record: record.get('kind') == 'entry'}
 
 
@@ -144,16 +146,17 @@ class LogPoint:
     it was is read from the placement's own run directory, once when the record
     is seen and again after the process has stopped, and kept with the witness.
     """
-    def __init__(self, log, point, folder, *, in_flight=None):
+    def __init__(self, log, point, folder, *, in_flight=None, close=None):
         if point not in LOG_POINTS:
             raise ValueError('unknown interruption point')
         self.log, self.point, self.folder, self.in_flight = Path(log), point, Path(folder), in_flight
+        self.close_at_point = close
         self.before = self.numbers()
         self.next = max(self.before, default=0) + 1
         self.started = self.waited = None
         self.state = 'unexercised'
         self.folder.mkdir(mode=0o700)
-        write_json(self.folder / 'selected.json', {'point': point, 'signal': 'SIGTERM',
+        write_json(self.folder / 'selected.json', {'point': point, 'action': 'close' if close else 'signal',
             'log_records_before_placement': len(self.before), 'at': time.time(),
             'observer': {'pid': os.getpid(), 'uid': os.getuid()}})
 
@@ -173,7 +176,7 @@ class LogPoint:
             if LOG_POINTS[self.point](record):
                 body = record['body']
                 # The placement, and for a notice the request planned to carry it (INTERFACE 4.4).
-                self.run = body['run'] if record['kind'] == 'notice' else body['invocation']['run']
+                self.run = body['run'] if record['kind'] in ('notice','run_started') else body['invocation']['run']
                 self.carrying = body['request'] if record['kind'] == 'notice' else None
                 return {'record': f'log/{self.next}.json', 'sha256': digest(raw), 'kind': record['kind']}
             self.next += 1
@@ -222,6 +225,27 @@ class LogPoint:
                     'signal_sent': False, 'at': time.time()})
                 return False
             time.sleep(0.01)
+        if self.point in ('run_started', 'answer_prepared'):
+            # Capture original linked bytes and prepared content from outside the archive.
+            # The reviewer later compares them to the position in the final log.
+            snapshot = self.folder / 'at-point'
+            snapshot.mkdir(mode=0o700)
+            for number in range(1,self.next+1):
+                shutil.copyfile(self.log/f'{number}.json', snapshot/f'{number}.json')
+            if self.point == 'answer_prepared':
+                body = strict_json((snapshot/f'{self.next}.json').read_bytes())['body']
+                number = body['prepared']
+                if type(number) is not int or number < 1:
+                    raise ValueError('invalid observed preparation number')
+                for name in ('answer.json','answer.md'):
+                    shutil.copyfile(self.log.parent/'prepared'/str(number)/name,snapshot/name)
+            after = self.numbers()
+            incompatible = {'seal','run_ended','entry','answer_prepared','close_requested'}
+            if any(strict_json((self.log/f'{n}.json').read_bytes())['kind'] in incompatible for n in after if n > self.next):
+                self.waited = time.monotonic() - self.started
+                write_json(self.folder/'unexercised.json', {'reason':'point_overtaken',
+                    'new_log_records_seen':len(after)-len(self.before),'signal_sent':False,'at':time.time()})
+                return False
         held = None
         if self.in_flight is not None:
             held = self.in_flight.wait(20)
@@ -238,6 +262,20 @@ class LogPoint:
                 'carrying_request_captured': None if self.carrying is None else self.carrying in requests}})
         return True
 
+    def act(self, proc):
+        if self.close_at_point is None:
+            os.killpg(proc.pid, signal.SIGTERM)
+            self.sent(proc)
+            return
+        if proc.poll() is not None:
+            self.missed(proc)
+            return
+        requested = time.time()
+        reply, exit_code, timed_out = self.close_at_point()
+        write_json(self.folder/'close.json', {'requested_at':requested,'observed_at':time.time(),
+            'process_group':proc.pid,'exit':exit_code,'timed_out':timed_out,'outcome':reply['outcome']})
+        self.state = 'close_requested'
+
     def sent(self, proc):
         write_json(self.folder / 'signal.json', {'signal': 'SIGTERM', 'number': int(signal.SIGTERM),
             'process_group': proc.pid, 'sent_at': time.time()})
@@ -253,10 +291,11 @@ class LogPoint:
         # One watchdog covers reaching the point and stopping after it; a
         # signalled service still gets ten seconds to record its ending.
         left = max(0, limit - self.waited)
-        return max(left, 10) if self.state == 'signalled' else left
+        return max(left, 10) if self.state in ('signalled','close_requested') else left
 
     def ended(self, proc, rc, timed_out):
-        if self.state != 'signalled':
+        acted = self.state in ('signalled','close_requested')
+        if not acted and self.point not in ('run_started','answer_prepared'):
             return
         try:
             os.killpg(proc.pid, 0)
@@ -267,13 +306,13 @@ class LogPoint:
             group_gone = None
         write_json(self.folder / 'termination.json', {'exit': rc, 'timed_out': timed_out,
             'process_group_gone': group_gone, 'observed_at': time.time()})
-        if rc is not None:
+        if rc is not None and acted:
             write_json(self.folder / 'timing.json', self.timing())
 
     def summary(self):
         """Controlled facts only; the witness files hold the full observation."""
         result = {'after': self.point, 'state': self.state, 'witness': self.folder.name}
-        for name in ['point', 'signal', 'termination', 'timing', 'unexercised']:
+        for name in ['point', 'signal', 'close', 'termination', 'timing', 'unexercised']:
             path = self.folder / (name + '.json')
             result[name] = strict_json(path.read_bytes()) if path.exists() else None
         return result
@@ -317,7 +356,7 @@ class Session:
         self.ref = None
         self.process = None
 
-    def command(self, label, *args, raw=False, key=None, endpoint=None, interrupt=None, observe=None):
+    def command(self, label, *args, raw=False, key=None, endpoint=None, interrupt=None, observe=None, expected_refusal=None):
         self.phase = 'command.' + safe_choice(args[0], ['new', 'prepare', 'commission', 'receipt', 'status', 'run', 'close'])
         self.index += 1
         stem = self.evidence / f'{self.index:02}-{label}'
@@ -358,11 +397,13 @@ class Session:
                     self.phase = 'interruption-witness'
                     if interrupt.await_point(proc, limit):
                         try:
-                            os.killpg(proc.pid, signal.SIGTERM)
+                            if isinstance(interrupt, LogPoint):
+                                interrupt.act(proc)
+                            else:
+                                os.killpg(proc.pid, signal.SIGTERM)
+                                interrupt.sent(proc)
                         except ProcessLookupError:
                             interrupt.missed(proc)
-                        else:
-                            interrupt.sent(proc)
                     limit = interrupt.remaining(limit)
                 try:
                     rc = proc.wait(timeout=limit)
@@ -422,6 +463,10 @@ class Session:
                 raise ValueError("unsupported Stewart reply schema")
         except (UnicodeError, json.JSONDecodeError):
             raise RuntimeError(label + ' did not return JSON; raw records retained privately') from None
+        if expected_refusal is not None:
+            if rc != 3 or reply.get('outcome') != 'refused' or reply.get('reason') != expected_refusal:
+                raise RuntimeError('closed reference did not refuse a new start')
+            return reply, rc, timed_out
         if key is None and (rc != 0 or reply.get('outcome') != 'completed'):
             raise RuntimeError(label + ' failed; raw records retained privately')
         return reply, rc, timed_out

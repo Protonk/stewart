@@ -35,12 +35,12 @@ def continuation_packet(batch, audit, placement, script, results, evidence):
     finally:
         e.close()
     ending, cause = CONTINUED[script]['endings'][placement-2]
-    return {'schema': 'stewart.c10-continuation/1', 'evidence': str(evidence), 'audit': audit,
+    return {'schema': 'stewart.c10-continuation/3', 'evidence': str(evidence), 'audit': audit,
         'container': 'stewart-c10-0-0', 'reference': reference, 'placement': placement,
         'max_placements': len(CONTINUED[script]['endings']),
         'prior': {'runs': placement-1, 'last_ending': ending, 'last_cause': cause, 'log_head_sha256': head,
                   'usage': {key: sum(usage[key].values()) for key in LIMITS}},
-        'model': batch['model'], 'limits': batch['limits'], 'endpoint': batch['endpoint'], 'proxy': None,
+        'file_size_limit': batch['file_size_limit'], 'model': batch['model'], 'limits': batch['limits'], 'endpoint': batch['endpoint'], 'proxy': None,
         'interruption': None, 'permitted_request_attempts': 4, 'automatic_continuation': False,
         'stop_after_seconds': batch['stop_after_seconds'], 'spending_authority': batch['spending_authority'],
         'account': batch['account'], 'bindings': {**batch['bindings'], 'apparatus_sha256': source_hash()}}
@@ -98,6 +98,7 @@ def continue_with_attempt_controls(binary, evidence, path, audit, placement, key
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--file-size-limit',type=int,choices=[131072],help='Exercise the paid placement process limit')
     parser.add_argument('--binary',type=Path,required=True)
     parser.add_argument('--evidence',type=Path,required=True)
     parser.add_argument('--case',help='One catalog case; default runs the whole rehearsal')
@@ -117,13 +118,14 @@ def main():
     require(not args.study_scenario or not (args.interruption or args.interface),
             'compaction study scenarios cannot be combined with interruption or guidance overrides')
     packet=study_proposal('rehearsal-only',args.submission,rehearsal=True,scenarios=args.study_scenario) if args.submission else rehearsal_packet()
+    packet['file_size_limit']=args.file_size_limit
     if args.interruption:
         # The shape of a live interrupted study: one supplied audit, a witnessed
         # point in its first placement and a separately bound second placement.
         require(args.submission and len(args.submission)==1 and not (args.interface or args.case or args.audit or args.check_operations),
                 'an interruption rehearsal takes exactly one --submission and no other selection')
-        packet.update(schema='stewart.interruption-commission/1',max_placements=2,
-            interruption={'after':args.interruption,'signal':'SIGTERM'},
+        packet.update(schema='stewart.interruption-commission/3',max_placements=2,
+            interruption={'after':args.interruption,'action':'signal'},
             runs=[run for run in packet['runs'] if run['submission_folder'] is not None])
         validate_packet(packet,rehearsal=True)
     if args.interface:

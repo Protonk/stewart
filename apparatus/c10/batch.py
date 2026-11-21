@@ -12,6 +12,9 @@ from pathlib import Path
 import platform
 import re
 import resource
+import select
+import signal
+import stat
 import shutil
 import subprocess
 import sys
@@ -23,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (CONTINUED, LIMITS, MIN_REQUEST_OUTPUT, catalog, credential_bytes, digest, file_hash,
     inventory, limit_exhausted, question_file, read_file, require, scan_tree, source_hash, strict_json,
     validate_packet, write_json)
+from common import FILE_SIZE_LIMIT, TRIAL_CONTROLS, TRIAL_POINTS
 from session import LogPoint, Session, export_evidence_state, failure_details, placement_folder
 from control import safe_state
 from fake import Auditor
@@ -52,9 +56,12 @@ def check_credential(path, key):
 def rehearsal_script(packet, run):
     """The fake auditor's script for one rehearsal audit."""
     scenario = run['scenario']
-    if packet.get('schema') != 'stewart.interruption-commission/1':
+    if packet.get('schema') != 'stewart.interruption-commission/3':
         return scenario
     after = packet['interruption']['after']
+    if after in TRIAL_POINTS:
+        return next(name for name, intent in TRIAL_CONTROLS.items()
+                    if intent == (after, packet['interruption']['action']))
     if scenario in CONTINUED:
         require(CONTINUED[scenario]['interruption'] == after,
                 'rehearsal interruption differs from its control scenario')
@@ -70,10 +77,13 @@ def rehearsal_script(packet, run):
 
 def first_interruption(packet, run, mode):
     """The witnessed point of a first placement, or None: the packet's, else the control's."""
-    if packet.get('schema') == 'stewart.interruption-commission/1':
+    if packet.get('schema') == 'stewart.interruption-commission/3':
         return packet['interruption']
+    if mode == 'rehearse' and run['scenario'] in TRIAL_CONTROLS:
+        point, action = TRIAL_CONTROLS[run['scenario']]
+        return {'after':point, 'action':action}
     after = CONTINUED.get(run['scenario'], {}).get('interruption') if mode == 'rehearse' else None
-    return None if after is None else {'after': after, 'signal': 'SIGTERM'}
+    return None if after is None else {'after': after, 'action':'signal'}
 
 
 def allowance_facts(allowances, interruption=None):
@@ -195,6 +205,52 @@ class Audit(Session):
         return audits[0]/'log'
 
     def spawn(self, argv, **options):
+        if '--key-fd' not in argv or self.commission['file_size_limit'] is None:
+            return self.spawn_child(argv, **options)
+        folder = self.bound_folder
+        arrangements = list((self.archive/'audits').glob('*/prep/*/arrangement.json'))
+        require(len(arrangements)==1 and arrangements[0].stat().st_size <= FILE_SIZE_LIMIT,
+                'accepted arrangement exceeds the reserved fixed request bytes')
+        ready, notify = os.pipe()
+        permit, release = os.pipe()
+        proc = None
+        try:
+            child = [sys.executable, '-I', '-B', str(Path(__file__).with_name('placement_guard.py')),
+                     str(notify), str(permit), str(FILE_SIZE_LIMIT), *argv]
+            options['pass_fds'] = (*options['pass_fds'], notify, permit)
+            proc = self.spawn_child(child, **options)
+            os.close(notify)
+            notify = None
+            require(select.select([ready], [], [], 10)[0] and os.read(ready,1)==b'1',
+                    'placement could not set the file-size limit')
+            # Inspect the child externally while it waits, before the caller
+            # can put a credential into the pipe. The hard limit survives exec.
+            limits = Path(f'/proc/{proc.pid}/limits').read_text()
+            match = re.search(r'^Max file size\s+(\d+)\s+(\d+)\s+bytes\s*$', limits, re.M)
+            require(match is not None, 'child file-size limit could not be observed')
+            actual = tuple(map(int,match.groups()))
+            parent = resource.getrlimit(resource.RLIMIT_FSIZE)
+            require(actual == (FILE_SIZE_LIMIT, FILE_SIZE_LIMIT) and parent[0] != FILE_SIZE_LIMIT,
+                    'placement or supervisor has an unexpected file-size limit')
+            write_json(folder/'file-bound.json', {'schema':'stewart.c10-file-bound/1',
+                'pid':proc.pid, 'soft':actual[0], 'hard':actual[1], 'supervisor_soft':parent[0],
+                'supervisor_hard':parent[1], 'arrangement_bytes':arrangements[0].stat().st_size,
+                'arrangement_sha256':file_hash(arrangements[0]), 'writer_sha256':file_hash(self.binary),
+                'observed_before_key_handoff':True, 'sigxfsz':'default-unblocked'})
+            self.bound_child = proc
+            os.write(release, b'1')
+            return proc
+        except BaseException:
+            if proc is not None:
+                proc.kill()
+                proc.wait()
+            raise
+        finally:
+            for fd in (ready, notify, permit, release):
+                if fd is not None:
+                    os.close(fd)
+
+    def spawn_child(self, argv, **options):
         if self.local:
             # Only smoke.py constructs this test path; the live CLI has no local option.
             require(self.mode == 'rehearse', 'local execution is synthetic only')
@@ -226,6 +282,21 @@ class Audit(Session):
 
     def execute(self, key, witness=None):
         return self.place(key, witness, 1, first_interruption(self.commission, self.run_item, self.mode))
+
+    def at_file_limit(self):
+        # The launcher and input intake have no placement limit. Only flag a
+        # file at or above the threshold that changes during this placement.
+        result = {}
+        candidates = (p for folder in (self.archive,self.root/'home',self.destination) for p in folder.rglob('*'))
+        from itertools import chain
+        for path in chain(candidates,self.evidence.glob('*-run.stdout'),self.evidence.glob('*-run.stderr')):
+            try:
+                item = path.lstat()
+            except FileNotFoundError:
+                continue
+            if stat.S_ISREG(item.st_mode) and item.st_size >= FILE_SIZE_LIMIT:
+                result[path.relative_to(self.root).as_posix()] = (item.st_ino,item.st_size,item.st_mtime_ns)
+        return result
 
     def place(self, key, witness, placement, interruption, intent=None):
         """Start one placement, observe its ending and review the whole audit."""
@@ -278,10 +349,24 @@ class Audit(Session):
                 # unheld one, like a live placement, is signalled on sight.
                 held = fake is not None and CONTINUED.get(fake.mode, {}).get('held') is True
                 point = LogPoint(self.log_folder(), interruption['after'], folder/'interruption',
-                                 in_flight=fake.holding if held else None)
+                                 in_flight=fake.holding if held else None,
+                                 close=(lambda: self.command('witness-close','close',self.ref))
+                                       if interruption['action'] == 'close' else None)
             self.run_attempted = True
-            reply, rc, timed_out = self.command('run','run',self.ref,key=key,endpoint=endpoint,
-                                                observe=observe,interrupt=point)
+            self.bound_folder, self.bound_child = folder, None
+            bounded = self.commission['file_size_limit'] is not None
+            before = self.at_file_limit() if bounded else {}
+            try:
+                reply, rc, timed_out = self.command('run','run',self.ref,key=key,endpoint=endpoint,
+                                                    observe=observe,interrupt=point)
+            finally:
+                if bounded:
+                    changed = sorted(name for name, item in self.at_file_limit().items() if before.get(name)!=item)
+                    exited = self.bound_child.returncode if self.bound_child is not None else None
+                    fired = exited == -signal.SIGXFSZ
+                    write_json(folder/'file-bound-result.json', {'schema':'stewart.c10-file-bound-result/1',
+                        'exit':exited, 'sigxfsz':fired, 'files_at_limit':changed,
+                        'clear':not changed and not fired and exited is not None})
         finally:
             if release is not None:
                 release.set()
@@ -298,6 +383,8 @@ class Audit(Session):
             reply = None
             event(self.evidence, 'caller_reply_lost', placement_effects='unknown')
         status, _, _ = self.command('status-after-run','status',self.ref)
+        if point is not None and point.state == 'close_requested' and status['data'].get('closure') is not None:
+            self.command('closed-run-probe','run',self.ref,expected_refusal='reference_closed')
         event(self.evidence, 'placement_observed', state=safe_state(status), caller_reply_lost=lost_reply)
         write_json(folder/'RESULT.json', {'failure':False, 'caller_reply_lost':lost_reply,
             'exit':rc, 'timed_out':timed_out})
@@ -394,6 +481,11 @@ def continued_match(observed, export, script, placement):
 
 
 def rehearsal_match(observed, export, scenario):
+    if scenario in TRIAL_CONTROLS:
+        witness = observed['review_before_close']
+        trial = (witness.get('placements') or [{}])[-1].get('interruption') or {}
+        expected = 'unexercised' if scenario == 'p2-missed' else 'pass'
+        return witness['outcome'] == 'checked' and trial.get('outcome') == expected and export['outcome']=='exported'
     if scenario in CONTINUED:
         return continued_match(observed, export, scenario, 1)
     expected_export = {'reflected-body':'withheld','export-contamination':'withheld',
@@ -455,7 +547,7 @@ def execute_batch(binary, private, out, packet, mode, key, sessions, witness, *,
     failed = sum(r.get('failed') is True for r in rows)
     # Those controls need the fixed rehearsal inventory; a rehearsal of one
     # interrupted study says so here and therefore admits no live launch.
-    lone_study = mode == 'rehearse' and packet.get('schema') == 'stewart.interruption-commission/1'
+    lone_study = mode == 'rehearse' and packet.get('schema') == 'stewart.interruption-commission/3'
     report = {'schema':'stewart.c10-session/2', 'mode':mode, 'local_iteration_only':local,
         'outcome':('incomplete' if failed else 'observed') if mode=='live' else ('failed' if halt else 'passed'),
         'planned':len(sessions), 'observed':sum(r['placement']=='observed' for r in rows),
@@ -529,6 +621,10 @@ def main():
             (witness/'canary.bin').write_bytes(key)
         report=execute_batch(args.binary,args.private,args.out,packet,args.mode,key,sessions,witness)
         if args.mode=='rehearse' and report['failed']==report['not_started']==0 and not report['skipped_checks']:
+            if packet['file_size_limit'] is not None:
+                from check_file_bound import exercise as exercise_bound
+                result = exercise_bound(args.binary, args.private.parent/'c10-file-bound', key)
+                write_json(args.out/'FILE-BOUND-CONTROLS.json', result)
             from check_operations import exercise as exercise_operations
             operator_root=args.private.parent/'c10-operator-controls'
             operator_controls=exercise_operations(args.private.parent,private=args.private,out=args.out,

@@ -24,14 +24,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (REPO, HERE, SOURCE_PATHS, LIMITS, CONTINUED, compact, rehearsal_packet, tree_hash, digest, fields, identifier, read_file,
                     require, source_hash, strict_json, validate_continuation, validate_packet,
                     write_json)
+from billing import charge as usage_charge, price_card, worst_case
 from connections import validate_label
 from launch import host_environment, select_qualification
 
 
 def configuration(value, live):
-    fields(value, ['campaign', 'authority', 'model', 'account', 'qualification',
-                  'schema', 'synthetic_connection', 'placement_ceiling', 'budget_usd', 'console', 'envelope'], 'host configuration')
-    require(value['schema'] == 'stewart.c10-campaign/2', 'unsupported campaign configuration')
+    fields(value, ['campaign', 'authority', 'account', 'qualification', 'grant_sha256', 'grant_path', 'cards', 'wave', 'wave_one_model', 'wave_one_ceiling',
+                  'schema', 'synthetic_connection', 'placement_ceiling', 'budget_usd', 'envelope'], 'host configuration')
+    require(value['schema'] == 'stewart.c10-campaign/3', 'unsupported campaign configuration')
     envelope = value['envelope']
     fields(envelope, ['cases', 'submissions', 'efforts', 'limits', 'max_placements', 'watchdog_seconds',
                       'study_build_sha256', 'pricing'], 'authorized campaign envelope')
@@ -50,10 +51,17 @@ def configuration(value, live):
     require(build is None or isinstance(build,str) and re.fullmatch('[0-9a-f]{64}',build),
             'invalid reviewed study build digest')
     pricing=envelope['pricing']
-    fields(pricing, ['input_cents_per_million','output_cents_per_million',
-                     'max_input_per_attempt','max_output_per_attempt'], 'campaign pricing')
-    require(all(type(n) is int and n > 0 for n in pricing.values()), 'positive integer billing bounds required')
-    for key in ['campaign', 'authority', 'model', 'qualification']:
+    require(isinstance(pricing, dict) and pricing and all(isinstance(k,str) and k for k in pricing),
+            'model rate cards missing')
+    for card in pricing.values():
+        price_card(card)
+    require(type(value['wave']) is int and value['wave'] in (1,2)
+            and value['wave_one_model'] in pricing and type(value['wave_one_ceiling']) is int
+            and 0 < value['wave_one_ceiling'] <= value['placement_ceiling'], 'invalid wave envelope')
+    require(isinstance(value['grant_sha256'],str) and re.fullmatch('[0-9a-f]{64}',value['grant_sha256']),
+            'invalid grant digest')
+    require(isinstance(value['cards'],str) and Path(value['cards']).is_absolute(),'expected private frozen card directory')
+    for key in ['campaign', 'authority', 'qualification']:
         require(isinstance(value[key], str) and value[key].strip(), 'empty host configuration field')
     require(identifier(value['campaign']), 'invalid campaign identifier')
     require(type(value['placement_ceiling']) is int and value['placement_ceiling'] > 0,
@@ -66,21 +74,20 @@ def configuration(value, live):
     if live:
         require(all(isinstance(v, str) and v.strip() for v in value['account'].values()),
                 'record the actual campaign account before live enabling')
-        console = value['console']
-        require(isinstance(console, dict), 'record the configured Console limit before live enabling')
-        fields(console, ['scope', 'month', 'limit_usd', 'starting_spend_usd', 'recorded_by',
-                         'recorded_at', 'credential_binding'], 'Console observation')
-        require(all(isinstance(console[k], str) and console[k].strip() for k in
-                    ['scope', 'month', 'recorded_by', 'recorded_at', 'credential_binding']),
-                'Console metadata is incomplete')
-        require(all(type(console[k]) in [int, float] and console[k] >= 0
-                    for k in ['limit_usd', 'starting_spend_usd'])
-                and console['limit_usd'] > console['starting_spend_usd'],
-                'Console limit needs positive remaining headroom')
-        cents(console['starting_spend_usd'])
-        cents(console['limit_usd'])
-        require(console['month'] == datetime.now(timezone.utc).strftime('%Y-%m'),
-                'refresh the Console observation for this billing month; campaign allowance does not renew')
+        grant_path = Path(value['grant_path'])
+        require(grant_path.is_absolute(), 'expected absolute grant path')
+        raw = read_file(grant_path)
+        require(digest(raw) == value['grant_sha256'], 'grant digest differs')
+        grant = strict_json(raw)
+        messages = grant['messages']
+        require(grant['schema']=='stewart.runtime-trials.envelope/1' and grant['waves']==2
+                and grant['campaign']==value['campaign'] and grant['grant']==value['authority']
+                and messages['endpoint']=='https://api.anthropic.com'
+                and set(messages['models'])==set(pricing) and messages['wave_one_model']==value['wave_one_model']
+                and messages['credential_label']==value['account']['credential_label']
+                and messages['placements']==value['placement_ceiling']
+                and messages['wave_one_placements']==value['wave_one_ceiling']
+                and messages['cap_usd_cents']==cents(value['budget_usd']), 'configuration exceeds protected grant')
     cents(value['budget_usd'])
     return value
 
@@ -98,19 +105,44 @@ def cents(amount):
     return int(value)
 
 
-def reservation(config, slots):
-    # INTERFACE 6.4 checks usage after a reply. Price every possible attempt,
-    # including retries and the last request that can exceed the input allowance.
-    envelope = config['envelope']
-    price = envelope['pricing']
-    per_attempt = (price['input_cents_per_million'] * price['max_input_per_attempt']
-                   + price['output_cents_per_million'] * price['max_output_per_attempt'])
-    numerator = slots * envelope['limits']['turns'] * 4 * per_attempt
-    return (numerator + 999999) // 1000000
+def reservation(config, slots, packet=None, claims=()):
+    if not slots:
+        return 0
+    if packet is None:
+        packet = rehearsal_packet()
+    limits=packet['limits'].copy()
+    if 'placement' in packet:
+        # Earlier records come from the launcher's reconciled, reviewed claims.
+        # An unavailable settlement cannot reduce the required reservation.
+        billed=set()
+        for claim in claims:
+            path=claim/'settlement.json'
+            if not path.exists():
+                continue
+            row=strict_json(read_file(path))
+            if row.get('trial')!=packet['audit']:
+                continue
+            require(row['model']==packet['model'] and row['grant_sha256']==config['grant_sha256']
+                    and type(row['run']) is int and 0<row['run']<packet['placement']
+                    and row['run'] not in billed, 'previous settlement differs from retained audit')
+            billed.add(row['run'])
+            for key in LIMITS:
+                counts=row['usage'][key]
+                require(all(type(counts.get(b)) is int and counts[b]>=0 for b in ('reported','estimated')),
+                        'invalid settled usage')
+                limits[key]=max(0,limits[key]-counts['reported']-counts['estimated'])
+    return slots * worst_case(config['envelope']['pricing'][packet['model']], limits,
+                              synthetic=packet['model']=='rehearsal-only')
+
+
+def model_allowed(config, model):
+    return model in config['envelope']['pricing'] and (config['wave']==2 or model==config['wave_one_model'])
 
 
 def check_envelope(packet, config, submissions):
     envelope = config['envelope']
+    require(packet['model']=='rehearsal-only' or packet['file_size_limit']==131072,
+            'paid packet requires the enforced 128 KiB placement file-size limit')
     require(all(packet['limits'][key] <= envelope['limits'][key] for key in LIMITS)
             and packet['max_placements'] <= envelope['max_placements']
             and packet['stop_after_seconds'] <= envelope['watchdog_seconds'],
@@ -147,12 +179,12 @@ def command(request, config, live, submissions=None):
                     and name in config['envelope']['submissions'], 'invalid rehearsal submission')
             require(tree_hash(Path(folder)) == config['envelope']['submissions'][name], 'rehearsal submission changed')
             argv += ['--submission', name, folder]
-        if config['model'] == 'rehearsal-only':
+        if set(config['envelope']['pricing']) == {'rehearsal-only'}:
             fixed = rehearsal_packet()
             check_envelope(fixed, config, submissions)
             slots = len(fixed['runs']) + len(CONTINUED) + len(request['submissions'])
             return argv, slots
-        return argv, 0
+        return argv + ['--file-size-limit','131072'], 0
     if kind == 'live':
         fields(request, ['operation', 'evidence', 'packet', 'sha256', 'rehearsal'], 'live request')
         require(live, 'this host session is offline; restart with --live after enabling')
@@ -162,7 +194,7 @@ def command(request, config, live, submissions=None):
         raw = read_file(Path(request['packet']))
         require(digest(raw) == request['sha256'], 'packet digest differs')
         packet = validate_packet(strict_json(raw), approved=True)
-        require(packet['model'] == config['model'] and packet['account'] == config['account']
+        require(model_allowed(config,packet['model']) and packet['account'] == config['account']
                 and packet['spending_authority'] == config['authority']
                 and packet['bindings']['qualification_id'] == config['qualification'],
                 'packet exceeds or differs from this campaign')
@@ -186,7 +218,7 @@ def command(request, config, live, submissions=None):
         raw = read_file(Path(request['packet']))
         require(digest(raw) == request['sha256'], 'packet digest differs')
         packet = validate_continuation(strict_json(raw), approved=True)
-        require(packet['model'] == config['model'] and packet['account'] == config['account']
+        require(model_allowed(config,packet['model']) and packet['account'] == config['account']
                 and packet['spending_authority'] == config['authority']
                 and packet['bindings']['qualification_id'] == config['qualification'],
                 'packet exceeds or differs from this campaign')
@@ -203,7 +235,7 @@ def command(request, config, live, submissions=None):
     require(identifier(request['audit']), 'invalid audit identifier')
     packet = strict_json(read_file(out / 'staging/commission.json'))
     is_fake = packet['model'] == 'rehearsal-only'
-    require(is_fake or packet['model'] == config['model']
+    require(is_fake or packet['model'] in config['envelope']['pricing']
             and packet['account'] == config['account']
             and packet['spending_authority'] == config['authority'],
             'operator target is outside this campaign')
@@ -218,14 +250,41 @@ def command(request, config, live, submissions=None):
     return argv, 0
 
 
-def dispatch(queue, name, request_raw, argv, charge, config_hash, reserved_cents):
+def frozen_card(config, packet, request, claims):
+    audit=packet['audit'] if request['operation']=='continue' else packet['runs'][0]['id']
+    slot=f"{audit}-p{packet.get('placement',1)}"
+    path=Path(config['cards'])/(slot+'.json')
+    raw=read_file(path)
+    card=strict_json(raw)
+    fields(card,['campaign','wave','trial','placement','question','reason','packet_sha256',
+                 'model','qualification','apparatus_sha256','writer_sha256','grant_sha256','file_size_limit'], 'frozen trial card')
+    require(card['file_size_limit']==packet['file_size_limit']==131072 and card['trial']==audit and card['placement']==packet.get('placement',1)
+            and card['campaign']==config['campaign'] and card['wave']==config['wave']
+            and card['model']==packet['model'] and card['grant_sha256']==config['grant_sha256']
+            and card['packet_sha256']==request['sha256']
+            and card['qualification']==packet['bindings']['qualification_id']
+            and card['apparatus_sha256']==packet['bindings']['apparatus_sha256']
+            and card['writer_sha256']==packet['bindings']['binary_sha256']
+            and all(isinstance(card[k],str) and card[k].strip() for k in ('question','reason')),
+            'packet differs from frozen trial card')
+    for claim in claims:
+        cmd=strict_json(read_file(claim/'command.json'))
+        require(cmd.get('slot')!=slot,'trial placement already claimed')
+    return slot,raw
+
+
+def dispatch(queue, name, request_raw, argv, charge, config_hash, reserved_cents, wave=1, slot=None, card=None):
     """A crash anywhere after mkdir leaves a claim, never an implicit retry."""
     claim = queue / 'claims' / name
     claim.mkdir(mode=0o700)
     (claim / 'request.json').write_bytes(request_raw)
+    retained=[claim/'request.json']
+    if card is not None:
+        (claim/'card.json').write_bytes(card)
+        retained.append(claim/'card.json')
     write_json(claim / 'command.json', {'argv': argv, 'placement_charge': charge,
-                                      'reserved_cents': reserved_cents, 'configuration_sha256': config_hash, 'started_at': time.time()})
-    for path in [claim / 'request.json', claim / 'command.json', claim, claim.parent]:
+                                      'wave':wave, 'slot':slot, 'reserved_cents': reserved_cents, 'configuration_sha256': config_hash, 'started_at': time.time()})
+    for path in [*retained, claim / 'command.json', claim, claim.parent]:
         fd = os.open(path, os.O_RDONLY)
         try:
             os.fsync(fd)
@@ -242,8 +301,16 @@ def reconciled(claim):
     result = claim / 'result.json'
     try:
         if strict_json(read_file(result)).get('exit') == 0:
-            return True
-    except (OSError, ValueError):
+            command = strict_json(read_file(claim/'command.json'))
+            argv = command.get('argv', [])
+            if len(argv)>4 and (argv[4]=='live' or argv[4:6]==['continue','live']):
+                if (claim/'settlement.json').exists():
+                    settled=strict_json(read_file(claim/'settlement.json'))
+                    if settled['cents']<=command['reserved_cents']:
+                        return True
+            else:
+                return True
+    except (OSError, ValueError, KeyError, TypeError):
         pass  # A torn result can be reconciled without rewriting it.
     record = claim / 'reconciliation.json'
     if not record.exists():
@@ -263,6 +330,12 @@ def charges(claim, config):
         row = strict_json(read_file(claim / 'command.json'))
         slots, money = row['placement_charge'], row['reserved_cents']
         require(all(type(n) is int and n >= 0 for n in (slots,money)), 'invalid claim reservation')
+        settlement = claim/'settlement.json'
+        if settlement.exists():
+            accounted = strict_json(read_file(settlement))
+            require(accounted['schema']=='stewart.c10-settlement/1' and accounted['reserved_cents']==money
+                    and type(accounted['cents']) is int and accounted['cents']>=0, 'invalid settlement')
+            money=accounted['cents']
         return slots, money
     except (OSError, ValueError, KeyError, TypeError):
         # Losing the metadata loses the admissible upper bound. Hold the
@@ -319,6 +392,86 @@ def publish_exports(results, evidence, audits):
     return published
 
 
+def exposure_review(queue, name, request, packet):
+    record=evidence_path(request.get('record',request['evidence']))
+    original=evidence_path(request['evidence'])
+    host=record/'host/RESULT.json'
+    scans=[]
+    if host.exists():
+        host_scan=strict_json(read_file(host)).get('host_scan') or {}
+        if 'files_with_matches' in host_scan:
+            scans.append(host_scan)
+        else:
+            scans.extend(host_scan.values())
+    audit=packet['audit'] if request['operation']=='continue' else packet['runs'][0]['id']
+    for receipt in sorted((original/'container'/audit).glob('export-*/EXPORT.json')):
+        scans.append(strict_json(read_file(receipt))['scan'])
+    value={'scans':len(scans),'files_examined':sum(s['files'] for s in scans),
+           'files_with_matches':sum(s['files_with_matches'] for s in scans),
+           'errors':sum(s['errors'] for s in scans),'credential_printed':False}
+    write_json(queue/'claims'/name/'exposure.json',value)
+    if value['files_with_matches']:
+        if not (queue/'STOP').exists():
+            write_json(queue/'STOP',{'reason':'credential material found','claim':name})
+        print('Credential material found in paid evidence; campaign stopped.',file=sys.stderr)
+        return False
+    return bool(scans) and not value['errors']
+
+
+def priced_export(queue, name, request, packet, config, reserved):
+    """Durably retain the hold on any incomplete or uncertain observation."""
+    try:
+        settle(queue,name,request,packet,config,reserved)
+    except (ValueError,OSError,KeyError,TypeError,IndexError):
+        return False
+    return True
+
+
+def settle(queue, name, request, packet, config, reserved):
+    """Release escrow only against the checked export of this exact placement."""
+    from verify import Evidence, verify
+    claim=queue/'claims'/name
+    result=strict_json(read_file(queue/'results'/(name+'.json')))
+    audit=packet['audit'] if request['operation']=='continue' else packet['runs'][0]['id']
+    run=packet.get('placement',1)
+    snapshots=[s for s in result.get('exports',[]) if s['audit']==audit]
+    require(snapshots and not (claim/'settlement.json').exists(), 'checked billing export missing')
+    snapshot=snapshots[-1]
+    evidence=Evidence(queue/'results'/snapshot['file'],snapshot['sha256'])
+    try:
+        review=verify(evidence)
+        require(review['outcome']=='checked' and len(review['placements'])==run
+                and review['placements'][-1]['run']==run and all(
+                    r.get('interruption') is None or r['interruption'].get('outcome')!='fail'
+                    for r in review['placements']), 'placement review incomplete')
+        binding=evidence.json('evidence/binding.json')
+        require(binding['mode']=='live' and (run!=1 or binding['commission']==packet),
+                'billing archive outside frozen live packet')
+        require(binding['run']['id']==audit and binding['commission']['model']==packet['model'],
+                'billing packet audit or model differs')
+        require(binding['binary_sha256']==packet['bindings']['binary_sha256'], 'billing writer differs')
+        value=usage_charge(config['envelope']['pricing'][packet['model']],review['placements'][-1])
+    finally:
+        evidence.close()
+    write_json(claim/'review.json',review)
+    review_hash=digest(read_file(claim/'review.json'))
+    settlement={'schema':'stewart.c10-settlement/1','trial':audit,'wave':config['wave'],
+                'grant_sha256':config['grant_sha256'],'review_sha256':review_hash,
+                'outcome':review['trial']['outcome'],'criteria':review['trial']['criteria'],'model':packet['model'],'run':run,
+                'packet_sha256':request['sha256'],'archive_sha256':snapshot['sha256'],
+                'reserved_cents':reserved, **value}
+    write_json(claim/'settlement.json',settlement)
+    require(value['cents']<=reserved, 'placement exceeded its reservation')
+    meter=queue/'results'/(name+'.meter.json')
+    with tempfile.NamedTemporaryFile(dir=meter.parent) as temp:
+        temp.write(compact({k:settlement[k] for k in ('trial','wave','run','outcome','packet_sha256',
+                  'archive_sha256','review_sha256','reserved_cents','cents')})+b'\n')
+        temp.flush()
+        os.fchmod(temp.fileno(),0o640)
+        os.fsync(temp.fileno())
+        os.link(temp.name,meter)
+
+
 def result_summary(queue, name, request, code, charge, reserved, *, reason=None):
     value = {'schema':'stewart.c10-dispatch-result/1', 'operation':request['operation'],
              'exit':code, 'placement_charge':charge, 'reserved_cents':reserved}
@@ -371,7 +524,10 @@ def serve(queue, config_path, live, once=False):
     with (queue / 'lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         identity = queue / 'campaign.json'
-        scope = {k: config[k] for k in ['schema', 'campaign', 'authority', 'model', 'account', 'qualification', 'envelope', 'placement_ceiling', 'budget_usd']}
+        scope = {k:v for k,v in config.items() if k not in ('wave','qualification','envelope')}
+        # The trusted operator freezes new study inputs between packets. Claim
+        # snapshots preserve the exact prior configuration and bound card.
+        scope['envelope']={k:v for k,v in config['envelope'].items() if k!='submissions'}
         if identity.exists():
             require(strict_json(read_file(identity)) == scope, 'queue belongs to another campaign or ceiling')
         else:
@@ -402,22 +558,26 @@ def serve(queue, config_path, live, once=False):
                     if request['operation'] in ['status','inspect','close','collect','continue']:
                         require(owned_evidence(queue,request['evidence']), 'target was not launched by this campaign')
                     claims = list((queue / 'claims').iterdir())
-                    reserved = reservation(config, charge)
+                    paid = request['operation'] in ('live','continue')
+                    packet = strict_json(read_file(Path(request['packet']))) if paid else None
+                    reserved = reservation(config, charge, packet, claims)
                     if charge:
                         require(all(reconciled(p) for p in claims), 'unfinished host claim: reconcile effects before placements')
                         ledger = [charges(p,config) for p in claims]
                         require(sum(slots for slots,_ in ledger) + charge <= config['placement_ceiling'],
                                 'campaign placement ceiling reached')
                         remaining = cents(config['budget_usd'])
-                        if live:
-                            console=config['console']
-                            remaining=min(remaining,cents(console['limit_usd'])-cents(console['starting_spend_usd']))
+                        if paid and config['wave']==1:
+                            require(not (queue/'wave-two').exists(),'wave one is closed')
+                            require(sum(slots for slots,_ in ledger)+charge<=config['wave_one_ceiling'],
+                                    'wave one placement ceiling reached')
                         require(sum(cost for _,cost in ledger) + reserved <= remaining,
-                                'campaign budget or Console headroom exhausted')
+                                'campaign budget exhausted')
+                    slot,card=frozen_card(config,packet,request,claims) if paid else (None,None)
                 except (ValueError, OSError, TypeError, KeyError, AttributeError) as error:
                     # Outward reasons contain no request-supplied strings, stream
                     # fragments or launcher paths. Refusals reserve nothing.
-                    known = ['campaign placement ceiling reached','campaign budget or Console headroom exhausted',
+                    known = ['campaign placement ceiling reached','campaign budget exhausted','wave one placement ceiling reached','wave one is closed',
                              'unfinished host claim: reconcile effects before placements']
                     reason = str(error) if type(error) is ValueError and str(error) in known else 'request outside campaign or invalid'
                     result_summary(queue,name,{'operation':'refused'},1,0,0,reason=reason)
@@ -425,8 +585,17 @@ def serve(queue, config_path, live, once=False):
                     if once:
                         return 1
                     continue
-                code = dispatch(queue, name, request_raw, argv, charge, config_hash, reserved)
+                if paid and config['wave']==2 and not (queue/'wave-two').exists():
+                    write_json(queue/'wave-two',{'grant_sha256':config['grant_sha256'],'at':time.time()})
+                code = dispatch(queue, name, request_raw, argv, charge, config_hash, reserved,config['wave'],slot,card)
+                if paid and not exposure_review(queue,name,request,packet):
+                    result_summary(queue,name,request,1,charge,reserved,reason='credential scan missing, incomplete or matched')
+                    return 1
                 result_summary(queue, name, request, code, charge, reserved)
+                if paid and code==0:
+                    if not priced_export(queue, name, request, packet, config, reserved):
+                        print(name + ': placement billing unsettled; retain escrow and reconcile', file=sys.stderr)
+                        return 1
                 print(name + ': exit=' + str(code) + '; inspect retained claim and C10 records', flush=True)
                 # One request per poll lets the agent review before publishing more.
                 # A failed subprocess does not authorize repetition or a replacement.
@@ -454,6 +623,9 @@ def deployment(queue, config):
     for path in [queue,config,REPO,REPO/'.scratch']:
         protected(path)
     campaign = strict_json(read_file(config))
+    if set(campaign['envelope']['pricing'])!={'rehearsal-only'}:
+        protected(Path(campaign['grant_path']))
+        protected(Path(campaign['cards']))
     _, binaries = select_qualification(REPO,campaign['qualification'])
     protected(binaries/'stewart')
     for name,mode in [('requests',0o3770),('packets',0o3770),('results',0o2750),

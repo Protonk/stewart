@@ -36,7 +36,7 @@ from verify import Evidence, inventory_from_evidence
 # Reviewer controls a fixed control's evidence cannot carry: nothing was
 # recorded before continue-cap's interruption, and only the reminder controls
 # are signalled at a witnessed point. Each control still fires in another script.
-NO_SUBJECT = {'continue-cap': ['changed-interruption-timing', 'changed-interruption-witness', 'repeated-effect-across-placements'],
+NO_SUBJECT = {'p1-signal':['repeated-effect-across-placements'], 'p2-signal':[],'continue-cap': ['changed-interruption-timing', 'changed-interruption-witness', 'repeated-effect-across-placements'],
               'continue-entries': ['changed-interruption-timing', 'changed-interruption-witness'],
               'reminder-spent': [], 'reminder-spent-unheld': [], 'reminder-spent-submits': [], 'reminder-unused': []}
 
@@ -116,9 +116,10 @@ def preflight(binary, private, packet, mode, result, stage, *, local):
     commission = binding['commission']
     require(binding['binary_sha256'] == bound['binary_sha256'], "binary differs from the audit's recorded writer")
     require(audit.ref == packet['reference'], 'operator reference differs from the packet')
+    require(commission['file_size_limit']==packet['file_size_limit'],'placement file-size limit differs from original commission')
     require(commission['model'] == packet['model'] and commission['limits'] == packet['limits']
             and commission['endpoint'] == packet['endpoint'], "packet differs from the audit's commission")
-    require(commission['schema'] != 'stewart.interruption-commission/1'
+    require(commission['schema'] != 'stewart.interruption-commission/3'
             or packet['placement'] <= commission['max_placements'], "placement exceeds the audit's commissioned ceiling")
     stage('preflight.input_witness')
     require(inventory_from_evidence(Evidence(root), 'evidence/input-witness/') == binding['input_inventory'],
@@ -356,7 +357,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('mode', choices=['rehearse', 'live'])
     parser.add_argument('--binary', type=Path, required=True, help='The exact writer the audit recorded')
-    parser.add_argument('--packet', type=Path, required=True, help='A stewart.c10-continuation/1 packet')
+    parser.add_argument('--packet', type=Path, required=True, help='A stewart.c10-continuation/3 packet')
     parser.add_argument('--private', type=Path, default=Path('/work/c10-private'))
     parser.add_argument('--out', type=Path, default=Path('/out'))
     args = parser.parse_args()

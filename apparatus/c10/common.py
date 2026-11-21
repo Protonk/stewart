@@ -16,6 +16,7 @@ from session_support import credential_bytes, digest, scan_tree, write_json
 SOURCE_PATHS = ['apparatus/c10', 'apparatus/sanity',
     'apparatus/driver/credential_observer.py', 'apparatus/driver/driver_core.py',
     'apparatus/driver/rawjson.py', 'apparatus/driver/answer_witness.py']
+FILE_SIZE_LIMIT = 131072
 FAMILIES = ['open-inquiry', 'inquiry-framing', 'comparison']
 # Rehearsal controls that need more than one placement. Each first placement
 # ends interrupted; a separately bound continuation packet starts the next one.
@@ -46,13 +47,23 @@ CONTINUED = {
     'reminder-unused': {'interruption': 'entry_record', 'held': True,
         'endings': [['interrupted', 'signal'], ['sealed', None]]},
 }
-INTERRUPTION_POINTS = ['reminder_notice', 'entry_record']
+CONTINUED.update({
+    'p1-signal': {'interruption':'run_started','held':True,'endings':[['interrupted','signal'],['sealed',None]]},
+    'p2-signal': {'interruption':'answer_prepared','held':True,'endings':[['interrupted','signal'],['sealed',None]]},
+})
+TRIAL_POINTS = ['run_started', 'answer_prepared']
+TRIAL_CONTROLS = {
+    'p1-signal': ('run_started', 'signal'), 'p2-signal': ('answer_prepared', 'signal'),
+    'p1-close': ('run_started', 'close'), 'p2-close': ('answer_prepared', 'close'),
+    'p2-missed': ('answer_prepared', 'signal'),
+}
+INTERRUPTION_POINTS = ['reminder_notice', 'entry_record', *TRIAL_POINTS]
 CONTINUABLE_CAUSES = ['signal', 'max_tokens', 'provider_unavailable', 'provider_rejected',
     'context_exhausted', 'provider_refusal', 'protocol_anomaly']
 MAX_PLACEMENTS = 4
 SCENARIOS = ['submitted', 'empty', 'unsubmitted', 'provider-rejected',
     'lost-run-reply', 'reflected-body', 'export-contamination', 'export-failure',
-    'compaction', 'compaction-below', 'compaction-invalid', *CONTINUED]
+    'compaction', 'compaction-below', 'compaction-invalid', *CONTINUED, *(s for s in TRIAL_CONTROLS if s not in CONTINUED)]
 BINDINGS = ['qualification_id', 'binary_sha256', 'source_commit', 'apparatus_sha256',
             'image', 'catalog_sha256']
 LIMITS = ['turns', 'input_tokens', 'output_tokens']
@@ -239,31 +250,29 @@ def catalog():
 
 
 def validate_interruption(value, *, rehearsal=False):
-    """A witnessed point after which the apparatus sends one signal to the placement.
-
-    Live packets may select only the recorded reminder notice. The point is a
-    log record published by that placement; elapsed time never selects it.
-    """
-    fields(value, ['after', 'signal'], 'interruption')
-    require(value['after'] in (INTERRUPTION_POINTS if rehearsal else ['reminder_notice'])
-            and value['signal'] == 'SIGTERM', 'unsupported interruption point or signal')
+    """Bind a manager action to a linked record from this placement."""
+    fields(value, ['after', 'action'], 'interruption')
+    points = INTERRUPTION_POINTS if rehearsal else ['reminder_notice', *TRIAL_POINTS]
+    require(value['after'] in points and (value['action'] == 'signal'
+            or value['action'] == 'close' and value['after'] in TRIAL_POINTS),
+            'unsupported interruption point or action')
     return value
 
 
 def validate_packet(packet, *, rehearsal=False, approved=False):
-    interface_study = packet.get('schema') == 'stewart.interface-commission/1'
+    interface_study = packet.get('schema') == 'stewart.interface-commission/2'
     # A study audit whose first placement is interrupted at a witnessed point.
-    # Later placements each need their own stewart.c10-continuation/1 packet.
-    interrupted_study = packet.get('schema') == 'stewart.interruption-commission/1'
+    # Later placements each need their own stewart.c10-continuation/3 packet.
+    interrupted_study = packet.get('schema') == 'stewart.interruption-commission/3'
     fields(packet, ['schema', 'model', 'effort', 'limits', 'endpoint', 'proxy', 'runs',
         'max_placements', 'permitted_request_attempts', 'automatic_continuation',
-        'stop_after_seconds', 'spending_authority', 'account', 'bindings']
+        'stop_after_seconds', 'file_size_limit', 'spending_authority', 'account', 'bindings']
         + (['study_build'] if interface_study else [])
         + (['interruption'] if interrupted_study else []), 'commission')
-    require(packet['schema'] in ['stewart.c10-commission/1', 'stewart.study-commission/1',
-                                'stewart.interface-commission/1',
-                                'stewart.interruption-commission/1'], 'unsupported commission schema')
-    study = packet['schema'] != 'stewart.c10-commission/1'
+    require(packet['schema'] in ['stewart.c10-commission/2', 'stewart.study-commission/2',
+                                'stewart.interface-commission/2',
+                                'stewart.interruption-commission/3'], 'unsupported commission schema')
+    study = packet['schema'] != 'stewart.c10-commission/2'
     if interrupted_study:
         validate_interruption(packet['interruption'], rehearsal=rehearsal)
         require(isinstance(packet['runs'], list) and len(packet['runs']) == 1,
@@ -271,6 +280,8 @@ def validate_packet(packet, *, rehearsal=False, approved=False):
     if interface_study:
         from study_build import validate
         validate(packet['study_build'], bound=approved)
+    require(packet['file_size_limit'] is None or type(packet['file_size_limit']) is int
+            and packet['file_size_limit'] == FILE_SIZE_LIMIT, 'unsupported placement file-size limit')
     model = packet['model']
     require(isinstance(model, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,127}', model), 'invalid model')
     require((model == 'rehearsal-only') == rehearsal and not model.startswith('REPLACE'), 'model does not match launch mode')
@@ -283,7 +294,7 @@ def validate_packet(packet, *, rehearsal=False, approved=False):
     # Every launch performs one placement. An interrupted study records the
     # audit's commissioned ceiling; its later placements are separately bound.
     require(type(packet['max_placements']) is int
-            and (2 <= packet['max_placements'] <= MAX_PLACEMENTS if interrupted_study
+            and ((1 if packet['interruption']['action'] == 'close' else 2) <= packet['max_placements'] <= MAX_PLACEMENTS if interrupted_study
                  else packet['max_placements'] == 1)
             and type(packet['permitted_request_attempts']) is int and packet['permitted_request_attempts'] == 4
             and packet['automatic_continuation'] is False, 'one placement per launch, built-in retries and no automatic continuation required')
@@ -340,8 +351,8 @@ def validate_continuation(packet, *, rehearsal=False, approved=False):
     fields(packet, ['schema', 'evidence', 'audit', 'container', 'reference', 'placement',
         'max_placements', 'prior', 'model', 'limits', 'endpoint', 'proxy', 'interruption',
         'permitted_request_attempts', 'automatic_continuation', 'stop_after_seconds',
-        'spending_authority', 'account', 'bindings'], 'continuation')
-    require(packet['schema'] == 'stewart.c10-continuation/1', 'unsupported continuation schema')
+        'file_size_limit', 'spending_authority', 'account', 'bindings'], 'continuation')
+    require(packet['schema'] == 'stewart.c10-continuation/3', 'unsupported continuation schema')
     evidence = packet['evidence']
     require(isinstance(evidence, str) and Path(evidence).is_absolute()
             and not any(ord(c) < 32 for c in evidence), 'continuation needs the absolute retained evidence folder')
@@ -364,6 +375,8 @@ def validate_continuation(packet, *, rehearsal=False, approved=False):
     if prior['usage'] is not None:
         fields(prior['usage'], LIMITS, 'prior usage')
         require(all(type(n) is int and 0 <= n <= 2**48 for n in prior['usage'].values()), 'invalid prior usage')
+    require(packet['file_size_limit'] is None or type(packet['file_size_limit']) is int
+            and packet['file_size_limit'] == FILE_SIZE_LIMIT, 'unsupported placement file-size limit')
     model = packet['model']
     require(isinstance(model, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,127}', model), 'invalid model')
     require((model == 'rehearsal-only') == rehearsal and not model.startswith('REPLACE'), 'model does not match launch mode')
@@ -390,13 +403,13 @@ def proposal(model, case_ids=None, repetitions=1, *, rehearsal=False):
     selected = list(cases) if case_ids is None else case_ids
     require(type(repetitions) is int and 1 <= repetitions <= 3, 'proposal repetitions must be 1–3')
     require(selected and len(set(selected)) == len(selected) and all(c in cases for c in selected), 'select known distinct cases')
-    packet = {'schema': 'stewart.c10-commission/1', 'model': model, 'effort': None,
+    packet = {'schema': 'stewart.c10-commission/2', 'model': model, 'effort': None,
         'limits': {'turns': 12, 'input_tokens': 160000, 'output_tokens': 12000},
         'endpoint': 'loopback-fake' if rehearsal else 'https://api.anthropic.com', 'proxy': None,
         'runs': [{'id': f'{name}-r{n}', 'case': name, 'repetition': n, 'scenario': 'submitted',
                   'submission_sha256': cases[name]['sha256']} for name in selected for n in range(1, repetitions + 1)],
         'max_placements': 1, 'permitted_request_attempts': 4, 'automatic_continuation': False,
-        'stop_after_seconds': 900, 'spending_authority': None,
+        'stop_after_seconds': 900, 'file_size_limit': None, 'spending_authority': None,
         'account': {key: None for key in ['account_label', 'workspace_id', 'credential_label']},
         'bindings': {key: None for key in BINDINGS}}
     return validate_packet(packet, rehearsal=rehearsal)
