@@ -139,6 +139,149 @@
         "path": ".scratch/runtime-trials-preparation-release-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
+      "pin": {
+        "reason": "Verify the original writer qualification bound to the two completed open inquiries and the proposed framing audit.",
+        "until": "The alignment records and their writer bindings have been reviewed or retired."
+      }
+    },
+    {
+      "id": "framing-effort-acceptance-01",
+      "kind": "suite",
+      "suite": "acceptance",
+      "script": {
+        "path": "apparatus/acceptance.sh",
+        "sha256": "8c6babd9b3e52f39f3e9013d623c4c86df899ab9e0faf084ee9ba66f1c837975"
+      },
+      "source_commit": "b58c89a796215b8e9d458326aaa340dfd69883d4",
+      "source_archive_sha256": "a69b8ad0bdcc6bffc7c5578e477e2e01a2cdcb58e5b5fbcfb67c8f7b1df68bab",
+      "date": "2026-11-21T22:03:12Z",
+      "outcome": "qualified",
+      "failures": [],
+      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+      "platforms": {
+        "linux-aarch64": {
+          "execution": "native",
+          "outcome": "qualified",
+          "failures": [],
+          "toolchain_image": "sha256:e99d40aafba5d8a5bac10cf7ff7bb787d00d5e3714bd6d83086df571787f6548",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "script_checks": {
+            "passed": 12,
+            "total": 12,
+            "controls_fired": 1,
+            "controls_total": 1
+          },
+          "self_test": {
+            "checks": 613,
+            "passed": 613,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cases": {
+            "selected": 175,
+            "ran": 175,
+            "passed": 175,
+            "failed": 0,
+            "skipped": 0
+          },
+          "variants": {
+            "ran": 314,
+            "passed": 217,
+            "failed": 97,
+            "skipped": 0
+          },
+          "checks": {
+            "passed": 195928,
+            "failed_outside_controls": 0,
+            "failed_inside_controls": 806
+          },
+          "controls": {
+            "fired": 97,
+            "total": 97
+          },
+          "driver_controls": {
+            "fired": 29,
+            "total": 29
+          },
+          "timing_samples": {
+            "commands": 4079,
+            "protocol": 1936
+          },
+          "e2e": {
+            "case": "e2e.reacting-audit",
+            "outcome": "pass",
+            "checks_passed": 854,
+            "checks_failed": 0
+          },
+          "release_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33",
+          "test_sha256": "5444adac3edd22406d8a495d5748fad1fda4b6fa8e299ef1a5611fff2603e7b4",
+          "result_sha256": "2636b9fb336bcf768205008d10323af65b36477b265a13bcec97cfb475905ab2",
+          "python_manifest": "sha256:dc354b0c18b5192842bc6800d22e624461383b149cdbbd9646fec78a28340721"
+        },
+        "linux-x86_64": {
+          "execution": "emulated (Rosetta)",
+          "outcome": "qualified",
+          "failures": [],
+          "toolchain_image": "sha256:45e388c67f16a6c32d950e03a9c980bdae395911ce3572c2488031d4bf7babda",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "script_checks": {
+            "passed": 12,
+            "total": 12,
+            "controls_fired": 1,
+            "controls_total": 1
+          },
+          "self_test": {
+            "checks": 613,
+            "passed": 613,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cases": {
+            "selected": 175,
+            "ran": 175,
+            "passed": 175,
+            "failed": 0,
+            "skipped": 0
+          },
+          "variants": {
+            "ran": 314,
+            "passed": 217,
+            "failed": 97,
+            "skipped": 0
+          },
+          "checks": {
+            "passed": 195928,
+            "failed_outside_controls": 0,
+            "failed_inside_controls": 806
+          },
+          "controls": {
+            "fired": 97,
+            "total": 97
+          },
+          "driver_controls": {
+            "fired": 29,
+            "total": 29
+          },
+          "timing_samples": {
+            "commands": 4079,
+            "protocol": 1936
+          },
+          "e2e": {
+            "case": "e2e.reacting-audit",
+            "outcome": "pass",
+            "checks_passed": 854,
+            "checks_failed": 0
+          },
+          "release_sha256": "4e3c43be318609cbbed1b0bb99bc7832cfa5119229ffdbee458551476cfca6c1",
+          "test_sha256": "ee56ffc1fa01de2ad379dd810b6de5ceed69bd12e860e15a6fa33a5a974c4dbc",
+          "result_sha256": "28e725e41733987a3b94a81eac96c95dc5a47df54f399bddea71450e773a4cd9",
+          "python_manifest": "sha256:b3ae2372f3c9b7f0a80ec21d1ae931002ea056509e04c5072f144efe9694732f"
+        }
+      },
+      "evidence": {
+        "path": ".scratch/framing-effort-acceptance-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
       "pin": null
     },
     {
@@ -2414,6 +2557,25 @@
       "pin": {
         "reason": "Carry both witnessed catalog cells, raw response shapes and settlement bindings into the per-model release alignment records.",
         "until": "The per-model alignment records have been reviewed or the release drops the models and these originals have no further inspection purpose."
+      }
+    },
+    {
+      "id": "framing-medium-preparation-01",
+      "kind": "experiment",
+      "date": "2026-11-21T21:57:46Z",
+      "date_from": "READINESS.json field at",
+      "summary": "Prepared single Haiku framing-inadequate commission, exact medium on seven loopback requests, protected rehearsal and offline queue reservation.",
+      "result": {
+        "path": "READINESS.json",
+        "sha256": "2965d12b22136d0e3ddd7af4f0491ca8192b3af4a689354693cf1d14b9ccb1d0"
+      },
+      "evidence": {
+        "path": ".scratch/framing-medium-preparation-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Review the exact packet, protected rehearsal and cost bound for the next live framing commission.",
+        "until": "The proposed commission has been settled, superseded or declined and its preparation originals have no further inspection purpose."
       }
     }
   ]

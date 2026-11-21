@@ -20,8 +20,8 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [runtime-trials-preparation-release-01](#runtime-trials-preparation-release-01) | 2026-11-21T18:52:28Z | `6b3d8a4` | qualified | latest |
-| acceptance | linux-x86_64 | [runtime-trials-preparation-release-01](#runtime-trials-preparation-release-01) | 2026-11-21T18:52:28Z | `6b3d8a4` | qualified | latest |
+| acceptance | linux-aarch64 | [framing-effort-acceptance-01](#framing-effort-acceptance-01) | 2026-11-21T22:03:12Z | `b58c89a` | qualified | latest |
+| acceptance | linux-x86_64 | [framing-effort-acceptance-01](#framing-effort-acceptance-01) | 2026-11-21T22:03:12Z | `b58c89a` | qualified | latest |
 | runtime | linux-aarch64 | [runtime-trials-preparation-runtime-01](#runtime-trials-preparation-runtime-01) | 2026-11-21T19:24:42Z | `6b3d8a4` | qualified | latest |
 | runtime | linux-x86_64 | [runtime-trials-preparation-runtime-01](#runtime-trials-preparation-runtime-01) | 2026-11-21T19:24:42Z | `6b3d8a4` | qualified | latest |
 | toolchain | linux-aarch64 | [linux-move-toolchain-02](#linux-move-toolchain-02) | 2026-11-21T02:43:49Z | `9e84464` | qualified | latest |
@@ -38,7 +38,7 @@ not carry them.
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
 - Evidence: `.scratch/runtime-trials-preparation-release-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: none
+- Pin: Verify the original writer qualification bound to the two completed open inquiries and the proposed framing audit.; until The alignment records and their writer bindings have been reviewed or retired.
 
 | | linux-aarch64 | linux-x86_64 |
 | --- | --- | --- |
@@ -61,6 +61,39 @@ not carry them.
 | Release binary SHA-256 | `45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33` | `4e3c43be318609cbbed1b0bb99bc7832cfa5119229ffdbee458551476cfca6c1` |
 | Test binary SHA-256 | `5444adac3edd22406d8a495d5748fad1fda4b6fa8e299ef1a5611fff2603e7b4` | `ee56ffc1fa01de2ad379dd810b6de5ceed69bd12e860e15a6fa33a5a974c4dbc` |
 | RESULT.json SHA-256 | `3f78bb744890419f51ed787db95b8ab05327125d0ace1e77e04fd2f41a14c56e` | `b2c6dc88c4c5e5f88dad0e2ddfc1f5d06b8f1d25f0075d95f7879b33e0d6d517` |
+
+### framing-effort-acceptance-01
+
+- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `8c6babd9b3e52f39f3e9013d623c4c86df899ab9e0faf084ee9ba66f1c837975` at the source commit)
+- Source commit: `b58c89a796215b8e9d458326aaa340dfd69883d4`; archive SHA-256 `a69b8ad0bdcc6bffc7c5578e477e2e01a2cdcb58e5b5fbcfb67c8f7b1df68bab`
+- Finished: 2026-11-21T22:03:12Z
+- Outcome: **qualified**
+- Run-level failures: none
+- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
+- Evidence: `.scratch/framing-effort-acceptance-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: none
+
+| | linux-aarch64 | linux-x86_64 |
+| --- | --- | --- |
+| Execution | native | emulated (Rosetta) |
+| Outcome | **qualified** | **qualified** |
+| Failures | none | none |
+| Toolchain image | `sha256:e99d40aafba5d8a5bac10cf7ff7bb787d00d5e3714bd6d83086df571787f6548` | `sha256:45e388c67f16a6c32d950e03a9c980bdae395911ce3572c2488031d4bf7babda` |
+| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
+| Python platform manifest | `sha256:dc354b0c18b5192842bc6800d22e624461383b149cdbbd9646fec78a28340721` | `sha256:b3ae2372f3c9b7f0a80ec21d1ae931002ea056509e04c5072f144efe9694732f` |
+| Script checks (exit records) | 12/12, controls 1/1 | 12/12, controls 1/1 |
+| Driver self-test | 613/613 | 613/613 |
+| Cases passed | 175/175 | 175/175 |
+| Cases | selected 175, ran 175, passed 175, failed 0, skipped 0 | selected 175, ran 175, passed 175, failed 0, skipped 0 |
+| Variants (a fired control's variant fails) | ran 314, passed 217, failed 97, skipped 0 | ran 314, passed 217, failed 97, skipped 0 |
+| Checks | passed 195928, failed outside controls 0, failed inside controls 806 | passed 195928, failed outside controls 0, failed inside controls 806 |
+| Sabotage control variants fired (INTERFACE C.2) | 97/97 | 97/97 |
+| Driver controls fired | 29/29 | 29/29 |
+| Timing samples | 4079 command, 1936 protocol | 4079 command, 1936 protocol |
+| End to end (`e2e.reacting-audit`) | pass, 854/854 checks | pass, 854/854 checks |
+| Release binary SHA-256 | `45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33` | `4e3c43be318609cbbed1b0bb99bc7832cfa5119229ffdbee458551476cfca6c1` |
+| Test binary SHA-256 | `5444adac3edd22406d8a495d5748fad1fda4b6fa8e299ef1a5611fff2603e7b4` | `ee56ffc1fa01de2ad379dd810b6de5ceed69bd12e860e15a6fa33a5a974c4dbc` |
+| RESULT.json SHA-256 | `2636b9fb336bcf768205008d10323af65b36477b265a13bcec97cfb475905ab2` | `28e725e41733987a3b94a81eac96c95dc5a47df54f399bddea71450e773a4cd9` |
 
 ### runtime-trials-preparation-runtime-01
 
@@ -844,3 +877,10 @@ Haiku 5.5 and Opus 5.5 each submitted and closed the ordinary open inquiry with 
 
 - Evidence: `.scratch/alignment-pair-01/EXIT.json` (recorded 2026-11-21T21:07:44Z).
 - Retained purpose: Carry both witnessed catalog cells, raw response shapes and settlement bindings into the per-model release alignment records.; until The per-model alignment records have been reviewed or the release drops the models and these originals have no further inspection purpose.
+
+### framing-medium-preparation-01
+
+Prepared single Haiku framing-inadequate commission, exact medium on seven loopback requests, protected rehearsal and offline queue reservation.
+
+- Evidence: `.scratch/framing-medium-preparation-01/READINESS.json` (recorded 2026-11-21T21:57:46Z).
+- Retained purpose: Review the exact packet, protected rehearsal and cost bound for the next live framing commission.; until The proposed commission has been settled, superseded or declined and its preparation originals have no further inspection purpose.

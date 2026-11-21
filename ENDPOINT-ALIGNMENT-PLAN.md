@@ -100,7 +100,7 @@ inadequate evidence, and the two request forms. [Completed open inquiries](appar
 | Specimen | Models | Purpose | Effort | State |
 | --- | --- | --- | --- | --- |
 | open-ordinary | Haiku and Opus | Open-inquiry submission | Omitted | H1 and O1 verified and closed |
-| framing-inadequate | Haiku and Opus | Framing submission with inadequate evidence and explicit wire setting | `medium` | Haiku proposed next; Opus needs separate authority |
+| framing-inadequate | Haiku and Opus | Framing submission with inadequate evidence and explicit wire setting | `medium` | [Haiku prepared for approval](apparatus/qualified.md#framing-medium-preparation-01) at $1.24; Opus needs separate authority |
 | comparison-ordinary | Haiku and Opus | Comparison submission | Omitted | Pending |
 | Compaction, ordinary open inquiry | Haiku and Opus | Signed summary, reset, accounting and entry continuity | Omitted | Pending a separately rehearsed bound |
 
