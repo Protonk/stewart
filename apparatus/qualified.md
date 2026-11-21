@@ -20,8 +20,8 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [linux-move-release-02](#linux-move-release-02) | 2026-11-21T03:54:58Z | `f68780d` | qualified | latest |
-| acceptance | linux-x86_64 | [linux-move-release-02](#linux-move-release-02) | 2026-11-21T03:54:58Z | `f68780d` | qualified | latest |
+| acceptance | linux-aarch64 | [runtime-trials-preparation-release-01](#runtime-trials-preparation-release-01) | 2026-11-21T18:52:28Z | `6b3d8a4` | qualified | latest |
+| acceptance | linux-x86_64 | [runtime-trials-preparation-release-01](#runtime-trials-preparation-release-01) | 2026-11-21T18:52:28Z | `6b3d8a4` | qualified | latest |
 | runtime | linux-aarch64 | [linux-move-runtime-02](#linux-move-runtime-02) | 2026-11-21T04:31:41Z | `f68780d` | qualified | latest |
 | runtime | linux-x86_64 | [linux-move-runtime-02](#linux-move-runtime-02) | 2026-11-21T04:31:41Z | `f68780d` | qualified | latest |
 | toolchain | linux-aarch64 | [linux-move-toolchain-02](#linux-move-toolchain-02) | 2026-11-21T02:43:49Z | `9e84464` | qualified | latest |
@@ -29,15 +29,15 @@ not carry them.
 
 ## Records
 
-### linux-move-release-02
+### runtime-trials-preparation-release-01
 
 - Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `8c6babd9b3e52f39f3e9013d623c4c86df899ab9e0faf084ee9ba66f1c837975` at the source commit)
-- Source commit: `f68780dfea49dce9b9cb816139e8084bf314dd3e`; archive SHA-256 `b4da51ee4c543e570eb0328aa5ee5e47c60db890beb8c82c41ae38b62966430a`
-- Finished: 2026-11-21T03:54:58Z
+- Source commit: `6b3d8a4c6cb25ca4dfd97b66e389ded75cbcf493`; archive SHA-256 `b755d823dad64e3385cfc0eee35a92469f414d882c972f2c6b1470ff697c7141`
+- Finished: 2026-11-21T18:52:28Z
 - Outcome: **qualified**
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/linux-move-release-02` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/runtime-trials-preparation-release-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -50,17 +50,17 @@ not carry them.
 | Python platform manifest | `sha256:dc354b0c18b5192842bc6800d22e624461383b149cdbbd9646fec78a28340721` | `sha256:b3ae2372f3c9b7f0a80ec21d1ae931002ea056509e04c5072f144efe9694732f` |
 | Script checks (exit records) | 12/12, controls 1/1 | 12/12, controls 1/1 |
 | Driver self-test | 613/613 | 613/613 |
-| Cases passed | 174/174 | 174/174 |
-| Cases | selected 174, ran 174, passed 174, failed 0, skipped 0 | selected 174, ran 174, passed 174, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 313, passed 216, failed 97, skipped 0 | ran 313, passed 216, failed 97, skipped 0 |
-| Checks | passed 192607, failed outside controls 0, failed inside controls 806 | passed 192607, failed outside controls 0, failed inside controls 806 |
+| Cases passed | 175/175 | 175/175 |
+| Cases | selected 175, ran 175, passed 175, failed 0, skipped 0 | selected 175, ran 175, passed 175, failed 0, skipped 0 |
+| Variants (a fired control's variant fails) | ran 314, passed 217, failed 97, skipped 0 | ran 314, passed 217, failed 97, skipped 0 |
+| Checks | passed 192880, failed outside controls 0, failed inside controls 806 | passed 192880, failed outside controls 0, failed inside controls 806 |
 | Sabotage control variants fired (INTERFACE C.2) | 97/97 | 97/97 |
 | Driver controls fired | 29/29 | 29/29 |
-| Timing samples | 4025 command, 1914 protocol | 4025 command, 1914 protocol |
+| Timing samples | 4031 command, 1920 protocol | 4031 command, 1920 protocol |
 | End to end (`e2e.reacting-audit`) | pass, 854/854 checks | pass, 854/854 checks |
-| Release binary SHA-256 | `6624b41f5c02438b18f88b24674eded4e6d7389ada170261aa77839bf5d052ef` | `7aee3d255ca52260f6cc0387c76947b01baf7ea220976f29c8ac336524cccdbc` |
-| Test binary SHA-256 | `6e2598ea862ce1722ce974d1e30dc7c2d3769fd234c5960f3015f03c14769235` | `c11467cf9edf1580fe4ad07ca20481db31f8a0bfc990122e8037d7766697e1c3` |
-| RESULT.json SHA-256 | `eb850b152cbbc09fc8cbd8dcd3aa78ba60fcacb1242858eb4f798fbefc2246c0` | `31666a8bc85e2756b99694e70709d37144d39ec7c0659bdd415c2fac724e5e9e` |
+| Release binary SHA-256 | `45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33` | `4e3c43be318609cbbed1b0bb99bc7832cfa5119229ffdbee458551476cfca6c1` |
+| Test binary SHA-256 | `5444adac3edd22406d8a495d5748fad1fda4b6fa8e299ef1a5611fff2603e7b4` | `ee56ffc1fa01de2ad379dd810b6de5ceed69bd12e860e15a6fa33a5a974c4dbc` |
+| RESULT.json SHA-256 | `3f78bb744890419f51ed787db95b8ab05327125d0ace1e77e04fd2f41a14c56e` | `b2c6dc88c4c5e5f88dad0e2ddfc1f5d06b8f1d25f0075d95f7879b33e0d6d517` |
 
 ### linux-move-runtime-02
 

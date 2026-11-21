@@ -2,16 +2,16 @@
   "schema": "stewart.qualified/1",
   "entries": [
     {
-      "id": "linux-move-release-02",
+      "id": "runtime-trials-preparation-release-01",
       "kind": "suite",
       "suite": "acceptance",
       "script": {
         "path": "apparatus/acceptance.sh",
         "sha256": "8c6babd9b3e52f39f3e9013d623c4c86df899ab9e0faf084ee9ba66f1c837975"
       },
-      "source_commit": "f68780dfea49dce9b9cb816139e8084bf314dd3e",
-      "source_archive_sha256": "b4da51ee4c543e570eb0328aa5ee5e47c60db890beb8c82c41ae38b62966430a",
-      "date": "2026-11-21T03:54:58Z",
+      "source_commit": "6b3d8a4c6cb25ca4dfd97b66e389ded75cbcf493",
+      "source_archive_sha256": "b755d823dad64e3385cfc0eee35a92469f414d882c972f2c6b1470ff697c7141",
+      "date": "2026-11-21T18:52:28Z",
       "outcome": "qualified",
       "failures": [],
       "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
@@ -35,20 +35,20 @@
             "skipped": 0
           },
           "cases": {
-            "selected": 174,
-            "ran": 174,
-            "passed": 174,
+            "selected": 175,
+            "ran": 175,
+            "passed": 175,
             "failed": 0,
             "skipped": 0
           },
           "variants": {
-            "ran": 313,
-            "passed": 216,
+            "ran": 314,
+            "passed": 217,
             "failed": 97,
             "skipped": 0
           },
           "checks": {
-            "passed": 192607,
+            "passed": 192880,
             "failed_outside_controls": 0,
             "failed_inside_controls": 806
           },
@@ -61,8 +61,8 @@
             "total": 29
           },
           "timing_samples": {
-            "commands": 4025,
-            "protocol": 1914
+            "commands": 4031,
+            "protocol": 1920
           },
           "e2e": {
             "case": "e2e.reacting-audit",
@@ -70,9 +70,9 @@
             "checks_passed": 854,
             "checks_failed": 0
           },
-          "release_sha256": "6624b41f5c02438b18f88b24674eded4e6d7389ada170261aa77839bf5d052ef",
-          "test_sha256": "6e2598ea862ce1722ce974d1e30dc7c2d3769fd234c5960f3015f03c14769235",
-          "result_sha256": "eb850b152cbbc09fc8cbd8dcd3aa78ba60fcacb1242858eb4f798fbefc2246c0",
+          "release_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33",
+          "test_sha256": "5444adac3edd22406d8a495d5748fad1fda4b6fa8e299ef1a5611fff2603e7b4",
+          "result_sha256": "3f78bb744890419f51ed787db95b8ab05327125d0ace1e77e04fd2f41a14c56e",
           "python_manifest": "sha256:dc354b0c18b5192842bc6800d22e624461383b149cdbbd9646fec78a28340721"
         },
         "linux-x86_64": {
@@ -94,20 +94,20 @@
             "skipped": 0
           },
           "cases": {
-            "selected": 174,
-            "ran": 174,
-            "passed": 174,
+            "selected": 175,
+            "ran": 175,
+            "passed": 175,
             "failed": 0,
             "skipped": 0
           },
           "variants": {
-            "ran": 313,
-            "passed": 216,
+            "ran": 314,
+            "passed": 217,
             "failed": 97,
             "skipped": 0
           },
           "checks": {
-            "passed": 192607,
+            "passed": 192880,
             "failed_outside_controls": 0,
             "failed_inside_controls": 806
           },
@@ -120,8 +120,8 @@
             "total": 29
           },
           "timing_samples": {
-            "commands": 4025,
-            "protocol": 1914
+            "commands": 4031,
+            "protocol": 1920
           },
           "e2e": {
             "case": "e2e.reacting-audit",
@@ -129,14 +129,14 @@
             "checks_passed": 854,
             "checks_failed": 0
           },
-          "release_sha256": "7aee3d255ca52260f6cc0387c76947b01baf7ea220976f29c8ac336524cccdbc",
-          "test_sha256": "c11467cf9edf1580fe4ad07ca20481db31f8a0bfc990122e8037d7766697e1c3",
-          "result_sha256": "31666a8bc85e2756b99694e70709d37144d39ec7c0659bdd415c2fac724e5e9e",
+          "release_sha256": "4e3c43be318609cbbed1b0bb99bc7832cfa5119229ffdbee458551476cfca6c1",
+          "test_sha256": "ee56ffc1fa01de2ad379dd810b6de5ceed69bd12e860e15a6fa33a5a974c4dbc",
+          "result_sha256": "b2c6dc88c4c5e5f88dad0e2ddfc1f5d06b8f1d25f0075d95f7879b33e0d6d517",
           "python_manifest": "sha256:b3ae2372f3c9b7f0a80ec21d1ae931002ea056509e04c5072f144efe9694732f"
         }
       },
       "evidence": {
-        "path": ".scratch/linux-move-release-02",
+        "path": ".scratch/runtime-trials-preparation-release-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": null
