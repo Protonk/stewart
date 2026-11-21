@@ -5,9 +5,9 @@ rejections"; INTERFACE 3.2, 4.4, 4.5, 6.2, 6.5, 6.6 and Appendix C.2).
 - `c1.effort-levels`: prepare accepts each documented level, records it in the prepared
   settings and pins it as the arrangement's request_extra; an unknown or wrongly cased level
   is refused at prepare.
-- `c1.effort`: a commission with an effort sends it on every request as the top-level
-  `output_config` member and nowhere else; its system blocks, tools and messages are byte for
-  byte those of the same commission without the setting, which sends no `output_config`.
+- `c1.effort`: the fake receives every documented level under `output_config.effort` on every
+  request. The high and omitted commissions send identical system blocks, tools and messages.
+  The omitted commission sends no `output_config`.
 - `c9.provider-rejections`: a provider that has moved away from what the release sends is
   reported as it answered, and the same commission runs normally against one that has not.
 
@@ -163,7 +163,7 @@ def _arrangement_members(sub):
 
 
 @case("c1.effort", ["C1", "C2"],
-      "an effort is sent on every request as the top-level output_config and nowhere else",
+      "each effort level is sent on every request as top-level output_config.effort and omission sends no output_config",
       needs=("loopback",),
       controls=[Control("misspell_effort", [r"^c1\.effort\.with\..*\.(effort|spliced|request-extra-sent)$",
                                             r"^c1\.effort\.differing\..*\.only-output-config$"]),
@@ -182,7 +182,8 @@ def c_effort(t):
     Differing: without the setting the arrangement differs only in request_extra ({}), no
     request has output_config, a provider that has no output_config at all accepts every request,
     and request by request the system, tools and messages bytes are equal, each body being the
-    other with exactly the output_config member removed."""
+    other with exactly the output_config member removed. The same interrupted and continued
+    runs exercise each other documented level against the fake's received request bytes."""
     with_, without = effort_submission(t, "high"), effort_submission(t, None)
     for label, sub in (("with", with_), ("without", without)):
         t.accept(sub, prefix="c1.effort.%s." % label, check_witness=True)
@@ -225,6 +226,14 @@ def c_effort(t):
         t.check(p + ".only-output-config", cut is not None and cut == b.body,
                 {"with": short(a.body[:200]), "without": short(b.body[:200])})
         t.check(p + ".without-has-no-output-config", nb.get("output_config") is None, nb.keys())
+
+    # The high/omitted pair above also exercises both sabotage controls.
+    if not t.sabotage:
+        for level in EFFORT_LEVELS:
+            if level != with_.effort:
+                sub = effort_submission(t, level)
+                t.accept(sub, prefix="c1.effort.%s." % level)
+                _effort_run(t, sub, level, fp.MESSAGES_API)
 
 
 # ---------------------------------------------------------------------------
