@@ -12,11 +12,11 @@ macOS code paths and the per-platform notes. It puts live runtime evidence on a
 supported platform, and makes a development build a Linux build. It also gives
 autonomous agents a natural boundary.
 
-**Status:** decided by the maintainer on 2026-11-20 and ready to start.
+**Status:** decided by the maintainer and ready to start.
 
 ## Decisions
 
-- **Platform.** Stewart supports Linux x86_64 and aarch64, as before. The
+- **Platform.** Stewart supports Linux x86_64 and aarch64. The
   `aarch64-apple-darwin` build target and every macOS code path are removed.
   For a Mac, the README says one thing: run Stewart inside a Linux VM or
   container and keep the archive on the Linux filesystem.
@@ -36,9 +36,9 @@ autonomous agents a natural boundary.
   Rosetta, as they do today.
 - **Sessions.** Claude Code sessions run inside the VM. The maintainer enters
   with `limactl shell stewart` and works with git and ordinary command-line
-  tools as before.
+  tools.
 - **Qualification.** Its kind is unchanged. Container suites build from
-  `git archive` in pinned toolchain images, now built by Podman, on both
+  `git archive` in pinned toolchain images, built by Podman, on both
   architectures. A working-tree run qualifies nothing, so the line becomes
   hermetic versus not, rather than Mac versus Linux.
 
@@ -70,7 +70,7 @@ The tooling stores no secret of its own, and nobody pastes a key for each run.
 
 ## Stages
 
-Each stage lists its known sites. A review of the tree found them; anything
+Each stage lists its known sites. Anything
 else that assumes macOS becomes a task where it is found.
 
 ### 1. Create the VM
@@ -189,7 +189,7 @@ be reproducible from the tracked template alone.
 - [ ] The driver, its fixtures and their test data: assign these to a separate
   agent that has not read `service/src` or `service/tests`. It works from this
   plan's decisions and the specification alone, under the driver-independence
-  rule. A reviewer who did not read the implementation found these sites:
+  rule. Known sites, found without reading the implementation:
   - `claude_code.py`:
     - the Darwin row of the platform table;
     - the binding-mutation control that uses `macos-aarch64` as the other

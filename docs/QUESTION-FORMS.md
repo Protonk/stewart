@@ -1,6 +1,6 @@
 # Question forms and rendering
 
-This specifies the three initial families, the exact text the auditor sees, the
+This specifies the three implemented families, the exact text the auditor sees, the
 tool descriptions and input schemas, the structured answer and the Markdown
 renderer. The policy is in [CONTRACTS.md](../CONTRACTS.md). The tools' input
 rules, replies and refusals are in [INTERFACE.md](INTERFACE.md) section 7.

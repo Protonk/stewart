@@ -1,7 +1,6 @@
 # Endpoint alignment
 
-**Current status:** The alignment tier is specified; the mechanism is not built.
-Its sources are the Messages small-commission apparatus (`apparatus/c10`, with
+The mechanism's sources are the Messages small-commission apparatus (`apparatus/c10`, with
 parts of `apparatus/sanity`) and the harness profile and check tooling
 (`apparatus/claude-code`, with the independent `apparatus/driver/claude_code_*`
 fixtures).
@@ -29,9 +28,7 @@ Keep open audits and their exact writers until closure or explicit disposition.
 ## 1. Specify the alignment check
 
 The design below maps the endpoint assumptions to witnesses, proposes the
-Messages run set with its cost, and defines the alignment record. It was drawn
-from the retained live records and the stand-ins' sources; nothing in it has
-been run or spent.
+Messages run set with its cost, and defines the alignment record.
 
 - [ ] Settle decisions D1–D5 with the maintainer, then fix the run table.
 - [ ] Run the shape inventory over the retained captures listed in 1.3 and
@@ -317,10 +314,6 @@ held to a ceiling of about USD 8.
   changes the commissioned route, or accept and record the unmet requirement.
 - **D5, reruns.** Can a run that fails the gate be repeated inside the same
   authority? At a ceiling of 8.25 there is no slack unless D1 frees some.
-
-**Done when:** the check design maps endpoint assumptions to runs, witnesses
-and record fields, estimates the cost of the proposed run set, and records the
-maintainer's decisions D1–D5.
 
 ## 2. Build the mechanism in `alignment/`
 

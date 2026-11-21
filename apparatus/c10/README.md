@@ -809,8 +809,8 @@ credential scan and archive digest. The reviewer validates archive membership
 and streams its digest without extracting it. Required oversized or unreadable
 members yield incomplete evidence; they are never silently omitted. Per-file
 reads are bounded at 64 MiB, with a 32 MiB response limit. A greater-than-2-MiB
-response invariance exercises the removal of the older indexer's one-MiB cutoff;
-it is not a full-history scale test.
+response invariance checks that the indexer imposes no one-MiB cutoff; it is not
+a full-history scale test.
 
 The reviewer reconstructs raw ordinary and summary requests, checks the top-level
 trigger separately from iteration charges, retains the signed content array

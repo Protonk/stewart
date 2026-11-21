@@ -109,9 +109,8 @@ identifies those builds and results.
 A default-off development adapter, included only in source builds, has
 completed native open inquiries through an agent harness with auditor
 submission, verified delivery and close. Its captured usage remains partial and
-live continuation unexercised. Full 64 KiB material pages that the harness once
-replaced with previews arrived whole in one bounded encounter after a transport
-change. These native encounters establish no model or platform qualification.
+live continuation unexercised. Full 64 KiB material pages arrived whole in one
+bounded encounter. These native encounters establish no model or platform qualification.
 
 Stewart is a single Rust binary, supported on Linux x86_64 and aarch64. The
 source also builds on Apple-silicon macOS, without a support or qualification

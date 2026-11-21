@@ -1,8 +1,7 @@
 # Claude Code development runtime contract
 
 This is the decided contract for the default-off `claude-code` development
-runtime. The principal approved its observation, limits and startup boundaries
-on 2026-11-10. It does not change the distributed Messages API contract.
+runtime. It does not change the distributed Messages API contract.
 The gated adapter is implemented and has passed native offline service checks
 and Linux container acceptance using a synthetic harness. The
 [qualification record](../../apparatus/qualified.md) identifies the exact
@@ -287,7 +286,7 @@ placement start remains. When the final placement's process is gone without a
 recording `interrupted` with cause `process_gone`, and then refuses
 `authoring_ended` at its start reservation with that record as
 `data.record`.
-Harness-native resume/fork/clear and automatic restart are excluded initially.
+Harness-native resume/fork/clear and automatic restart are excluded.
 
 Harness-managed compaction within a placement does not grant a new slot, reset
 the deadline or replace ledger state. Record exposed boundaries and summaries

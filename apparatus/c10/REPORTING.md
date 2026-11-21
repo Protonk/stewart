@@ -43,7 +43,7 @@ Each batch is bound by its plan hash. Plans supply the complete placement invent
 and exact commission; neither omitted exports nor absent session results remove
 an audit from the report. The assembler reads current session records when their
 schema is supported and independently reviews every immutable export. It never
-translates historical session receipts into the new schema. Unsupported or absent
+translates session receipts of an unsupported schema. Unsupported or absent
 session records remain linked and explicitly unassessed; available exports can
 still establish observations. Native and Linux evidence keep their distinct scope.
 

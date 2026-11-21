@@ -1,9 +1,5 @@
 # Release and work plan
 
-The manager interface's scripted stages and the coverage review are complete
-apart from endpoint alignment. The next step is moving development into one
-Linux VM, then the runtime trials.
-
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
 [INTERFACE](docs/INTERFACE.md) own behavior; [ACCEPTANCE](ACCEPTANCE.md) owns the
@@ -43,7 +39,7 @@ records and the interaction findings
 
 ## Unselected candidates
 
-The developer lookback (2026-11-16 and 17) left these candidates. None is
+The developer lookback left these candidates. None is
 selected. Behavior-preserving candidates keep every public byte and need only
 the usual checks:
 
@@ -101,9 +97,7 @@ The requirements remain those of ACCEPTANCE while its review is open.
 
 ### Coverage and acceptance-policy review
 
-Every sabotage item in ACCEPTANCE now has a C.2 control or a disposition in
-INTERFACE Appendix C, and the driver gaps found in review have cases. The
-release and runtime suites run every case on both Linux architectures without
+The release and runtime suites run every case on both Linux architectures without
 skips; native runs skip only Linux-only expectations.
 
 - [ ] Settle the endpoint evidence the release names through
@@ -111,10 +105,8 @@ skips; native runs skip only Linux-only expectations.
 
 Accepted limitations: the readiness reassessment's surviving mutants were
 equivalent; the runtime's unit-only limits are stated in its
-[contract](docs/claude-code/CONTRACT.md#evidence-owed). Two tests each failed
-once under heavy machine load and passed on rerun (the native held-lock
-delivery test and the credential-descriptor deadline, now a driver case);
-rerun a timing-sensitive failure alone before acting on it.
+[contract](docs/claude-code/CONTRACT.md#evidence-owed). Rerun a
+timing-sensitive failure alone before acting on it.
 
 ### Release documentation and source package
 

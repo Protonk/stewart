@@ -238,8 +238,7 @@ An observation under one credential route does not establish another route.
 The [independent runtime driver](../apparatus/driver/CLAUDE-CODE.md) uses a
 synthetic executable to check preparation, core MCP effects, stopping and
 continuation. It invokes no Claude process. Real setup or runtime checks need
-their own bounded commission; the earlier two-tool probe is not a service
-qualification or a check of this build's launch surface.
+their own bounded commission.
 
 The runtime container suite checks
 [`claude-code-markers.txt`](../apparatus/claude-code-markers.txt): every listed
