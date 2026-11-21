@@ -838,9 +838,9 @@ Five Sonnet 5.5 audits on Linux Claude Code 2.1.322 closed with verified returns
 - Evidence: `.scratch/cc-trials-02/EXIT-LEDGER.json` (recorded 2026-11-21T20:34:59Z).
 - Retained purpose: Inspect the paired interruption witnesses, prepared and delivered bytes, closed returns and partial usage with the campaign report.; until The maintainer has reviewed these comparisons and no unresolved inspection requires the originals.
 
-### alignment-preparation-01
+### alignment-pair-01
 
-Offline comparison of 202 retained Messages attempts and protected admission rehearsal for one Haiku and one Opus open inquiry.
+Haiku 5.5 and Opus 5.5 each submitted and closed the ordinary open inquiry with omitted effort through the qualified release writer.
 
-- Evidence: `.scratch/alignment-preparation-01/READINESS.json` (recorded 2026-11-21T21:00:38Z).
-- Retained purpose: Verify the proposed pair, its captured-shape comparisons and the qualified-writer rehearsal at commissioning.; until The first pair is completed or retired and its relevant inputs and evidence have been reviewed.
+- Evidence: `.scratch/alignment-pair-01/EXIT.json` (recorded 2026-11-21T21:07:44Z).
+- Retained purpose: Carry both witnessed catalog cells, raw response shapes and settlement bindings into the per-model release alignment records.; until The per-model alignment records have been reviewed or the release drops the models and these originals have no further inspection purpose.

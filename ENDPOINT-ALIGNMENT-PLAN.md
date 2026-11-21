@@ -27,7 +27,7 @@ Keep open audits and their exact writers until closure or explicit disposition.
 
 ## 1. Specify the alignment check
 
-The initial pair uses the existing protected launcher. The remaining mechanism work below can proceed after those two catalog trials. Complete the per-model record before counting any release gate as passed.
+Complete the per-model comparison record before counting a release gate as passed. The first two catalog observations are available for this work.
 
 - [x] Fix the initial comparison, release coverage and proposed reservation table.
 - [x] Inventory the historical captures and resolve the ordinary and summary usage comparisons. The [comparison procedure](alignment/messages/README.md) identifies the captured and synthetic shapes.
@@ -62,7 +62,7 @@ live captures already show.
 | A12 | Effort effect | Acceptance only: a provider that ignores a parameter goes unreported (INTERFACE 6.5) | Not modelled | Usage `thinking_tokens` and output per level, reported but not gated | `high` accepted on Haiku |
 | A13 | Credential reflection | None; scanned as INTERFACE 6.1 states | Rehearsal reflection control | Stewart scan; launcher host scan | None seen |
 
-The [comparison procedure](alignment/messages/README.md) cites the provider documentation and dated model card used for the proposed packets. Reconfirm their currency on the commission date.
+The [comparison procedure](alignment/messages/README.md) cites the provider documentation and dated model card used for the catalog packets. Reconfirm their currency on the commission date.
 
 ### 1.2 Witness origin and scope
 
@@ -93,13 +93,13 @@ The [comparison procedure](alignment/messages/README.md) cites the provider docu
 Use the qualified release writer for every gate observation. Both model IDs,
 all three families, the six evidence variants and each selectable effort
 (including explicitly requested medium) are represented below. Omitted effort
-is a distinct request shape. H1 and O1 form the first proposed commission,
-one placement each, in that order. Review and settle H1 before admitting O1.
-The remaining catalog cells are a later commission.
+is a distinct request shape. Both models submitted and closed H1 and O1
+with verified deliveries. H2–H6 and O2–O6 need separate authorization.
+[Reviewed first pair](apparatus/qualified.md#alignment-pair-01)
 
 | Haiku | Opus | Catalog specimen | Requested effort | Placement reservation, Haiku / Opus |
 | --- | --- | --- | --- | --- |
-| H1 | O1 | open-ordinary | omitted | $1.24 / $9.88 |
+| H1 ✓ | O1 ✓ | open-ordinary | omitted | $1.24 / $9.88 |
 | H2 | O2 | open-inadequate | low | $1.24 / $9.88 |
 | H3 | O3 | framing-ordinary | medium | $1.24 / $9.88 |
 | H4 | O4 | framing-inadequate | high | $1.24 / $9.88 |
@@ -114,14 +114,13 @@ Use distinct audit identifiers for both models. Each packet permits one
 placement and the writer's standard transport retries. A second placement
 or a replacement audit needs its own commission.
 
-The first pair needs at most **$11.12** in queue reservations. Expected usage
-can be much smaller. The queue reserves at the highest applicable input
+H1 and O1 settled at $0.02 and $0.17 under a shared $11.12 cap. Their
+reservation history and per-model observations are in the paired trial
+record above. For a new commission, use the queue's calculation on the exact
+packets and dated model cards. It reserves at the highest applicable input
 price, including cache writes, for the allowance and terminal overrun. It
-also reserves remaining output plus one request's maximum output, and rounds
-up per placement. Use the queue's calculation on the exact packets and dated
-model cards. Settle each placement from its reviewed capture. The $11.12 is a
-proposed fresh campaign cap. A historical workspace limit grants no spending
-authority.
+also reserves remaining output plus one request's maximum output and rounds
+up per placement. Settle each placement from its reviewed capture.
 
 H7 and O7 remain required for release. The current launcher refuses paid
 packets that can enter server compaction. Establish and rehearse a separate
@@ -129,12 +128,10 @@ bound for summary iterations, retries, large capture files and interrupted
 estimates before pricing or commissioning these two rows. Historical
 compaction is input for this rehearsal.
 
-Inventory the selected work exports from readiness-m4-live-01, the six
-c10-live pilots, sanity-live-02, -03 and -05, readiness-m2-live and
-readiness-m3-live, and opus-live-01 through -04. Compare actual response
-bytes, their attempt records and the prepared arrangement. Resolve ordinary
-and summary usage differences with fixtures or explicit shape limitations
-before the first paid comparison.
+The paired trial record includes the digest and location of the historical
+shape inventory used for comparison. Its original sources include 40 exports
+from 20 studies. Reuse its attempt and fixture digests when comparing a new
+response shape.
 
 ### 1.4 Alignment record
 
@@ -187,7 +184,7 @@ re-verifies its evidence digests as `check` does for experiments. Historical
 - From sanity: the session engine, credential route, exporter and process
   observers.
 
-The [Messages comparison procedure](alignment/messages/README.md) covers the historical inventory, current packet preparation and the two usage-shape dispositions. The protected launcher admits the first pair using its existing saved-connection rehearsal. [Offline readiness](apparatus/qualified.md#alignment-preparation-01)
+The [Messages comparison procedure](alignment/messages/README.md) covers the historical inventory, current packet preparation and the two usage-shape dispositions. The paired trial record links the original offline readiness ledger and both live comparisons.
 
 Remaining mechanism work includes:
 - Assemble reviewed attempt, fixture, and custody observations into each model's final comparison record.

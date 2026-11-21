@@ -2398,22 +2398,22 @@
       }
     },
     {
-      "id": "alignment-preparation-01",
+      "id": "alignment-pair-01",
       "kind": "experiment",
-      "date": "2026-11-21T21:00:38Z",
-      "date_from": "READINESS.json field at",
-      "summary": "Offline comparison of 202 retained Messages attempts and protected admission rehearsal for one Haiku and one Opus open inquiry.",
+      "date": "2026-11-21T21:07:44Z",
+      "date_from": "EXIT.json field at",
+      "summary": "Haiku 5.5 and Opus 5.5 each submitted and closed the ordinary open inquiry with omitted effort through the qualified release writer.",
       "result": {
-        "path": "READINESS.json",
-        "sha256": "6b5ebb39dc38a05d3696e6d1528c4695b72ebcf1e5d2bc40222109ec46083799"
+        "path": "EXIT.json",
+        "sha256": "94a8a8feb5ba06bce6c9ec8277016376f12d065953a11cdd8de756989f41883c"
       },
       "evidence": {
-        "path": ".scratch/alignment-preparation-01",
+        "path": ".scratch/alignment-pair-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Verify the proposed pair, its captured-shape comparisons and the qualified-writer rehearsal at commissioning.",
-        "until": "The first pair is completed or retired and its relevant inputs and evidence have been reviewed."
+        "reason": "Carry both witnessed catalog cells, raw response shapes and settlement bindings into the per-model release alignment records.",
+        "until": "The per-model alignment records have been reviewed or the release drops the models and these originals have no further inspection purpose."
       }
     }
   ]
