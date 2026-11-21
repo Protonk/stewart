@@ -169,7 +169,7 @@ review records are labelled parser fixtures, not live evidence.
 ## Service comparison procedure
 
 `service_check.py` freezes one already-prepared open-inquiry audit with a
-reviewed profile. Its version-3 commission binds exact input, preparation,
+reviewed profile. Its version-4 commission binds exact input, preparation,
 arrangement and source bytes, the original writer, profile, harness executable
 and Python interpreter. Preparation launches nothing. Experiment bounds are one
 to three service starts, at most 600 seconds per placement and 900 seconds per
@@ -184,8 +184,9 @@ python3 -I -B apparatus/claude-code/service_check.py prepare \
   --reference stw1:... --folder /absolute/submission --writer /absolute/stewart
 ```
 
-Only after the principal approves the exact commission, use its bound Python
-and frozen controller. The extra-usage flag conveys the account-setting
+Use the bound Python and frozen controller after the principal approves the
+exact commission or grants a bounded campaign that authorizes the operator
+to approve the packet. The extra-usage flag conveys the account-setting
 assertion; it does not verify billing or change a setting.
 
 ```sh
@@ -203,8 +204,10 @@ process stopping observations. The run command's observation deadline adds
 it grants no additional model time. Failed or uncertain work requires review.
 
 After return, the procedure reads service-owned auth/model group identities and
-independently probes absence. Missing, present or unknown groups block further
-mutation. A run command that times out, exits unexpectedly or returns an unusable
+independently probes absence. A recorded group must be absent. In a witnessed trial a signal can
+precede group creation. The controller may establish that case from both the
+service's clean stop and the Linux subreaper finding no descendants. The
+subreaper collects adopted children throughout the run and concurrent close. A run command that times out, exits unexpectedly or returns an unusable
 reply stops only its client group, so the same probe still runs, up to six times
 a second apart, before the failure is reported. `STOPPING.json` names its clock
 and observer and keeps every observation; `stopping_probed` in the result
@@ -229,8 +232,8 @@ startup, usage, notice delivery and stopping still need independent review.
 A later explicit `run` also requires `--reviewed-review SHA256`, naming the
 preceding `placements/N/review/REVIEW.json`. The procedure revalidates that review
 and every earlier execution, then checks current status, stopping and archive
-bytes. Only an open audit interrupted by its commissioned placement deadline, with
-unused starts, can continue. The service's cause label does not establish that
+bytes. Continuation requires unused starts and an open audit interrupted by its
+commissioned deadline or witnessed signal. The service's cause label does not establish that
 deadline alone: review also requires the procedure's own measurement of the run
 command to reach the placement deadline and the retained stop record to show the
 elapsed time and absent groups. Other interruptions need a separate disposition. Ended,
@@ -262,6 +265,39 @@ specified delivered modes. It retains unsubmitted controls and
 copies the original peer witnesses for independent review. It launches no real
 Claude process and establishes neither live authority nor Linux qualification.
 
+
+### Commissioned runtime trials
+
+For an authorized two-wave campaign, pass `--campaign-envelope PATH` and
+`--campaign-sha256 SHA256` to the supplied-surface `run`. The general
+service `prepare` takes the same options with `--wave N --trial NAME`.
+These bind the approved model, pin and allowance. Each launch records its
+reservation in the envelope's sibling `harness-reservations` directory.
+A rate-limit or allowance event or a changed initialization version stops
+the route. Inspect the original evidence and the stop record.
+
+After reviewing an observed placement, use the packet's frozen `campaign.py`
+with `--reservation ABSOLUTE_PATH --review ABSOLUTE_PATH --review-sha256 DIGEST`
+to acknowledge that reservation. S0 uses `observation/CHECK.json`. A service
+placement uses `placements/N/review/REVIEW.json`. A stopped or unreconciled
+reservation blocks another start.
+
+A service packet can bind `--trigger P1-signal`, `P2-signal`, `P1-close` or
+`P2-close`. P1 watches the published start and P2 the auditor preparation.
+An observer outside Stewart retains the triggering prefix, the P2 prepared
+bytes and the client identity. It sends the commissioned signal or requests
+close from the exact writer. Each review checks observed ledger digests,
+continuation input, reminder count, usage and package attribution. Manager
+close verifies the delivered selection and its modes before confirming
+receipt and checking that a further start is refused.
+
+Exercise the four actions and the missed-trigger control with
+`prepare-interruptions --output FRESH_SUITE --writer GATED_BINARY --work FRESH_WORK`.
+Use a Linux filesystem supported for audit storage. Run the first packet's
+frozen `sources/claude-code/service_check.py rehearse-interruptions --suite FRESH_SUITE
+--rehearsal-sha256 SHA256` with the digest of `REHEARSAL.json`.
+The signal comparisons include a reviewed continuation. All five comparisons
+require verified delivery and closure.
 
 ## Bounded invocation library
 

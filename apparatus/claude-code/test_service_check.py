@@ -20,6 +20,34 @@ class Controls(unittest.TestCase):
     def tearDown(self):
         self.temporary.cleanup()
 
+    def test_trigger_requires_all_witnessed_records_and_exact_process_group(self):
+        out = self.root / 'execution'
+        proof = out / 'interruption'
+        before = proof / 'log'
+        after = self.root / 'audit/log'
+        before.mkdir(parents=True)
+        after.mkdir(parents=True)
+        c.save(out / 'run.process.json', {'pid': 1234, 'group': 1234})
+        c.save(proof / 'outcome.json', {'state': 'signalled', 'group': 1234, 'signal': 'SIGTERM'})
+        for log in (before, after):
+            c.save(log / '1.json', {'kind': 'commission'})
+            c.save(log / '2.json', {'kind': 'run_started'})
+        point = {'record': '2.json', 'pid': 1234, 'group': 1234,
+                 'kind': 'run_started', 'sha256': c.p.sha((before / '2.json').read_bytes())}
+        c.save(proof / 'point.json', point)
+        def assess():
+            return c.witnessed_outcome(out, after.parent, 'P1-signal',
+                                       {'ending': 'interrupted', 'cause': 'signal'}, {'state': 'absent'})
+        self.assertEqual(assess()['outcome'], 'exercised')
+        original = (before / '1.json').read_bytes()
+        (before / '1.json').unlink()
+        with self.assertRaisesRegex(ValueError, 'missing a ledger record'):
+            assess()
+        (before / '1.json').write_bytes(original)
+        (out / 'run.process.json').write_bytes(c.p.compact({'pid': 1234, 'group': 4567}))
+        with self.assertRaisesRegex(ValueError, 'different client'):
+            assess()
+
     def selection(self):
         audit = self.root / 'audit'
         for path in ['log', 'runs/1', 'payload']:

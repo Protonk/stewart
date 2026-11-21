@@ -54,6 +54,8 @@ def reserve(path, digest, wave, trial, packet, commission, placement, model, ver
         if trial == 'S0':
             if wave != 1 or placement != 0 or any(r['trial'] == 'S0' for r in prior):
                 raise ValueError('surface allowance exhausted')
+        elif not any(r['trial'] == 'S0' for r in prior):
+            raise ValueError('service admission requires the reviewed surface check')
         elif (not 1 <= placement <= 3 or len(slots) >= scope['service_starts']
                 or (wave == 1 and sum(r['wave'] == 1 for r in slots) >= scope['wave_one_service_starts'])):
             raise ValueError('service start allowance exhausted')
@@ -76,7 +78,8 @@ def reserve(path, digest, wave, trial, packet, commission, placement, model, ver
 
 class AllowanceObserver:
     """Inspect complete native messages while retaining only the stop reason in the ledger."""
-    def __init__(self, envelope):
+    def __init__(self, envelope, version=None):
+        self.version = version
         self.directory = Path(envelope).parent / 'harness-reservations'
         self.buffers = {'stdout': bytearray(), 'stderr': bytearray()}
 
@@ -93,6 +96,9 @@ class AllowanceObserver:
                     continue  # The stream observer checks framing independently.
                 if not isinstance(row, dict):
                     continue
+                if row.get('type') == 'system' and row.get('subtype') == 'init' and self.version:
+                    if row.get('claude_code_version') != self.version:
+                        self.stop('initialization differs from the commissioned harness version')
                 if row.get('type') == 'rate_limit_event':
                     self.stop('rate-limit event')
                 if row.get('type') == 'system' and row.get('subtype') in ('rate_limit', 'usage_limit', 'overage'):
@@ -103,6 +109,10 @@ class AllowanceObserver:
                 self.stop('allowance diagnostic')
         if len(buffer) > 4 * 1024 * 1024:
             raise ValueError('billing monitor frame exceeded observation bound')
+
+    def finish(self, channel):
+        if self.buffers[channel]:
+            self.feed(channel, b'\n')
 
     @staticmethod
     def billing_text(text):
@@ -119,3 +129,54 @@ class AllowanceObserver:
         except FileExistsError:
             pass
         raise ValueError('campaign harness stop: ' + reason)
+
+
+def acknowledge(reservation, review_path, review_digest):
+    """Release the latest slot only against the exact successful review of its own execution."""
+    reservation, review_path = Path(reservation), Path(review_path)
+    root = reservation.parent
+    with (root / 'lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if (root / 'STOP').exists() or reservation != sorted(root.glob('[0-9][0-9][0-9].json'))[-1]:
+            raise ValueError('cannot release a stopped campaign or an earlier slot')
+        raw = reservation.read_bytes()
+        claim = json.loads(raw)
+        packet = Path(claim['packet'])
+        if hashlib.sha256((packet / 'COMMISSION.json').read_bytes()).hexdigest() != claim['commission_sha256']:
+            raise ValueError('commission changed since reservation')
+        if claim['trial'] == 'S0':
+            expected = packet / 'observation/CHECK.json'
+        else:
+            expected = packet / 'placements' / str(claim['placement']) / 'review/REVIEW.json'
+        if review_path != expected:
+            raise ValueError('review is not the reserved packet and placement')
+        review_raw = review_path.read_bytes()
+        review = json.loads(review_raw)
+        if hashlib.sha256(review_raw).hexdigest() != review_digest or review['outcome'] != 'observed':
+            raise ValueError('missing or changed successful review')
+        if claim['trial'] == 'S0':
+            observation = (packet / 'observation/OBSERVATION.json').read_bytes()
+            result = json.loads((packet / 'observation/RESULT.json').read_bytes())
+            if (review['schema'] != 'stewart.claude-code.reviewed-check/1' or
+                    review['observation_sha256'] != hashlib.sha256(observation).hexdigest() or
+                    result['commission_sha256'] != claim['commission_sha256'] or result['outcome'] != 'observed'):
+                raise ValueError('surface review differs from reserved observation')
+        elif review['commission_sha256'] != claim['commission_sha256']:
+            raise ValueError('review differs from reserved commission')
+        receipt = {'reservation_sha256': hashlib.sha256(raw).hexdigest(), 'review_sha256': review_digest,
+                   'safe_to_continue': True, 'at': datetime.now(timezone.utc).isoformat()}
+        with reservation.with_suffix('.review.json').open('x') as out:
+            json.dump(receipt, out, sort_keys=True)
+            out.write('\n')
+            out.flush()
+            os.fsync(out.fileno())
+
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description=acknowledge.__doc__)
+    parser.add_argument('--reservation', required=True, type=Path)
+    parser.add_argument('--review', required=True, type=Path)
+    parser.add_argument('--review-sha256', required=True)
+    args = parser.parse_args()
+    acknowledge(args.reservation, args.review, args.review_sha256)

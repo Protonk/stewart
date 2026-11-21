@@ -276,7 +276,7 @@ def run_packet(packet, approved=None, extra_usage_disabled=False, rehearsal=Fals
         launch = p.decode(p.read_file(packet / 'installation/launch.json'))
         campaign.reserve(envelope, envelope_sha256, 1, 'S0', packet, p.sha(raw), 0,
                          commission['bindings']['model'], launch['version'])
-        allowance = campaign.AllowanceObserver(envelope)
+        allowance = campaign.AllowanceObserver(envelope, launch['version'])
     out = packet / 'observation'
     cases, failures, attempted = [], [], []
     workspaces, sessions = set(), set()
@@ -329,6 +329,8 @@ def run_packet(packet, approved=None, extra_usage_disabled=False, rehearsal=Fals
                                       check_stop=case.check_stop)
                 for channel in ('stdout', 'stderr'):
                     if result['stream_eof'][channel]:
+                        if allowance:
+                            allowance.finish(channel)
                         try:
                             case.finish_stream(channel)
                         except observer.ObserverStop:

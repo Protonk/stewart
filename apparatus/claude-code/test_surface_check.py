@@ -46,6 +46,45 @@ class ControllerControls(unittest.TestCase):
             observer.feed('stdout', b'it_event","rate_limit_info":{"status":"allowed"}}\n')
         self.assertTrue((ledger / 'STOP').is_file())
 
+    def test_final_diagnostic_without_newline_stops(self):
+        ledger = self.root / 'harness-reservations'
+        ledger.mkdir()
+        observer = c.campaign.AllowanceObserver(self.root / 'envelope.json', 'pinned')
+        observer.feed('stderr', b'usage limit')
+        with self.assertRaisesRegex(ValueError, 'allowance diagnostic'):
+            observer.finish('stderr')
+
+    def test_version_mismatch_stops_before_later_slots(self):
+        ledger = self.root / 'harness-reservations'
+        ledger.mkdir()
+        observer = c.campaign.AllowanceObserver(self.root / 'envelope.json', 'pinned')
+        with self.assertRaisesRegex(ValueError, 'version'):
+            observer.feed('stdout', b'{"type":"system","subtype":"init","claude_code_version":"other"}\n')
+        self.assertTrue((ledger / 'STOP').exists())
+
+    def test_review_must_attest_reserved_surface_observation(self):
+        root = self.root / 'harness-reservations'
+        root.mkdir()
+        packet = self.root / 'S0'
+        out = packet / 'observation'
+        out.mkdir(parents=True)
+        c.save(packet / 'COMMISSION.json', {})
+        digest = c.digest_file(packet / 'COMMISSION.json')
+        c.save(out / 'OBSERVATION.json', {})
+        c.save(out / 'RESULT.json', {'outcome': 'observed', 'commission_sha256': digest})
+        claim = root / '001.json'
+        c.save(claim, {'trial': 'S0', 'packet': str(packet), 'commission_sha256': digest})
+        checked = out / 'CHECK.json'
+        review = {'schema': 'stewart.claude-code.reviewed-check/1', 'outcome': 'observed', 'observation_sha256': '0'*64}
+        c.save(checked, review)
+        with self.assertRaisesRegex(ValueError, 'reserved observation'):
+            c.campaign.acknowledge(claim, checked, c.digest_file(checked))
+        checked.unlink()
+        review['observation_sha256'] = c.digest_file(out / 'OBSERVATION.json')
+        c.save(checked, review)
+        c.campaign.acknowledge(claim, checked, c.digest_file(checked))
+        self.assertTrue(claim.with_suffix('.review.json').is_file())
+
     def test_ledger_accounts_one_campaign_across_packets(self):
         ledger = self.root / 'harness-reservations'
         ledger.mkdir()

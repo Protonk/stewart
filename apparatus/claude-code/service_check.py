@@ -5,6 +5,7 @@ continuation requires review of the preceding stopped placement. No automatic st
 """
 import argparse
 import base64
+import ctypes
 from datetime import datetime, timezone
 import importlib.util
 import json
@@ -24,7 +25,9 @@ import answer_witness as answer
 spec = importlib.util.spec_from_file_location('service_profile', HERE / 'profile.py')
 p = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(p)
-SOURCES = ('claude-code/service_check.py', 'claude-code/profile.py', 'claude-code/pin.py',
+sys.path.insert(0, str(HERE))
+import campaign
+SOURCES = ('claude-code/service_check.py', 'claude-code/campaign.py', 'claude-code/profile.py', 'claude-code/pin.py',
            'driver/claude_code_service_witness.py', 'driver/answer_witness.py',
            'driver/claude_code.py', 'driver/driver_core.py', 'driver/rawjson.py')
 ENV = {'PATH': '/usr/bin:/bin', 'TMPDIR': '/tmp', 'LANG': 'C.UTF-8'}
@@ -126,7 +129,7 @@ def profile_from(preparation):
     return reply, settings, profile
 
 
-def prepare(output, preparation, reference, folder, writer, mode='real-harness', synthetic=None):
+def prepare(output, preparation, reference, folder, writer, mode='real-harness', synthetic=None, trial=None, trigger=None):
     output, preparation, folder, writer = map(p.absolute, (output, preparation, folder, writer))
     require(mode in ('real-harness', 'synthetic-rehearsal'), 'unknown packet mode')
     reply, settings, profile = profile_from(preparation)
@@ -149,9 +152,16 @@ def prepare(output, preparation, reference, folder, writer, mode='real-harness',
     placements = settings['limits']['max_placements']
     require(type(seconds) is int and 1 <= seconds <= 600, 'placement exceeds this procedure bound')
     require(seconds * placements <= 900, 'packet exceeds 900 seconds of total placement time')
+    if trigger is not None:
+        require(trigger in ('P1-signal', 'P2-signal', 'P1-close', 'P2-close'), 'unknown witnessed action')
+        require(trial is not None or mode == 'synthetic-rehearsal', 'a live action requires a bound campaign')
+    if trial is not None:
+        scope = campaign.load(trial['envelope'], trial['sha256'])['harness']
+        require(mode == 'real-harness' and profile['launch']['version'] == scope['version']
+                and settings['model'] == scope['model'], 'campaign model or version differs')
     if mode == 'real-harness':
         require(synthetic is None and profile['launch']['version'] != 'synthetic-offline-1'
-                and settings['model'] == 'claude-haiku-5-5', 'unexpected real profile/model')
+                and (trial is not None or settings['model'] == 'claude-haiku-5-5'), 'unexpected real profile/model')
     else:
         require(profile['launch']['version'] == 'synthetic-offline-1'
                 and settings['model'] == witness.runtime.MODEL and seconds <= 15,
@@ -183,14 +193,15 @@ def prepare(output, preparation, reference, folder, writer, mode='real-harness',
     if synthetic:
         paths += [Path(synthetic['script']), Path(synthetic['scenario'])]
         paths += list(Path(synthetic['script']).parent.glob('*.py'))
-    manifest = {'schema': 'stewart.claude-code.service-commission/3', 'mode': mode,
+    manifest = {'schema': 'stewart.claude-code.service-commission/4', 'mode': mode,
                 'prepared_at': utc(), 'reference': reference, 'folder': str(folder),
                 'archive': str(archive), 'writer': str(writer), 'python': str(Path(sys.executable).resolve()),
                 'prepared_handle': reply['data']['prepared'], 'model': settings['model'],
                 'placement_timeout_seconds': seconds, 'service_command_timeout_seconds': seconds + 15,
                 'max_service_starts': placements, 'max_authentication_invocations': placements,
                 'max_model_invocations': placements, 'max_placement_seconds': seconds * placements,
-                'continuation_causes': ['placement_deadline'],
+                'continuation_causes': ['signal'] if trigger and trigger.endswith('-signal') else ['placement_deadline'],
+                'campaign': trial, 'trigger': trigger,
                 'environment': ENV, 'cwd': '/tmp', 'submission': inventory(folder),
                 'bindings': [{'path': str(path), 'sha256': p.read_file(path, limit=None, hash_only=True)[0]}
                              for path in dict.fromkeys(paths)],
@@ -206,15 +217,25 @@ def verify(packet):
     packet = p.absolute(packet)
     raw = p.read_file(packet / 'COMMISSION.json')
     value = p.decode(raw)
-    require(value['schema'] == 'stewart.claude-code.service-commission/3', 'unknown commission schema')
+    require(value['schema'] == 'stewart.claude-code.service-commission/4', 'unknown commission schema')
     require(value['mode'] in ('real-harness', 'synthetic-rehearsal')
             and type(value['max_service_starts']) is int and 1 <= value['max_service_starts'] <= 3
             and value['max_service_starts'] == value['max_authentication_invocations'] == value['max_model_invocations'],
             'commission is outside bounded placement scope')
     require(value['environment'] == ENV and value['cwd'] == '/tmp', 'manager environment changed')
-    require(value['continuation_causes'] == ['placement_deadline'], 'continuation scope changed')
+    action = value['trigger']
+    require(action in (None, 'P1-signal', 'P2-signal', 'P1-close', 'P2-close')
+            and value['continuation_causes'] == (['signal'] if action and action.endswith('-signal')
+                                                else ['placement_deadline']), 'continuation scope changed')
     reply, settings, profile = profile_from(packet / 'inputs/prepare.json')
+    if value['campaign'] is not None:
+        trial = value['campaign']
+        scope = campaign.load(trial['envelope'], trial['sha256'])['harness']
+        require(scope['model'] == settings['model'] and scope['version'] == profile['launch']['version']
+                and value['mode'] == 'real-harness', 'campaign differs from the prepared installation')
     if value['mode'] == 'real-harness':
+        require(value['campaign'] is not None or (action is None and settings['model'] == 'claude-haiku-5-5'),
+                'direct service comparison requires the authorized baseline model')
         p.separate_login(profile['launch']['config_directory'], packet, value['archive'], value['folder'],
                          settings['destination'], *(row['path'] for row in value['bindings']))
     require(inventory(Path(value['folder'])) == value['submission'], 'submission membership or bytes changed')
@@ -266,7 +287,104 @@ def execution_evidence(out):
     return p.sha(raw)
 
 
-def command(directory, label, argv, timeout):
+def wait_for_trial(proc, out, manifest, audit, placement, timeout, adopted):
+    """Watch whole, published records outside the archive while the placement runs."""
+    trial = manifest['campaign']
+    allowance = None
+    if trial:
+        scope = campaign.load(trial['envelope'], trial['sha256'])['harness']
+        allowance = campaign.AllowanceObserver(trial['envelope'], scope['version'])
+    trigger = manifest['trigger'] if placement == 1 else None
+    wanted = 'run_started' if trigger and trigger.startswith('P1-') else 'answer_prepared'
+    root = out / 'interruption'
+    if trigger:
+        root.mkdir(mode=0o700)
+        save(root / 'selected.json', {'trigger': trigger, 'placement': placement, 'observer': os.getpid(),
+                                     'client_group': proc.pid, 'started_at': utc()})
+    log = audit / 'log'
+    ledger = out / 'ledger-witness'
+    ledger.mkdir(mode=0o700)
+    witness_index = 1
+    next_record = 1
+    next_chunk = 1
+    seen = False
+    until = time.monotonic() + timeout
+    while True:
+        reap_adopted(adopted, {proc.pid})
+        ended = proc.poll() is not None
+        if allowance:
+            captures = audit / 'runs' / str(placement)
+            while True:
+                chunks = list(captures.glob('runtime-%d-*.bin' % next_chunk))
+                if not chunks:
+                    break
+                require(len(chunks) == 1, 'ambiguous harness capture')
+                channel = chunks[0].stem.split('-', 2)[2]
+                if channel in ('stdout', 'stderr'):
+                    allowance.feed(channel, p.read_file(chunks[0]))
+                next_chunk += 1
+        if trigger and not seen:
+            while (file := log / ('%d.json' % next_record)).is_file():
+                raw = p.read_file(file)
+                row = p.decode(raw)
+                next_record += 1
+                body = row['body']
+                origin = body.get('run') if wanted == 'run_started' else body.get('invocation', {}).get('run')
+                if row['kind'] != wanted or origin != placement:
+                    continue
+                seen = True
+                # Freeze the witnessed log prefix, including exact bytes of the trigger.
+                prefix = root / 'log'
+                prefix.mkdir(mode=0o700)
+                for index in range(1, next_record):
+                    prior = log / ('%d.json' % index)
+                    p.publish(prefix / prior.name, p.read_file(prior))
+                require(p.read_file(prefix / file.name) == raw, 'trigger changed during observation')
+                if wanted == 'answer_prepared':
+                    for name, field in (('answer.json', 'answer_sha256'), ('answer.md', 'rendering_sha256')):
+                        original = audit / 'prepared' / str(body['prepared']) / name
+                        data = p.read_file(original)
+                        require(p.sha(data) == body[field], 'prepared file differs from witnessed digest')
+                        p.publish(root / name, data)
+                save(root / 'point.json', {'record': file.name, 'sha256': p.sha(raw), 'kind': wanted,
+                     'pid': proc.pid, 'group': proc.pid, 'observer': os.getpid(), 'at': utc()})
+                if proc.poll() is not None:
+                    save(root / 'outcome.json', {'state': 'unexercised', 'reason': 'placement_ended_at_point'})
+                elif trigger.endswith('-signal'):
+                    try:
+                        os.killpg(proc.pid, signal.SIGTERM)
+                    except ProcessLookupError:
+                        state = 'unexercised'
+                    else:
+                        state = 'signalled'
+                    save(root / 'outcome.json', {'state': state, 'group': proc.pid, 'signal': 'SIGTERM', 'at': utc()})
+                else:
+                    reply = json_command(root, 'manager-close', manifest, ['close', manifest['reference']],
+                                         allowed=(0, 3, 4, 5), wait=lambda close, seconds: wait_with_adoption(
+                                             close, seconds, adopted, {proc.pid, close.pid}))
+                    save(root / 'outcome.json', {'state': 'close_requested', 'reply': reply, 'at': utc()})
+                break
+        while (published := log / ('%d.json' % witness_index)).is_file():
+            raw = p.read_file(published)
+            save(ledger / published.name, {'sha256': p.sha(raw), 'seen_at': utc(),
+                                           'monotonic_ns': time.clock_gettime_ns(CLOCK)})
+            witness_index += 1
+        if ended:
+            if allowance:
+                for channel in ('stdout', 'stderr'):
+                    allowance.finish(channel)
+            if trigger and not seen:
+                save(root / 'outcome.json', {'state': 'unexercised', 'reason': 'placement_ended_first'})
+            return proc.returncode
+        remaining = until - time.monotonic()
+        if remaining <= 0:
+            if trigger and not seen:
+                save(root / 'outcome.json', {'state': 'unexercised', 'reason': 'watchdog_expired_first'})
+            raise subprocess.TimeoutExpired(proc.args, timeout)
+        time.sleep(min(0.01, remaining))
+
+
+def command(directory, label, argv, timeout, wait=None):
     """Observe the direct client group; service-owned groups are checked separately."""
     save(directory / (label + '.start.json'), {'argv': argv, 'timeout_seconds': timeout,
          'environment': ENV, 'cwd': '/tmp', 'started_at': utc()})
@@ -279,7 +397,7 @@ def command(directory, label, argv, timeout):
                                      env=ENV, cwd='/tmp', start_new_session=True)
             save(directory / (label + '.process.json'), {'pid': child.pid, 'group': child.pid})
             try:
-                result['exit'] = child.wait(timeout=timeout)
+                result['exit'] = wait(child, timeout) if wait else child.wait(timeout=timeout)
             except subprocess.TimeoutExpired:
                 result['timed_out'] = True
                 os.killpg(child.pid, signal.SIGTERM)
@@ -309,14 +427,60 @@ def command(directory, label, argv, timeout):
     return result
 
 
-def json_command(directory, label, manifest, args, allowed=(0,)):
+def json_command(directory, label, manifest, args, allowed=(0,), wait=None):
     result = command(directory, label, [manifest['writer'], *args, '--json'],
-                     manifest['service_command_timeout_seconds'] if args[0] == 'run' else 30)
+                     manifest['service_command_timeout_seconds'] if args[0] == 'run' else 30, **({'wait': wait} if wait else {}))
     require(result['exit'] in allowed, label + ': unexpected exit ' + str(result['exit']))
     return p.decode(p.read_file(directory / (label + '.stdout')))
 
 
-def stopping(audit, output, placement=1, probes=1, pause=1.0):
+def observe_descendants():
+    """Become the Linux adoption point before starting our own client."""
+    libc = ctypes.CDLL(None, use_errno=True)
+    if sys.platform != 'linux' or libc.prctl(36, 1, 0, 0, 0) != 0:  # PR_SET_CHILD_SUBREAPER
+        raise OSError('cannot establish the Linux descendant witness')
+
+
+def reap_adopted(ended, clients):
+    # A subreaper must collect exited orphans while the service is observing
+    # its process groups. A zombie in a group can keep killpg(group, 0) true.
+    children = Path('/proc/self/task/%d/children' % os.getpid()).read_text()
+    for pid in map(int, children.split()):
+        if pid in clients:
+            continue
+        try:
+            reaped, status = os.waitpid(pid, os.WNOHANG)
+        except ChildProcessError:
+            continue
+        if reaped:
+            ended.append({'pid': reaped, 'status': status})
+
+
+def wait_with_adoption(proc, seconds, ended, clients):
+    until = time.monotonic() + seconds
+    while proc.poll() is None:
+        reap_adopted(ended, clients)
+        if time.monotonic() >= until:
+            raise subprocess.TimeoutExpired(proc.args, seconds)
+        time.sleep(0.01)
+    return proc.returncode
+
+
+def descendants_absent(ended):
+    until = time.monotonic() + 3
+    while time.monotonic() < until:
+        try:
+            pid, status = os.waitpid(-1, os.WNOHANG)
+        except ChildProcessError:
+            return {'absent': True, 'observer': os.getpid(), 'reaped': ended, 'at': utc()}
+        if pid:
+            ended.append({'pid': pid, 'status': status})
+        else:
+            time.sleep(0.02)
+    return {'absent': False, 'observer': os.getpid(), 'reaped': ended, 'at': utc()}
+
+
+def stopping(audit, output, placement=1, probes=1, pause=1.0, descendant_record=None):
     """Probe the service-recorded groups; only observed absence of both is stopping.
 
     `probes` bounds repeated read-only observations after an abnormal return.
@@ -340,6 +504,17 @@ def stopping(audit, output, placement=1, probes=1, pause=1.0):
                 observation = witness.runtime.group_observation(value['group'])
                 rows.append({'probe': probe, 'role': role, 'group': value['group'], 'observation': observation,
                              'started_ns': before, 'finished_ns': time.clock_gettime_ns(CLOCK)})
+            except FileNotFoundError as error:
+                # Before launch a role has no group ID. Only the independent kernel
+                # witness plus the service's clean stop can resolve that absence.
+                stop_file = audit / 'runs' / str(placement) / 'runtime-stop.json'
+                if (descendant_record and descendant_record.is_file() and stop_file.is_file()
+                        and p.decode(p.read_file(descendant_record))['absent'] is True
+                        and p.decode(p.read_file(stop_file))['groups_gone'] is True):
+                    rows.append({'probe': probe, 'role': role, 'group': None, 'observation': 'absent',
+                                 'basis': 'no group record; subreaper observed no descendants; service agreed'})
+                else:
+                    diagnostics.append(str(error))
             except (OSError, ValueError, KeyError, TypeError) as error:
                 diagnostics.append(str(error))
         record['observations'].extend(rows)
@@ -362,13 +537,50 @@ def observed_run(out, manifest, audit, placement, result):
     groups, so they are probed before the failure propagates. `stopping_probed`
     separates "not probed" from "probed and not absent".
     """
+    descendant_record = None
+    adopted = []
+    if manifest.get('campaign') or manifest.get('trigger'):
+        observe_descendants()
+        descendant_record = out / 'DESCENDANTS.json'
+    def wait_observed(proc, timeout):
+        try:
+            return wait_for_trial(proc, out, manifest, audit, placement, timeout, adopted)
+        except BaseException:
+            # Let the exact writer stop its owned groups on observer failure.
+            # Keep adopting until it returns, then retain both group probes.
+            if proc.poll() is None:
+                try:
+                    os.killpg(proc.pid, signal.SIGTERM)
+                    wait_with_adoption(proc, 10, adopted, {proc.pid})
+                except (ProcessLookupError, subprocess.TimeoutExpired):
+                    pass
+            raise
+
     try:
-        result['run_reply'] = json_command(out, 'run', manifest, ['run', manifest['reference']], allowed=(0, 3, 4, 5))
+        if descendant_record:
+            outcome = command(out, 'run', [manifest['writer'], 'run', manifest['reference'], '--json'],
+                              manifest['service_command_timeout_seconds'],
+                              wait=wait_observed)
+            require(outcome['exit'] in (0, 3, 4, 5), 'unexpected run exit ' + str(outcome['exit']))
+            result['run_reply'] = p.decode(p.read_file(out / 'run.stdout'))
+        else:
+            result['run_reply'] = json_command(out, 'run', manifest, ['run', manifest['reference']], allowed=(0, 3, 4, 5))
     except BaseException:
-        result['stopping_observed'] = stopping(audit, out / 'STOPPING.json', placement, probes=ABNORMAL_STOP_PROBES)
+        if descendant_record:
+            save(descendant_record, descendants_absent(adopted))
+            result['stopping_observed'] = stopping(audit, out / 'STOPPING.json', placement, probes=ABNORMAL_STOP_PROBES,
+                                                   descendant_record=descendant_record)
+        else:
+            result['stopping_observed'] = stopping(audit, out / 'STOPPING.json', placement, probes=ABNORMAL_STOP_PROBES)
         result['stopping_probed'] = True
         raise
-    result['stopping_observed'] = stopping(audit, out / 'STOPPING.json', placement)
+    if descendant_record:
+        observed = descendants_absent(adopted)
+        save(descendant_record, observed)
+        groups_gone = stopping(audit, out / 'STOPPING.json', placement, descendant_record=descendant_record)
+        result['stopping_observed'] = observed['absent'] and groups_gone
+    else:
+        result['stopping_observed'] = stopping(audit, out / 'STOPPING.json', placement)
     result['stopping_probed'] = True
 
 
@@ -470,6 +682,11 @@ def run(packet, approved=None, extra_usage_disabled=False, rehearsal=False, plac
     root.mkdir(mode=0o700)
     out = root / 'execution'
     out.mkdir(mode=0o700)
+    if manifest['campaign'] is not None:
+        trial = manifest['campaign']
+        _, _, profile = profile_from(packet / 'inputs/prepare.json')
+        campaign.reserve(trial['envelope'], trial['sha256'], trial['wave'], trial['name'], packet, p.sha(raw),
+                         placement, manifest['model'], profile['launch']['version'])
     save(out / 'START.json', {'started_at': utc(), 'commission_sha256': p.sha(raw),
          'placement': placement, 'reviewed_prior_sha256': reviewed,
          'approved_commission': approved, 'extra_usage_disabled': extra_usage_disabled, 'retry_allowed': False})
@@ -489,7 +706,8 @@ def run(packet, approved=None, extra_usage_disabled=False, rehearsal=False, plac
                     'acceptance was not established')
         else:
             require(continuation_state(manifest, status, placement - 1), 'current state permits no continuation')
-            require(stopping(audit, out / 'STOPPING-BEFORE.json', placement - 1), 'current stopping is unknown')
+            require(stopping(audit, out / 'STOPPING-BEFORE.json', placement - 1,
+                             descendant_record=root.parent / str(placement - 1) / 'execution/DESCENDANTS.json'), 'current stopping is unknown')
             require(inventory(Path(manifest['archive'])) == prior['archive_inventory'],
                     'current archive differs from the reviewed preceding capture')
         receipt = json_command(out, 'receipt', manifest, ['receipt', reference, '--verify'])
@@ -596,7 +814,7 @@ def capture_selection(audit, sources):
     This is a correlation of Stewart's records, not an outside witness of every
     model action. An omitted call shared by those records can remain undetected.
     """
-    records = {}
+    records, preparations = {}, {}
     previous = None
     logs = sorted((audit / 'log').glob('*.json'), key=lambda path: int(path.stem))
     require([int(path.stem) for path in logs] == list(range(1, len(logs) + 1)), 'ledger numbering gap')
@@ -607,6 +825,8 @@ def capture_selection(audit, sources):
         previous = p.sha(raw)
         if row['kind'] == 'entry':
             records['log/' + path.name] = row['body']
+        if row['kind'] == 'answer_prepared':
+            preparations['log/' + path.name] = row['body']
     selected, handles, prepared, consumed, allocated, deleted = {}, {}, {}, set(), set(), {}
     revision, citations, refusals, completed = 0, 0, 0, 0
     submitted = False
@@ -697,6 +917,14 @@ def capture_selection(audit, sources):
                 consumed.add(log_name)
             if tool == 'prepare':
                 require(data['revision'] == revision and data['entry_count'] == len(selected), 'preparation selection differs')
+                event = preparations.pop(log_name, None)
+                require(event is not None and event['invocation'] == {
+                    'run': number, 'tool_use_id': result['tool_use_id'], 'call': result['call']}
+                    and event['handle'] == data['prepared'] and event['revision'] == revision
+                    and event['entry_count'] == len(selected), 'prepared event differs from the completed tool')
+                directory = audit / 'prepared' / str(event['prepared'])
+                for name, field in (('answer.json', 'answer_sha256'), ('answer.md', 'rendering_sha256')):
+                    require(p.sha(p.read_file(directory / name)) == event[field], 'prepared selection digest differs')
                 prepared[data['prepared']] = revision
             if tool == 'submit' and operands.get('confirm') is True:
                 require(prepared.get(operands['prepared']) == revision and data['seal']['actor'] == 'auditor',
@@ -708,10 +936,88 @@ def capture_selection(audit, sources):
         observations.append(dict(stream_observations(channels), placement=number,
                                  incoming_tool_calls=len(wire_calls), tool_results=len(files), revision=revision))
     require(consumed == set(records), 'not every entry effect is accounted for')
+    require(not preparations, 'auditor preparation without a correlated completed tool result')
     return list(selected.values()), revision, {'completed_calls': completed, 'refused_or_failed_calls': refusals,
               'citations_checked': citations, 'auditor_submitted': submitted,
               'incoming_tool_calls': incoming_total, 'tool_results': results_total,
               'unresolved_mcp_calls': incoming_total - results_total, 'placements': observations}
+
+
+def witnessed_outcome(out, audit, trigger, last, seal):
+    root = out / 'interruption'
+    outcome = p.decode(p.read_file(root / 'outcome.json'))
+    if (root / 'point.json').is_file():
+        point = p.decode(p.read_file(root / 'point.json'))
+        prefix = root / 'log'
+        number = int(Path(point['record']).stem)
+        require({file.name for file in prefix.iterdir()} == {'%d.json' % n for n in range(1, number + 1)},
+                'outside trigger witness is missing a ledger record')
+        process = p.decode(p.read_file(out / 'run.process.json'))
+        require(point['group'] == process['group'] and point['pid'] == process['pid'],
+                'outside trigger point refers to a different client')
+        if outcome['state'] == 'signalled':
+            require(outcome['group'] == process['group'] and outcome['signal'] == 'SIGTERM',
+                    'signal did not target the observed client group')
+        for path in prefix.iterdir():
+            require(p.read_file(path) == p.read_file(audit / 'log' / path.name),
+                    'witnessed ledger prefix differs from stopped archive')
+        raw = p.read_file(prefix / point['record'])
+        row = p.decode(raw)
+        require(p.sha(raw) == point['sha256'] and point['kind'] == row['kind'], 'trigger witness changed')
+        require(row['kind'] == ('run_started' if trigger.startswith('P1') else 'answer_prepared'),
+                'point differs from commissioned trigger')
+        if row['kind'] == 'answer_prepared':
+            body = row['body']
+            for name, field in (('answer.json', 'answer_sha256'), ('answer.md', 'rendering_sha256')):
+                seen = p.read_file(root / name)
+                require(p.sha(seen) == body[field] and seen == p.read_file(audit / 'prepared' / str(body['prepared']) / name),
+                        'witnessed preparation changed')
+    else:
+        require(outcome['state'] == 'unexercised', 'action has no outside point witness')
+    if outcome['state'] == 'unexercised' or (last['ending'] == 'sealed' and seal.get('actor') == 'auditor'):
+        return {'outcome': 'unexercised', 'witness': outcome, 'reason': 'placement ended or point was overtaken'}
+    if trigger.endswith('-signal'):
+        require(outcome['state'] == 'signalled' and last['ending'] == 'interrupted' and last['cause'] == 'signal'
+                and seal['state'] == 'absent', 'signal or interrupted custody differs from the outside witness')
+    else:
+        require(outcome['state'] == 'close_requested' and last['ending'] == 'stopped_by_close'
+                and seal['actor'] == 'manager', 'witnessed close did not stop the placement with manager attribution')
+    return {'outcome': 'exercised', 'witness': outcome}
+
+
+def trial_observations(audit, placement, status, out):
+    records = [p.decode(p.read_file(path)) for path in sorted((audit / 'log').glob('*.json'),
+                                                              key=lambda path: int(path.stem))]
+    observed = out / 'ledger-witness'
+    files = sorted((audit / 'log').glob('*.json'), key=lambda path: int(path.stem))
+    require({path.name for path in files} == {path.name for path in observed.iterdir()},
+            'outside ledger observation has missing or unexpected records')
+    entry_times = []
+    for path, row in zip(files, records):
+        stamp = p.decode(p.read_file(observed / path.name))
+        require(stamp['sha256'] == p.sha(p.read_file(path)), 'stopped ledger differs from outside observation')
+        if row['kind'] == 'entry' and row['body']['invocation']['run'] == placement:
+            entry_times.append(stamp['seen_at'])
+    reminders = sum(row['kind'] == 'notice' and row['body']['type'] == 'reminder' for row in records)
+    require(reminders <= 1, 'procedural reminder published more than once')
+    run = audit / 'runs' / str(placement)
+    frames = [p.decode(line) for line in bytes(runtime_channels(run).get('input', b'')).splitlines() if line]
+    inputs = [frame.get('message', {}).get('content') for frame in frames if frame.get('type') == 'user']
+    if placement > 1:
+        require(len(inputs) >= 2 and inputs[1] == witness.runtime.CONTINUATION,
+                'continuing auditor did not receive the continuation notice after the question')
+    usage = status['data']['allowances']['usage']
+    endings = [row['body']['usage'] for row in records if row['kind'] == 'run_ended']
+    for key in ('placements', 'stopped', 'reported_placements', 'unknown_intervals'):
+        require(usage[key] == sum(end[key] for end in endings), 'cumulative ' + key + ' differs')
+    reports = [end['reported_main_loop'] for end in endings if end['reported_main_loop'] is not None]
+    summed = {key: sum(item[key] for item in reports) for key in reports[0]} if reports else None
+    require(usage['reported_main_loop'] == summed, 'cumulative reported main loop differs')
+    tools = []
+    for path in sorted(run.glob('result-*.json'), key=lambda path: int(path.stem.split('-')[1])):
+        tools.append(p.decode(p.read_file(path))['body']['tool'])
+    return {'entry_times': entry_times, 'reminders': reminders, 'continuation_input_observed': placement > 1,
+            'run_tools': tools, 'usage': usage}
 
 
 def review(packet, placement=1):
@@ -746,8 +1052,16 @@ def review(packet, placement=1):
         require(status['data']['runs']['count'] == placement and len(counts['placements']) == placement,
                 'captured placement count differs')
         require(status['data']['answer'] == {'revision': revision, 'entries': len(entries)}, 'status selection differs')
+        agency = status['data']['seal'].get('actor')
+        triggered = placement == 1 and manifest['trigger'] is not None
+        if manifest['campaign'] or manifest['trigger']:
+            report['trial_observations'] = trial_observations(audit, placement, status, out)
         eligible = continuation_state(manifest, status, placement)
-        if eligible:
+        if triggered:
+            point = witnessed_outcome(out, audit, manifest['trigger'], status['data']['runs']['last'], status['data']['seal'])
+            report['interruption'] = point
+            eligible = eligible and point['outcome'] == 'exercised' and manifest['trigger'].endswith('-signal')
+        elif eligible:
             try:
                 stop = p.decode(p.read_file(audit / 'runs' / str(placement) / 'runtime-stop.json'))
                 run_result = p.decode(p.read_file(out / 'run.result.json'))
@@ -763,12 +1077,13 @@ def review(packet, placement=1):
                       continuation_eligible=eligible,
                       status_condition=status['data']['condition'], last_run=status['data']['runs']['last'],
                       reported_usage=status['data']['allowances']['usage'])
-        if counts['auditor_submitted']:
-            require(status['data']['seal']['actor'] == 'auditor' and status['data']['headline']['delivered']['verified'],
+        if counts['auditor_submitted'] or (triggered and agency == 'manager'):
+            require(agency == ('auditor' if counts['auditor_submitted'] else 'manager')
+                    and status['data']['headline']['delivered']['verified'],
                     'auditor submission or verified delivery missing')
             pin = witness.write_witness(review_dir / 'WITNESS.json', entries, revision,
                   family='open-inquiry/1', writer=p.read_file(Path(manifest['writer']), limit=None, hash_only=True)[0],
-                  actor='auditor', reference=manifest['reference'], status_raw=status_raw,
+                  actor=agency, reference=manifest['reference'], status_raw=status_raw,
                   inputs={**sources, 'question-body': sources['question']},
                   provenance={'kind': 'service-owned-capture-correlation', 'description': report['scope']})
             package_review = witness.review_package(out / 'package', review_dir / 'WITNESS.json', review_dir / 'package',
@@ -783,6 +1098,12 @@ def review(packet, placement=1):
                 'copy_checks': 'The package witness ran its mode checks on the private copy, whose modes the '
                                'apparatus sets; they do not observe the delivered package.'}
             require(not defects, 'delivered package modes differ: ' + '; '.join(defects))
+            if triggered and manifest['trigger'] == 'P2-close' and agency == 'manager':
+                prepared = p.decode(p.read_file(out / 'interruption/answer.json'))
+                if prepared['revision'] == revision:
+                    require(p.read_file(out / 'interruption/answer.json') == p.read_file(out / 'package/answer.json')
+                            and p.read_file(out / 'interruption/answer.md') == p.read_file(out / 'package/answer.md'),
+                            'manager-sealed selection differs from witnessed preparation')
         report['outcome'] = 'observed'
     except Exception as error:
         report['failure'] = repr(error)
@@ -792,9 +1113,68 @@ def review(packet, placement=1):
     return int(report['outcome'] != 'observed')
 
 
+def close_trial(packet, manifest, assessment, original, placement, reviewed):
+    """Verify a clean manager delivery before acknowledging it. Never surrender a loss."""
+    frozen_executor(packet, manifest)
+    require(attempts(packet) == list(range(1, placement + 1)), 'close requires the latest reviewed placement')
+    out = packet / 'closure'
+    out.mkdir(mode=0o700)
+    save(out / 'START.json', {'at': utc(), 'reviewed_review_sha256': reviewed})
+    audit = Path(manifest['archive']) / 'audits' / manifest['reference'].split(':', 3)[1]
+    stage = packet / 'placements' / str(placement) / 'execution'
+    require(stopping(audit, out / 'STOPPING.json', placement, descendant_record=stage / 'DESCENDANTS.json'),
+            'stopping could not be established before manager close')
+    require(inventory(Path(manifest['archive'])) == original['archive_inventory'], 'archive differs from review')
+    ref = manifest['reference']
+    state = json_command(out, 'status-before', manifest, ['status', ref])['data']
+    require(not state['runs']['held'] and state['runs']['count'] == placement, 'current placement differs')
+    result = json_command(out, 'close', manifest, ['close', ref])
+    require(result['outcome'] == 'completed', 'manager close did not complete')
+    fresh = json_command(out, 'status-delivery', manifest, ['status', ref])['data']
+    require(fresh['seal']['actor'] == 'manager' and fresh['headline']['delivered']['verified'] is True
+            and not fresh['seal']['unproduced'], 'manager delivery has an unresolved loss or incorrect attribution')
+    source = Path(fresh['headline']['delivered']['location'])
+    modes = delivered_modes(source)
+    rows = snapshot(source, out / 'package')
+    require(not package_mode_defects(modes, rows), 'manager delivery modes differ')
+    inputs = packet / 'inputs/submission'
+    sources = {'question': p.read_file(inputs / 'question.md').split(b'\n---\n', 1)[1]}
+    sources.update({row['path']: p.read_file(inputs / row['path']) for row in manifest['submission']
+                    if row['type'] == 'file' and row['path'].startswith('materials/')})
+    entries, revision, counts = capture_selection(audit, sources)
+    require(not counts['auditor_submitted'] and revision == fresh['seal']['revision'],
+            'manager seal disagrees with witnessed selection')
+    pin = witness.write_witness(out / 'WITNESS.json', entries, revision, family='open-inquiry/1',
+            writer=p.read_file(Path(manifest['writer']), limit=None, hash_only=True)[0], actor='manager',
+            reference=ref, status_raw=p.read_file(out / 'status-delivery.stdout'),
+            inputs={**sources, 'question-body': sources['question']},
+            provenance={'kind': 'service-owned-capture-correlation', 'description': 'Reviewed selection at manager close'})
+    package = witness.review_package(out / 'package', out / 'WITNESS.json', out / 'comparison',
+                                    witness_sha256=pin, archive_root=Path(manifest['archive']))
+    require(package['outcome'] == 'observed', 'manager-delivered package differs from witnessed selection')
+    confirmation = fresh['deliveries'][-1]['confirmation']
+    require(isinstance(confirmation, str) and confirmation and not fresh['deliveries'][-1]['losses'],
+            'no loss-free confirmation')
+    confirmed = json_command(out, 'confirm', manifest, ['close', ref, '--confirm', confirmation])
+    require(confirmed['data']['closure'] == 'complete', 'manager closure was not confirmed')
+    after = json_command(out, 'status-after', manifest, ['status', ref])['data']
+    require(after['headline']['closed'] == 'yes' and after['headline']['delivered']['confirmed'],
+            'confirmed closure missing from status')
+    refusal = json_command(out, 'run-after-close', manifest, ['run', ref], allowed=(3,))
+    require(refusal['outcome'] == 'refused' and refusal['reason'] == 'reference_closed',
+            'closed reference accepted or refused for another reason')
+    preserved_members(original['archive_inventory'], snapshot(Path(manifest['archive']), out / 'service-archive'))
+    require(inventory(source) == rows and delivered_modes(source) == modes, 'delivered package changed')
+    save(out / 'RESULT.json', {'outcome': 'closed', 'actor': 'manager', 'package_unchanged': True,
+          'package_review': package['counts'], 'refused_after_close': True, 'finished_at': utc()})
+    return 0
+
+
 def close(packet, reviewed, placement=1):
     manifest, commission_raw = verify(packet)
     assessment, original = reviewed_execution(packet, manifest, commission_raw, placement, reviewed)
+    if not assessment['auditor_submitted'] and (manifest.get('campaign') or manifest.get('trigger')):
+        return close_trial(packet, manifest, assessment, original, placement, reviewed)
     require(assessment['auditor_submitted'] and assessment['package_review']['outcome'] == 'observed',
             'ordinary close requires explicit review of the complete auditor-submitted package')
     frozen_executor(packet, manifest)
@@ -808,7 +1188,8 @@ def close(packet, reviewed, placement=1):
             and status['data']['headline']['delivered']['verified']
             and status['data']['runs']['count'] == placement, 'current close state differs')
     audit = Path(manifest['archive']) / 'audits' / reference.split(':', 3)[1]
-    require(stopping(audit, out / 'STOPPING.json', placement), 'current stopping is unknown')
+    require(stopping(audit, out / 'STOPPING.json', placement,
+                     descendant_record=packet / 'placements' / str(placement) / 'execution/DESCENDANTS.json'), 'current stopping is unknown')
     require(inventory(Path(manifest['archive'])) == original['archive_inventory'],
             'current archive differs from reviewed capture')
     delivered = Path(status['data']['headline']['delivered']['location'])
@@ -1026,6 +1407,86 @@ def rehearse(suite, approved_digest):
     return int(report['outcome'] != 'observed')
 
 
+INTERRUPTIONS = (
+    ('p1-signal', 'P1-signal', 'submit'), ('p2-signal', 'P2-signal', 'sequence'),
+    ('p1-close', 'P1-close', 'sequence'), ('p2-close', 'P2-close', 'sequence'),
+    ('miss', 'P2-signal', 'no-submit'),
+)
+
+
+def prepare_interruptions(output, writer, work):
+    output, writer, work = map(p.absolute, (output, writer, work))
+    output.mkdir(mode=0o700)
+    driver = witness.runtime.Driver(writer, work, selected=())
+    bindings = []
+    for name, trigger, scenario in INTERRUPTIONS:
+        fixture = driver.fixture(name, scenario=scenario, timeout=6, placements=2,
+                                 python=str(Path(sys.executable).resolve()))
+        if name == 'p1-close':
+            driver.change_scenario(fixture, steps=[{'op': 'hang'}])
+        elif scenario == 'sequence':
+            driver.change_scenario(fixture, steps=[{'op': 'record'}, {'op': 'call_begin', 'label': 'prep',
+                                   'tool': 'prepare', 'arguments': {}}, {'op': 'hang'}])
+        preparation = output / (name + '-preparation.json')
+        save(preparation, driver.prepare(fixture))
+        digest = prepare(output / name, preparation, fixture['reference'], fixture['folder'], writer,
+                         mode='synthetic-rehearsal', synthetic={'script': str(driver.harness_script),
+                         'scenario': str(fixture['scenario']), 'witness': str(fixture['witness'])}, trigger=trigger)
+        bindings.append({'name': name, 'commission_sha256': digest})
+    save(output / 'REHEARSAL.json', {'schema': 'stewart.runtime-interruptions/1', 'bindings': bindings})
+    print('Prepared five offline comparisons at ' + str(output))
+
+
+def rehearse_interruptions(suite, digest):
+    raw = p.read_file(suite / 'REHEARSAL.json')
+    plan = p.decode(raw)
+    require(digest == p.sha(raw) and plan['schema'] == 'stewart.runtime-interruptions/1'
+            and [b['name'] for b in plan['bindings']] == [row[0] for row in INTERRUPTIONS],
+            'interruption rehearsal binding differs')
+    host = suite / 'host'
+    host.mkdir(mode=0o700)
+    results = []
+    for binding, (name, trigger, _) in zip(plan['bindings'], INTERRUPTIONS):
+        packet = suite / name
+        manifest, packet_raw = verify(packet)
+        require(manifest['mode'] == 'synthetic-rehearsal' and manifest['trigger'] == trigger
+                and p.sha(packet_raw) == binding['commission_sha256'], 'interruption packet differs')
+        if not results:
+            frozen_executor(packet, manifest)
+        def invoke(action, index, reviewed=None):
+            argv = [manifest['python'], '-I', '-B', str(packet / 'sources/claude-code/service_check.py'),
+                    action, '--packet', str(packet), '--placement', str(index)]
+            if reviewed:
+                argv += ['--reviewed-review', reviewed]
+            label = '%s-%s-%s' % (name, action, index)
+            result = command(host, label, argv, 100)
+            require(result['exit'] == 0, 'failed rehearsal command ' + label)
+        last = 1
+        invoke('run-rehearsal', last)
+        invoke('review', last)
+        def read_review():
+            raw = p.read_file(packet / 'placements' / str(last) / 'review/REVIEW.json')
+            return p.decode(raw), p.sha(raw)
+        assessment, reviewed = read_review()
+        outcome = assessment['interruption']['outcome']
+        require(outcome == ('unexercised' if name == 'miss' else 'exercised'), 'wrong witnessed result ' + name)
+        if name.endswith('-signal'):
+            require(assessment['continuation_eligible'], 'signal did not admit a reviewed continuation')
+            last += 1
+            invoke('run-rehearsal', last, reviewed)
+            invoke('review', last)
+            assessment, reviewed = read_review()
+            require(assessment['trial_observations']['continuation_input_observed'], 'missing re-entry notice')
+        invoke('close', last, reviewed)
+        closed = p.decode(p.read_file(packet / 'closure/RESULT.json'))
+        require(closed['outcome'] == 'closed' and closed['package_unchanged'], 'closure or package failure')
+        results.append({'name': name, 'point': outcome, 'placements': last, 'closure': closed,
+                        'review_sha256': reviewed})
+        save(host / (name + '.json'), results[-1])
+    save(host / 'RESULT.json', {'outcome': 'observed', 'comparisons': results})
+    print('Five independent trigger controls passed; all five references closed.')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='action', required=True)
@@ -1033,6 +1494,11 @@ def main():
     for name in ('output', 'preparation', 'folder', 'writer'):
         prep.add_argument('--' + name, type=p.absolute, required=True)
     prep.add_argument('--reference', required=True)
+    prep.add_argument('--campaign-envelope', type=p.absolute)
+    prep.add_argument('--campaign-sha256')
+    prep.add_argument('--wave', type=int, choices=(1, 2))
+    prep.add_argument('--trial')
+    prep.add_argument('--trigger', choices=('P1-signal', 'P2-signal', 'P1-close', 'P2-close'))
     rehearsal_parser = commands.add_parser('prepare-rehearsal', help='prepare six synthetic comparisons; no real harness')
     for name in ('output', 'writer', 'work'):
         rehearsal_parser.add_argument('--' + name, type=p.absolute, required=True)
@@ -1051,9 +1517,24 @@ def main():
             command_parser.add_argument('--extra-usage-disabled', action='store_true')
         if name == 'close':
             command_parser.add_argument('--reviewed-review', required=True)
+    controls = commands.add_parser('prepare-interruptions', help='prepare P1/P2 signal and close controls with a synthetic peer')
+    for name in ('output', 'writer', 'work'):
+        controls.add_argument('--' + name, type=p.absolute, required=True)
+    controls = commands.add_parser('rehearse-interruptions', help='exercise five frozen synthetic comparisons')
+    controls.add_argument('--suite', type=p.absolute, required=True)
+    controls.add_argument('--rehearsal-sha256', required=True)
     args = parser.parse_args()
+    if args.action == 'prepare-interruptions':
+        return prepare_interruptions(args.output, args.writer, args.work)
+    if args.action == 'rehearse-interruptions':
+        return rehearse_interruptions(args.suite, args.rehearsal_sha256)
     if args.action == 'prepare':
-        print('Commission SHA-256: ' + prepare(args.output, args.preparation, args.reference, args.folder, args.writer))
+        fields = (args.campaign_envelope, args.campaign_sha256, args.wave, args.trial)
+        require(all(fields) or not any(fields), 'campaign preparation needs its envelope, digest, wave and trial')
+        trial = dict(envelope=str(args.campaign_envelope), sha256=args.campaign_sha256,
+                     wave=args.wave, name=args.trial) if all(fields) else None
+        print('Commission SHA-256: ' + prepare(args.output, args.preparation, args.reference, args.folder,
+                                              args.writer, trial=trial, trigger=args.trigger))
         return 0
     if args.action == 'prepare-rehearsal':
         return prepare_rehearsal(args.output, args.writer, args.work)
