@@ -24,8 +24,9 @@ The [runtime contract](docs/claude-code/CONTRACT.md) owns the runtime's
 boundaries. The [service procedure](apparatus/claude-code/README.md#service-comparison-procedure)
 and [C10](apparatus/c10/README.md) own the apparatus.
 
-**Status:** proposed. The envelope is not yet granted, and nothing has been
-launched.
+The maintainer granted both waves on 21 November 2026 with a USD 10 total
+Messages cutoff and included subscription usage only. Campaign records are in
+`.scratch/runtime-trials-20261121-01/` in the development guest.
 
 ## Objective
 
@@ -79,7 +80,7 @@ remains.
 | Routes | **Harness:** in the Linux development VM through the service procedure, with subscription login, included usage only and paid extra usage disabled. **Messages:** direct TLS to `api.anthropic.com` through C10 and its [host queue](apparatus/c10/HOST-QUEUE.md), on the `stewart-haiku` key. |
 | Models | **Harness:** `claude-sonnet-5-5` under the profile S0 produces, for the harness version S0 pins. **Messages:** `claude-sonnet-5-5`, and `claude-haiku-5-5` for wave 2 diagnostics. |
 | Starts and placements | **Harness:** S0's check sessions and at most 16 service starts, at most 9 of them in wave 1. **Messages:** at most 12 placements, at most 6 of them in wave 1. |
-| Cost | **Messages:** a cutoff the maintainer sets at the grant, proposed at USD 10, excluding what the maintainer reserves on the same key for endpoint alignment. The agent tracks spend from Stewart's reported and estimated usage at list prices, and reserves each placement's worst case before launch. The maintainer may state the remaining budget at any time; the agent never asks. The key's provider-side cap is a backstop. **Harness:** included subscription usage only. |
+| Cost | **Messages:** a USD 10 total cutoff, excluding what the maintainer reserves on the same key for endpoint alignment. The agent tracks spend from Stewart's reported and estimated usage at list prices, and reserves each placement's worst case before launch. The maintainer may state the remaining budget at any time; the agent never asks. The key's provider-side cap is a backstop. **Harness:** included subscription usage only. |
 | Time | The service procedure's bounds of 600 seconds per placement and 900 seconds per packet, and C10's watchdog per audit. |
 | Bindings | The provider key is present in the VM's keyring at the grant, with an expiry beyond the campaign. Each packet binds its writer, apparatus commit, inputs, model, limits, interruption point or close, and its starts or placements. A harness packet also binds the profile, harness executable and interpreter. Writers come from commits whose required container suite passed. Each launch path has a current rehearsal of the committed apparatus with that writer. |
 | Waves | Wave 1 below, then at most one wave 2 within the remaining bounds. |
@@ -137,7 +138,7 @@ never provoked.
 
 ### 1. Prepare
 
-- [ ] The maintainer grants the envelope and sets the Messages cutoff.
+- [x] The maintainer granted the envelope and set the Messages cutoff.
 - [ ] Record the envelope in the campaign's configurations: a host queue
   configuration for Messages, and a campaign ledger for harness starts. The
   agent checks and updates the ledger before each start, because the service
