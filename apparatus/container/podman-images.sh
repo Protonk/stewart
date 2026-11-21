@@ -10,8 +10,10 @@ podman_host() {
 image_index() {
     role=$1
     registry_ref=$2
-    hstep "index-$role" skopeo inspect --raw "docker://$registry_ref" || return 1
-    index_file=$OUT/host/index-$role.stdout
+    index_name=index-$role
+    [ "$role" != python ] || index_name=python-inspect
+    hstep "$index_name" skopeo inspect --raw "docker://$registry_ref" || return 1
+    index_file=$OUT/host/$index_name.stdout
     printf '%s  %s\n' "${registry_ref##*@sha256:}" "$index_file" | sha256sum --check --status || return 1
     for arch in $PLATFORMS; do
         digest=$(jq -er --arg arch "$arch" '
@@ -29,20 +31,12 @@ image_index() {
     done
 }
 
-# The qualification record uses a single digest descriptor per image.
-image_descriptor() {
-    jq -ne --arg digest "$1" '
-        $digest | select(test("^sha256:[a-f0-9]{64}$")) | [{configuration: {descriptor: {digest: .}}}]
-    '
-}
-
 toolchain_identity() {
     arch=$1
-    hstep "toolchain-podman-$arch" podman image inspect "$TAG-$arch" || return 1
+    hstep "toolchain-inspect-$arch" podman image inspect "$TAG-$arch" || return 1
     id=$(jq -er --arg arch "$arch" '
         select(length == 1) | .[0] | select(.Architecture == $arch and .Os == "linux")
         | .Id | sub("^sha256:"; "") | select(test("^[a-f0-9]{64}$"))
-    ' "$OUT/host/toolchain-podman-$arch.stdout") || return 1
-    hstep "toolchain-inspect-$arch" image_descriptor "sha256:$id" || return 1
+    ' "$OUT/host/toolchain-inspect-$arch.stdout") || return 1
     printf '%s\n' "$id" > "$OUT/host/toolchain-$arch.id"
 }

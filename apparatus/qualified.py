@@ -539,13 +539,25 @@ class Evidence:
         return token
 
     def image(self, rel, need=True):
-        data = self.json(rel, need)
-        if data is None:
+        raw = self.bytes(rel, need)
+        if raw is None:
             return None
+        try:
+            data = parse_json(raw)
+        except (ValueError, UnicodeDecodeError) as exc:
+            self.problem("%s: invalid image inspection (%s)" % (rel, exc))
+            return None
+        if isinstance(data, dict) and isinstance(data.get("manifests"), list):
+            return "sha256:" + sha256(raw)
         if not isinstance(data, list) or len(data) != 1 or not isinstance(data[0], dict):
             self.problem("%s: not a single image inspection" % rel)
             return None
-        digest = self.field(data[0], "configuration.descriptor.digest", rel, "str")
+        if "Id" in data[0]:
+            ident = self.field(data[0], "Id", rel, "str")
+            digest = None if ident is None else "sha256:" + ident.removeprefix("sha256:")
+        else:
+            # Retained suite records are verified against their producer's inspection.
+            digest = self.field(data[0], "configuration.descriptor.digest", rel, "str")
         if digest is not None and not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
             self.problem("%s: image digest %r is not sha256:<hex>" % (rel, digest))
             return None
@@ -1032,7 +1044,8 @@ def runtime_platform(ctx, ev, head, p, machine, native, expectations, bins):
 
 
 def podman_inspection(ev, role, arch, need):
-    path = "host/%s-podman-%s.stdout" % (role, arch)
+    path = ("host/toolchain-inspect-%s.stdout" % arch if role == "toolchain"
+            else "host/%s-podman-%s.stdout" % (role, arch))
     rows = ev.json(path, need)
     if rows is None:
         return None
@@ -1045,7 +1058,7 @@ def podman_inspection(ev, role, arch, need):
 
 def registry_platform(ev, role, arch, index_digest, need):
     """Reconcile the registry's index bytes, selected Linux descriptor and local inspection."""
-    path = "host/index-%s.stdout" % role
+    path = "host/python-inspect.stdout" if role == "python" else "host/index-%s.stdout" % role
     raw = ev.bytes(path, need)
     if raw is None:
         return None
@@ -1101,8 +1114,9 @@ def podman_images(ctx, ev, head, suite, platforms, python_index=None):
         local = podman_inspection(ev, "toolchain", arch, need)
         if local is not None:
             config = str(local.get("Id", "")).removeprefix("sha256:")
-            if not HEX64.fullmatch(config) or "sha256:" + config != ev.image("host/toolchain-inspect-%s.stdout" % arch):
-                ev.problem("the linux/%s toolchain ID differs from its recorded inspection" % arch)
+            selected = ev.line("host/toolchain-%s.id" % arch, need)
+            if not HEX64.fullmatch(config) or config != selected:
+                ev.problem("the linux/%s build selected a different image ID from its inspection" % arch)
         for role, index in pins.items():
             manifest = registry_platform(ev, role, arch, index, need)
             if manifest is not None:
@@ -3200,7 +3214,8 @@ def _self_test_controls(base, isolated, control):
     # A registry index binds each platform to its own local Linux manifest.
     pev = Evidence(ctx, "run-0")
     child = "sha256:" + sha256(b"ARM child")
-    path = "host/index-python.stdout"
+    path = "host/python-inspect.stdout"
+    original_python_inspect = _read(pev.path(path)).decode()
     index = json.dumps({"manifests": [{"platform": {"os": "linux", "architecture": "arm64"}, "digest": child}]})
     index_id = "sha256:" + sha256(index.encode())
     _write(pev.dir, path, index)
@@ -3220,6 +3235,7 @@ def _self_test_controls(base, isolated, control):
     pev = Evidence(ctx, "run-0")
     control("Podman: a change to the registry bytes breaks the source pin",
             registry_platform(pev, "python", "arm64", index_id, True) is None and bool(pev.problems), repr(pev.problems))
+    _write(pev.dir, path, original_python_inspect)
     # A failed case alone must determine failure even if every exit record and
     # other count says success. Restore this temporary fixture after the check.
     case_path = os.path.join(ctx.scratch, "run-0", "driver-arm64/evidence/RESULT.json")

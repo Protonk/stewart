@@ -65,7 +65,6 @@ sha256sum "$OUT/staging/source.tar" >"$OUT/host/source.sha256"
 
 # The only network step: the pinned python image for both architectures.
 image_index python "$PYTHON" || stop_here "resolve or pull the pinned driver images"
-hstep python-inspect image_descriptor "${PYTHON##*@}" || stop_here "record Python index"
 
 build_arch() {
     b="build-$p"
