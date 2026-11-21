@@ -1131,7 +1131,7 @@ def main():
     resource.setrlimit(resource.RLIMIT_CORE,(0,0))
     parser=argparse.ArgumentParser(description=__doc__)
     subs=parser.add_subparsers(dest='command',required=True)
-    subs.add_parser('list',help='List fixed cases and the full C10 planning count')
+    subs.add_parser('list',help='List the available catalog specimens')
     p=subs.add_parser('propose',help='Write an unbound, unpaid small-batch proposal')
     p.add_argument('--file-size-limit',type=int,choices=[131072],help='Per-file limit for the Stewart placement process, in bytes')
     p.add_argument('--model',required=True)
@@ -1214,9 +1214,8 @@ def main():
     args=parser.parse_args()
     try:
         if args.command=='list':
-            print(json.dumps({'cases':[{k:c[k] for k in ['id','family','variant']} for c in catalog().values()],
-                'full_C10':{'fixed_commissions':6,'default_effort_audits':18,'additional_mechanism_audits':3,
-                            'total_audits_per_model':21,'spending_authorized':False}},indent=2))
+            print(json.dumps({'cases': [{k: c[k] for k in ('id', 'family', 'variant')}
+                                        for c in catalog().values()], 'spending_authorized': False}, indent=2))
         elif args.command=='propose':
             require(args.output.is_absolute(),'proposal output must be absolute')
             require(not args.submission or args.cases is None and args.repetitions==1,

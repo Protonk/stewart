@@ -35,7 +35,7 @@ from verify import tree_inventory_from_evidence
 import study_build
 import host_queue
 import smoke
-from fake import follow_pages
+from fake import Auditor, first_message, follow_pages
 
 
 # The rehearsal inventory, written out from the control specification: six fixed
@@ -128,6 +128,29 @@ def read_reply(call_id, source, start, end, size, text, next_start=None):
                          'complete': next_start is None, 'cite': {'source': source, 'start': start, 'end': end}},
                 'next': [] if next_start is None else [{'tool': 'read', 'input': {'source': source, 'start': next_start}, 'why': 'rest'}]}
     return call_id, [{'type': 'text', 'text': json.dumps(envelope)}, {'type': 'text', 'text': text}]
+
+
+class RehearsalEffortTests(unittest.TestCase):
+    def test_wire_setting_agrees_with_supplied_commission(self):
+        family = catalog()['framing-inadequate']['family']
+        question = 'Inspect the supplied evidence.'
+        for effort in (None, 'low', 'medium', 'high', 'xhigh', 'max'):
+            with self.subTest(effort=effort), tempfile.TemporaryDirectory() as td:
+                packet = {'effort': effort}
+                peer = Auditor('provider-rejected', Path(td), {}, question, family, packet=packet)
+                self.addCleanup(peer.server.server_close)
+                body = {'model': 'rehearsal-only', 'system': strict_json(study_build.system_bytes(packet, family)),
+                        'tools': study_build.spec.expected_tools(family), 'messages': [first_message(question, 1)]}
+                if effort is not None:
+                    body['output_config'] = {'effort': effort}
+                self.assertEqual(peer.respond(body)[0], 401)
+                for invalid in (None, {}, {'effort': 'wrong'}):
+                    with self.assertRaises(ValueError):
+                        peer.respond({**body, 'output_config': invalid})
+                if effort is not None:
+                    del body['output_config']
+                    with self.assertRaises(ValueError):
+                        peer.respond(body)
 
 
 class FakePagingTests(unittest.TestCase):

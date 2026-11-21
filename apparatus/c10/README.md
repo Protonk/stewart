@@ -106,11 +106,13 @@ reads back every file through `receipt --read`. Catalog hashes bind metadata
 and recursive material membership, including empty directories. Submission
 hashes bind the rendered question and input bytes separately in each audit.
 
-The endpoint alignment tier needs one run of each case per named model, spread
-across the effort values, plus one compaction run. Repetitions, effort
-comparisons and killed-and-continued audits are experiment-tier questions
-([ACCEPTANCE](../../ACCEPTANCE.md#the-endpoint-alignment-tier)). Placements and
-provider request attempts are separate counts. An interrupted audit needs more
+For each named model, select a specimen from each family and include inadequate
+evidence somewhere in that set. Check one explicitly requested effort on an
+already selected family audit. The scripted tier checks every supported spelling
+at the fake provider. Provider compaction has a separate evidence requirement.
+[Endpoint alignment](../../ACCEPTANCE.md#the-endpoint-alignment-tier)
+
+Placements and provider request attempts are separate counts. An interrupted audit needs more
 than one placement: its first is launched with a witnessed interruption and each
 later one is a separately approved [continuation](#continue-a-retained-audit). Killing the process is a
 different case that this apparatus does not exercise. These quantities grant no

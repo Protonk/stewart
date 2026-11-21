@@ -109,7 +109,12 @@ class Auditor(Fake):
         self.holding, self.release = threading.Event(), threading.Event()
 
     def respond(self, body):
-        require(body['model'] == 'rehearsal-only' and 'output_config' not in body, 'fake model/settings changed')
+        require(body['model'] == 'rehearsal-only', 'fake model changed')
+        effort = self.packet.get('effort')
+        if effort is None:
+            require('output_config' not in body, 'omitted effort reached the fake provider')
+        else:
+            require(body.get('output_config') == {'effort': effort}, 'fake provider received a different effort')
         require(body['system'] == strict_json(system_bytes(self.packet, self.family, self.guidance))
                 and body['tools'] == spec.expected_tools(self.family), 'fake arrangement differs from specification')
         # A new conversation every placement; nothing earlier is replayed.
