@@ -76,10 +76,20 @@ def reserve(path, digest, wave, trial, packet, commission, placement, model, ver
         return dest
 
 
+def unique_fields(pairs):
+    value = dict(pairs)
+    if len(value) != len(pairs):
+        raise ValueError('duplicate native frame field')
+    return value
+
+
 class AllowanceObserver:
-    """Inspect complete native messages while retaining only the stop reason in the ledger."""
-    def __init__(self, envelope, version=None):
+    """Observe native allowance events and retain scoped warnings and terminal stop reasons."""
+    def __init__(self, envelope, version, model, trial, placement):
         self.version = version
+        self.model_window = 'seven_day_' + model.removeprefix('claude-').split('-', 1)[0]
+        self.trial = trial
+        self.placement = placement
         self.directory = Path(envelope).parent / 'harness-reservations'
         self.buffers = {'stdout': bytearray(), 'stderr': bytearray()}
 
@@ -91,16 +101,18 @@ class AllowanceObserver:
             buffer[:] = tail
             if channel == 'stdout':
                 try:
-                    row = json.loads(line)
-                except (ValueError, UnicodeError):
+                    row = json.loads(line, object_pairs_hook=unique_fields)
+                except (json.JSONDecodeError, UnicodeError):
                     continue  # The stream observer checks framing independently.
+                except ValueError:
+                    self.stop('invalid native frame with ambiguous fields')
                 if not isinstance(row, dict):
                     continue
                 if row.get('type') == 'system' and row.get('subtype') == 'init' and self.version:
                     if row.get('claude_code_version') != self.version:
                         self.stop('initialization differs from the commissioned harness version')
                 if row.get('type') == 'rate_limit_event':
-                    self.stop('rate-limit event')
+                    self.rate_limit(row.get('rate_limit_info'))
                 if row.get('type') == 'system' and row.get('subtype') in ('rate_limit', 'usage_limit', 'overage'):
                     self.stop('allowance event')
                 if row.get('is_error') and self.billing_text(str(row.get('result', ''))):
@@ -109,6 +121,62 @@ class AllowanceObserver:
                 self.stop('allowance diagnostic')
         if len(buffer) > 4 * 1024 * 1024:
             raise ValueError('billing monitor frame exceeded observation bound')
+
+    def rate_limit(self, info):
+        """The subscription status and the pay-as-you-go status describe different allowances."""
+        allowed = ('allowed', 'allowed_warning')
+        if not isinstance(info, dict):
+            self.stop('invalid rate-limit information')
+        for flag in ('overageEnabled', 'isUsingOverage'):
+            if flag in info and type(info[flag]) is not bool:
+                self.stop('invalid paid-extra-usage flag')
+            if info.get(flag):
+                self.stop('paid extra usage enabled or in use')
+        overage = info.get('overageStatus')
+        if overage in allowed:
+            self.stop('paid extra usage available')
+        if overage not in (None, 'rejected'):
+            self.stop('invalid paid-extra-usage status')
+
+        status = info.get('status')
+        if status == 'rejected':
+            self.stop('subscription quota rejected')
+        if status not in allowed:
+            self.stop('invalid subscription status')
+        window = info.get('rateLimitType')
+        if window == 'overage':
+            self.stop('paid extra usage available')
+        if window is not None and window not in ('five_hour', 'seven_day', 'seven_day_sonnet', 'seven_day_opus'):
+            self.stop('invalid subscription window')
+        windows = info.get('unifiedWindows', {})
+        if not isinstance(windows, dict):
+            self.stop('invalid subscription window information')
+        for name, details in windows.items():
+            if not isinstance(details, dict) or details.get('status') not in (*allowed, 'rejected'):
+                self.stop('invalid subscription window status')
+            # Other model-specific windows can be exhausted while this one permits use.
+            if name == 'overage' and details['status'] in allowed:
+                self.stop('paid extra usage available')
+            if name in (window, 'five_hour', 'seven_day', self.model_window) and details['status'] == 'rejected':
+                self.stop('subscription quota rejected')
+            if name == window and details['status'] != status:
+                self.stop('invalid conflicting subscription status')
+
+        utilization = info.get('utilization')
+        reset = info.get('resetsAt')
+        if utilization is not None and (type(utilization) not in (int, float) or not 0 <= utilization <= 1):
+            self.stop('invalid subscription utilization')
+        if reset is not None and (type(reset) is not int or reset < 0):
+            self.stop('invalid subscription reset time')
+        if status == 'allowed_warning':
+            details = {key: info[key] for key in ('status', 'rateLimitType', 'utilization', 'resetsAt')
+                       if info.get(key) is not None}
+            row = {'at': datetime.now(timezone.utc).isoformat(), 'trial': self.trial,
+                   'placement': self.placement, 'rate_limit_info': details}
+            with (self.directory / 'warnings.jsonl').open('a') as stream:
+                stream.write(json.dumps(row) + '\n')
+                stream.flush()
+                os.fsync(stream.fileno())
 
     def finish(self, channel):
         if self.buffers[channel]:

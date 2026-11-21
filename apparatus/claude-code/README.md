@@ -273,8 +273,16 @@ For an authorized two-wave campaign, pass `--campaign-envelope PATH` and
 service `prepare` takes the same options with `--wave N --trial NAME`.
 These bind the approved model, pin and allowance. Each launch records its
 reservation in the envelope's sibling `harness-reservations` directory.
-A rate-limit or allowance event or a changed initialization version stops
-the route. Inspect the original evidence and the stop record.
+An included-subscription status of `allowed` or `allowed_warning` permits the
+current invocation to continue. Each warning adds a row to
+`harness-reservations/warnings.jsonl` with its trial, placement, and the
+reported window, utilization and reset time when present. A warning leaves
+future starts subject to the ordinary reservation and review checks.
+A rejected subscription, available or active paid extra usage, or invalid or
+conflicting billing status stops the route. A rejected `overageStatus` describes
+the unavailability of paid extra usage. The subscription has its own `status`.
+The controller also stops on billing errors and diagnostics or a changed
+initialization version. Inspect the original evidence and the stop record.
 
 After reviewing an observed placement, use the packet's frozen `campaign.py`
 with `--reservation ABSOLUTE_PATH --review ABSOLUTE_PATH --review-sha256 DIGEST`

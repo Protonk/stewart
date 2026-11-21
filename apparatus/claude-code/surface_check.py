@@ -276,7 +276,7 @@ def run_packet(packet, approved=None, extra_usage_disabled=False, rehearsal=Fals
         launch = p.decode(p.read_file(packet / 'installation/launch.json'))
         campaign.reserve(envelope, envelope_sha256, 1, 'S0', packet, p.sha(raw), 0,
                          commission['bindings']['model'], launch['version'])
-        allowance = campaign.AllowanceObserver(envelope, launch['version'])
+        allowance = campaign.AllowanceObserver(envelope, launch['version'], commission['bindings']['model'], 'S0', 0)
     out = packet / 'observation'
     cases, failures, attempted = [], [], []
     workspaces, sessions = set(), set()

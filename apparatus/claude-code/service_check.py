@@ -293,7 +293,7 @@ def wait_for_trial(proc, out, manifest, audit, placement, timeout, adopted):
     allowance = None
     if trial:
         scope = campaign.load(trial['envelope'], trial['sha256'])['harness']
-        allowance = campaign.AllowanceObserver(trial['envelope'], scope['version'])
+        allowance = campaign.AllowanceObserver(trial['envelope'], scope['version'], scope['model'], trial['name'], placement)
     trigger = manifest['trigger'] if placement == 1 else None
     wanted = 'run_started' if trigger and trigger.startswith('P1-') else 'answer_prepared'
     root = out / 'interruption'

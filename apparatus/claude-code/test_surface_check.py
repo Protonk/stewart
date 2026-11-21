@@ -35,21 +35,85 @@ class ControllerControls(unittest.TestCase):
         self.writer.chmod(0o700)
         self.packet = self.root / 'packet'
 
-    def test_campaign_spending_stop_across_chunks(self):
+    def test_campaign_allows_subscription_warning_and_records_window(self):
         ledger = self.root / 'harness-reservations'
         ledger.mkdir()
-        observer = c.campaign.AllowanceObserver(self.root / 'envelope.json')
+        observer = c.campaign.AllowanceObserver(self.root / 'envelope.json', 'pinned', 'claude-sonnet-5-5', 'S0', 0)
+        warning = {
+            'status': 'allowed_warning', 'resetsAt': 1795482000, 'rateLimitType': 'seven_day',
+            'utilization': 0.82, 'overageStatus': 'rejected', 'overageDisabledReason': 'org_level_disabled',
+            'isUsingOverage': False, 'overageEnabled': False, 'surpassedThreshold': 0.75,
+            'unifiedWindows': {'seven_day': {'utilization': 0.82, 'resetsAt': 1795482000,
+                                            'status': 'allowed_warning', 'surpassedThreshold': 0.75}},
+        }
+        # Reassemble a split native frame and process the next frame from the same read.
+        frame = json.dumps({'type': 'rate_limit_event', 'rate_limit_info': warning}).encode()
+        observer.feed('stdout', frame[:15])
+        observer.feed('stdout', frame[15:] + b'\n{"type":"rate_limit_event","rate_limit_info":{"status":"allowed"}}\n')
         observer.feed('stdout', b'{"type":"assistant","message":{"content":"a rate_limit_event"}}\n')
+        other_model = {'status': 'allowed', 'unifiedWindows': {'seven_day_opus': {'status': 'rejected'}}}
+        observer.feed('stdout', json.dumps({'type': 'rate_limit_event', 'rate_limit_info': other_model}).encode() + b'\n')
         self.assertFalse((ledger / 'STOP').exists())
-        observer.feed('stdout', b'{"type":"rate_lim')
-        with self.assertRaisesRegex(ValueError, 'rate-limit event'):
-            observer.feed('stdout', b'it_event","rate_limit_info":{"status":"allowed"}}\n')
-        self.assertTrue((ledger / 'STOP').is_file())
+        notice, = (ledger / 'warnings.jsonl').read_text().splitlines()
+        record = json.loads(notice)
+        self.assertEqual((record['trial'], record['placement']), ('S0', 0))
+        self.assertEqual(record['rate_limit_info'], {
+            'status': 'allowed_warning', 'rateLimitType': 'seven_day', 'resetsAt': 1795482000, 'utilization': 0.82})
+
+    def test_campaign_missing_warning_telemetry_is_optional(self):
+        ledger = self.root / 'harness-reservations'
+        ledger.mkdir()
+        observer = c.campaign.AllowanceObserver(self.root / 'envelope.json', 'pinned', 'claude-sonnet-5-5', 'S0', 0)
+        observer.feed('stdout', b'{"type":"rate_limit_event","rate_limit_info":{"status":"allowed_warning"}}\n')
+        self.assertEqual(json.loads((ledger / 'warnings.jsonl').read_text())['rate_limit_info'],
+                         {'status': 'allowed_warning'})
+
+    def test_campaign_stops_on_rejection_overage_or_ambiguous_status(self):
+        safe = {'status': 'allowed_warning', 'overageEnabled': False, 'isUsingOverage': False,
+                'overageStatus': 'rejected'}
+        examples = [
+            (dict(safe, status='rejected'), 'quota rejected'),
+            (dict(safe, overageEnabled=True), 'paid extra usage'),
+            (dict(safe, isUsingOverage=True), 'paid extra usage'),
+            (dict(safe, overageStatus='allowed'), 'paid extra usage'),
+            (dict(safe, status='unknown'), 'invalid'),
+            (dict(safe, isUsingOverage='false'), 'invalid'),
+            (dict(safe, rateLimitType='seven_day', unifiedWindows={'seven_day': {'status': 'rejected'}}),
+             'quota rejected'),
+            (dict(safe, rateLimitType='seven_day', unifiedWindows={'seven_day': {'status': 'allowed'}}),
+             'conflicting'),
+            (dict(safe, unifiedWindows={'five_hour': {'status': 'rejected'}}), 'quota rejected'),
+            (dict(safe, unifiedWindows={'seven_day_sonnet': {'status': 'rejected'}}), 'quota rejected'),
+            (dict(safe, unifiedWindows={'overage': {'status': 'allowed'}}), 'paid extra usage'),
+            (dict(safe, utilization=1.5), 'invalid'),
+            ({}, 'invalid'), (None, 'invalid'),
+        ]
+        for n, (info, reason) in enumerate(examples):
+            with self.subTest(info=info):
+                case = self.root / str(n)
+                ledger = case / 'harness-reservations'
+                ledger.mkdir(parents=True)
+                observer = c.campaign.AllowanceObserver(case / 'envelope.json', 'pinned', 'claude-sonnet-5-5', 'S0', 0)
+                frame = json.dumps({'type': 'rate_limit_event', 'rate_limit_info': info}).encode()
+                observer.feed('stdout', frame)
+                with self.assertRaisesRegex(ValueError, reason):
+                    observer.finish('stdout')
+                self.assertIn(reason, (ledger / 'STOP').read_text())
+                self.assertFalse((ledger / 'warnings.jsonl').exists())
+
+    def test_duplicate_billing_status_stops(self):
+        ledger = self.root / 'harness-reservations'
+        ledger.mkdir()
+        observer = c.campaign.AllowanceObserver(self.root / 'envelope.json', 'pinned', 'claude-sonnet-5-5', 'S0', 0)
+        with self.assertRaisesRegex(ValueError, 'ambiguous'):
+            observer.feed('stdout', b'{"type":"rate_limit_event","rate_limit_info":'
+                                    b'{"status":"rejected","status":"allowed"}}\n')
+        self.assertTrue((ledger / 'STOP').exists())
 
     def test_final_diagnostic_without_newline_stops(self):
         ledger = self.root / 'harness-reservations'
         ledger.mkdir()
-        observer = c.campaign.AllowanceObserver(self.root / 'envelope.json', 'pinned')
+        observer = c.campaign.AllowanceObserver(self.root / 'envelope.json', 'pinned', 'claude-sonnet-5-5', 'S0', 0)
         observer.feed('stderr', b'usage limit')
         with self.assertRaisesRegex(ValueError, 'allowance diagnostic'):
             observer.finish('stderr')
@@ -57,7 +121,7 @@ class ControllerControls(unittest.TestCase):
     def test_version_mismatch_stops_before_later_slots(self):
         ledger = self.root / 'harness-reservations'
         ledger.mkdir()
-        observer = c.campaign.AllowanceObserver(self.root / 'envelope.json', 'pinned')
+        observer = c.campaign.AllowanceObserver(self.root / 'envelope.json', 'pinned', 'claude-sonnet-5-5', 'S0', 0)
         with self.assertRaisesRegex(ValueError, 'version'):
             observer.feed('stdout', b'{"type":"system","subtype":"init","claude_code_version":"other"}\n')
         self.assertTrue((ledger / 'STOP').exists())
