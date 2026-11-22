@@ -91,7 +91,8 @@ def stage(args):
     files = vendor_files(listing, ROOT / "service")
     require(len(files) == toolchain["vendor"]["files"], "vendor count differs")
     with tempfile.TemporaryDirectory(prefix=".stewart-package-", dir=args.output.parent) as temp:
-        work = Path(temp)
+        work = Path(temp) / "artifacts"
+        work.mkdir()
         for arch, label in [("arm64", "aarch64"), ("amd64", "x86_64")]:
             platform = release["platforms"]["linux-" + label]
             dest = work / ("stewart-linux-" + label)
@@ -102,9 +103,7 @@ def stage(args):
         source_archive(work / ("stewart-" + version + "-source.tar.gz"), commit, version, listing, files)
         sums = "".join(digest(p) + "  " + p.name + "\n" for p in sorted(work.iterdir()))
         (work / "SHA256SUMS").write_text(sums, encoding="ascii")
-        args.output.mkdir()
-        for p in sorted(work.iterdir(), key=lambda p: (p.name == "SHA256SUMS", p.name)):
-            p.rename(args.output / p.name)
+        work.rename(args.output)
     print("Staged", version, "from", commit, "with", len(files), "verified vendor files.")
     print(sums, end="")
 

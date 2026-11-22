@@ -3,7 +3,8 @@
 Stewart is the Rust audit service in [`service/`](../service): one crate, binary
 `stewart`. [`apparatus/`](../apparatus) holds what builds and tests it: pinned
 Linux toolchain images, container scripts and an independent acceptance driver
-with a fake provider. The apparatus does not ship. What to build and what
+with a fake provider. The release source archive includes these tools. The installed
+executable runs independently of them. What to build and what
 evidence is owed are in [DESIGN.md](../DESIGN.md),
 [CONTRACTS.md](../CONTRACTS.md), [ACCEPTANCE.md](../ACCEPTANCE.md) and
 [docs/INTERFACE.md](../docs/INTERFACE.md); [AGENTS.md](../AGENTS.md) states the
@@ -16,11 +17,13 @@ accounts, rootless container storage and Git transport. [Provisioning and access
 
 ## Build from a release source archive
 
-Verify the signed checksums as described in the [installation instructions](../README.md#install-and-verify-a-linux-release). Unpack the source archive, enter the extracted `stewart-VERSION/service` directory, and use a Linux Rust toolchain with Cargo and a C compiler. The crate's Cargo configuration selects the dependencies shipped in `vendor/`.
+Verify the signed checksums as described in the [installation instructions](../README.md#install-and-verify-a-linux-release). Unpack the source archive on local ext4, xfs or btrfs and enter the extracted `stewart-VERSION/service` directory. Use a Linux Rust toolchain with Cargo and a C compiler. The crate's Cargo configuration selects the dependencies shipped in `vendor/`. The integration tests create audit archives, so give them a private temporary directory on the same filesystem.
 
 ```sh
 sha256sum --check VENDOR-SHA256SUMS
 cargo build --locked --offline --release
+export TMPDIR="$PWD/target/test-tmp"
+install -d -m 700 "$TMPDIR"
 cargo test --locked --offline
 ./target/release/stewart help
 ```
