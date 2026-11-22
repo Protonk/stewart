@@ -538,7 +538,7 @@ def _verify(e, report, check):
             active.extend(appended)
             body = ordinary_body(arrnode, req['max_tokens'], active, summary)
             if packet['file_size_limit'] is not None:
-                check(len(body)<=request_body_bound(number) and len(raw)<=packet['file_size_limit'],
+                check(len(body)<=request_body_bound(number, packet['file_size_limit']) and len(raw)<=packet['file_size_limit'],
                       'request_exceeds_file_bound')
             check(len(body) == req['body_bytes'] and digest(body) == req['body_sha256'], 'request_body_binding')
             request_bodies[placement, number] = body

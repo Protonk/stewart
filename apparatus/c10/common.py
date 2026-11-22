@@ -17,6 +17,8 @@ SOURCE_PATHS = ['apparatus/c10', 'apparatus/sanity',
     'apparatus/driver/credential_observer.py', 'apparatus/driver/driver_core.py',
     'apparatus/driver/rawjson.py', 'apparatus/driver/answer_witness.py']
 FILE_SIZE_LIMIT = 131072
+COMPACTION_FILE_LIMIT = 655360
+FILE_LIMITS = (FILE_SIZE_LIMIT, COMPACTION_FILE_LIMIT)
 FAMILIES = ['open-inquiry', 'inquiry-framing', 'comparison']
 # Rehearsal controls that need more than one placement. Each first placement
 # ends interrupted; a separately bound continuation packet starts the next one.
@@ -281,7 +283,7 @@ def validate_packet(packet, *, rehearsal=False, approved=False):
         from study_build import validate
         validate(packet['study_build'], bound=approved)
     require(packet['file_size_limit'] is None or type(packet['file_size_limit']) is int
-            and packet['file_size_limit'] == FILE_SIZE_LIMIT, 'unsupported placement file-size limit')
+            and packet['file_size_limit'] in FILE_LIMITS, 'unsupported placement file-size limit')
     model = packet['model']
     require(isinstance(model, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,127}', model), 'invalid model')
     require((model == 'rehearsal-only') == rehearsal and not model.startswith('REPLACE'), 'model does not match launch mode')
@@ -376,7 +378,7 @@ def validate_continuation(packet, *, rehearsal=False, approved=False):
         fields(prior['usage'], LIMITS, 'prior usage')
         require(all(type(n) is int and 0 <= n <= 2**48 for n in prior['usage'].values()), 'invalid prior usage')
     require(packet['file_size_limit'] is None or type(packet['file_size_limit']) is int
-            and packet['file_size_limit'] == FILE_SIZE_LIMIT, 'unsupported placement file-size limit')
+            and packet['file_size_limit'] in FILE_LIMITS, 'unsupported placement file-size limit')
     model = packet['model']
     require(isinstance(model, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,127}', model), 'invalid model')
     require((model == 'rehearsal-only') == rehearsal and not model.startswith('REPLACE'), 'model does not match launch mode')

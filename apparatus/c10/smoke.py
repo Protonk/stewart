@@ -11,7 +11,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from common import (CONTINUED, INTERRUPTION_POINTS, LIMITS, digest, rehearsal_packet, source_hash,
+from common import (FILE_LIMITS,CONTINUED, INTERRUPTION_POINTS, LIMITS, digest, rehearsal_packet, source_hash,
                     validate_packet, write_json, file_hash, require, read_file, strict_json)
 from batch import prepare_batch, execute_batch, credential_marker, rehearsal_script
 from placements import Refused, run_continuation
@@ -98,7 +98,7 @@ def continue_with_attempt_controls(binary, evidence, path, audit, placement, key
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--file-size-limit',type=int,choices=[131072],help='Exercise the paid placement process limit')
+    parser.add_argument('--file-size-limit',type=int,choices=FILE_LIMITS,help='Exercise the paid placement process limit')
     parser.add_argument('--binary',type=Path,required=True)
     parser.add_argument('--evidence',type=Path,required=True)
     parser.add_argument('--case',help='One catalog case; default runs the whole rehearsal')

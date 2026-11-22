@@ -1,5 +1,5 @@
 """Meter one commissioned Messages campaign from Stewart's verified placement records."""
-from common import FILE_SIZE_LIMIT, LIMITS, fields, require
+from common import COMPACTION_FILE_LIMIT, FILE_LIMITS, FILE_SIZE_LIMIT, LIMITS, fields, require
 
 CATEGORIES = ('input_tokens','cache_creation_input_tokens','cache_read_input_tokens','output_tokens')
 MICRODOLLARS_PER_CENT = 10000
@@ -25,15 +25,15 @@ def rounded_cents(units):
     return (units + divisor - 1)//divisor
 
 
-def request_body_bound(turns):
-    return FILE_SIZE_LIMIT + turns * (FILE_SIZE_LIMIT + 1) + 1024
+def request_body_bound(turns, file_limit=FILE_SIZE_LIMIT):
+    return file_limit + turns * (file_limit + 1) + 1024
 
 
-def worst_case(card, limits, *, synthetic=False):
-    # The commissioned path uses ordinary Messages with client tools, no server
-    # tools or automatic cache directives. A response reaching the summary
-    # threshold must exhaust a cumulative allowance before another request.
-    require(synthetic or limits['input_tokens'] + limits['output_tokens'] <= 150000,
+def worst_case(card, limits, *, synthetic=False, file_limit=FILE_SIZE_LIMIT):
+    # Ordinary packets must exhaust a cumulative allowance before a summary.
+    # The larger protected study limit enables the on-demand path below.
+    require(file_limit in FILE_LIMITS, 'unsupported reservation file limit')
+    require(synthetic or file_limit == COMPACTION_FILE_LIMIT or limits['input_tokens'] + limits['output_tokens'] <= 150000,
             'packet may enter unbounded compaction iterations')
     input_price = max(band[k] for band in card['bands'] for k in CATEGORIES[:-1])
     output_price = max(band['output_tokens'] for band in card['bands'])
@@ -42,8 +42,17 @@ def worst_case(card, limits, *, synthetic=False):
     # Each complete pre-send capture includes every newly appended message byte.
     # Retries send exactly that body. Another request after a success consumes
     # a turn. The pinned arrangement covers all fixed fields plus constant framing.
-    body_bytes = request_body_bound(limits['turns'])
+    body_bytes = request_body_bound(limits['turns'], file_limit)
     terminal_input = max(card['context_tokens'], (body_bytes + 2) // 3)
+    if file_limit == COMPACTION_FILE_LIMIT:
+        # Direct, on-demand compaction reads the context once and max_tokens caps
+        # its whole output. A response lost after transmission may still be billed
+        # a full context even when the writer's byte-based estimate was smaller.
+        # An estimate consumes 16k output or exhausts the remaining allowance.
+        # Retries keep the original cap. Reserve separate maxima for provider
+        # billing and for settlement from captures, including one final overrun.
+        lost = min(limits['turns'], (limits['output_tokens'] + 15999) // 16000)
+        terminal_input = max(terminal_input, (1 + lost) * card['context_tokens'])
     return rounded_cents((limits['input_tokens'] + terminal_input)*input_price
                          + (limits['output_tokens'] + min(16000,limits['output_tokens']))*output_price)
 

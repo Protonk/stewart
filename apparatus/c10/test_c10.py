@@ -1544,6 +1544,63 @@ class HostQueueTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'compaction'):
             worst_case(card,{'input_tokens':150000,'output_tokens':1024})
 
+    def test_large_capture_reservation_covers_retry_and_terminal_estimates(self):
+        from billing import worst_case
+        rates = json.loads((Path(__file__).resolve().parents[2]/'alignment/messages/pricing-2026-11-21.json').read_bytes())
+        limits = {'turns':16,'input_tokens':1000000,'output_tokens':24000}
+        for model, cents in [('claude-haiku-5-5',482),('claude-opus-5-5',3852)]:
+            with self.subTest(model=model):
+                self.assertEqual(worst_case(rates[model],limits,file_limit=655360),cents)
+                with self.assertRaisesRegex(ValueError,'compaction'):
+                    worst_case(rates[model],limits)
+        # At fewer turns, actual potentially billed lost replies dominate the byte estimate.
+        self.assertEqual(worst_case(rates['claude-opus-5-5'],{**limits,'turns':5},file_limit=655360),3280)
+
+    def test_compaction_queue_refuses_over_budget_or_used_slot_before_launch(self):
+        from study import study_proposal
+        from compaction_specimen import generate
+        for name in ('exact', 'over', 'used'):
+            with self.subTest(name=name):
+                queue = self.root/name
+                for sub in ('requests','packets','submissions','claims'):
+                    (queue/sub).mkdir(parents=True)
+                material = queue/'submissions/traces'
+                generate(material)
+                packet = study_proposal('test-model',[('traces',material)])
+                packet.update(file_size_limit=655360, limits={'turns':16,'input_tokens':1000000,'output_tokens':24000},
+                              max_placements=1, account=self.config['account'], spending_authority=self.config['authority'],
+                              bindings=self.packet['bindings'])
+                cfg = {**self.config,'placement_ceiling':1,'wave_one_ceiling':1}
+                cfg['envelope'] = {**cfg['envelope'],'limits':packet['limits'],'submissions':{'traces':packet['runs'][0]['submission_sha256']}}
+                amount = host_queue.reservation(cfg,1,packet)
+                cfg['budget_usd'] = (amount - (name=='over'))/100
+                self.grant(cfg)
+                grant = Path(cfg['grant_path'])
+                grant.write_text(json.dumps({**json.loads(grant.read_bytes()),'file_size_limit':655360}))
+                cfg['grant_sha256'] = digest(grant.read_bytes())
+                path = queue/'packets/traces.json'
+                write_json(path,packet)
+                write_json(queue/'requests/try.json',{**self.request,'evidence':str(self.root/'.scratch'/name),
+                           'packet':str(path),'sha256':digest(path.read_bytes())})
+                if name=='used':
+                    earlier=queue/'claims/earlier'
+                    earlier.mkdir()
+                    write_json(earlier/'result.json',{'exit':0})
+                    write_json(earlier/'command.json',{'placement_charge':1,'reserved_cents':amount})
+                config=self.root/(name+'.json')
+                write_json(config,cfg)
+                with mock.patch.object(host_queue.subprocess,'check_output',return_value=b''), mock.patch.object(
+                        host_queue,'source_hash',return_value='source'), mock.patch.object(host_queue.subprocess,'run',
+                        return_value=subprocess.CompletedProcess([],0)) as child:
+                    code=host_queue.serve(queue,config,True,once=True)
+                if name=='exact':
+                    self.assertEqual((code,child.call_count),(0,1))
+                else:
+                    self.assertEqual((code,child.call_count),(1,0))
+                    reason = 'campaign budget exhausted' if name=='over' else 'campaign placement ceiling reached'
+                    self.assertEqual(json.loads((queue/'results/try.json').read_bytes())['reason'],reason)
+                    self.assertFalse((queue/'claims/try').exists())
+
     def test_pre_send_estimate_can_exceed_context_and_guard_is_mandatory(self):
         from billing import worst_case
         rate=dict(through_input_tokens=1000000,input_tokens=2000000,cache_creation_input_tokens=4000000,

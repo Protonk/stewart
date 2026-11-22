@@ -21,7 +21,7 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import (REPO, HERE, SOURCE_PATHS, LIMITS, CONTINUED, compact, rehearsal_packet, tree_hash, digest, fields, identifier, read_file,
+from common import (COMPACTION_FILE_LIMIT, FILE_LIMITS, FILE_SIZE_LIMIT, REPO, HERE, SOURCE_PATHS, LIMITS, CONTINUED, compact, rehearsal_packet, tree_hash, digest, fields, identifier, read_file,
                     require, source_hash, strict_json, validate_continuation, validate_packet,
                     write_json)
 from billing import charge as usage_charge, price_card, worst_case
@@ -132,7 +132,8 @@ def reservation(config, slots, packet=None, claims=()):
                         'invalid settled usage')
                 limits[key]=max(0,limits[key]-counts['reported']-counts['estimated'])
     return slots * worst_case(config['envelope']['pricing'][packet['model']], limits,
-                              synthetic=packet['model']=='rehearsal-only')
+                              synthetic=packet['model']=='rehearsal-only',
+                              file_limit=packet['file_size_limit'] or FILE_SIZE_LIMIT)
 
 
 def model_allowed(config, model):
@@ -141,8 +142,15 @@ def model_allowed(config, model):
 
 def check_envelope(packet, config, submissions):
     envelope = config['envelope']
-    require(packet['model']=='rehearsal-only' or packet['file_size_limit']==131072,
-            'paid packet requires the enforced 128 KiB placement file-size limit')
+    require(packet['model']=='rehearsal-only' or packet['file_size_limit'] in FILE_LIMITS,
+            'paid packet requires an enforced file limit (128 KiB for ordinary placements)')
+    if packet['file_size_limit'] == COMPACTION_FILE_LIMIT and packet['model'] != 'rehearsal-only':
+        raw = read_file(Path(config['grant_path']))
+        require(digest(raw)==config['grant_sha256'] and strict_json(raw).get('file_size_limit')==COMPACTION_FILE_LIMIT
+                and config['placement_ceiling']==packet['max_placements']==1
+                and packet['schema']=='stewart.study-commission/2' and len(packet['runs'])==1
+                and packet['runs'][0].get('submission_folder') is not None and packet['proxy'] is None,
+                'large file limit needs one granted direct study placement')
     require(all(packet['limits'][key] <= envelope['limits'][key] for key in LIMITS)
             and packet['max_placements'] <= envelope['max_placements']
             and packet['stop_after_seconds'] <= envelope['watchdog_seconds'],
@@ -184,7 +192,17 @@ def command(request, config, live, submissions=None):
             check_envelope(fixed, config, submissions)
             slots = len(fixed['runs']) + len(CONTINUED) + len(request['submissions'])
             return argv, slots
-        return argv + ['--file-size-limit','131072'], 0
+        grant_raw = read_file(Path(config['grant_path']))
+        require(digest(grant_raw)==config['grant_sha256'], 'rehearsal grant differs')
+        file_limit = strict_json(grant_raw).get('file_size_limit', FILE_SIZE_LIMIT)
+        require(file_limit in FILE_LIMITS, 'unknown rehearsal file limit')
+        if file_limit == COMPACTION_FILE_LIMIT:
+            require(len(request['submissions'])==1, 'compaction rehearsal needs one verified template')
+            audit, folder = request['submissions'][0]
+            argv += ['--study-scenario',audit,'compaction']
+            for scenario in ('compaction-below','compaction-invalid'):
+                argv += ['--submission',scenario,folder,'--study-scenario',scenario,scenario]
+        return argv + ['--file-size-limit',str(file_limit)], 0
     if kind == 'live':
         fields(request, ['operation', 'evidence', 'packet', 'sha256', 'rehearsal'], 'live request')
         require(live, 'this host session is offline; restart with --live after enabling')
@@ -258,7 +276,7 @@ def frozen_card(config, packet, request, claims):
     card=strict_json(raw)
     fields(card,['campaign','wave','trial','placement','question','reason','packet_sha256',
                  'model','qualification','apparatus_sha256','writer_sha256','grant_sha256','file_size_limit'], 'frozen trial card')
-    require(card['file_size_limit']==packet['file_size_limit']==131072 and card['trial']==audit and card['placement']==packet.get('placement',1)
+    require(card['file_size_limit']==packet['file_size_limit'] and packet['file_size_limit'] in FILE_LIMITS and card['trial']==audit and card['placement']==packet.get('placement',1)
             and card['campaign']==config['campaign'] and card['wave']==config['wave']
             and card['model']==packet['model'] and card['grant_sha256']==config['grant_sha256']
             and card['packet_sha256']==request['sha256']
@@ -506,8 +524,11 @@ def settle(queue, name, request, packet, config, reserved):
                 'outcome':review['trial']['outcome'],'criteria':review['trial']['criteria'],'model':packet['model'],'run':run,
                 'packet_sha256':request['sha256'],'archive_sha256':snapshot['sha256'],
                 'reserved_cents':reserved, **value}
-    write_json(claim/'settlement.json',settlement)
     require(value['cents']<=reserved, 'placement exceeded its reservation')
+    if packet['file_size_limit']==COMPACTION_FILE_LIMIT:
+        require(not any(a['basis']=='estimated' for a in value['attempts']),
+                'unresolved compaction attempt retains its reservation')
+    write_json(claim/'settlement.json',settlement)
     meter=queue/'results'/(name+'.meter.json')
     with tempfile.NamedTemporaryFile(dir=meter.parent) as temp:
         temp.write(compact({k:settlement[k] for k in ('trial','wave','run','outcome','packet_sha256',

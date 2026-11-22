@@ -59,25 +59,21 @@ tokens. A million microdollars is one dollar.
 
 Freeze per-model rate bands with the commission, including discounts, cache
 charges and the maximum input that can overrun the cumulative limit in the
-last request. The campaign admits only ordinary client-tool packets whose
-cumulative input plus output limits do not exceed the 150,000-token compaction
-threshold. This excludes a new server summarization iteration from the cost
-bound. Every request and retry checks remaining allowances. Before the child
-starts, the runner reserves the unused input allowance plus the greater of the
-model context window and the largest terminal estimate, at the highest input
-rate. It also reserves the unused output allowance plus one request's maximum
-output (at most 16,000 tokens) at the highest output rate. Settlement counts
+last request. For ordinary catalog placements, the cumulative input and output limits sum to at most 150,000 tokens. The queue reserves the unused input allowance plus the larger of a full model context and the maximum final input estimate. It reserves the output allowance plus the maximum output of one retry. Each request and retry checks remaining allowances.
+
+A dedicated on-demand compaction campaign admits one supplied, hash-bound study on the direct route. The protected grant specifies a 655,360-byte file limit and one placement. Its bound also covers potentially billable responses lost after transmission. Each such estimate consumes 16,000 output tokens or the remaining output allowance, so at most the output allowance divided by 16,000, rounded up, can be lost. Reserve a full context for each of those calls in addition to the input allowance and a terminal context. Use the greater of this bound and the independent pre-send byte estimate. On this route the provider reads the prompt once for a summary and caps the whole call's output. The reviewer sums billed iterations. A missing or estimated attempt keeps the full hold pending reconciliation. [On-demand compaction](https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand) and [billing for disconnected requests](https://support.claude.com/en/articles/8977456-how-do-i-pay-for-my-claude-api-usage).
+
+Settlement counts
 the full Stewart estimate and rounds up to the next cent per placement.
 
-Each paid packet, including a continuation, specifies `file_size_limit` of
-131072 bytes. An unprivileged helper lowers both file-size limits, arms the
+Ordinary paid packets specify a 131,072-byte `file_size_limit`. The dedicated compaction grant and packet both specify 655,360 bytes. An unprivileged helper lowers both file-size limits, arms the
 default SIGXFSZ action and execs the release writer. Before putting the key
 in its pipe, the launcher reads the waiting child's actual kernel limits and
 checks the accepted arrangement fits. The writer completely records every
 request's newly appended messages before its first network attempt. A retry
 uses the same body, and the next new request requires a charged turn. The
-maximum pre-send body in bytes is therefore 131072 for fixed arrangement
-members, plus 131073 per remaining turn (one capture and its delimiter), plus
+maximum pre-send body in bytes is therefore one file limit for fixed arrangement
+members, plus the file limit and one delimiter byte per turn (one capture and its delimiter), plus
 1024 for JSON framing. Stewart charges the ceiling of body bytes divided by
 three for an estimated input. Rehearsal includes the same oversized question
 with and without enforcement and a smaller question with enforcement.

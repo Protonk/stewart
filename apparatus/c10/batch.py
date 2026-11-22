@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (CONTINUED, LIMITS, MIN_REQUEST_OUTPUT, catalog, credential_bytes, digest, file_hash,
     inventory, limit_exhausted, question_file, read_file, require, scan_tree, source_hash, strict_json,
     validate_packet, write_json)
-from common import FILE_SIZE_LIMIT, TRIAL_CONTROLS, TRIAL_POINTS
+from common import TRIAL_CONTROLS, TRIAL_POINTS
 from session import LogPoint, Session, export_evidence_state, failure_details, placement_folder
 from control import safe_state
 from fake import Auditor
@@ -208,15 +208,16 @@ class Audit(Session):
         if '--key-fd' not in argv or self.commission['file_size_limit'] is None:
             return self.spawn_child(argv, **options)
         folder = self.bound_folder
+        file_limit = self.commission['file_size_limit']
         arrangements = list((self.archive/'audits').glob('*/prep/*/arrangement.json'))
-        require(len(arrangements)==1 and arrangements[0].stat().st_size <= FILE_SIZE_LIMIT,
+        require(len(arrangements)==1 and arrangements[0].stat().st_size <= file_limit,
                 'accepted arrangement exceeds the reserved fixed request bytes')
         ready, notify = os.pipe()
         permit, release = os.pipe()
         proc = None
         try:
             child = [sys.executable, '-I', '-B', str(Path(__file__).with_name('placement_guard.py')),
-                     str(notify), str(permit), str(FILE_SIZE_LIMIT), *argv]
+                     str(notify), str(permit), str(file_limit), *argv]
             options['pass_fds'] = (*options['pass_fds'], notify, permit)
             proc = self.spawn_child(child, **options)
             os.close(notify)
@@ -230,7 +231,7 @@ class Audit(Session):
             require(match is not None, 'child file-size limit could not be observed')
             actual = tuple(map(int,match.groups()))
             parent = resource.getrlimit(resource.RLIMIT_FSIZE)
-            require(actual == (FILE_SIZE_LIMIT, FILE_SIZE_LIMIT) and parent[0] != FILE_SIZE_LIMIT,
+            require(actual == (file_limit, file_limit) and parent[0] != file_limit,
                     'placement or supervisor has an unexpected file-size limit')
             write_json(folder/'file-bound.json', {'schema':'stewart.c10-file-bound/1',
                 'pid':proc.pid, 'soft':actual[0], 'hard':actual[1], 'supervisor_soft':parent[0],
@@ -294,7 +295,7 @@ class Audit(Session):
                 item = path.lstat()
             except FileNotFoundError:
                 continue
-            if stat.S_ISREG(item.st_mode) and item.st_size >= FILE_SIZE_LIMIT:
+            if stat.S_ISREG(item.st_mode) and item.st_size >= self.commission['file_size_limit']:
                 result[path.relative_to(self.root).as_posix()] = (item.st_ino,item.st_size,item.st_mtime_ns)
         return result
 
@@ -631,7 +632,7 @@ def main():
         if args.mode=='rehearse' and report['failed']==report['not_started']==0 and not report['skipped_checks']:
             if packet['file_size_limit'] is not None:
                 from check_file_bound import exercise as exercise_bound
-                result = exercise_bound(args.binary, args.private.parent/'c10-file-bound', key)
+                result = exercise_bound(args.binary, args.private.parent/'c10-file-bound', key, packet['file_size_limit'])
                 write_json(args.out/'FILE-BOUND-CONTROLS.json', result)
             from check_operations import exercise as exercise_operations
             operator_root=args.private.parent/'c10-operator-controls'

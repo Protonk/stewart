@@ -18,7 +18,7 @@ import sys
 import time
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from common import (BINDINGS,CONTINUED,TRIAL_CONTROLS,HERE,LIMITS,MAX_PLACEMENTS,REPO,SOURCE_PATHS,AttemptsUnsettled,catalog,
+from common import (COMPACTION_FILE_LIMIT,FILE_LIMITS,BINDINGS,CONTINUED,TRIAL_CONTROLS,HERE,LIMITS,MAX_PLACEMENTS,REPO,SOURCE_PATHS,AttemptsUnsettled,catalog,
     compact,digest,file_hash,identifier,proposal,read_file,rehearsal_packet,require,scan_tree,settled_attempts,
     source_hash,strict_json,validate_continuation,validate_packet,write_json)
 import podman
@@ -494,6 +494,12 @@ def check_rehearsal_inputs(rehearsed,packet=None):
         coverage={run['submission_sha256'] for run in supplied_runs(rehearsed)}
         require(all(run['submission_sha256'] in coverage for run in supplied_runs(packet)),
                 'study inputs need their own successful rehearsal intake and review')
+        if packet['file_size_limit']==COMPACTION_FILE_LIMIT and packet['model']!='rehearsal-only':
+            required = {'compaction', 'compaction-below', 'compaction-invalid'}
+            for placement in supplied_runs(packet):
+                seen = {run['scenario'] for run in supplied_runs(rehearsed)
+                        if run['submission_sha256']==placement['submission_sha256']}
+                require(required <= seen, 'large study needs three compaction comparisons with its exact template')
     return expected
 
 
@@ -510,7 +516,7 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
     expected=check_rehearsal_inputs(rehearsed,packet)
     if rehearsed['file_size_limit'] is not None:
         from check_file_bound import verify_result
-        verify_result(strict_json(read_file(path/'container/FILE-BOUND-CONTROLS.json')), bound['binary_sha256'])
+        verify_result(strict_json(read_file(path/'container/FILE-BOUND-CONTROLS.json')), bound['binary_sha256'], rehearsed['file_size_limit'])
     if connection:
         require(host.get('credential_source',{}).get('kind')=='persistent-keyring'
                 and read_file(path/'host/connection-collect.exit')==b'0\n',
@@ -1133,7 +1139,7 @@ def main():
     subs=parser.add_subparsers(dest='command',required=True)
     subs.add_parser('list',help='List the available catalog specimens')
     p=subs.add_parser('propose',help='Write an unbound, unpaid small-batch proposal')
-    p.add_argument('--file-size-limit',type=int,choices=[131072],help='Per-file limit for the Stewart placement process, in bytes')
+    p.add_argument('--file-size-limit',type=int,choices=FILE_LIMITS,help='Per-file limit for the Stewart placement process, in bytes')
     p.add_argument('--model',required=True)
     p.add_argument('--case',action='append',dest='cases')
     p.add_argument('--repetitions',type=int,default=1)
@@ -1190,7 +1196,7 @@ def main():
         p.add_argument('--submission',action='append',nargs=2,metavar=('ID','FOLDER'),
                        help='Rehearsal only: include these study inputs alongside all conformance controls')
         if mode=='rehearse':
-            p.add_argument('--file-size-limit',type=int,choices=[131072],help='Rehearse the paid placement process bound')
+            p.add_argument('--file-size-limit',type=int,choices=FILE_LIMITS,help='Rehearse the paid placement process bound')
             p.add_argument('--study-scenario',action='append',nargs=2,metavar=('ID','SCENARIO'),
                            help='For a supplied ID: compaction, compaction-below or compaction-invalid; synthetic usage, no live token estimate')
     p=subs.add_parser('review',help='Read all immutable exports without extracting or launching')
