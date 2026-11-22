@@ -82,8 +82,8 @@ def stage(args):
     release, toolchain = records[args.qualification], records[args.toolchain]
     for record, suite in [(release, "acceptance"), (toolchain, "toolchain")]:
         require(record.get("suite") == suite and record["outcome"] == "qualified", "expected a qualified " + suite)
-    require(git("rev-parse", commit + ":service") == git("rev-parse", release["source_commit"] + ":service"),
-            "the release crate tree differs from the qualified crate tree")
+    changes = git("diff", "--name-only", release["source_commit"], commit, "--", "service", ":(exclude)service/README.md")
+    require(not changes, "crate inputs differ from qualification: " + changes.decode().strip())
     evidence = ROOT / release["evidence"]["path"]
     listing = (ROOT / toolchain["evidence"]["path"] / "host/vendor.sha256").read_bytes()
     require(hashlib.sha256(listing).hexdigest() == toolchain["vendor"]["listing_sha256"] and
