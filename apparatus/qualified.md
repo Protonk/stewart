@@ -906,6 +906,22 @@ Haiku and Opus ordinary comparisons, both auditor-submitted, verified, closed an
 - Evidence: `.scratch/final-four-comparisons-01/EXIT.json` (recorded 2026-11-22T00:00:09Z).
 - Retained purpose: Review the original attempts, citation checks and delivery before completing the per-model alignment records.; until The release alignment is reviewed or the models are retired and these originals have no further inspection purpose.
 
+### messages-alignment-haiku-01
+
+claude-haiku-5-5 reached auditor submission, delivery and closure for all three families and signed compaction. 35 reported attempts, 0 estimated. The queue settled $0.41.
+
+[Per-model comparison and evidence digests](../alignment/messages/records/messages-alignment-haiku-01.json)
+
+Private evidence is retained in `.scratch/messages-alignment-haiku-01`.
+
+### messages-alignment-opus-01
+
+claude-opus-5-5 reached auditor submission, delivery and closure for all three families and signed compaction. 23 reported attempts, 0 estimated. The queue settled $3.55.
+
+[Per-model comparison and evidence digests](../alignment/messages/records/messages-alignment-opus-01.json)
+
+Private evidence is retained in `.scratch/messages-alignment-opus-01`.
+
 ### final-four-compaction-cells-01
 
 Final Messages commission with both comparisons and two witnessed signed-summary resets. All four audits submitted, verified, closed and settled.

@@ -10,7 +10,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Separate release work | Specify and build endpoint alignment offline. Align the endpoints named for release under a separate commission. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
+| Separate release work | Finish the offline alignment apparatus and the development harness record. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |
 | After the first release | Investigate shortening test and suite wall-clock time. | [Test wall-clock](development/TEST-WALL-CLOCK-PLAN.md) |
 | Unselected | Broader blinded evaluation and family dogfooding. | [Deferred studies](#deferred-studies) |
@@ -87,7 +87,7 @@ Family-descriptor candidates remain unselected.
 | Requirement | Remaining work |
 | --- | --- |
 | Linux container qualification | Qualify the binaries to be shipped against the [scripted acceptance claims](ACCEPTANCE.md#the-scripted-tier). |
-| Endpoint alignment | A current [alignment record](ACCEPTANCE.md#the-endpoint-alignment-tier) for each model the release names, each run under an authorized budget. |
+| Endpoint alignment | The Messages records for [Haiku](apparatus/qualified.md#messages-alignment-haiku-01) and [Opus](apparatus/qualified.md#messages-alignment-opus-01) meet the [release requirement](ACCEPTANCE.md#the-endpoint-alignment-tier) for their pinned settings. |
 | Release documentation and source package | Define and build the source archive and finish the outside-reader documentation pass ([below](#release-documentation-and-source-package)). |
 | Public release gate | The maintainer decides when to publish the qualified binaries. |
 
@@ -98,8 +98,7 @@ The requirements remain those of ACCEPTANCE while its review is open.
 The release and runtime suites run every case on both Linux architectures without
 skips; native runs skip only Linux-only expectations.
 
-- [ ] Settle the endpoint evidence the release names through
-  [endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md).
+- [x] Settle the Messages evidence for both named release models. The development runtime’s harness pin remains with [endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md).
 
 Accepted limitations: the readiness reassessment's surviving mutants were
 equivalent; the runtime's unit-only limits are stated in its

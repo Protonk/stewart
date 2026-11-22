@@ -1,0 +1,898 @@
+{
+  "schema": "stewart.messages-alignment/1",
+  "id": "messages-alignment-opus-01",
+  "model": "claude-opus-5-5",
+  "at": "2026-11-22T00:10:10.251Z",
+  "settings": {
+    "endpoint": "https://api.anthropic.com",
+    "route": "direct",
+    "model": "claude-opus-5-5",
+    "api_version": "2026-10-21",
+    "compaction_beta": "compact-2026-09-04",
+    "compaction": {
+      "trigger_tokens": 150000,
+      "request": {
+        "type": "summarize"
+      }
+    },
+    "max_tokens_per_request": 16000,
+    "effort_allowlist": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ]
+  },
+  "release_writer": {
+    "qualification_id": "runtime-trials-preparation-release-01",
+    "binary_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33"
+  },
+  "documentation_checked_on": "2026-11-21",
+  "reported_attempts": 23,
+  "estimated_attempts": 0,
+  "calculated_usd": "3.527288",
+  "settled_cents": 355,
+  "answer_assessment": "unexamined",
+  "currency": "Applies to the named model and direct route at the recorded API version, beta, allowed effort spellings, compaction trigger and request, and output cap. Compare these settings with the release before naming this model. A changed pin requires alignment for the new settings.",
+  "witness_limits": [
+    "Stewart captured the direct-route requests and responses. Independent reconstruction does not witness live wire bytes, framing, or the number of provider attempts.",
+    "No independent provider invoice or Console observation for these placements."
+  ],
+  "comparison": {
+    "A1": {
+      "subject": "Request acceptance",
+      "observed": "yes",
+      "disposition": "match",
+      "conclusion": "All 23 reconstructed requests received HTTP 200 and a provider request ID, including the summary request.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json",
+        "open/review.json",
+        "framing/review.json",
+        "comparison/review.json",
+        "compaction/review.json"
+      ],
+      "fixtures": []
+    },
+    "A2": {
+      "subject": "Message envelope",
+      "observed": "yes",
+      "disposition": "existing fixture",
+      "conclusion": "The release driver replays the observed envelope, including nullable container, diagnostics and stop_details. The small rehearsal peer omits those optional members.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/m3-ordinary-ending.json",
+        "apparatus/driver/testdata/messages/m4-summary.json"
+      ]
+    },
+    "A3": {
+      "subject": "Content blocks",
+      "observed": "yes",
+      "disposition": "existing fixture",
+      "conclusion": "Observed compaction, thinking, tool_use. Their member sets match captured fixtures, including caller on tool_use and the opaque signature on thinking and compaction.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/m2-cap.json",
+        "apparatus/driver/testdata/messages/m3-citation-corrected.json",
+        "apparatus/driver/testdata/messages/m4-summary.json"
+      ]
+    },
+    "A4": {
+      "subject": "Stop reasons",
+      "observed": "partial",
+      "disposition": "limitation",
+      "conclusion": "Observed compaction, tool_use. The driver also scripts other endings. This series supplies no live instance of refusal, a context-window stop, an output cap, or an ordinary end_turn.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/m2-cap.json",
+        "apparatus/driver/testdata/messages/m3-ordinary-ending.json",
+        "apparatus/driver/testdata/messages/m4-summary.json"
+      ]
+    },
+    "A5": {
+      "subject": "Ordinary usage",
+      "observed": "yes",
+      "disposition": "existing fixture",
+      "conclusion": "One message iteration agreed with the top-level counts. The captured ordinary fixture includes output_tokens_details. The rehearsal peer also exercises top-level-only usage.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/m3-ordinary-ending.json"
+      ]
+    },
+    "A6": {
+      "subject": "Summary usage",
+      "observed": "yes",
+      "disposition": "existing fixture",
+      "conclusion": "One charged compaction iteration, zero top-level input and output, and no output_tokens_details member. The exact M4 fixture replays this shape. Synthetic mixed iterations exercise summation.",
+      "evidence": [
+        "compaction/shapes.json",
+        "compaction/review.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/m4-summary.json"
+      ]
+    },
+    "A7": {
+      "subject": "Summary, reset and entry continuity",
+      "observed": "yes",
+      "disposition": "match",
+      "conclusion": "At the pinned trigger the provider returned one signed compaction block. The next ordinary request reused it byte-for-byte in the reset context. The original entry was retrieved and revised, and its revised version reached delivery once.",
+      "evidence": [
+        "compaction/shapes.json",
+        "compaction/review.json",
+        "compaction/entry-delivery.json",
+        "compaction/observation.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/m4-summary.json"
+      ]
+    },
+    "A8": {
+      "subject": "Charges and cost",
+      "observed": "partial",
+      "disposition": "limitation",
+      "conclusion": "All usage was reported. Per-request prices and upward per-placement rounding reproduce the queue settlements. No independent workspace billing observation was supplied.",
+      "evidence": [
+        "open/review.json",
+        "framing/review.json",
+        "comparison/review.json",
+        "compaction/review.json",
+        "open/meter.json",
+        "framing/meter.json",
+        "comparison/meter.json",
+        "compaction/meter.json",
+        "pricing.json"
+      ],
+      "fixtures": []
+    },
+    "A9": {
+      "subject": "Provider errors",
+      "observed": "no",
+      "disposition": "limitation",
+      "conclusion": "Every attempt returned HTTP 200. The captured historical 401 and scripted retry controls cover adapter handling. Live rejection, retry and backoff behavior were unobserved for this model in this series.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/sanity-authentication-error.json"
+      ]
+    },
+    "A10": {
+      "subject": "Transport",
+      "observed": "partial",
+      "disposition": "limitation",
+      "conclusion": "Timing, request IDs and selected headers come from Stewart. Request reconstruction independently checks internal consistency. Direct TLS provided no independent live witness of per-request bytes, framing, or attempt count.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json",
+        "open/review.json",
+        "framing/review.json",
+        "comparison/review.json",
+        "compaction/review.json"
+      ],
+      "fixtures": []
+    },
+    "A11": {
+      "subject": "Model identity",
+      "observed": "yes",
+      "disposition": "match",
+      "conclusion": "Every response named the requested model claude-opus-5-5. The reconstructed requests used the configured model without fallbacks.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json",
+        "open/review.json",
+        "framing/review.json",
+        "comparison/review.json",
+        "compaction/review.json"
+      ],
+      "fixtures": []
+    },
+    "A12": {
+      "subject": "Manager effort passthrough",
+      "observed": "yes",
+      "disposition": "match",
+      "conclusion": "The framing requests carried the manager’s medium value. The other three audits omitted output_config. Both forms were accepted. Other supported spellings are exercised by the scripted release driver.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json",
+        "open/packet.json",
+        "framing/packet.json",
+        "comparison/packet.json",
+        "compaction/packet.json",
+        "open/review.json",
+        "framing/review.json",
+        "comparison/review.json",
+        "compaction/review.json"
+      ],
+      "fixtures": []
+    },
+    "A13": {
+      "subject": "Credential reflection",
+      "observed": "yes",
+      "disposition": "match",
+      "conclusion": "Attempt markers and all twelve exposure scans were clean. The rehearsal peer’s reflection control separately exercises detection.",
+      "evidence": [
+        "open/observation.json",
+        "framing/observation.json",
+        "comparison/observation.json",
+        "compaction/observation.json",
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json"
+      ],
+      "fixtures": []
+    }
+  },
+  "fixture_decision": "Existing captured fixtures cover the observed envelopes, block members and accounting shapes. The lightweight peer retains its minimal-envelope and mixed-iteration controls.",
+  "fixtures_added": [],
+  "fixture_source": {
+    "commit": "ba47bac1f87f0f0f27ca8bda353fe6e2e05881ea",
+    "files": {
+      "apparatus/driver/testdata/messages/m2-cap.json": "f2dc69b90bd373506e4029d09df7490e67f3f801a69863e59915fd6f8da1d562",
+      "apparatus/driver/testdata/messages/m3-citation-corrected.json": "1a6ea9ccc7d0936579e1734a30300f972e088e6e6f5fb6ad5fb816a8fd260b88",
+      "apparatus/driver/testdata/messages/m3-ordinary-ending.json": "ee1df6b283c322424e116e2e9a692a44ebd27e07546d5bd1928f27f407753728",
+      "apparatus/driver/testdata/messages/m4-summary.json": "87d8c3ec491c8ee5b91a344472207a59effbae9964c09c0314ac433f01d77820",
+      "apparatus/driver/testdata/messages/sanity-authentication-error.json": "0366ef8a85e9d5f36b6541f5f64a89a8d785d0242693c9ab256621f6d6c0f380",
+      "apparatus/driver/testdata/README.md": "b6e565bf31501bee49f87d8306a061a36a5948e4326e0ec54c2e9112feb0c160"
+    }
+  },
+  "runs": {
+    "open": {
+      "specimen": "open-ordinary",
+      "family": "open-inquiry/1",
+      "evidence_variant": "ordinary",
+      "model": "claude-opus-5-5",
+      "response_models": [
+        "claude-opus-5-5"
+      ],
+      "effort": null,
+      "audit": "opus-open-ordinary",
+      "opened_at": "2026-11-21T21:06:07.930Z",
+      "closed_at": "2026-11-21T21:06:28.154Z",
+      "placements": 1,
+      "limits": {
+        "turns": 16,
+        "input_tokens": 115000,
+        "output_tokens": 32000
+      },
+      "file_limit_bytes": 131072,
+      "watchdog_seconds": 900,
+      "ending": "sealed",
+      "cause": null,
+      "seal_actor": "auditor",
+      "auditor_submitted": true,
+      "closed": true,
+      "delivery_verified": true,
+      "procedural_checks": 116,
+      "citations_checked": 9,
+      "operations": {
+        "list": 1,
+        "prepare": 1,
+        "read": 4,
+        "record_account": 1,
+        "record_limit": 1,
+        "record_observation": 2,
+        "submit": 1
+      },
+      "refused_or_failed_calls": 0,
+      "guidance_call_requests": [],
+      "notices": [],
+      "usage": {
+        "input_tokens": {
+          "estimated": 0,
+          "reported": 31671
+        },
+        "output_tokens": {
+          "estimated": 0,
+          "reported": 1800
+        },
+        "turns": {
+          "estimated": 0,
+          "reported": 5
+        }
+      },
+      "compaction": {
+        "context_resets": 0,
+        "failed_summaries": 0,
+        "reentries_after_reset": 0,
+        "successful_summaries": 0,
+        "summary_requests": 0
+      },
+      "summary_and_reset": [],
+      "prior_entry_revisions": [],
+      "delivered_after_reset": [],
+      "response_stops": {
+        "tool_use": 5
+      },
+      "content_blocks": [
+        "thinking",
+        "tool_use"
+      ],
+      "credential_scans": {
+        "scans": 3,
+        "files_examined": 234,
+        "files_with_matches": 0,
+        "errors": 0,
+        "credential_printed": false
+      },
+      "commission_sha256": "6cc9c4a12f2dde4207061cef5ae6a788670d18b8964a073db93e1e2aa26931a9",
+      "authorization_sha256": "afa5239d693c31f46ffde7253458d7d64da0096e1e94e1070cf25ea3802dfc0a",
+      "packet_sha256": "96f9a576a3e4986667ff837bdbe5fb581d1279b6fb282ff2fea2685fc9cbf754",
+      "bindings": {
+        "qualification_id": "runtime-trials-preparation-release-01",
+        "binary_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33",
+        "source_commit": "419fb0acdcae4f07ae306122683a3d98f85367c7",
+        "apparatus_sha256": "b481807752a1167ee0fac5a2e965a5488483c663a7fefa7af2460ef67910caeb",
+        "image": "docker.io/library/python@sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+        "catalog_sha256": "c8f140d1b70bd2f767a7654a8a849318fefbd4b4d19e4833af7fdb4d9f5315a6"
+      },
+      "export": {
+        "path": "open/work.tar",
+        "original": "/var/lib/stewart/queue-alignment-pair-01/results/25791ac10533664724ce330225de3e5f9e38fdb08a7c65a99e1d5c182b401268.tar",
+        "sha256": "25791ac10533664724ce330225de3e5f9e38fdb08a7c65a99e1d5c182b401268"
+      },
+      "calculated_usd": "0.162684",
+      "settled_cents": 17
+    },
+    "framing": {
+      "specimen": "framing-inadequate",
+      "family": "inquiry-framing/1",
+      "evidence_variant": "inadequate",
+      "model": "claude-opus-5-5",
+      "response_models": [
+        "claude-opus-5-5"
+      ],
+      "effort": "medium",
+      "audit": "opus-framing-inadequate",
+      "opened_at": "2026-11-21T22:29:07.012Z",
+      "closed_at": "2026-11-21T22:29:37.666Z",
+      "placements": 1,
+      "limits": {
+        "input_tokens": 115000,
+        "output_tokens": 32000,
+        "turns": 16
+      },
+      "file_limit_bytes": 131072,
+      "watchdog_seconds": 900,
+      "ending": "sealed",
+      "cause": null,
+      "seal_actor": "auditor",
+      "auditor_submitted": true,
+      "closed": true,
+      "delivery_verified": true,
+      "procedural_checks": 116,
+      "citations_checked": 11,
+      "operations": {
+        "list": 1,
+        "prepare": 1,
+        "read": 1,
+        "record_account": 1,
+        "record_limit": 1,
+        "record_observation": 2,
+        "record_relation": 1,
+        "record_working_question": 1,
+        "submit": 1
+      },
+      "refused_or_failed_calls": 0,
+      "guidance_call_requests": [],
+      "notices": [],
+      "usage": {
+        "input_tokens": {
+          "estimated": 0,
+          "reported": 42127
+        },
+        "output_tokens": {
+          "estimated": 0,
+          "reported": 2790
+        },
+        "turns": {
+          "estimated": 0,
+          "reported": 6
+        }
+      },
+      "compaction": {
+        "context_resets": 0,
+        "failed_summaries": 0,
+        "reentries_after_reset": 0,
+        "successful_summaries": 0,
+        "summary_requests": 0
+      },
+      "summary_and_reset": [],
+      "prior_entry_revisions": [],
+      "delivered_after_reset": [],
+      "response_stops": {
+        "tool_use": 6
+      },
+      "content_blocks": [
+        "thinking",
+        "tool_use"
+      ],
+      "credential_scans": {
+        "credential_printed": false,
+        "errors": 0,
+        "files_examined": 229,
+        "files_with_matches": 0,
+        "scans": 3
+      },
+      "commission_sha256": "5fbc4ed1c07ac51369d849c9b84ce3ca023f25080190af99374c3f204e0d707f",
+      "authorization_sha256": "2cccc49a5aadef5f2afbcf9a293f60b8a2adf99bce315354a74988cdd03dcf65",
+      "packet_sha256": "7d7aeccd49354dd98eaf40380123f7a728ecfa85c08ef438a7db7818f52e76c3",
+      "bindings": {
+        "apparatus_sha256": "d8c22403e0d135c33f521dac044b27ebaee6540ab82093a173e6ec061532c4b0",
+        "binary_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33",
+        "catalog_sha256": "c8f140d1b70bd2f767a7654a8a849318fefbd4b4d19e4833af7fdb4d9f5315a6",
+        "image": "docker.io/library/python@sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+        "qualification_id": "runtime-trials-preparation-release-01",
+        "source_commit": "b58c89a796215b8e9d458326aaa340dfd69883d4"
+      },
+      "export": {
+        "path": "framing/work.tar",
+        "original": ".scratch/opus-framing-medium-01/work.tar",
+        "sha256": "33369376413a8c1ac352bda982824169d1a2242a8784fd29c52207a6cfb254c3"
+      },
+      "calculated_usd": "0.224308",
+      "settled_cents": 23
+    },
+    "comparison": {
+      "specimen": "comparison-ordinary",
+      "family": "comparison/1",
+      "evidence_variant": "ordinary",
+      "model": "claude-opus-5-5",
+      "response_models": [
+        "claude-opus-5-5"
+      ],
+      "effort": null,
+      "audit": "opus-comparison-ordinary",
+      "opened_at": "2026-11-21T23:54:37.035Z",
+      "closed_at": "2026-11-21T23:55:00.094Z",
+      "placements": 1,
+      "limits": {
+        "input_tokens": 115000,
+        "output_tokens": 32000,
+        "turns": 16
+      },
+      "file_limit_bytes": 131072,
+      "watchdog_seconds": 900,
+      "ending": "sealed",
+      "cause": null,
+      "seal_actor": "auditor",
+      "auditor_submitted": true,
+      "closed": true,
+      "delivery_verified": true,
+      "procedural_checks": 116,
+      "citations_checked": 11,
+      "operations": {
+        "list": 1,
+        "prepare": 1,
+        "read": 3,
+        "record_account": 1,
+        "record_comparison": 1,
+        "record_criterion": 1,
+        "record_limit": 1,
+        "record_observation": 2,
+        "submit": 1
+      },
+      "refused_or_failed_calls": 0,
+      "guidance_call_requests": [],
+      "notices": [],
+      "usage": {
+        "input_tokens": {
+          "estimated": 0,
+          "reported": 36923
+        },
+        "output_tokens": {
+          "estimated": 0,
+          "reported": 2456
+        },
+        "turns": {
+          "estimated": 0,
+          "reported": 5
+        }
+      },
+      "compaction": {
+        "context_resets": 0,
+        "failed_summaries": 0,
+        "reentries_after_reset": 0,
+        "successful_summaries": 0,
+        "summary_requests": 0
+      },
+      "summary_and_reset": [],
+      "prior_entry_revisions": [],
+      "delivered_after_reset": [],
+      "response_stops": {
+        "tool_use": 5
+      },
+      "content_blocks": [
+        "thinking",
+        "tool_use"
+      ],
+      "credential_scans": {
+        "credential_printed": false,
+        "errors": 0,
+        "files_examined": 243,
+        "files_with_matches": 0,
+        "scans": 3
+      },
+      "commission_sha256": "abbe33b642ec2981b72cb0991a90803c39ba6f6fc012634d31b84911fb2f7111",
+      "authorization_sha256": "dfecc8dd84da6bacd05b12d753ece57d91e0014e83cdd14fe94cd2de27c65315",
+      "packet_sha256": "e65677497633c32b3489d83b0feac4738225481bcf99e8c7eda6213762cc0109",
+      "bindings": {
+        "apparatus_sha256": "d8c22403e0d135c33f521dac044b27ebaee6540ab82093a173e6ec061532c4b0",
+        "binary_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33",
+        "catalog_sha256": "c8f140d1b70bd2f767a7654a8a849318fefbd4b4d19e4833af7fdb4d9f5315a6",
+        "image": "docker.io/library/python@sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+        "qualification_id": "runtime-trials-preparation-release-01",
+        "source_commit": "b58c89a796215b8e9d458326aaa340dfd69883d4"
+      },
+      "export": {
+        "path": "comparison/work.tar",
+        "original": ".scratch/final-four-comparisons-01/opus/work.tar",
+        "sha256": "0e00828a7a5f17e70c58ca832f4906c869f69e235fab5ac2c2c54b78a458023e"
+      },
+      "calculated_usd": "0.196812",
+      "settled_cents": 20
+    },
+    "compaction": {
+      "specimen": "opus-large-traces",
+      "family": "open-inquiry/1",
+      "evidence_variant": "ordinary",
+      "model": "claude-opus-5-5",
+      "response_models": [
+        "claude-opus-5-5"
+      ],
+      "effort": null,
+      "audit": "opus-large-traces",
+      "opened_at": "2026-11-22T00:09:23.263Z",
+      "closed_at": "2026-11-22T00:10:10.251Z",
+      "placements": 1,
+      "limits": {
+        "input_tokens": 1000000,
+        "output_tokens": 24000,
+        "turns": 16
+      },
+      "file_limit_bytes": 655360,
+      "watchdog_seconds": 1800,
+      "ending": "sealed",
+      "cause": null,
+      "seal_actor": "auditor",
+      "auditor_submitted": true,
+      "closed": true,
+      "delivery_verified": true,
+      "procedural_checks": 127,
+      "citations_checked": 11,
+      "operations": {
+        "list": 1,
+        "prepare": 1,
+        "read": 9,
+        "record_account": 1,
+        "record_limit": 1,
+        "record_observation": 1,
+        "replace": 1,
+        "search": 1,
+        "submit": 1,
+        "what_am_i_working_with": 2
+      },
+      "refused_or_failed_calls": 0,
+      "guidance_call_requests": [
+        3,
+        5
+      ],
+      "notices": [],
+      "usage": {
+        "input_tokens": {
+          "estimated": 0,
+          "reported": 714941
+        },
+        "output_tokens": {
+          "estimated": 0,
+          "reported": 4186
+        },
+        "turns": {
+          "estimated": 0,
+          "reported": 7
+        }
+      },
+      "compaction": {
+        "context_resets": 1,
+        "failed_summaries": 0,
+        "reentries_after_reset": 1,
+        "successful_summaries": 1,
+        "summary_requests": 1
+      },
+      "summary_and_reset": [
+        {
+          "iterations": [
+            "compaction"
+          ],
+          "request": 4,
+          "reset_request": 5,
+          "signed_content_sha256": "a00a27effbdd3774ead790f7e806f96831636caa6c74f7f8fc19e7d6205f7e79",
+          "top_level_input": 0,
+          "top_level_output": 0,
+          "trigger_request": 3,
+          "trigger_tokens": 341413
+        }
+      ],
+      "prior_entry_revisions": [
+        {
+          "before_request": 2,
+          "id": "e1",
+          "original_version": 1,
+          "retrieval_request": 5,
+          "revised_version": 2,
+          "revision_request": 6,
+          "summary_request": 4
+        }
+      ],
+      "delivered_after_reset": [
+        {
+          "all_delivered": true,
+          "delivered_versions": {
+            "e1": 2
+          },
+          "matching_duplicate_additions": [],
+          "preexisting_ids": [
+            "e1"
+          ],
+          "summary_request": 4
+        }
+      ],
+      "response_stops": {
+        "compaction": 1,
+        "tool_use": 6
+      },
+      "content_blocks": [
+        "compaction",
+        "thinking",
+        "tool_use"
+      ],
+      "credential_scans": {
+        "credential_printed": false,
+        "errors": 0,
+        "files_examined": 332,
+        "files_with_matches": 0,
+        "scans": 3
+      },
+      "commission_sha256": "abbe33b642ec2981b72cb0991a90803c39ba6f6fc012634d31b84911fb2f7111",
+      "authorization_sha256": "dfecc8dd84da6bacd05b12d753ece57d91e0014e83cdd14fe94cd2de27c65315",
+      "packet_sha256": "d1a4325ff59e983067ef508737af7eae0995c6ede8a090af83c92ea4506758d7",
+      "bindings": {
+        "apparatus_sha256": "b3b01917f1613c91e6250fe04abbef040f08564b205082ed02083abd23ccb3ed",
+        "binary_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33",
+        "catalog_sha256": "c8f140d1b70bd2f767a7654a8a849318fefbd4b4d19e4833af7fdb4d9f5315a6",
+        "image": "docker.io/library/python@sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+        "qualification_id": "runtime-trials-preparation-release-01",
+        "source_commit": "f82013db7424f99a2a94ff178a569bae54cfe401"
+      },
+      "export": {
+        "path": "compaction/work.tar",
+        "original": ".scratch/final-four-compaction-cells-01/opus/work.tar",
+        "sha256": "c51453e737f58358157f5d976215d5d946bad9607295ad26da227d8964c583dd"
+      },
+      "calculated_usd": "2.943484",
+      "settled_cents": 295
+    }
+  },
+  "capture_lookup": "For every attempt, <run>/shapes.json names the exact work.tar member and the digests of the attempt, corresponding request-N.json and response-N-A.bin. The response and request share the attempt directory. The export receipts and reviews are bound below.",
+  "capture_examples": {
+    "open": {
+      "tool_use": {
+        "archive": "open/work.tar",
+        "attempt": "aot2lkw4bqbj57iux/1/1/1",
+        "member": "private/archive/audits/aot2lkw4bqbj57iux/runs/1/attempt-1-1.json",
+        "attempt_sha256": "d4fa66d208c48479417e8806b17a04928ecc1043fb8fad330f66a903cb8e3ab9",
+        "request_record_sha256": "afd62a4450c446f6dc708b07b0164ca7a8462f5657303407947011a03a3dcb73",
+        "request_body_sha256": "2fa7fd766974cf8530e4131d63aec881cae49ed602374264b0e5fea8589167f6",
+        "response_sha256": "025bafdcbce2557eeffc3c29c5187bc882530b011d1e4a8c77ae46a31495344e"
+      },
+      "ordinary": {
+        "archive": "open/work.tar",
+        "attempt": "aot2lkw4bqbj57iux/1/1/1",
+        "member": "private/archive/audits/aot2lkw4bqbj57iux/runs/1/attempt-1-1.json",
+        "attempt_sha256": "d4fa66d208c48479417e8806b17a04928ecc1043fb8fad330f66a903cb8e3ab9",
+        "request_record_sha256": "afd62a4450c446f6dc708b07b0164ca7a8462f5657303407947011a03a3dcb73",
+        "request_body_sha256": "2fa7fd766974cf8530e4131d63aec881cae49ed602374264b0e5fea8589167f6",
+        "response_sha256": "025bafdcbce2557eeffc3c29c5187bc882530b011d1e4a8c77ae46a31495344e"
+      },
+      "thinking": {
+        "archive": "open/work.tar",
+        "attempt": "aot2lkw4bqbj57iux/1/3/1",
+        "member": "private/archive/audits/aot2lkw4bqbj57iux/runs/1/attempt-3-1.json",
+        "attempt_sha256": "6b8f85fe2713de68e8a507b44f564ee06966e81e3deb552aaea0d2e1bbd2c280",
+        "request_record_sha256": "09f8fe096a767609dab70e764ea2600fc6bf05581b6df2e50441d75b317f4656",
+        "request_body_sha256": "fbc094c47ceaf89b6e2432a8487fd6ff6b8ed357c89239fc6fefab186f8c0a4e",
+        "response_sha256": "3635f34da0d81ad1420a40cad64f21f6c3c739275b0fe7b785c5e04d6673c2b6"
+      }
+    },
+    "framing": {
+      "tool_use": {
+        "archive": "framing/work.tar",
+        "attempt": "a4cpsrafygthfo7fq/1/1/1",
+        "member": "private/archive/audits/a4cpsrafygthfo7fq/runs/1/attempt-1-1.json",
+        "attempt_sha256": "404c3b6c15773bb6e907d57c13d20976d171c1520d7a765aa83f04d02a1554e7",
+        "request_record_sha256": "02d5b18b01cb0176b1c60f69093c1373143bd3ba77101fe220db734c96fb6fbd",
+        "request_body_sha256": "e0a977268142619f1070cedefec8518f29b9cb07307e0c4096bb88155e462a79",
+        "response_sha256": "b09ae8d1d81db6ab89acc1276a1c709a76df41d8bd7fc0f74f801341c2064b35"
+      },
+      "ordinary": {
+        "archive": "framing/work.tar",
+        "attempt": "a4cpsrafygthfo7fq/1/1/1",
+        "member": "private/archive/audits/a4cpsrafygthfo7fq/runs/1/attempt-1-1.json",
+        "attempt_sha256": "404c3b6c15773bb6e907d57c13d20976d171c1520d7a765aa83f04d02a1554e7",
+        "request_record_sha256": "02d5b18b01cb0176b1c60f69093c1373143bd3ba77101fe220db734c96fb6fbd",
+        "request_body_sha256": "e0a977268142619f1070cedefec8518f29b9cb07307e0c4096bb88155e462a79",
+        "response_sha256": "b09ae8d1d81db6ab89acc1276a1c709a76df41d8bd7fc0f74f801341c2064b35"
+      },
+      "thinking": {
+        "archive": "framing/work.tar",
+        "attempt": "a4cpsrafygthfo7fq/1/3/1",
+        "member": "private/archive/audits/a4cpsrafygthfo7fq/runs/1/attempt-3-1.json",
+        "attempt_sha256": "c5676ca61f6ed454847059772ab12b9530470d590df6fc49ccc40b284cfa8e2a",
+        "request_record_sha256": "a10d9813ba4bd05fe09c5e147d69fef471c3a2669b149e75b8e0419687c0f145",
+        "request_body_sha256": "1beb432f40a8c782f456d739b2c70cca93e980334dda83e7f117913579824faf",
+        "response_sha256": "87b81fa261ce106dc98b847f29f2ec169c97102b7f10a0d3a00ccdfbedcc7d13"
+      }
+    },
+    "comparison": {
+      "tool_use": {
+        "archive": "comparison/work.tar",
+        "attempt": "ahi5hybpdfhz2gqvs/1/1/1",
+        "member": "private/archive/audits/ahi5hybpdfhz2gqvs/runs/1/attempt-1-1.json",
+        "attempt_sha256": "2260f8d10c3c9aa51ed351ea58646e675c5c025bd3a69efa7a5abab4cc094b29",
+        "request_record_sha256": "2a9cfd3451f0b2a74b2bb165a477776e1c9726ffe7eb8b8cca3e63bde490ab93",
+        "request_body_sha256": "b956aa774f85dc9304601c1420f933b216a7552f7f28c70483a38b78965fd09e",
+        "response_sha256": "0ab6f05f52ee3700aeccfe8801d77924fa8c88fc96877315b26c72362cb37565"
+      },
+      "ordinary": {
+        "archive": "comparison/work.tar",
+        "attempt": "ahi5hybpdfhz2gqvs/1/1/1",
+        "member": "private/archive/audits/ahi5hybpdfhz2gqvs/runs/1/attempt-1-1.json",
+        "attempt_sha256": "2260f8d10c3c9aa51ed351ea58646e675c5c025bd3a69efa7a5abab4cc094b29",
+        "request_record_sha256": "2a9cfd3451f0b2a74b2bb165a477776e1c9726ffe7eb8b8cca3e63bde490ab93",
+        "request_body_sha256": "b956aa774f85dc9304601c1420f933b216a7552f7f28c70483a38b78965fd09e",
+        "response_sha256": "0ab6f05f52ee3700aeccfe8801d77924fa8c88fc96877315b26c72362cb37565"
+      },
+      "thinking": {
+        "archive": "comparison/work.tar",
+        "attempt": "ahi5hybpdfhz2gqvs/1/3/1",
+        "member": "private/archive/audits/ahi5hybpdfhz2gqvs/runs/1/attempt-3-1.json",
+        "attempt_sha256": "25bd3890dbf65db3d514313d7f2bf4d6f11341af0314d1c4ae8c4c8402d92ab7",
+        "request_record_sha256": "6738c7b115c92258107dcf30cf5f1f9d679484ef57240e9f22f027163a03d38d",
+        "request_body_sha256": "d3e29cc29b5f5e8a5b0fa8874a62a33931b8c454ec291f68d2c0a06a70f145c1",
+        "response_sha256": "fcefc7b78b9202be416f066d6cb38f992cf558101c7dcaa73241a222ca8f9f1d"
+      }
+    },
+    "compaction": {
+      "thinking": {
+        "archive": "compaction/work.tar",
+        "attempt": "aiofr5rg2kcpmse5u/1/1/1",
+        "member": "private/archive/audits/aiofr5rg2kcpmse5u/runs/1/attempt-1-1.json",
+        "attempt_sha256": "8bee5d039a6cbe072ec89b67c72ee79554cae65b478c4d49736f764397a1e512",
+        "request_record_sha256": "906e0935161278ae09aaa1018ccb4bd37d19ddb74c12c2870622a341921eaea2",
+        "request_body_sha256": "a7c51b1f14ec3158782bf6e1925d3f2c90447254e65296b0b194aa252370d7fe",
+        "response_sha256": "01987b3404283f8645fb18e5554a092b24dbbfaf449abd12bd53a480e4c4c217"
+      },
+      "tool_use": {
+        "archive": "compaction/work.tar",
+        "attempt": "aiofr5rg2kcpmse5u/1/1/1",
+        "member": "private/archive/audits/aiofr5rg2kcpmse5u/runs/1/attempt-1-1.json",
+        "attempt_sha256": "8bee5d039a6cbe072ec89b67c72ee79554cae65b478c4d49736f764397a1e512",
+        "request_record_sha256": "906e0935161278ae09aaa1018ccb4bd37d19ddb74c12c2870622a341921eaea2",
+        "request_body_sha256": "a7c51b1f14ec3158782bf6e1925d3f2c90447254e65296b0b194aa252370d7fe",
+        "response_sha256": "01987b3404283f8645fb18e5554a092b24dbbfaf449abd12bd53a480e4c4c217"
+      },
+      "ordinary": {
+        "archive": "compaction/work.tar",
+        "attempt": "aiofr5rg2kcpmse5u/1/1/1",
+        "member": "private/archive/audits/aiofr5rg2kcpmse5u/runs/1/attempt-1-1.json",
+        "attempt_sha256": "8bee5d039a6cbe072ec89b67c72ee79554cae65b478c4d49736f764397a1e512",
+        "request_record_sha256": "906e0935161278ae09aaa1018ccb4bd37d19ddb74c12c2870622a341921eaea2",
+        "request_body_sha256": "a7c51b1f14ec3158782bf6e1925d3f2c90447254e65296b0b194aa252370d7fe",
+        "response_sha256": "01987b3404283f8645fb18e5554a092b24dbbfaf449abd12bd53a480e4c4c217"
+      },
+      "compaction": {
+        "archive": "compaction/work.tar",
+        "attempt": "aiofr5rg2kcpmse5u/1/4/1",
+        "member": "private/archive/audits/aiofr5rg2kcpmse5u/runs/1/attempt-4-1.json",
+        "attempt_sha256": "23507816d3dca83aa1f6efab41f8b4312d2b803177901dc7cd593aa73b835893",
+        "request_record_sha256": "8536c9f6d2adc43b6775c52a9baf49c562b7b1d543106e583c499fe208649c1c",
+        "request_body_sha256": "fbc6f8bddd5041d8a4888b0593deda5043eaedeb371d57baf9be3fda7013074c",
+        "response_sha256": "1642a0e404b656f5b67f8c5ce6b94ce5127c7d5dc04adeb3300e0b55dddec0f5"
+      },
+      "summary": {
+        "archive": "compaction/work.tar",
+        "attempt": "aiofr5rg2kcpmse5u/1/4/1",
+        "member": "private/archive/audits/aiofr5rg2kcpmse5u/runs/1/attempt-4-1.json",
+        "attempt_sha256": "23507816d3dca83aa1f6efab41f8b4312d2b803177901dc7cd593aa73b835893",
+        "request_record_sha256": "8536c9f6d2adc43b6775c52a9baf49c562b7b1d543106e583c499fe208649c1c",
+        "request_body_sha256": "fbc6f8bddd5041d8a4888b0593deda5043eaedeb371d57baf9be3fda7013074c",
+        "response_sha256": "1642a0e404b656f5b67f8c5ce6b94ce5127c7d5dc04adeb3300e0b55dddec0f5"
+      },
+      "reset": {
+        "archive": "compaction/work.tar",
+        "attempt": "aiofr5rg2kcpmse5u/1/5/1",
+        "member": "private/archive/audits/aiofr5rg2kcpmse5u/runs/1/attempt-5-1.json",
+        "attempt_sha256": "121d653363a7e49fc635645320cfb0fb29f961fb9bcb2bd0c79ab7ab1e168c7f",
+        "request_record_sha256": "2729cc1cbe105ae637c84469ae4562e1cf7132827f0e8d57397738075b914368",
+        "request_body_sha256": "3123860fd84598b328d419fe7f0ea92e594d271c11e4baa0eac6d13221798588",
+        "response_sha256": "4a9c0ef6affd8a857d34c910162a4d98c8ca35978333c8ad7e69769c61e6d0c0"
+      }
+    }
+  },
+  "files": {
+    "compaction/EXPORT.json": "334cf0cb9c38765db9bc743a05ea49bd698fc1ec1a9c6f4bca9f9e522c742699",
+    "compaction/authorization.json": "dfecc8dd84da6bacd05b12d753ece57d91e0014e83cdd14fe94cd2de27c65315",
+    "compaction/commission.json": "abbe33b642ec2981b72cb0991a90803c39ba6f6fc012634d31b84911fb2f7111",
+    "compaction/entry-delivery.json": "5c3c852a13e709b1ec25c16fa8b36d488d8b6b431eaba4189f5bfa00e108d12f",
+    "compaction/meter.json": "d370075f01a4dc9ef5979b2d919c2212fac8678c4107fae3dc9d72ddb1571694",
+    "compaction/observation.json": "90bcad59d61034fc293fdbc19613c2099b2f76b377df2b75a15647abe7df5976",
+    "compaction/packet.json": "d1a4325ff59e983067ef508737af7eae0995c6ede8a090af83c92ea4506758d7",
+    "compaction/review.json": "ac242926ad07da49b2b9e77f3048d1ae2dbccecdd0453b10072916d821baf923",
+    "compaction/shapes.json": "63c066359e8bb6c65f27b4d1cf02bf669e8355f81f07a4a0b25965732ad7c29c",
+    "compaction/work.tar": "c51453e737f58358157f5d976215d5d946bad9607295ad26da227d8964c583dd",
+    "comparison/EXPORT.json": "3db2799b782d41c25ef706071e752a886cf3840204c7b3a486f3c5a2ad91c611",
+    "comparison/authorization.json": "dfecc8dd84da6bacd05b12d753ece57d91e0014e83cdd14fe94cd2de27c65315",
+    "comparison/commission.json": "abbe33b642ec2981b72cb0991a90803c39ba6f6fc012634d31b84911fb2f7111",
+    "comparison/meter.json": "a52e914dbb30202da1342fb49bb1ae9fb4d0b2cc935febd95ae2ef57b14e3aa7",
+    "comparison/observation.json": "60bfcd462c3e858fd6393e71a7dad36e52aad015a87ca2c79a47fa7dd2b7e4e8",
+    "comparison/packet.json": "e65677497633c32b3489d83b0feac4738225481bcf99e8c7eda6213762cc0109",
+    "comparison/review.json": "11dc4c98fffc5b7d571de260bae1390c10e439b39b7939fc25cdc3db6d2591df",
+    "comparison/shapes.json": "5bde0864d228989a8f47f948257d642f43ef3f5ff31bc183eadbdd6e87699689",
+    "comparison/work.tar": "0e00828a7a5f17e70c58ca832f4906c869f69e235fab5ac2c2c54b78a458023e",
+    "framing/EXPORT.json": "b687902aecc390607648b74fabbf4e11aadc2a7f9b2c6e494336de695d3a4720",
+    "framing/authorization.json": "2cccc49a5aadef5f2afbcf9a293f60b8a2adf99bce315354a74988cdd03dcf65",
+    "framing/commission.json": "5fbc4ed1c07ac51369d849c9b84ce3ca023f25080190af99374c3f204e0d707f",
+    "framing/meter.json": "8e8d9485be7fbbdabfa13c9b60cef287605b64389f798ac5eb816373f6d1e859",
+    "framing/observation.json": "416b0b3a56961ce2121ad9c08980f879a8196df4322a6c6349a285656c398aae",
+    "framing/packet.json": "7d7aeccd49354dd98eaf40380123f7a728ecfa85c08ef438a7db7818f52e76c3",
+    "framing/review.json": "5a195829caa2562bcf0f2a9a8a90b4a084f8d5c7208fe03ff9932d3aa7278604",
+    "framing/shapes.json": "961e428a0ac5366d744dbaa815d917df1d07313e6e46fed5bcf52b3714829193",
+    "framing/work.tar": "33369376413a8c1ac352bda982824169d1a2242a8784fd29c52207a6cfb254c3",
+    "historical-shapes.json": "4145bbb5324c3e2ac294b78223900ea6f53411b7a17e88e3210da6bdf2d77027",
+    "open/EXPORT.json": "d17cb8f98b544787a2b163f92a33521132918557d41ac308e6791f4127cbeea3",
+    "open/authorization.json": "afa5239d693c31f46ffde7253458d7d64da0096e1e94e1070cf25ea3802dfc0a",
+    "open/commission.json": "6cc9c4a12f2dde4207061cef5ae6a788670d18b8964a073db93e1e2aa26931a9",
+    "open/meter.json": "3477c72cd6d5ea21c7a7c404b7ac24e9ef6a5cce369e52c0a78c691af7a5c442",
+    "open/observation.json": "cea1a5c70c4a97d5fe0acc051bb801485e46beeca3aa4fc8cb983916c87b35ff",
+    "open/packet.json": "96f9a576a3e4986667ff837bdbe5fb581d1279b6fb282ff2fea2685fc9cbf754",
+    "open/review.json": "acb9fb32e4dd543fa64f05ca8b0be23c25eb2cadee1986d7c944548a6392cf75",
+    "open/settlement.json": "3b06aa4edf3701e2b6befe4fff2cd74e0c4a452e6d00c3a4985179cff9458a7c",
+    "open/shapes.json": "9b5cb94abf8a277dc298fa6f8b264dce41cec7cf60a0d3a71c93c4f661b267c1",
+    "open/work.tar": "25791ac10533664724ce330225de3e5f9e38fdb08a7c65a99e1d5c182b401268",
+    "pricing.json": "7234edf87d1d1e624c44f5c62589ca1664305abdf4ab99d03cb9f00e76f2f3db",
+    "sources.json": "81d906e8f78bc8c94d57d4dfc84867b5e8ed24c137354adc586acdf8ea92681f"
+  }
+}

@@ -1,0 +1,911 @@
+{
+  "schema": "stewart.messages-alignment/1",
+  "id": "messages-alignment-haiku-01",
+  "model": "claude-haiku-5-5",
+  "at": "2026-11-22T00:07:17.449Z",
+  "settings": {
+    "endpoint": "https://api.anthropic.com",
+    "route": "direct",
+    "model": "claude-haiku-5-5",
+    "api_version": "2026-10-21",
+    "compaction_beta": "compact-2026-09-04",
+    "compaction": {
+      "trigger_tokens": 150000,
+      "request": {
+        "type": "summarize"
+      }
+    },
+    "max_tokens_per_request": 16000,
+    "effort_allowlist": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ]
+  },
+  "release_writer": {
+    "qualification_id": "runtime-trials-preparation-release-01",
+    "binary_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33"
+  },
+  "documentation_checked_on": "2026-11-21",
+  "reported_attempts": 35,
+  "estimated_attempts": 0,
+  "calculated_usd": "0.3873232",
+  "settled_cents": 41,
+  "answer_assessment": "unexamined",
+  "currency": "Applies to the named model and direct route at the recorded API version, beta, allowed effort spellings, compaction trigger and request, and output cap. Compare these settings with the release before naming this model. A changed pin requires alignment for the new settings.",
+  "witness_limits": [
+    "Stewart captured the direct-route requests and responses. Independent reconstruction does not witness live wire bytes, framing, or the number of provider attempts.",
+    "No independent provider invoice or Console observation for these placements."
+  ],
+  "comparison": {
+    "A1": {
+      "subject": "Request acceptance",
+      "observed": "yes",
+      "disposition": "match",
+      "conclusion": "All 35 reconstructed requests received HTTP 200 and a provider request ID, including the summary request.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json",
+        "open/review.json",
+        "framing/review.json",
+        "comparison/review.json",
+        "compaction/review.json"
+      ],
+      "fixtures": []
+    },
+    "A2": {
+      "subject": "Message envelope",
+      "observed": "yes",
+      "disposition": "existing fixture",
+      "conclusion": "The release driver replays the observed envelope, including nullable container, diagnostics and stop_details. The small rehearsal peer omits those optional members.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/m3-ordinary-ending.json",
+        "apparatus/driver/testdata/messages/m4-summary.json"
+      ]
+    },
+    "A3": {
+      "subject": "Content blocks",
+      "observed": "yes",
+      "disposition": "existing fixture",
+      "conclusion": "Observed compaction, text, thinking, tool_use. Their member sets match captured fixtures, including caller on tool_use and the opaque signature on thinking and compaction.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/m2-cap.json",
+        "apparatus/driver/testdata/messages/m3-citation-corrected.json",
+        "apparatus/driver/testdata/messages/m3-ordinary-ending.json",
+        "apparatus/driver/testdata/messages/m4-summary.json"
+      ]
+    },
+    "A4": {
+      "subject": "Stop reasons",
+      "observed": "partial",
+      "disposition": "limitation",
+      "conclusion": "Observed compaction, tool_use. The driver also scripts other endings. This series supplies no live instance of refusal, a context-window stop, an output cap, or an ordinary end_turn.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/m2-cap.json",
+        "apparatus/driver/testdata/messages/m3-ordinary-ending.json",
+        "apparatus/driver/testdata/messages/m4-summary.json"
+      ]
+    },
+    "A5": {
+      "subject": "Ordinary usage",
+      "observed": "yes",
+      "disposition": "existing fixture",
+      "conclusion": "One message iteration agreed with the top-level counts. The captured ordinary fixture includes output_tokens_details. The rehearsal peer also exercises top-level-only usage.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/m3-ordinary-ending.json"
+      ]
+    },
+    "A6": {
+      "subject": "Summary usage",
+      "observed": "yes",
+      "disposition": "existing fixture",
+      "conclusion": "One charged compaction iteration, zero top-level input and output, and no output_tokens_details member. The exact M4 fixture replays this shape. Synthetic mixed iterations exercise summation.",
+      "evidence": [
+        "compaction/shapes.json",
+        "compaction/review.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/m4-summary.json"
+      ]
+    },
+    "A7": {
+      "subject": "Summary, reset and entry continuity",
+      "observed": "yes",
+      "disposition": "match",
+      "conclusion": "At the pinned trigger the provider returned one signed compaction block. The next ordinary request reused it byte-for-byte in the reset context. The original entry was retrieved and revised, and its revised version reached delivery once.",
+      "evidence": [
+        "compaction/shapes.json",
+        "compaction/review.json",
+        "compaction/entry-delivery.json",
+        "compaction/observation.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/m4-summary.json"
+      ]
+    },
+    "A8": {
+      "subject": "Charges and cost",
+      "observed": "partial",
+      "disposition": "limitation",
+      "conclusion": "All usage was reported. Per-request prices and upward per-placement rounding reproduce the queue settlements. No independent workspace billing observation was supplied.",
+      "evidence": [
+        "open/review.json",
+        "framing/review.json",
+        "comparison/review.json",
+        "compaction/review.json",
+        "open/meter.json",
+        "framing/meter.json",
+        "comparison/meter.json",
+        "compaction/meter.json",
+        "pricing.json"
+      ],
+      "fixtures": []
+    },
+    "A9": {
+      "subject": "Provider errors",
+      "observed": "no",
+      "disposition": "limitation",
+      "conclusion": "Every attempt returned HTTP 200. The captured historical 401 and scripted retry controls cover adapter handling. Live rejection, retry and backoff behavior were unobserved for this model in this series.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json"
+      ],
+      "fixtures": [
+        "apparatus/driver/testdata/messages/sanity-authentication-error.json"
+      ]
+    },
+    "A10": {
+      "subject": "Transport",
+      "observed": "partial",
+      "disposition": "limitation",
+      "conclusion": "Timing, request IDs and selected headers come from Stewart. Request reconstruction independently checks internal consistency. Direct TLS provided no independent live witness of per-request bytes, framing, or attempt count.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json",
+        "open/review.json",
+        "framing/review.json",
+        "comparison/review.json",
+        "compaction/review.json"
+      ],
+      "fixtures": []
+    },
+    "A11": {
+      "subject": "Model identity",
+      "observed": "yes",
+      "disposition": "match",
+      "conclusion": "Every response named the requested model claude-haiku-5-5. The reconstructed requests used the configured model without fallbacks.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json",
+        "open/review.json",
+        "framing/review.json",
+        "comparison/review.json",
+        "compaction/review.json"
+      ],
+      "fixtures": []
+    },
+    "A12": {
+      "subject": "Manager effort passthrough",
+      "observed": "yes",
+      "disposition": "match",
+      "conclusion": "The framing requests carried the manager’s medium value. The other three audits omitted output_config. Both forms were accepted. Other supported spellings are exercised by the scripted release driver.",
+      "evidence": [
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json",
+        "open/packet.json",
+        "framing/packet.json",
+        "comparison/packet.json",
+        "compaction/packet.json",
+        "open/review.json",
+        "framing/review.json",
+        "comparison/review.json",
+        "compaction/review.json"
+      ],
+      "fixtures": []
+    },
+    "A13": {
+      "subject": "Credential reflection",
+      "observed": "yes",
+      "disposition": "match",
+      "conclusion": "Attempt markers and all twelve exposure scans were clean. The rehearsal peer’s reflection control separately exercises detection.",
+      "evidence": [
+        "open/observation.json",
+        "framing/observation.json",
+        "comparison/observation.json",
+        "compaction/observation.json",
+        "open/shapes.json",
+        "framing/shapes.json",
+        "comparison/shapes.json",
+        "compaction/shapes.json"
+      ],
+      "fixtures": []
+    }
+  },
+  "fixture_decision": "Existing captured fixtures cover the observed envelopes, block members and accounting shapes. The lightweight peer retains its minimal-envelope and mixed-iteration controls.",
+  "fixtures_added": [],
+  "fixture_source": {
+    "commit": "ba47bac1f87f0f0f27ca8bda353fe6e2e05881ea",
+    "files": {
+      "apparatus/driver/testdata/messages/m2-cap.json": "f2dc69b90bd373506e4029d09df7490e67f3f801a69863e59915fd6f8da1d562",
+      "apparatus/driver/testdata/messages/m3-citation-corrected.json": "1a6ea9ccc7d0936579e1734a30300f972e088e6e6f5fb6ad5fb816a8fd260b88",
+      "apparatus/driver/testdata/messages/m3-ordinary-ending.json": "ee1df6b283c322424e116e2e9a692a44ebd27e07546d5bd1928f27f407753728",
+      "apparatus/driver/testdata/messages/m4-summary.json": "87d8c3ec491c8ee5b91a344472207a59effbae9964c09c0314ac433f01d77820",
+      "apparatus/driver/testdata/messages/sanity-authentication-error.json": "0366ef8a85e9d5f36b6541f5f64a89a8d785d0242693c9ab256621f6d6c0f380",
+      "apparatus/driver/testdata/README.md": "b6e565bf31501bee49f87d8306a061a36a5948e4326e0ec54c2e9112feb0c160"
+    }
+  },
+  "runs": {
+    "open": {
+      "specimen": "open-ordinary",
+      "family": "open-inquiry/1",
+      "evidence_variant": "ordinary",
+      "model": "claude-haiku-5-5",
+      "response_models": [
+        "claude-haiku-5-5"
+      ],
+      "effort": null,
+      "audit": "haiku-open-ordinary",
+      "opened_at": "2026-11-21T21:04:23.685Z",
+      "closed_at": "2026-11-21T21:04:48.867Z",
+      "placements": 1,
+      "limits": {
+        "turns": 16,
+        "input_tokens": 115000,
+        "output_tokens": 32000
+      },
+      "file_limit_bytes": 131072,
+      "watchdog_seconds": 900,
+      "ending": "sealed",
+      "cause": null,
+      "seal_actor": "auditor",
+      "auditor_submitted": true,
+      "closed": true,
+      "delivery_verified": true,
+      "procedural_checks": 117,
+      "citations_checked": 11,
+      "operations": {
+        "list": 1,
+        "prepare": 1,
+        "read": 4,
+        "record_account": 1,
+        "record_limit": 2,
+        "record_observation": 6,
+        "replace": 1,
+        "search": 7,
+        "submit": 1
+      },
+      "refused_or_failed_calls": 4,
+      "guidance_call_requests": [],
+      "notices": [],
+      "usage": {
+        "input_tokens": {
+          "estimated": 0,
+          "reported": 86492
+        },
+        "output_tokens": {
+          "estimated": 0,
+          "reported": 4542
+        },
+        "turns": {
+          "estimated": 0,
+          "reported": 9
+        }
+      },
+      "compaction": {
+        "context_resets": 0,
+        "failed_summaries": 0,
+        "reentries_after_reset": 0,
+        "successful_summaries": 0,
+        "summary_requests": 0
+      },
+      "summary_and_reset": [],
+      "prior_entry_revisions": [],
+      "delivered_after_reset": [],
+      "response_stops": {
+        "tool_use": 9
+      },
+      "content_blocks": [
+        "text",
+        "thinking",
+        "tool_use"
+      ],
+      "credential_scans": {
+        "scans": 3,
+        "files_examined": 295,
+        "files_with_matches": 0,
+        "errors": 0,
+        "credential_printed": false
+      },
+      "commission_sha256": "6cc9c4a12f2dde4207061cef5ae6a788670d18b8964a073db93e1e2aa26931a9",
+      "authorization_sha256": "afa5239d693c31f46ffde7253458d7d64da0096e1e94e1070cf25ea3802dfc0a",
+      "packet_sha256": "3d18f104ece6c3e0ac8d2889b5d3d74fd6f15e8169bfbc8743c1439950f4b761",
+      "bindings": {
+        "qualification_id": "runtime-trials-preparation-release-01",
+        "binary_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33",
+        "source_commit": "419fb0acdcae4f07ae306122683a3d98f85367c7",
+        "apparatus_sha256": "b481807752a1167ee0fac5a2e965a5488483c663a7fefa7af2460ef67910caeb",
+        "image": "docker.io/library/python@sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+        "catalog_sha256": "c8f140d1b70bd2f767a7654a8a849318fefbd4b4d19e4833af7fdb4d9f5315a6"
+      },
+      "export": {
+        "path": "open/work.tar",
+        "original": "/var/lib/stewart/queue-alignment-pair-01/results/69e8437d54c7bc2f5dd28728dee53c456fdc0aca889a7245cbb63ee68899f665.tar",
+        "sha256": "69e8437d54c7bc2f5dd28728dee53c456fdc0aca889a7245cbb63ee68899f665"
+      },
+      "calculated_usd": "0.0109202",
+      "settled_cents": 2
+    },
+    "framing": {
+      "specimen": "framing-inadequate",
+      "family": "inquiry-framing/1",
+      "evidence_variant": "inadequate",
+      "model": "claude-haiku-5-5",
+      "response_models": [
+        "claude-haiku-5-5"
+      ],
+      "effort": "medium",
+      "audit": "haiku-framing-inadequate",
+      "opened_at": "2026-11-21T22:07:06.755Z",
+      "closed_at": "2026-11-21T22:07:31.366Z",
+      "placements": 1,
+      "limits": {
+        "input_tokens": 115000,
+        "output_tokens": 32000,
+        "turns": 16
+      },
+      "file_limit_bytes": 131072,
+      "watchdog_seconds": 900,
+      "ending": "sealed",
+      "cause": null,
+      "seal_actor": "auditor",
+      "auditor_submitted": true,
+      "closed": true,
+      "delivery_verified": true,
+      "procedural_checks": 116,
+      "citations_checked": 10,
+      "operations": {
+        "list": 1,
+        "prepare": 1,
+        "read": 2,
+        "record_account": 2,
+        "record_limit": 2,
+        "record_observation": 4,
+        "record_relation": 2,
+        "record_working_question": 1,
+        "search": 7,
+        "submit": 1
+      },
+      "refused_or_failed_calls": 4,
+      "guidance_call_requests": [],
+      "notices": [],
+      "usage": {
+        "input_tokens": {
+          "estimated": 0,
+          "reported": 77979
+        },
+        "output_tokens": {
+          "estimated": 0,
+          "reported": 4600
+        },
+        "turns": {
+          "estimated": 0,
+          "reported": 9
+        }
+      },
+      "compaction": {
+        "context_resets": 0,
+        "failed_summaries": 0,
+        "reentries_after_reset": 0,
+        "successful_summaries": 0,
+        "summary_requests": 0
+      },
+      "summary_and_reset": [],
+      "prior_entry_revisions": [],
+      "delivered_after_reset": [],
+      "response_stops": {
+        "tool_use": 9
+      },
+      "content_blocks": [
+        "thinking",
+        "tool_use"
+      ],
+      "credential_scans": {
+        "credential_printed": false,
+        "errors": 0,
+        "files_examined": 283,
+        "files_with_matches": 0,
+        "scans": 3
+      },
+      "commission_sha256": "b91a1e49e353211527fd473b8c1d5465d2733b097e51f864c0b22c28ca094af7",
+      "authorization_sha256": "b93cafc75fef873551e4af8bead5b633dcb9dd1d89cb558636f237b43ee0bdbc",
+      "packet_sha256": "a2a0e05c19c25497524a239c411d400fc6dcc98854d8f80151eda17ace6139ef",
+      "bindings": {
+        "apparatus_sha256": "d8c22403e0d135c33f521dac044b27ebaee6540ab82093a173e6ec061532c4b0",
+        "binary_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33",
+        "catalog_sha256": "c8f140d1b70bd2f767a7654a8a849318fefbd4b4d19e4833af7fdb4d9f5315a6",
+        "image": "docker.io/library/python@sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+        "qualification_id": "runtime-trials-preparation-release-01",
+        "source_commit": "b58c89a796215b8e9d458326aaa340dfd69883d4"
+      },
+      "export": {
+        "path": "framing/work.tar",
+        "original": ".scratch/framing-medium-01/work.tar",
+        "sha256": "9cd044a43dc1eecd5c9a440e7784015c612ea87dae8ac4e04c0fdc838047f836"
+      },
+      "calculated_usd": "0.0100979",
+      "settled_cents": 2
+    },
+    "comparison": {
+      "specimen": "comparison-ordinary",
+      "family": "comparison/1",
+      "evidence_variant": "ordinary",
+      "model": "claude-haiku-5-5",
+      "response_models": [
+        "claude-haiku-5-5"
+      ],
+      "effort": null,
+      "audit": "haiku-comparison-ordinary",
+      "opened_at": "2026-11-21T23:52:51.290Z",
+      "closed_at": "2026-11-21T23:53:08.438Z",
+      "placements": 1,
+      "limits": {
+        "input_tokens": 115000,
+        "output_tokens": 32000,
+        "turns": 16
+      },
+      "file_limit_bytes": 131072,
+      "watchdog_seconds": 900,
+      "ending": "sealed",
+      "cause": null,
+      "seal_actor": "auditor",
+      "auditor_submitted": true,
+      "closed": true,
+      "delivery_verified": true,
+      "procedural_checks": 116,
+      "citations_checked": 11,
+      "operations": {
+        "list": 1,
+        "prepare": 1,
+        "read": 4,
+        "record_account": 1,
+        "record_comparison": 1,
+        "record_criterion": 1,
+        "record_limit": 1,
+        "record_observation": 2,
+        "submit": 1
+      },
+      "refused_or_failed_calls": 0,
+      "guidance_call_requests": [],
+      "notices": [],
+      "usage": {
+        "input_tokens": {
+          "estimated": 0,
+          "reported": 57655
+        },
+        "output_tokens": {
+          "estimated": 0,
+          "reported": 2927
+        },
+        "turns": {
+          "estimated": 0,
+          "reported": 7
+        }
+      },
+      "compaction": {
+        "context_resets": 0,
+        "failed_summaries": 0,
+        "reentries_after_reset": 0,
+        "successful_summaries": 0,
+        "summary_requests": 0
+      },
+      "summary_and_reset": [],
+      "prior_entry_revisions": [],
+      "delivered_after_reset": [],
+      "response_stops": {
+        "tool_use": 7
+      },
+      "content_blocks": [
+        "thinking",
+        "tool_use"
+      ],
+      "credential_scans": {
+        "credential_printed": false,
+        "errors": 0,
+        "files_examined": 254,
+        "files_with_matches": 0,
+        "scans": 3
+      },
+      "commission_sha256": "abbe33b642ec2981b72cb0991a90803c39ba6f6fc012634d31b84911fb2f7111",
+      "authorization_sha256": "dfecc8dd84da6bacd05b12d753ece57d91e0014e83cdd14fe94cd2de27c65315",
+      "packet_sha256": "dd62535185856759b2d1eb0aefbb0671309fd4d35346967076743a6160a9dadd",
+      "bindings": {
+        "apparatus_sha256": "d8c22403e0d135c33f521dac044b27ebaee6540ab82093a173e6ec061532c4b0",
+        "binary_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33",
+        "catalog_sha256": "c8f140d1b70bd2f767a7654a8a849318fefbd4b4d19e4833af7fdb4d9f5315a6",
+        "image": "docker.io/library/python@sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+        "qualification_id": "runtime-trials-preparation-release-01",
+        "source_commit": "b58c89a796215b8e9d458326aaa340dfd69883d4"
+      },
+      "export": {
+        "path": "comparison/work.tar",
+        "original": ".scratch/final-four-comparisons-01/haiku/work.tar",
+        "sha256": "3a4b8a8f9c8fc9c9b225a0172b31aecac6bed2626388d3251a456e7bae6293f0"
+      },
+      "calculated_usd": "0.007229",
+      "settled_cents": 1
+    },
+    "compaction": {
+      "specimen": "haiku-large-traces",
+      "family": "open-inquiry/1",
+      "evidence_variant": "ordinary",
+      "model": "claude-haiku-5-5",
+      "response_models": [
+        "claude-haiku-5-5"
+      ],
+      "effort": null,
+      "audit": "haiku-large-traces",
+      "opened_at": "2026-11-22T00:06:29.126Z",
+      "closed_at": "2026-11-22T00:07:17.449Z",
+      "placements": 1,
+      "limits": {
+        "input_tokens": 1000000,
+        "output_tokens": 24000,
+        "turns": 16
+      },
+      "file_limit_bytes": 655360,
+      "watchdog_seconds": 1800,
+      "ending": "sealed",
+      "cause": null,
+      "seal_actor": "auditor",
+      "auditor_submitted": true,
+      "closed": true,
+      "delivery_verified": true,
+      "procedural_checks": 127,
+      "citations_checked": 22,
+      "operations": {
+        "list": 1,
+        "prepare": 1,
+        "read": 9,
+        "record_account": 1,
+        "record_limit": 1,
+        "record_observation": 1,
+        "replace": 1,
+        "search": 3,
+        "submit": 1,
+        "what_am_i_working_with": 1
+      },
+      "refused_or_failed_calls": 0,
+      "guidance_call_requests": [
+        6
+      ],
+      "notices": [],
+      "usage": {
+        "input_tokens": {
+          "estimated": 0,
+          "reported": 752191
+        },
+        "output_tokens": {
+          "estimated": 0,
+          "reported": 6218
+        },
+        "turns": {
+          "estimated": 0,
+          "reported": 10
+        }
+      },
+      "compaction": {
+        "context_resets": 1,
+        "failed_summaries": 0,
+        "reentries_after_reset": 1,
+        "successful_summaries": 1,
+        "summary_requests": 1
+      },
+      "summary_and_reset": [
+        {
+          "iterations": [
+            "compaction"
+          ],
+          "request": 5,
+          "reset_request": 6,
+          "signed_content_sha256": "5fbf81acf546d83f49907ab3f2d56e0211c012dc7a6a4466a2195cb5d801d47e",
+          "top_level_input": 0,
+          "top_level_output": 0,
+          "trigger_request": 4,
+          "trigger_tokens": 342215
+        }
+      ],
+      "prior_entry_revisions": [
+        {
+          "before_request": 2,
+          "id": "e1",
+          "original_version": 1,
+          "retrieval_request": 6,
+          "revised_version": 2,
+          "revision_request": 8,
+          "summary_request": 5
+        }
+      ],
+      "delivered_after_reset": [
+        {
+          "all_delivered": true,
+          "delivered_versions": {
+            "e1": 2
+          },
+          "matching_duplicate_additions": [],
+          "preexisting_ids": [
+            "e1"
+          ],
+          "summary_request": 5
+        }
+      ],
+      "response_stops": {
+        "compaction": 1,
+        "tool_use": 9
+      },
+      "content_blocks": [
+        "compaction",
+        "thinking",
+        "tool_use"
+      ],
+      "credential_scans": {
+        "credential_printed": false,
+        "errors": 0,
+        "files_examined": 347,
+        "files_with_matches": 0,
+        "scans": 3
+      },
+      "commission_sha256": "abbe33b642ec2981b72cb0991a90803c39ba6f6fc012634d31b84911fb2f7111",
+      "authorization_sha256": "dfecc8dd84da6bacd05b12d753ece57d91e0014e83cdd14fe94cd2de27c65315",
+      "packet_sha256": "f6113a26491830a022bc23280ca1f4c94b40b01c385c196b7ff9dda1bf5a4190",
+      "bindings": {
+        "apparatus_sha256": "b3b01917f1613c91e6250fe04abbef040f08564b205082ed02083abd23ccb3ed",
+        "binary_sha256": "45db6dc0bed99de55e0da9158eab81eb9324810814791a32624ade50eddd7d33",
+        "catalog_sha256": "c8f140d1b70bd2f767a7654a8a849318fefbd4b4d19e4833af7fdb4d9f5315a6",
+        "image": "docker.io/library/python@sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+        "qualification_id": "runtime-trials-preparation-release-01",
+        "source_commit": "f82013db7424f99a2a94ff178a569bae54cfe401"
+      },
+      "export": {
+        "path": "compaction/work.tar",
+        "original": ".scratch/final-four-compaction-cells-01/haiku/work.tar",
+        "sha256": "647b7f8d3c1053729d0e0ca5717973ec597391b2c63188e2f329af4bd74054c4"
+      },
+      "calculated_usd": "0.3590761",
+      "settled_cents": 36
+    }
+  },
+  "capture_lookup": "For every attempt, <run>/shapes.json names the exact work.tar member and the digests of the attempt, corresponding request-N.json and response-N-A.bin. The response and request share the attempt directory. The export receipts and reviews are bound below.",
+  "capture_examples": {
+    "open": {
+      "thinking": {
+        "archive": "open/work.tar",
+        "attempt": "ab72cktfevbdmtdig/1/1/1",
+        "member": "private/archive/audits/ab72cktfevbdmtdig/runs/1/attempt-1-1.json",
+        "attempt_sha256": "badaae035a0fdab5923cd6b327a7aac077c7949463915c08675eee31db1187bf",
+        "request_record_sha256": "e0869c9ff0fec864db93e64ba5b51fe01b0dba2c9e58221366a743a86b0cdeb0",
+        "request_body_sha256": "f3cc10194c07d6894fd26a00164387f22d99082f5ed117268083aa2d2b9dbdfb",
+        "response_sha256": "d255532e6c71ac590fef45ee2e33327b1b2e65b8bc8cf0c70585d114f87cac4e"
+      },
+      "tool_use": {
+        "archive": "open/work.tar",
+        "attempt": "ab72cktfevbdmtdig/1/1/1",
+        "member": "private/archive/audits/ab72cktfevbdmtdig/runs/1/attempt-1-1.json",
+        "attempt_sha256": "badaae035a0fdab5923cd6b327a7aac077c7949463915c08675eee31db1187bf",
+        "request_record_sha256": "e0869c9ff0fec864db93e64ba5b51fe01b0dba2c9e58221366a743a86b0cdeb0",
+        "request_body_sha256": "f3cc10194c07d6894fd26a00164387f22d99082f5ed117268083aa2d2b9dbdfb",
+        "response_sha256": "d255532e6c71ac590fef45ee2e33327b1b2e65b8bc8cf0c70585d114f87cac4e"
+      },
+      "ordinary": {
+        "archive": "open/work.tar",
+        "attempt": "ab72cktfevbdmtdig/1/1/1",
+        "member": "private/archive/audits/ab72cktfevbdmtdig/runs/1/attempt-1-1.json",
+        "attempt_sha256": "badaae035a0fdab5923cd6b327a7aac077c7949463915c08675eee31db1187bf",
+        "request_record_sha256": "e0869c9ff0fec864db93e64ba5b51fe01b0dba2c9e58221366a743a86b0cdeb0",
+        "request_body_sha256": "f3cc10194c07d6894fd26a00164387f22d99082f5ed117268083aa2d2b9dbdfb",
+        "response_sha256": "d255532e6c71ac590fef45ee2e33327b1b2e65b8bc8cf0c70585d114f87cac4e"
+      },
+      "text": {
+        "archive": "open/work.tar",
+        "attempt": "ab72cktfevbdmtdig/1/4/1",
+        "member": "private/archive/audits/ab72cktfevbdmtdig/runs/1/attempt-4-1.json",
+        "attempt_sha256": "f58cd9521feab92c586c87e81e18fbe86bd632f77f802c7e682fe1bf1020afad",
+        "request_record_sha256": "d4b3114b9c8eb76b7b9d97ea72cb908d1ecfa4806ceb444bb0801513f432ee2b",
+        "request_body_sha256": "bab6e7463f5ddf6f33da665db44264bed15bb9ff4a39c7de36c5a090d45d2164",
+        "response_sha256": "31de3385d80ffe9626f163fe7589a8fc4d86e649d6ac4d454a22cc86fb5e8b89"
+      }
+    },
+    "framing": {
+      "thinking": {
+        "archive": "framing/work.tar",
+        "attempt": "agv3cwuqvcbitqnjk/1/1/1",
+        "member": "private/archive/audits/agv3cwuqvcbitqnjk/runs/1/attempt-1-1.json",
+        "attempt_sha256": "50e5d490ce41bbbbef31bd46736c16d308a001cac2bbef266e80d32a80eaf4c5",
+        "request_record_sha256": "dc8f8632956f7691c32fe088e6bf35411618d96bc741e263fdc814ef4dd0f5b4",
+        "request_body_sha256": "6f8e37ac04b5098212cf62fbd0a4ac70604d44860ea79f6da448789d7ccfcd92",
+        "response_sha256": "8613b478a74d6638987a20d9aee02241a4dcf71e4b271703f9b2acb967f75dbc"
+      },
+      "tool_use": {
+        "archive": "framing/work.tar",
+        "attempt": "agv3cwuqvcbitqnjk/1/1/1",
+        "member": "private/archive/audits/agv3cwuqvcbitqnjk/runs/1/attempt-1-1.json",
+        "attempt_sha256": "50e5d490ce41bbbbef31bd46736c16d308a001cac2bbef266e80d32a80eaf4c5",
+        "request_record_sha256": "dc8f8632956f7691c32fe088e6bf35411618d96bc741e263fdc814ef4dd0f5b4",
+        "request_body_sha256": "6f8e37ac04b5098212cf62fbd0a4ac70604d44860ea79f6da448789d7ccfcd92",
+        "response_sha256": "8613b478a74d6638987a20d9aee02241a4dcf71e4b271703f9b2acb967f75dbc"
+      },
+      "ordinary": {
+        "archive": "framing/work.tar",
+        "attempt": "agv3cwuqvcbitqnjk/1/1/1",
+        "member": "private/archive/audits/agv3cwuqvcbitqnjk/runs/1/attempt-1-1.json",
+        "attempt_sha256": "50e5d490ce41bbbbef31bd46736c16d308a001cac2bbef266e80d32a80eaf4c5",
+        "request_record_sha256": "dc8f8632956f7691c32fe088e6bf35411618d96bc741e263fdc814ef4dd0f5b4",
+        "request_body_sha256": "6f8e37ac04b5098212cf62fbd0a4ac70604d44860ea79f6da448789d7ccfcd92",
+        "response_sha256": "8613b478a74d6638987a20d9aee02241a4dcf71e4b271703f9b2acb967f75dbc"
+      }
+    },
+    "comparison": {
+      "thinking": {
+        "archive": "comparison/work.tar",
+        "attempt": "awew7kcoaeyo32kfd/1/1/1",
+        "member": "private/archive/audits/awew7kcoaeyo32kfd/runs/1/attempt-1-1.json",
+        "attempt_sha256": "76e2b7f6a7aae023c1fd4fe217075f8cf2fc256068308bbc290a0c11cb6ffb91",
+        "request_record_sha256": "ad9805e9697b28ed1a14c63fc69c2584b4b2bd57fbeea69fef2972970792e34d",
+        "request_body_sha256": "d7d6b331449b7e10961fcbda7cd3809a2f6e56f103e7dbbd2a86f2fc7df0ff8e",
+        "response_sha256": "8cc0b5f371d852e04076e5ecee2e486bee66c6652e2f4729ae149859d4eb179a"
+      },
+      "tool_use": {
+        "archive": "comparison/work.tar",
+        "attempt": "awew7kcoaeyo32kfd/1/1/1",
+        "member": "private/archive/audits/awew7kcoaeyo32kfd/runs/1/attempt-1-1.json",
+        "attempt_sha256": "76e2b7f6a7aae023c1fd4fe217075f8cf2fc256068308bbc290a0c11cb6ffb91",
+        "request_record_sha256": "ad9805e9697b28ed1a14c63fc69c2584b4b2bd57fbeea69fef2972970792e34d",
+        "request_body_sha256": "d7d6b331449b7e10961fcbda7cd3809a2f6e56f103e7dbbd2a86f2fc7df0ff8e",
+        "response_sha256": "8cc0b5f371d852e04076e5ecee2e486bee66c6652e2f4729ae149859d4eb179a"
+      },
+      "ordinary": {
+        "archive": "comparison/work.tar",
+        "attempt": "awew7kcoaeyo32kfd/1/1/1",
+        "member": "private/archive/audits/awew7kcoaeyo32kfd/runs/1/attempt-1-1.json",
+        "attempt_sha256": "76e2b7f6a7aae023c1fd4fe217075f8cf2fc256068308bbc290a0c11cb6ffb91",
+        "request_record_sha256": "ad9805e9697b28ed1a14c63fc69c2584b4b2bd57fbeea69fef2972970792e34d",
+        "request_body_sha256": "d7d6b331449b7e10961fcbda7cd3809a2f6e56f103e7dbbd2a86f2fc7df0ff8e",
+        "response_sha256": "8cc0b5f371d852e04076e5ecee2e486bee66c6652e2f4729ae149859d4eb179a"
+      }
+    },
+    "compaction": {
+      "thinking": {
+        "archive": "compaction/work.tar",
+        "attempt": "a5ttuyslxhoczdonk/1/1/1",
+        "member": "private/archive/audits/a5ttuyslxhoczdonk/runs/1/attempt-1-1.json",
+        "attempt_sha256": "337623f59b9069e4dec46c034001d887a351089b6f54dc7690d59c26673e681f",
+        "request_record_sha256": "7365f9f4ec9bcacfd6f38a12ea7c09623bd6769a88aea71f8479c4d34d8ad173",
+        "request_body_sha256": "10034f2f0b620794d57bef268806ed4b74524cd083578430346110e2d4f23b4a",
+        "response_sha256": "3c6189241efea82cae4ec427022bedece4d5bcd6eef6a673798c867b3906b059"
+      },
+      "tool_use": {
+        "archive": "compaction/work.tar",
+        "attempt": "a5ttuyslxhoczdonk/1/1/1",
+        "member": "private/archive/audits/a5ttuyslxhoczdonk/runs/1/attempt-1-1.json",
+        "attempt_sha256": "337623f59b9069e4dec46c034001d887a351089b6f54dc7690d59c26673e681f",
+        "request_record_sha256": "7365f9f4ec9bcacfd6f38a12ea7c09623bd6769a88aea71f8479c4d34d8ad173",
+        "request_body_sha256": "10034f2f0b620794d57bef268806ed4b74524cd083578430346110e2d4f23b4a",
+        "response_sha256": "3c6189241efea82cae4ec427022bedece4d5bcd6eef6a673798c867b3906b059"
+      },
+      "ordinary": {
+        "archive": "compaction/work.tar",
+        "attempt": "a5ttuyslxhoczdonk/1/1/1",
+        "member": "private/archive/audits/a5ttuyslxhoczdonk/runs/1/attempt-1-1.json",
+        "attempt_sha256": "337623f59b9069e4dec46c034001d887a351089b6f54dc7690d59c26673e681f",
+        "request_record_sha256": "7365f9f4ec9bcacfd6f38a12ea7c09623bd6769a88aea71f8479c4d34d8ad173",
+        "request_body_sha256": "10034f2f0b620794d57bef268806ed4b74524cd083578430346110e2d4f23b4a",
+        "response_sha256": "3c6189241efea82cae4ec427022bedece4d5bcd6eef6a673798c867b3906b059"
+      },
+      "compaction": {
+        "archive": "compaction/work.tar",
+        "attempt": "a5ttuyslxhoczdonk/1/5/1",
+        "member": "private/archive/audits/a5ttuyslxhoczdonk/runs/1/attempt-5-1.json",
+        "attempt_sha256": "ccb006feb209a68280bf786725ad84912b7c7a6baa76112b7b37aab534e6160a",
+        "request_record_sha256": "08d07285cc5da2cc79b3d642b668730551286d38d6907baf7b372f2b7316e62f",
+        "request_body_sha256": "60a0a160aa5c4ee6a3cee5c391febfa3a83791ff25d87bf9df803d1c35214dfc",
+        "response_sha256": "8ad9cc39bc7e01ee83ac09249f15cabde7f9fb0d21835030a1ccb216ee4464d1"
+      },
+      "summary": {
+        "archive": "compaction/work.tar",
+        "attempt": "a5ttuyslxhoczdonk/1/5/1",
+        "member": "private/archive/audits/a5ttuyslxhoczdonk/runs/1/attempt-5-1.json",
+        "attempt_sha256": "ccb006feb209a68280bf786725ad84912b7c7a6baa76112b7b37aab534e6160a",
+        "request_record_sha256": "08d07285cc5da2cc79b3d642b668730551286d38d6907baf7b372f2b7316e62f",
+        "request_body_sha256": "60a0a160aa5c4ee6a3cee5c391febfa3a83791ff25d87bf9df803d1c35214dfc",
+        "response_sha256": "8ad9cc39bc7e01ee83ac09249f15cabde7f9fb0d21835030a1ccb216ee4464d1"
+      },
+      "reset": {
+        "archive": "compaction/work.tar",
+        "attempt": "a5ttuyslxhoczdonk/1/6/1",
+        "member": "private/archive/audits/a5ttuyslxhoczdonk/runs/1/attempt-6-1.json",
+        "attempt_sha256": "08dca3b6a0e668c6f724629812699908acdafec4ff3899a74de18832e70e8fdc",
+        "request_record_sha256": "16706611cf24585f211d5f1127d556889c3a64a81ea615f7bdb73b1f5a8db33b",
+        "request_body_sha256": "b012e8687c661d365bd6dd3c4561958ba716d5d21c41b1148a143408b7a5489d",
+        "response_sha256": "7b74e4b044ea0a27b0ef67141d4f88b80c8f01642cb8f3d133eb25a703f33061"
+      }
+    }
+  },
+  "files": {
+    "compaction/EXPORT.json": "afcfc201a957520d37dc563c5385603630b963390e72e534c13e76261db4762b",
+    "compaction/authorization.json": "dfecc8dd84da6bacd05b12d753ece57d91e0014e83cdd14fe94cd2de27c65315",
+    "compaction/commission.json": "abbe33b642ec2981b72cb0991a90803c39ba6f6fc012634d31b84911fb2f7111",
+    "compaction/entry-delivery.json": "af6300c5c5b3304f8a3cfb443a799460c52b71f5ebc10f24442adc17dd00e566",
+    "compaction/meter.json": "82296ad6826492a708795c6a0af166d3bf877bfb1b510dce4256fa7c3fcc377e",
+    "compaction/observation.json": "f1c90a42f6041dcbe43aeca15dffd205e2186492796be0cf356861194db6f78e",
+    "compaction/packet.json": "f6113a26491830a022bc23280ca1f4c94b40b01c385c196b7ff9dda1bf5a4190",
+    "compaction/review.json": "27a10cd138fd01d5f77ce6c40f2fa0b557376de216e3a4bde0cc4a85e9d724ba",
+    "compaction/shapes.json": "34c29b715ad3a7362d96afb003faf4694af5d1b8ba966c030c42d60f5ce142fa",
+    "compaction/work.tar": "647b7f8d3c1053729d0e0ca5717973ec597391b2c63188e2f329af4bd74054c4",
+    "comparison/EXPORT.json": "8305f18ae748b80d1ba27fa2ee25a1957eefcc0178e1b55d40fc8e44b7d008c7",
+    "comparison/authorization.json": "dfecc8dd84da6bacd05b12d753ece57d91e0014e83cdd14fe94cd2de27c65315",
+    "comparison/commission.json": "abbe33b642ec2981b72cb0991a90803c39ba6f6fc012634d31b84911fb2f7111",
+    "comparison/meter.json": "04d98a3f55607c507d2793ad1d40791dd0f9cf225ecc16cbaab2efbb4667632e",
+    "comparison/observation.json": "b02b9bc9786f501c3b7b0d54d9b23c8bac453b4cb13d73ffa0ec99dda36e3890",
+    "comparison/packet.json": "dd62535185856759b2d1eb0aefbb0671309fd4d35346967076743a6160a9dadd",
+    "comparison/review.json": "e47d47407ce7665a0a401aed957075aeb6255d713d42de452bbb451fa3f3e5ef",
+    "comparison/shapes.json": "58769aa590f6011e949a0fef449579697654f3d0c9f1f7f7c236b256b2513b67",
+    "comparison/work.tar": "3a4b8a8f9c8fc9c9b225a0172b31aecac6bed2626388d3251a456e7bae6293f0",
+    "framing/EXPORT.json": "985c0306944e3cddf8bcc5f8efe7db55d1deabe5884cc28717df508f252880ad",
+    "framing/authorization.json": "b93cafc75fef873551e4af8bead5b633dcb9dd1d89cb558636f237b43ee0bdbc",
+    "framing/commission.json": "b91a1e49e353211527fd473b8c1d5465d2733b097e51f864c0b22c28ca094af7",
+    "framing/meter.json": "dbac001fc0ed849ff5a29f5d1137542d6aae9b53c3805ed7db74c4d20b8c2270",
+    "framing/observation.json": "ff9575fe80b4dfa870c7cf481e45f0625031cbe7f68c2a5f09dc3c9398fd73ee",
+    "framing/packet.json": "a2a0e05c19c25497524a239c411d400fc6dcc98854d8f80151eda17ace6139ef",
+    "framing/review.json": "80e6e8c047bb3a978c4fd15f83b26a0a5caedad12afa8127013a4317e62c87f0",
+    "framing/shapes.json": "ea2048a981b80871aada1b7a68aab03611ff5f4bbe3fd670e88c4817bb4de2ee",
+    "framing/work.tar": "9cd044a43dc1eecd5c9a440e7784015c612ea87dae8ac4e04c0fdc838047f836",
+    "historical-shapes.json": "4145bbb5324c3e2ac294b78223900ea6f53411b7a17e88e3210da6bdf2d77027",
+    "open/EXPORT.json": "ce9c0e77866e3f86c6835f856be121bc86a9204b77ed5ef134db2194f731d2b1",
+    "open/authorization.json": "afa5239d693c31f46ffde7253458d7d64da0096e1e94e1070cf25ea3802dfc0a",
+    "open/commission.json": "6cc9c4a12f2dde4207061cef5ae6a788670d18b8964a073db93e1e2aa26931a9",
+    "open/meter.json": "84820a69823de437cda76c56e0c869c2d491d7603573352fa19267662d68cfa8",
+    "open/observation.json": "2485a0b71aa3226a886e772260e8159fe723b331da1891f42731c9393ab0ae0d",
+    "open/packet.json": "3d18f104ece6c3e0ac8d2889b5d3d74fd6f15e8169bfbc8743c1439950f4b761",
+    "open/review.json": "eae1775ce8c8e27d8d30548d1fe51f75c097b01aae84f3a4572011367aa1c14b",
+    "open/settlement.json": "a41a273752c06494562254385946c0adc1ab5fd42ccd185d04f29d38c02226e4",
+    "open/shapes.json": "34162d310bbf6a5e569507ca6244b6f2a57cef369c55b22a9259a8e049ebf62d",
+    "open/work.tar": "69e8437d54c7bc2f5dd28728dee53c456fdc0aca889a7245cbb63ee68899f665",
+    "pricing.json": "7234edf87d1d1e624c44f5c62589ca1664305abdf4ab99d03cb9f00e76f2f3db",
+    "sources.json": "526d20f68183a70c08457966504cbd24525ccf392d5f5119751510bfb069bae8"
+  }
+}

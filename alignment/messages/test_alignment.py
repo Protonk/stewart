@@ -14,6 +14,9 @@ from inventory import COUNTS, digest, inventory, shape
 from prepare import prepare, worst_case
 from common import strict_json
 
+sys.path.insert(0, str(HERE.parents[1] / "apparatus"))
+import qualified
+
 FIXTURES = HERE.parents[1] / 'apparatus/driver/testdata/messages'
 
 
@@ -30,6 +33,122 @@ def example(name, *, summary=False):
     arrangement = {'model': v['model'], 'family': 'open-inquiry/1', 'request_extra': {},
                    'anthropic_version': '2026-10-21', 'anthropic_beta': 'compact-2026-09-04'}
     return {'body': body}, request, arrangement, raw
+
+
+class QualificationChecks(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.ctx = qualified.Ctx(str(self.root))
+        self.run_id = 'series'
+        self.folder = self.root / '.scratch' / self.run_id
+        self.folder.mkdir(parents=True)
+        self.tracked = self.root / 'alignment/messages/records/series.json'
+        self.tracked.parent.mkdir(parents=True)
+        self.files = {}
+        runs = {}
+        writer = {'binary_sha256': 'a' * 64, 'qualification_id': 'release'}
+        self.suites = [{'id': 'release', 'kind': 'suite', 'suite': 'acceptance', 'outcome': 'qualified',
+                        'platforms': {'linux': {'outcome': 'qualified', 'release_sha256': 'a' * 64}}}]
+        for slot, family in [('open', 'open-inquiry/1'), ('framing', 'inquiry-framing/1'),
+                             ('comparison', 'comparison/1'), ('compaction', 'open-inquiry/1')]:
+            prefix = slot + '/'
+            (self.folder / slot).mkdir()
+            def save(name, value):
+                raw = json.dumps(value).encode()
+                (self.folder / (prefix + name)).write_bytes(raw)
+                self.files[prefix + name] = digest(raw)
+                return digest(raw)
+            receipt = save('work.tar', 'export bytes')
+            grant = save('commission.json', 'commission')
+            auth = save('authorization.json', {'grant_sha256': grant})
+            export = save('EXPORT.json', {'outcome': 'exported', 'evidence_state': 'complete', 'archive': {'sha256': receipt}})
+            effort = 'medium' if slot == 'framing' else None
+            packet = {'model': 'example', 'effort': effort, 'limits': {}, 'bindings': writer,
+                      'endpoint': 'https://example.invalid', 'proxy': None, 'runs': [{'id': slot}]}
+            packet_digest = save('packet.json', packet)
+            save('meter.json', {'packet_sha256': packet_digest, 'archive_sha256': receipt, 'cents': 1})
+            usage = {k: {'reported': 1, 'estimated': 0} for k in ('turns', 'input_tokens', 'output_tokens')}
+            report = {'audit': slot, 'auditor_submitted': True, 'closed': True, 'delivery_verified': True,
+                      'ending': 'sealed', 'cause': None, 'seal_actor': 'auditor', 'usage': usage}
+            compaction = {'successful_summaries': int(slot == 'compaction')}
+            save('review.json', dict(report, failures=[], outcome='checked', placements=[{}],
+                                     coverage={'compaction': compaction, 'citations_checked': 0, 'operations': {}}))
+            seen = {'model': 'example', 'writer': writer['binary_sha256'], 'api_version': 'version',
+                    'beta': 'beta', 'effort': effort}
+            save('shapes.json', {'attempts': {'1': {'observation': seen}}, 'counts': {'tool_use': 1},
+                                 'exports': [{'sha256': receipt, 'receipt_sha256': export}]})
+            run = dict(report, model='example', family=family, response_models=['example'], limits={}, bindings=writer,
+                       evidence_variant='inadequate' if slot == 'framing' else 'ordinary', effort=effort,
+                       placements=1, operations={}, compaction=compaction, citations_checked=0, calculated_usd='0.01',
+                       settled_cents=1, packet_sha256=packet_digest, authorization_sha256=auth,
+                       commission_sha256=grant, export={'path': prefix + 'work.tar', 'sha256': receipt},
+                       response_stops={'tool_use': 1})
+            if slot == 'compaction':
+                run.update(summary_and_reset=[{'request': 2}], prior_entry_revisions=[{'id': 'e1'}],
+                           delivered_after_reset=[{'all_delivered': True, 'matching_duplicate_additions': []}])
+                save('entry-delivery.json', run['delivered_after_reset'])
+            observation = {}
+            if slot == 'framing':
+                observation = {'allowable_efforts': ['medium'], 'compaction_trigger_tokens': 100,
+                               'compaction_request': {}, 'max_tokens_per_request': 1000}
+            if slot == 'compaction':
+                observation = {'gate_passed': True, 'gates': {'delivery': True}, 'summaries': run['summary_and_reset'],
+                               'continuity': run['prior_entry_revisions']}
+            save('observation.json', observation)
+            runs[slot] = run
+        self.ctx.blob = lambda commit, name: b'fixture'
+        rows = {'A%d' % n: {'observed': 'yes', 'disposition': 'match', 'conclusion': 'reviewed',
+                             'evidence': ['open/review.json'], 'fixtures': []} for n in range(1, 14)}
+        self.doc = {'schema': 'stewart.messages-alignment/1', 'id': 'series', 'model': 'example',
+                    'settings': {'model': 'example', 'route': 'direct', 'endpoint': 'https://example.invalid',
+                                 'api_version': 'version', 'compaction_beta': 'beta', 'max_tokens_per_request': 1000,
+                                 'effort_allowlist': ['medium'], 'compaction': {'trigger_tokens': 100, 'request': {}}},
+                    'at': '2026-01-01T00:00:00Z', 'release_writer': writer, 'runs': runs, 'comparison': rows,
+                    'capture_examples': {slot: {} for slot in runs}, 'files': self.files, 'fixtures_added': [],
+                    'witness_limits': ['direct route'], 'currency': 'while pins hold', 'documentation_checked_on': '2026-01-01',
+                    'fixture_source': {'commit': 'f' * 40, 'files': {'fixture.json': digest(b'fixture')}},
+                    'reported_attempts': 4, 'estimated_attempts': 0, 'settled_cents': 4, 'calculated_usd': '0.04'}
+
+    def decision(self, doc):
+        raw = json.dumps(doc).encode()
+        self.tracked.write_bytes(raw)
+        (self.folder / 'ALIGNMENT.json').write_bytes(raw)
+        return qualified.alignment_document(self.ctx, self.run_id, self.suites)
+
+    def test_gate_refuses_unresolved_row_missing_family_and_wrong_writer(self):
+        self.decision(self.doc)
+        for which, edit in [('protocol', lambda d: d['comparison'].pop('A9')),
+                            ('unresolved', lambda d: d['comparison']['A6'].update(disposition='open')),
+                            ('run set', lambda d: d['runs'].pop('framing')),
+                            ('writer', lambda d: d['release_writer'].update(binary_sha256='b' * 64)),
+                            ('continuity', lambda d: d['runs']['compaction'].update(prior_entry_revisions=[]))]:
+            with self.subTest(which=which), self.assertRaisesRegex(qualified.Refusal, which):
+                doc = copy.deepcopy(self.doc)
+                edit(doc)
+                self.decision(doc)
+
+    def test_checks_private_evidence_and_ignores_unrelated_files(self):
+        entry, doc = self.decision(self.doc)
+        qualified.verify_alignment_files(self.ctx, entry, doc)
+        (self.folder / 'unrelated').write_bytes(b'unrelated')
+        qualified.verify_alignment_files(self.ctx, entry, doc)
+        (self.folder / 'open/work.tar').write_bytes(b'changed')
+        with self.assertRaisesRegex(qualified.Refusal, 'open/work.tar'):
+            qualified.verify_alignment_files(self.ctx, entry, doc)
+
+    def test_changed_request_pin_with_unchanged_observation(self):
+        self.doc['settings']['compaction']['trigger_tokens'] += 1
+        entry, doc = self.decision(self.doc)
+        with self.assertRaisesRegex(qualified.Refusal, 'release request pins'):
+            qualified.verify_alignment_files(self.ctx, entry, doc)
+
+    def test_changed_claim_with_unchanged_procedural_review(self):
+        self.doc['runs']['open']['citations_checked'] = 10
+        entry, doc = self.decision(self.doc)
+        with self.assertRaisesRegex(qualified.Refusal, 'procedural review'):
+            qualified.verify_alignment_files(self.ctx, entry, doc)
 
 
 class InventoryChecks(unittest.TestCase):

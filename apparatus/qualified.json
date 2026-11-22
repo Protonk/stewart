@@ -2636,6 +2636,44 @@
       }
     },
     {
+      "id": "messages-alignment-haiku-01",
+      "kind": "alignment",
+      "date": "2026-11-22T00:07:17Z",
+      "date_from": "ALIGNMENT.json field at",
+      "summary": "claude-haiku-5-5 reached auditor submission, delivery and closure for all three families and signed compaction. 35 reported attempts, 0 estimated. The queue settled $0.41.",
+      "result": {
+        "path": "ALIGNMENT.json",
+        "sha256": "4fdfd251aef9335298fd984473de19e3fd3479d2f8afc5491b7ea8336191eb09"
+      },
+      "evidence": {
+        "path": ".scratch/messages-alignment-haiku-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Release evidence for the pinned Messages model and request settings.",
+        "until": "Superseded by a reviewed alignment for changed pins or the release drops this model."
+      }
+    },
+    {
+      "id": "messages-alignment-opus-01",
+      "kind": "alignment",
+      "date": "2026-11-22T00:10:10Z",
+      "date_from": "ALIGNMENT.json field at",
+      "summary": "claude-opus-5-5 reached auditor submission, delivery and closure for all three families and signed compaction. 23 reported attempts, 0 estimated. The queue settled $3.55.",
+      "result": {
+        "path": "ALIGNMENT.json",
+        "sha256": "85870992c5c631775461c7e487db10115934017eed5d91e8a73c8e0911781f1a"
+      },
+      "evidence": {
+        "path": ".scratch/messages-alignment-opus-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Release evidence for the pinned Messages model and request settings.",
+        "until": "Superseded by a reviewed alignment for changed pins or the release drops this model."
+      }
+    },
+    {
       "id": "final-four-compaction-cells-01",
       "kind": "experiment",
       "date": "2026-11-22T00:11:14Z",

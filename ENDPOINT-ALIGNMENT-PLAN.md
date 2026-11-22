@@ -27,7 +27,7 @@ Keep open audits and their exact writers until closure or explicit disposition.
 
 ## 1. Specify the alignment check
 
-Complete the per-model comparison record before counting a release gate as passed. The six catalog observations and both model-specific compaction observations are available for this work.
+The [Haiku](apparatus/qualified.md#messages-alignment-haiku-01) and [Opus](apparatus/qualified.md#messages-alignment-opus-01) release series each have a verified Messages alignment record.
 
 - [x] Fix the initial comparison, release coverage and proposed reservation table.
 - [x] Inventory the historical captures and resolve the ordinary and summary usage comparisons. The [comparison procedure](alignment/messages/README.md) identifies the captured and synthetic shapes.
@@ -128,39 +128,7 @@ response shape.
 
 ### 1.4 Alignment record
 
-One record per model per series. It holds:
-- the endpoint base URL and route (direct or proxy);
-- the API version, compaction beta, compaction trigger and request, and output
-  cap;
-- the requested model ID and the response `model` values;
-- whether effort was omitted or explicitly supplied and the exact supplied value;
-- the writer (qualification ID and release SHA-256), apparatus commit, image and
-  catalog digest;
-- the commission and authorization digests;
-- the dates of the runs and of the documentation check.
-
-Per run, it holds:
-- specimen, family, evidence variant, effort and limits;
-- ending, cause, submitted or not, and placements;
-- reported and estimated turns, input and output;
-- compaction counts;
-- the export path and digest.
-
-It also holds:
-- an inventory row for each A1–A13 shape: observed or not, with capture paths
-  and digests;
-- a comparison result for each row: match, or difference with its resolution,
-  given as an adapter-fix commit, a fixture path with provenance, or a stated
-  limitation;
-- the captured fixtures added;
-- the calculated cost at the dated prices, and the billing observation if any;
-- the unmet witness requirements;
-- the pinned inputs whose change ends currency: model ID, API version, beta,
-  effort allowlist, compaction trigger and request, and output cap.
-
-A new `alignment` kind in `apparatus/qualified.py` keeps the record and
-re-verifies its evidence digests as `check` does for experiments. Historical
-`c10-*` and `readiness-*` records stay as they are.
+The [record procedure](alignment/messages/README.md#register-a-model-series) defines the per-model evidence, qualification entry and currency conditions.
 
 ### 1.5 Existing apparatus and remaining mechanism work
 
@@ -180,11 +148,7 @@ re-verifies its evidence digests as `check` does for experiments. Historical
 The [Messages comparison procedure](alignment/messages/README.md) covers the historical inventory, current packet preparation and the two usage-shape dispositions. The paired trial record links the original offline readiness ledger and both live comparisons.
 
 Remaining mechanism work includes:
-- Assemble reviewed attempt, fixture, and custody observations into each model's final comparison record.
 - A trace-count option for `compaction_specimen.py`.
-- The `alignment` record kind.
-- Fixture feedback with provenance into `apparatus/driver/testdata/messages/`,
-  with expected values and controls by a specification-only author.
 
 ### 1.6 Harness alignment
 
@@ -222,9 +186,7 @@ uses the qualified shipping writer.
   bounded launch, and the surface and service checks. The independent observer,
   peer, surface fixture and service witness stay in `apparatus/driver/` under
   the independence rule; changes to them need a specification-only author.
-- [ ] Feed captures back as stand-in fixtures with provenance, as
-  `apparatus/driver/testdata/messages/` already does, with independently
-  expected values and firing controls added by a specification-only author.
+- [x] Compare both model series with the captured stand-ins. Existing fixtures and their firing controls cover the observed shapes. Neither series required a new fixture.
 
 Inputs worth reusing: the full-size synthetic compaction rehearsal
 (`.scratch/readiness-m4-rehearsal-02/REVIEW.json`), the bounded live compaction
@@ -238,9 +200,7 @@ its offline controls fire, and the retired apparatus is gone.
 
 ## 3. Align and record
 
-- [ ] For each release model, assemble the reviewed family and compaction
-  observations into its current alignment record. Resolve each difference with an adapter fix, a stand-in
-  fixture or a stated release limitation before counting the record as current.
+- [x] Both release models have a verified Messages record covering three families and compaction. All 13 comparison rows have a disposition for each model.
 - [ ] Align the harness pin the development build uses, through the Linux route,
   producing its profile check.
 

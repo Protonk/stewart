@@ -5,7 +5,8 @@ The record, apparatus/qualified.json, is a moving front with temporary pins.
 For each suite and platform it keeps the latest run, and, when that run did
 not qualify, also the latest run that did. Any other record stays only while
 it is pinned, with a reason and a condition, stated in words, for releasing
-it. An experiment is recorded only by pinning it. Git history keeps the
+it. Messages alignment pins the per-model comparison and rechecks its private evidence files.
+An experiment is recorded only by pinning it. Git history keeps the
 records that leave. apparatus/qualified.md is rendered from the JSON and must
 not be edited by hand.
 
@@ -37,6 +38,7 @@ results are evaluated under the rules of their recorded driver version.
 
 Run it from the repository root with an isolated interpreter:
 
+    python3 -I -B apparatus/qualified.py alignment RUN_DIR --reason TEXT --until TEXT
     python3 -I -B apparatus/qualified.py extract RUN_DIR --suite acceptance
     python3 -I -B apparatus/qualified.py check [--strict] [--require-evidence]
     python3 -I -B apparatus/qualified.py candidates
@@ -63,6 +65,7 @@ import argparse
 import ast
 import copy
 import datetime
+from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 import math
@@ -1319,6 +1322,197 @@ def experiment_entry(ctx, run_id, result_rel, summary, date_rel=None):
             "result": result, "evidence": evidence_field(run_id), "pin": None}
 
 
+def alignment_document(ctx, run_id, entries):
+    """Read the distributable decision even in a clone without the private audit exports."""
+    rel = "alignment/messages/records/%s.json" % run_id
+    data = read_regular(os.path.join(ctx.root, rel), rel)
+    if data is None:
+        raise Refusal("%s is missing" % rel)
+
+    def require(ok, issue):
+        if not ok:
+            raise Refusal("%s: %s" % (rel, issue))
+
+    def digest_map(values):
+        return isinstance(values, dict) and bool(values) and all(
+            clean_rel(name) == name and name != "." and isinstance(value, str) and HEX64.fullmatch(value)
+            for name, value in values.items())
+
+    try:
+        doc = parse_json(data)
+        require(nesting_depth(doc) <= MAX_DEPTH, "document nested too deeply")
+        require(doc["schema"] == "stewart.messages-alignment/1" and doc["id"] == run_id,
+                "schema or record identity differs")
+        settings, files, runs = doc["settings"], doc["files"], doc["runs"]
+        require(digest_map(files), "invalid evidence paths or digests")
+        require(doc["model"] == settings["model"] and RUN_ID.fullmatch(doc["model"]), "model identity differs")
+        require(utc(doc["at"]) and set(settings) == {"model", "endpoint", "route", "api_version",
+                "compaction_beta", "compaction", "max_tokens_per_request", "effort_allowlist"}, "missing series pins")
+        require(set(settings["compaction"]) == {"trigger_tokens", "request"} and
+                isinstance(settings["effort_allowlist"], list) and settings["effort_allowlist"], "missing request pins")
+        writer = doc["release_writer"]
+        suite = next((e for e in entries if e["id"] == writer["qualification_id"] and e["kind"] == "suite"
+                      and e["suite"] == "acceptance" and e["outcome"] == "qualified"), None)
+        require(suite and any(p["outcome"] == "qualified" and p["release_sha256"] == writer["binary_sha256"]
+                              for p in suite["platforms"].values()), "release writer has no matching qualification")
+        cases = {"open": ("open-inquiry/1", "ordinary"), "framing": ("inquiry-framing/1", "inadequate"),
+                 "comparison": ("comparison/1", "ordinary"), "compaction": ("open-inquiry/1", "ordinary")}
+        require(set(runs) == set(cases), "incomplete release run set")
+        for slot, (family, variant) in cases.items():
+            run = runs[slot]
+            require(run["family"] == family and run["evidence_variant"] == variant and
+                    run["model"] == doc["model"] and run["response_models"] == [doc["model"]] and
+                    run["bindings"]["binary_sha256"] == writer["binary_sha256"] and
+                    run["bindings"]["qualification_id"] == writer["qualification_id"], slot + " run binding differs")
+            require((run["effort"] in settings["effort_allowlist"] if slot == "framing" else run["effort"] is None)
+                    and is_int(run["placements"]) and run["placements"] == 1, slot + " effort or placement differs")
+            require(run["ending"] == "sealed" and run["cause"] is None and run["seal_actor"] == "auditor" and
+                    all(run[k] is True for k in ("auditor_submitted", "delivery_verified", "closed")),
+                    slot + " submission, delivery or closure is unverified")
+            for name in ("work.tar", "EXPORT.json", "observation.json", "review.json", "shapes.json",
+                         "packet.json", "authorization.json", "commission.json", "meter.json"):
+                require(slot + "/" + name in files, slot + " missing " + name)
+            require(run["export"]["path"] == slot + "/work.tar" and
+                    all(files[slot + "/" + filename] == expected for filename, expected in (
+                        ("work.tar", run["export"]["sha256"]), ("packet.json", run["packet_sha256"]),
+                        ("authorization.json", run["authorization_sha256"]), ("commission.json", run["commission_sha256"]))),
+                    slot + " export, packet or authority digest differs")
+        compact = runs["compaction"]
+        require(compact["compaction"]["successful_summaries"] > 0 and compact["summary_and_reset"] and
+                compact["prior_entry_revisions"] and "compaction/entry-delivery.json" in files and
+                compact["delivered_after_reset"] and all(item["all_delivered"] is True and
+                not item["matching_duplicate_additions"] for item in compact["delivered_after_reset"]),
+                "compaction continuity is unverified")
+        require(isinstance(doc["documentation_checked_on"], str) and
+                datetime.date.fromisoformat(doc["documentation_checked_on"]) and doc["witness_limits"] and
+                doc["currency"] and isinstance(doc["fixtures_added"], list), "missing currency or witness scope")
+        rows = doc["comparison"]
+        require(set(rows) == {"A%d" % n for n in range(1, 14)}, "missing or extra protocol comparison")
+        fixture = doc["fixture_source"]
+        require(HEX40.fullmatch(fixture["commit"]) and digest_map(fixture["files"]), "invalid fixture binding")
+        for name, row in rows.items():
+            require(row["observed"] in ("yes", "no", "partial") and row["disposition"] in
+                    ("match", "existing fixture", "new fixture", "adapter fix", "limitation") and
+                    isinstance(row["conclusion"], str) and row["conclusion"].strip() and row["evidence"] and
+                    all(ref in files for ref in row["evidence"]), name + " is unresolved or lacks evidence")
+            require(all(ref in fixture["files"] for ref in row["fixtures"]) and
+                    (row["disposition"] not in ("existing fixture", "new fixture") or row["fixtures"]),
+                    name + " lacks fixture provenance")
+            if row["disposition"] == "adapter fix":
+                require(HEX40.fullmatch(row["commit"]) and ctx.commit_exists(row["commit"]), name + " lacks a fix")
+        for name, expected in fixture["files"].items():
+            blob = ctx.blob(fixture["commit"], name)
+            require(blob is not None and sha256(blob) == expected, "fixture source differs: " + name)
+        for r in runs.values():
+            require(is_int(r["settled_cents"]) and r["settled_cents"] >= 0 and
+                    all(is_int(r["usage"][k][basis]) and r["usage"][k][basis] >= 0
+                        for k in ("turns", "input_tokens", "output_tokens") for basis in ("reported", "estimated")),
+                    "invalid usage or settlement")
+        require(all(is_int(doc[k]) for k in ("reported_attempts", "estimated_attempts", "settled_cents")) and
+                Decimal(doc["calculated_usd"]) == sum(Decimal(r["calculated_usd"]) for r in runs.values()),
+                "invalid series cost or counts")
+        require(doc["reported_attempts"] == sum(r["usage"]["turns"]["reported"] for r in runs.values())
+                and doc["estimated_attempts"] == sum(r["usage"]["turns"]["estimated"] for r in runs.values())
+                and doc["settled_cents"] == sum(r["settled_cents"] for r in runs.values()), "series totals differ")
+    except (KeyError, TypeError, ValueError, AttributeError, RecursionError, InvalidOperation) as exc:
+        raise Refusal("%s: malformed alignment document (%s)" % (rel, exc)) from None
+    summary = ("%s reached auditor submission, delivery and closure for all three families and signed compaction. "
+               "%d reported attempts, %d estimated. The queue settled $%d.%02d." %
+               (doc["model"], doc["reported_attempts"], doc["estimated_attempts"], *divmod(doc["settled_cents"], 100)))
+    return {"id": run_id, "kind": "alignment", "date": utc(doc["at"]), "date_from": "ALIGNMENT.json field at",
+            "summary": summary, "result": {"path": "ALIGNMENT.json", "sha256": sha256(data)},
+            "evidence": evidence_field(run_id), "pin": None}, doc
+
+
+def verify_alignment_files(ctx, entry, doc):
+    """Bind the private inputs as well as the distributable decision."""
+    ev = Evidence(ctx, entry["id"])
+    for rel, expected in {**doc["files"], "ALIGNMENT.json": entry["result"]["sha256"]}.items():
+        if ev.streamed_digest(rel) != expected:
+            ev.problem("%s: missing or changed alignment evidence" % rel)
+    if ev.problems:
+        raise ExtractError(entry["id"], ev.problems)
+    for slot, run in doc["runs"].items():
+        packet = ev.json(slot + "/packet.json")
+        report = ev.json(slot + "/review.json")
+        meter = ev.json(slot + "/meter.json")
+        receipt = ev.json(slot + "/EXPORT.json")
+        auth = ev.json(slot + "/authorization.json")
+        shapes = ev.json(slot + "/shapes.json")
+        try:
+            if (receipt["outcome"] != "exported" or receipt["evidence_state"] != "complete" or
+                    receipt["archive"]["sha256"] != run["export"]["sha256"] or
+                    shapes["exports"][0]["receipt_sha256"] != doc["files"][slot + "/EXPORT.json"]):
+                ev.problem(slot + ": export receipt differs from archive or inventory")
+            if auth.get("commission_sha256", auth.get("grant_sha256")) != run["commission_sha256"]:
+                ev.problem(slot + ": authorization names a different commission")
+            fields = ("model", "effort", "limits", "bindings")
+            if any(packet[k] != run[k] for k in fields) or packet["endpoint"] != doc["settings"]["endpoint"] or (
+                    packet["proxy"] is not None or packet["runs"][0]["id"] != run["audit"]):
+                ev.problem(slot + ": packet differs from alignment")
+            fields = ("audit", "closed", "ending", "cause", "seal_actor", "auditor_submitted", "delivery_verified", "usage")
+            if any(report[k] != run[k] for k in fields) or report["failures"] or report["outcome"] != "checked" or (
+                    report["coverage"]["compaction"] != run["compaction"] or
+                    report["coverage"]["citations_checked"] != run["citations_checked"] or
+                    report["coverage"]["operations"] != run["operations"] or len(report["placements"]) != run["placements"]):
+                ev.problem(slot + ": procedural review differs from alignment")
+            if (meter["cents"], meter["archive_sha256"], meter["packet_sha256"]) != (
+                    run["settled_cents"], run["export"]["sha256"], run["packet_sha256"]):
+                ev.problem(slot + ": queue settlement differs from alignment")
+            settings = doc["settings"]
+            if slot == "framing":
+                observed = ev.json(slot + "/observation.json")
+                if (observed["allowable_efforts"] != settings["effort_allowlist"] or
+                        observed["compaction_trigger_tokens"] != settings["compaction"]["trigger_tokens"] or
+                        observed["compaction_request"] != settings["compaction"]["request"] or
+                        observed["max_tokens_per_request"] != settings["max_tokens_per_request"]):
+                    ev.problem("framing: release request pins differ from the observation")
+            if slot == "compaction":
+                observed = ev.json(slot + "/observation.json")
+                if (not observed["gate_passed"] or not all(observed["gates"].values()) or
+                        observed["summaries"] != run["summary_and_reset"] or
+                        observed["continuity"] != run["prior_entry_revisions"]):
+                    ev.problem("compaction: signed reset or entry continuity differs from the observation")
+            attempts = shapes["attempts"]
+            for attempt in attempts.values():
+                seen = attempt["observation"]
+                if (seen["model"], seen["writer"], seen["api_version"], seen["beta"], seen["effort"]) != (
+                        run["model"], run["bindings"]["binary_sha256"], settings["api_version"],
+                        settings["compaction_beta"], run["effort"]):
+                    ev.problem(slot + ": captured attempt differs from the release request pins")
+                    break
+            if (shapes["counts"] != run["response_stops"] or len(attempts) != sum(run["usage"]["turns"].values())
+                    or shapes["exports"][0]["sha256"] != run["export"]["sha256"]):
+                ev.problem(slot + ": shape inventory differs from alignment")
+            for sample in doc["capture_examples"][slot].values():
+                seen = attempts[sample["attempt"]]
+                if (sample["archive"] != run["export"]["path"] or
+                        sample["member"] not in [source["member"] for source in seen["sources"]] or
+                        any(seen["observation"][k] != sample[k] for k in
+                            ("attempt_sha256", "request_record_sha256", "request_body_sha256", "response_sha256"))):
+                    ev.problem(slot + ": capture example differs from original inventory")
+            if slot == "compaction" and run["delivered_after_reset"] != ev.json(slot + "/entry-delivery.json"):
+                ev.problem("compaction: entry delivery differs from its witness")
+        except (KeyError, IndexError, TypeError, AttributeError) as exc:
+            ev.problem("%s: malformed alignment evidence (%s)" % (slot, exc))
+    if ev.problems:
+        raise ExtractError(entry["id"], ev.problems)
+
+
+def cmd_alignment(ctx, args, out=print):
+    run_id = run_folder(ctx, args.run_dir)
+    record = load_record(ctx)
+    entry, doc = alignment_document(ctx, run_id, record["entries"])
+    verify_alignment_files(ctx, entry, doc)
+    if any(old["id"] == run_id and old["kind"] != "alignment" for old in record["entries"]):
+        raise Refusal("%s already names another kind of evidence" % run_id)
+    entry["pin"] = {"reason": one_line(args.reason, "--reason"), "until": one_line(args.until, "--until")}
+    record["entries"] = [old for old in record["entries"] if old["id"] != run_id] + [entry]
+    apply_front(record, out)
+    save(ctx, record, out)
+    out("recorded %s with %d verified evidence files" % (run_id, len(doc["files"])))
+
+
 # ---------------------------------------------------------------- the record
 
 def empty_record():
@@ -1569,11 +1763,11 @@ def record_problems(record):
             else:
                 _fields(e, suite_fields(e["suite"]), where, probs,
                         checked_elsewhere=("id", "kind", "suite", "date", "evidence"))
-        elif e.get("kind") == "experiment":
+        elif e.get("kind") in ("experiment", "alignment"):
             _fields(e, EXPERIMENT_FIELDS, where, probs,
                     checked_elsewhere=tuple(k for k in EXPERIMENT_FIELDS if k != "pin"))
             if pin is None:
-                probs.append("%s: an experiment record must be pinned" % where)
+                probs.append("%s: a %s record must be pinned" % (where, e["kind"]))
             result = e.get("result")
             if not isinstance(result, dict):
                 probs.append("%s: no result" % where)
@@ -1591,7 +1785,7 @@ def record_problems(record):
             elif date_from != "DONE" and clean_rel(date_file(date_from)) != date_file(date_from):
                 probs.append("%s: date_from names a path that is not normalized" % where)
         else:
-            probs.append("%s: kind is not suite or experiment" % where)
+            probs.append("%s: kind is not suite, experiment or alignment" % where)
     return probs
 
 
@@ -2024,6 +2218,9 @@ def render(record):
             L += ["- Evidence: `%s` (%s)" % (e["evidence"]["path"], e["evidence"]["where"]),
                   "- Pin: %s" % pin_text, ""]
             L += render_platform_rows(e)
+        elif e["kind"] == "alignment":
+            L += [cell(e["summary"]), "", "[Per-model comparison and evidence digests](../alignment/messages/records/%s.json)" % e["id"], "",
+                  "Private evidence is retained in %s." % code(e["evidence"]["path"])]
         else:
             r = e["result"]
             L += [cell(e["summary"]), "",
@@ -2189,6 +2386,14 @@ def run_check(ctx, strict=False, out=print, with_drift=True, require_evidence=Fa
                 fails.append(("commit", "%s: source commit %s is not in this repository" % (e["id"], e["source_commit"])))
             else:
                 out("ok   %s: source commit %s is in the repository" % (e["id"], e["source_commit"][:12]))
+        if e["kind"] == "alignment":
+            try:
+                fresh, alignment_doc = alignment_document(ctx, e["id"], entries)
+            except Refusal as exc:
+                fails.append(("alignment", str(exc)))
+                continue
+            if fresh["summary"] != e["summary"] or diff_fields(e, fresh):
+                fails.append(("alignment", "%s differs from its tracked comparison" % e["id"]))
         if e["id"] not in keep and not e.get("pin"):
             out("note %s is neither on the front nor pinned; the next extract drops it" % e["id"])
         # The evidence is the .scratch folder listed under exactly the record's id (record_problems has made its
@@ -2222,6 +2427,8 @@ def run_check(ctx, strict=False, out=print, with_drift=True, require_evidence=Fa
         try:
             if e["kind"] == "suite":
                 fresh = extract_suite(ctx, e["id"], e["suite"])
+            elif e["kind"] == "alignment":
+                verify_alignment_files(ctx, fresh, alignment_doc)
             else:
                 fresh = experiment_entry(ctx, e["id"], e["result"]["path"], e["summary"], date_file(e["date_from"]))
         except Refusal as exc:
@@ -2234,6 +2441,7 @@ def run_check(ctx, strict=False, out=print, with_drift=True, require_evidence=Fa
         else:
             out("ok   %s matches its local evidence (re-extracted: %s)" % (
                 e["id"], "digests, counts and outcome" if e["kind"] == "suite" else
+                "comparison and %d evidence digests" % len(alignment_doc["files"]) if e["kind"] == "alignment" else
                 "result digest and date" if "files" not in e["result"] else
                 "listing digest of %d files, and date" % e["result"]["files"]))
     mismatches = toolchain_mismatches(entries)
@@ -2476,7 +2684,7 @@ def cmd_extract(ctx, run_arg, suite, out=print):
     entry = extract_suite(ctx, run_id, suite)
     old = next((e for e in record["entries"] if e["id"] == run_id), None)
     if old is not None and old["kind"] != "suite":
-        raise Refusal("%s is recorded as an experiment; unpin it first" % run_id)
+        raise Refusal("%s is recorded as %s; unpin it first" % (run_id, old["kind"]))
     if old is not None:
         entry["pin"] = old.get("pin")
         diffs = diff_fields(old, entry)
@@ -3904,6 +4112,10 @@ def main(argv=None):
                         "when the folder has no DONE with a time (default: the result, if a JSON file)")
     p.add_argument("--reason", required=True, help="why the record is kept")
     p.add_argument("--until", required=True, help="the condition, in words, under which it can be released")
+    p = sub.add_parser("alignment", help="verify and pin a per-model Messages comparison and its evidence")
+    p.add_argument("run_dir", metavar="RUN_DIR", help="private evidence folder directly under .scratch")
+    p.add_argument("--reason", required=True, help="purpose of retaining this model series")
+    p.add_argument("--until", required=True, help="when to release this pin")
     p = sub.add_parser("unpin", help="release a pin; the record leaves unless it is on the front",
                        description="Remove a pin and apply the front. An experiment record leaves at once.")
     p.add_argument("id", metavar="ID")
@@ -3954,6 +4166,8 @@ def main(argv=None):
             cmd_extract(ctx, args.run_dir, args.suite)
         elif args.command == "pin":
             cmd_pin(ctx, args)
+        elif args.command == "alignment":
+            cmd_alignment(ctx, args)
         elif args.command == "unpin":
             cmd_unpin(ctx, args.id)
         elif args.command == "render":

@@ -99,7 +99,10 @@ empty folder to close, with files only and with the preparation server.
 with verified delivery across all three forms. The release and synthetic runtime
 suites passed on native Linux aarch64 and on x86_64 under Rosetta. Both used
 the same aarch64 guest kernel.
-Endpoint alignment for the models a release will name remains outstanding.
+The Messages release writer has current alignment records for
+[Haiku 5.5](apparatus/qualified.md#messages-alignment-haiku-01) and
+[Opus 5.5](apparatus/qualified.md#messages-alignment-opus-01). Each model
+submitted in all three families and delivered a revised entry after provider compaction.
 Bounded Messages continuations preserved recorded work; one audit
 submitted and another exhausted its allowance with a partial account later
 sealed and closed by the manager. In witnessed Sonnet Messages trials, the
