@@ -898,3 +898,10 @@ Opus framing audit with inadequate evidence and explicit medium. Six HTTP 200 re
 
 - Evidence: `.scratch/opus-framing-medium-01/OBSERVATION.json` (recorded 2026-11-21T22:30:55Z).
 - Retained purpose: Compare the original Opus framing requests, response shapes and citation evidence when reviewing the per-model release alignment record.; until The Opus release alignment record is reviewed or the model is retired and these originals have no further inspection purpose.
+
+### final-four-comparisons-01
+
+Haiku and Opus ordinary comparisons, both auditor-submitted, verified, closed and settled.
+
+- Evidence: `.scratch/final-four-comparisons-01/EXIT.json` (recorded 2026-11-22T00:00:09Z).
+- Retained purpose: Review the original attempts, citation checks and delivery before completing the per-model alignment records.; until The release alignment is reviewed or the models are retired and these originals have no further inspection purpose.

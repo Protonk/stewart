@@ -2615,6 +2615,25 @@
         "reason": "Compare the original Opus framing requests, response shapes and citation evidence when reviewing the per-model release alignment record.",
         "until": "The Opus release alignment record is reviewed or the model is retired and these originals have no further inspection purpose."
       }
+    },
+    {
+      "id": "final-four-comparisons-01",
+      "kind": "experiment",
+      "date": "2026-11-22T00:00:09Z",
+      "date_from": "EXIT.json field at",
+      "summary": "Haiku and Opus ordinary comparisons, both auditor-submitted, verified, closed and settled.",
+      "result": {
+        "path": "EXIT.json",
+        "sha256": "05bc4002035035e514f90842f2175a0c0a08124b87b779dca6599bf025ddd545"
+      },
+      "evidence": {
+        "path": ".scratch/final-four-comparisons-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Review the original attempts, citation checks and delivery before completing the per-model alignment records.",
+        "until": "The release alignment is reviewed or the models are retired and these originals have no further inspection purpose."
+      }
     }
   ]
 }

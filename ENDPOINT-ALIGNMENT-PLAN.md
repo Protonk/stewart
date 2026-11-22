@@ -101,7 +101,7 @@ inadequate evidence, and the two request forms. [Completed open inquiries](appar
 | --- | --- | --- | --- | --- |
 | open-ordinary | Haiku and Opus | Open-inquiry submission | Omitted | H1 and O1 verified and closed |
 | framing-inadequate | Haiku and Opus | Framing submission with inadequate evidence and explicit wire setting | `medium` | Both verified and closed. [Haiku](apparatus/qualified.md#framing-medium-01) settled at $0.02 and [Opus](apparatus/qualified.md#opus-framing-medium-01) at $0.23. |
-| comparison-ordinary | Haiku and Opus | Comparison submission | Omitted | Pending |
+| comparison-ordinary | Haiku and Opus | Comparison submission | Omitted | [Both verified and closed](apparatus/qualified.md#final-four-comparisons-01). Haiku settled at $0.01 and Opus at $0.20. |
 | Compaction, ordinary open inquiry | Haiku and Opus | Signed summary, reset, accounting and entry continuity | Omitted | Pending a separately rehearsed bound |
 
 Catalog placements have 16 turns, 115,000 input tokens and 32,000 output
