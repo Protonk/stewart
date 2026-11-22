@@ -8,130 +8,115 @@ materials, an answer form and limits. Stewart preserves the inputs, gives the
 auditor tools to investigate them, and delivers its recorded answer as structured
 data and readable Markdown.
 
+## Question forms
+
+The `family` field in `question.md` selects the auditor's task and its tools for
+recording an answer.
+
+| Form | What the auditor does |
+| --- | --- |
+| `open-inquiry` | Answers your question as written, drawing on observations from the supplied files. |
+| `inquiry-framing` | Starts from a concern you describe, formulates a working question the files can help answer, and investigates it. |
+| `comparison` | Examines the alternatives you name side by side and records how they differ or agree on a stated criterion. |
+
+Each form has a [worked submission and walkthrough](examples/questions/README.md). Run
+`stewart help forms` for the instructions and material roles.
+
 ## Install and verify a Linux release
 
-For a published version, get `stewart-linux-aarch64` or `stewart-linux-x86_64`, `SHA256SUMS` and `SHA256SUMS.sig` from the same [release](https://github.com/Protonk/stewart/releases). The source archive is covered by the same signature. Obtain `allowed_signers` from a trusted checkout of the release repository and verify the signer's public fingerprint through a channel you trust.
+Download the binary for your architecture (`stewart-linux-aarch64` or
+`stewart-linux-x86_64`), `SHA256SUMS` and `SHA256SUMS.sig` from the same
+[release](https://github.com/Protonk/stewart/releases). Before replacing an installed
+binary, keep a copy if it created any open audits. Only that exact binary can continue
+or close them.
 
-From the download directory on Linux, run the following with OpenSSH and GNU coreutils. Set `SIGNERS` to the trusted file.
+Set `SIGNERS` to the path of the [allowed signers file](allowed_signers) from a trusted checkout
+and confirm the signer's fingerprint through an independent channel. From the download
+directory on Linux, verify the signature and checksum before installing.
 
 ```sh
-set -e
 binary="stewart-linux-$(uname -m)"
-test -f "$binary"
-ssh-keygen -Y verify -f "$SIGNERS" -I stewart-release -n file -s SHA256SUMS.sig < SHA256SUMS
-sha256sum --check --ignore-missing SHA256SUMS
-install -Dm755 "$binary" "$HOME/.local/bin/stewart"
-"$HOME/.local/bin/stewart" help
+ssh-keygen -Y verify -f "$SIGNERS" -I stewart-release -n file -s SHA256SUMS.sig < SHA256SUMS &&
+  sha256sum --check --ignore-missing SHA256SUMS &&
+  install -Dm755 "$binary" "$HOME/.local/bin/stewart"
 ```
 
-Use a local ext4, xfs or btrfs directory for the audit archive. The first three steps of the [inquiry walkthrough](#run-an-inquiry) exercise intake and preparation without a key. The [build guide](development/DEVELOPMENT.md#build-from-a-release-source-archive) covers the offline source build.
-
-## Choose a question form
-
-| Form | Example question |
-| --- | --- |
-| [Open inquiry](examples/questions/open/WALKTHROUGH.md) | Does this implementation meet the supplied requirements? |
-| [Inquiry framing](examples/questions/framing/WALKTHROUGH.md) | We are concerned about missed reminders. Frame and investigate a useful question from these materials. |
-| [Comparison](examples/questions/comparison/WALKTHROUGH.md) | How do implementations A and B compare against these reliability criteria? |
-
-Each form permits uncertainty, inadequate evidence and disagreement with the
-question's premise. You judge the conclusions. Citation checks verify locations
-and exact quotations; assessing their support for a conclusion remains your
-judgment. The linked walkthroughs are hand-written illustrations of inputs,
-auditor calls and rendered answers.
-
-You can use `material-roles` in `question.md` to identify what each file
-contributes. For example, a comparison can name the alternatives A and B and
-identify the file that supplies the criterion. `stewart prepare` flags a
-misspelled filename and gives advice when only one alternative is supplied.
-See the [declaration syntax](docs/INTERFACE.md#declared-material-roles).
-
-Open inquiry also accepts [your own guidance](docs/INTERFACE.md#selected-family-guidance).
+Add `$HOME/.local/bin` to your `PATH` and run `stewart help` to check the installation.
+The signed checksums also cover the source archive, which includes the dependencies for
+an [offline build](development/DEVELOPMENT.md#build-from-a-release-source-archive).
 
 ## Run an inquiry
 
-The submission is an ordinary folder: `question.md` holds settings and your
-question; `materials/` holds the selected UTF-8 text files. Use absolute paths
-for the submission folder, archive and answer destination, keeping the three
-locations separate. The [worked examples](examples/questions/README.md#preparing-an-example)
-include a submission you can copy and prepare.
+### Prepare and commission
 
-1. **Set up:** `stewart new FOLDER --archive ROOT` creates the reference `REF`
-   and scaffolds an absent folder. An existing submission folder is left intact.
-2. **Prepare:** edit the question and materials, then run `stewart prepare REF`
-   to inspect the selection, instructions, tools and limits. It returns a handle
-   `HANDLE`; no commission is accepted yet.
-3. **Commission:** `stewart commission REF HANDLE --i-am-finished` captures and
-   verifies the prepared selection. Later source edits cannot change the audit.
-4. **Run:** `stewart run REF` starts the auditor, which reads and records through
-   Stewart's tools. Explicit submission seals the answer and initiates delivery, which
-   Stewart verifies by reading the copy back. The package includes the exact
-   accepted question body in `question.md` alongside the answer.
-5. **Close:** `stewart close REF` ends authoring and reports what remains to close
-   the audit. After launch, it preserves any unsubmitted work with manager
-   attribution. If it requests confirmation, inspect the delivered copy and
-   follow the returned command to finish.
+Choose an archive on local ext4, XFS or Btrfs. `new` prints an audit reference and
+creates the submission folder if needed.
 
-Steps 1–3, `status`, `receipt` and a `close` before launch are local and need
-no provider key, so they check a new installation without spending anything.
+```sh
+stewart new "$HOME/inquiry" --archive "$HOME/stewart-archive"
+```
 
-An interrupted run can continue the same audit with its recorded work and
-cumulative limits intact. `stewart receipt REF` recovers the accepted commission;
-`stewart status REF` distinguishes execution, submission, delivery and closure.
-`stewart describe COMMAND` shows what a command can read, write or send before
-you invoke it. The [CLI interface](docs/INTERFACE.md)
-also defines structured JSON replies for scripts and agent managers.
+Put the UTF-8 text files to examine under `materials/`. In `question.md`, write your
+question and set the form, model, turn and token limits, and an existing directory for
+the answer. Use absolute paths for the submission folder, archive and answer
+destination. Keep all three separate, with none inside another.
+[Question file format](docs/INTERFACE.md#32-front-matter-question2)
 
-Before preparing files, a manager can use the optional `stewart manager-mcp`
-stdio server to discover question families, explain their material roles,
-assess a proposed question and file inventory, or assemble a candidate
-submission folder in a workspace you designate. An assessment reports errors
-and advice. You may edit and assess again, or use the CLI to prepare the
-actual files. See the [preparation protocol](docs/MANAGER-PREPARATION.md).
-The [manager walkthroughs](examples/manager/README.md) follow one audit from an
-empty folder to close, with files only and with the preparation server.
+Use the reference from `new` in place of `REF`. Review the selection, instructions and
+limits shown by `prepare`. It prints the `HANDLE` that identifies what you reviewed.
+Commissioning copies and verifies the inputs, fixing the question and materials for the audit.
 
-## Before running
+```sh
+stewart prepare REF
+stewart commission REF HANDLE --i-am-finished
+```
 
-- **Platform:** Linux x86_64 or aarch64. The archive must be on local ext4,
-  xfs or btrfs. On a Mac, run Stewart in a Linux VM or container and keep the archive on one of those filesystems.
-- **Access:** the auditor works on accepted text through Stewart's tools. It
-  cannot execute supplied code, use a shell or retrieve additional material.
-- **Credentials:** only `run` needs the provider key and network. Supply the key
-  through `--key-fd FD` or `ANTHROPIC_API_KEY`, never both. The
-  [credential interface](docs/INTERFACE.md#61-provider) describes the descriptor
-  route and protection limits.
-- **Allowances:** turns and input/output tokens accumulate across the audit,
-  including continuations. They are not a dollar ceiling.
-- **Storage:** the archive keeps accepted inputs, exchanges and recorded work;
-  the destination receives the sealed answer package. Close retains the archive.
-  You manage storage and backups; Stewart provides no deletion service or
-  protection against the archive owner.
-- **Writer:** keep the exact binary that created an audit until it closes.
-  A newer binary cannot continue or close that audit. Records are never upgraded
-  in place; see [version obligations](CONTRACTS.md#versions-and-legacy-obligations).
+### Run and read the answer
+
+Only `run` contacts the provider. Supply the API key through `ANTHROPIC_API_KEY` or an
+open file descriptor with `--key-fd FD`. The auditor reads and searches the captured
+text and can cite passages in its entries. If a run is interrupted, another `run` on the
+same reference continues with the recorded entries and remaining allowance.
+
+```sh
+stewart run REF
+stewart status REF
+```
+
+On submission, Stewart seals the answer, copies it to the destination and reads it back.
+`status` reports whether delivery succeeded. In the return package, `answer.md` is the
+readable answer and `answer.json` contains the same entries as structured data. The
+package also includes the original question body, a manifest and any submitted
+artifacts.
+
+Finish with `stewart close REF`. If you close after launch with the answer still open,
+Stewart preserves the entries and records that the manager sealed them. If `close` asks
+for confirmation, inspect the delivered copy and follow the command it prints. The
+archive keeps the accepted inputs, exchanges and recorded work after closure.
+
+The [CLI walkthrough](examples/manager/FILE-ONLY.md) shows the commands and their
+output. The optional [manager MCP server](docs/MANAGER-PREPARATION.md) can assemble the
+submission folder before you prepare it.
 
 ## Status
 
-**Version 0.0.2 — experimental.** Small live commissions have returned answers
-with verified delivery across all three forms. The release and synthetic runtime
-suites passed on native Linux aarch64 and on x86_64 under Rosetta. Both used
-the same aarch64 guest kernel.
-The Messages release writer has current alignment records for
-[Haiku 5.5](apparatus/qualified.md#messages-alignment-haiku-01) and
-[Opus 5.5](apparatus/qualified.md#messages-alignment-opus-01). Each model
-submitted in all three families and delivered a revised entry after provider compaction.
+Stewart 0.0.2 is experimental. In live audits through the Messages API, Haiku 5.5 and
+Opus 5.5 each submitted answers in all three forms, and Stewart verified delivery. The
+optional Claude Code adapter, available in source builds, has completed one live open
+inquiry. [Live audit records](apparatus/qualified.md)
 
-The optional Claude Code adapter is available in source builds. In the Linux
-aarch64 alignment, Sonnet 5.5 on Claude Code 2.1.322 submitted two entries
-in one open inquiry. The delivered package passed all 18 comparisons and the
-audit closed. The placement ended without a final usage frame.
-[Linux harness alignment](apparatus/qualified.md#claude-code-alignment-linux-01)
+Both release binaries passed the acceptance suite on the same Linux guest kernel. The
+aarch64 binary ran natively and the x86_64 binary ran under Rosetta.
+[Release qualification](apparatus/qualified.md#framing-effort-acceptance-01)
 
-Stewart is a single Rust binary, supported on Linux x86_64 and aarch64. See [building and testing](development/DEVELOPMENT.md), the
-[crate guide](service/README.md) and [contributing](AGENTS.md), or read the [design](DESIGN.md),
-[behavioral contracts](CONTRACTS.md) and [acceptance requirements](ACCEPTANCE.md).
+## Development
+
+The [design](DESIGN.md) explains the responsibilities of the manager, auditor and
+service. The [crate guide](service/README.md) maps those responsibilities to the Rust
+code. For changes to Stewart, see the [behavioral contracts](CONTRACTS.md),
+[acceptance requirements](ACCEPTANCE.md) and
+[build and test guide](development/DEVELOPMENT.md).
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+[MIT](LICENSE).
