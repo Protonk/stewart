@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parents[1] / 'apparatus/c10'))
+sys.path.insert(0, str(HERE.parents[1] / 'alignment/messages/procedure'))
 from billing import price_card, worst_case
 from common import FILE_SIZE_LIMIT, file_hash, proposal, validate_packet, write_json
 

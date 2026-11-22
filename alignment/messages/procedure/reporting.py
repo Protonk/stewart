@@ -27,9 +27,9 @@ def identity(path, raw=None):
 def reviewer_sources():
     # Bind the code that reads, checks and assembles this position. Unrelated
     # test or prose edits do not create a different evidentiary position.
-    paths = ['apparatus/c10/'+name+'.py' for name in
+    paths = ['alignment/messages/procedure/'+name+'.py' for name in
              ['reporting','verify','common','study','study_build']]
-    paths += ['apparatus/sanity/session_support.py']
+    paths += ['alignment/messages/launcher/session_support.py']
     paths += ['apparatus/driver/'+name+'.py' for name in ['answer_witness','driver_core','rawjson']]
     return [{'path':path,'sha256':file_hash(REPO/path)} for path in paths]
 

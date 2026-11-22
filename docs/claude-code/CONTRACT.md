@@ -316,7 +316,7 @@ arrangement, environment names and values, supporting controls, handshake,
 input shape and pinned texts that Stewart supplies to the harness. Retain the
 exact synthetic prompt and result with it. Do not hash or copy the credential
 store. Profile validation, installation verification and assembly from separately
-reviewed evidence are implemented in the [profile apparatus](../../apparatus/claude-code/README.md).
+reviewed evidence are implemented in the [profile apparatus](../../alignment/claude-code/README.md).
 The independent fixture exercises actual helpers offline. A bounded invocation
 library, observer, integrated controller and review workflow passed synthetic
 rehearsals on macOS using the actual helpers and independent traffic witnesses.

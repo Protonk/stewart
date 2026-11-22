@@ -18,7 +18,7 @@ FIXTURES = HERE / 'testdata/verification'
 spec = importlib.util.spec_from_file_location('profile_producer', HERE / 'profile.py')
 profile = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(profile)
-sys.path.insert(0, str(HERE.parent / 'driver'))
+sys.path.insert(0, str(HERE.parents[1] / 'apparatus/driver'))
 from claude_code_surface import REQUIRED_CHECKS
 
 

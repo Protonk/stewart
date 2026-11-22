@@ -14,7 +14,7 @@ import time
 from session_support import digest, write_json
 
 # The Messages API version and compaction beta every request must carry. The
-# sanity container's source archive holds only apparatus/sanity, so these are
+# sanity container's source archive holds only the Messages launcher, so these are
 # kept here; the C10 tests compare them with the specification-derived values.
 API_VERSION = '2026-10-21'
 ANTHROPIC_BETA = 'compact-2026-09-04'

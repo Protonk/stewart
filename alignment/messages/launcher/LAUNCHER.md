@@ -17,9 +17,9 @@ Commit the apparatus before running. Choose a new absolute directory directly
 under `.scratch` and the qualification ID for the exact binary to exercise:
 
 ```sh
-python3 -I -B apparatus/sanity/launch.py rehearse \
+python3 -I -B alignment/messages/launcher/launch.py rehearse \
     "$PWD/.scratch/sanity-launch-NN" --qualification ACCEPTANCE-ID
-python3 -I -B apparatus/sanity/review.py "$PWD/.scratch/sanity-launch-NN"
+python3 -I -B alignment/messages/launcher/review.py "$PWD/.scratch/sanity-launch-NN"
 ```
 
 The container has no network. The host generates a nonfunctional canary or reads an explicitly selected
@@ -52,7 +52,7 @@ binary digest, committed apparatus source and specimen digest. It does not
 launch a container or contact a provider:
 
 ```sh
-python3 -I -B apparatus/sanity/packet.py apparatus/sanity/commission-proposal.json \
+python3 -I -B alignment/messages/launcher/packet.py alignment/messages/launcher/commission-proposal.json \
     /absolute/private-directory/commission.json --qualification ACCEPTANCE-ID
 ```
 
@@ -79,10 +79,10 @@ See [the run sheet](RUN-SHEET.md) for the decisions and review sequence.
 ## Live launch, only after spending authorization
 
 Run from the dedicated launcher account after provisioning the bound connection
-through the non-echoing prompt. [Saved provider connections](../c10/README.md#saved-provider-connections)
+through the non-echoing prompt. [Saved provider connections](../procedure/README.md#saved-provider-connections)
 
 ```sh
-python3 -I -B apparatus/sanity/launch.py live \
+python3 -I -B alignment/messages/launcher/launch.py live \
     "$PWD/.scratch/sanity-live-NN" --qualification ACCEPTANCE-ID \
     --commission /absolute/private-directory/commission.json \
     --approved-commission APPROVED-FILE-SHA256
@@ -147,10 +147,10 @@ requiring review; it never calls a model qualified or grades the answer.
 Local helper checks, which consume no model tokens:
 
 ```sh
-python3 -I -B apparatus/sanity/test_launch.py
+python3 -I -B alignment/messages/launcher/test_launch.py
 ```
 
 Container qualification and a synthetic credential rehearsal must exercise the
 chosen executable and committed launch code before real-key use. The
-[qualification record](../qualified.md) identifies retained demonstrations;
+[qualification record](../../../apparatus/qualified.md) identifies retained demonstrations;
 local helper checks alone do not qualify the Linux path.

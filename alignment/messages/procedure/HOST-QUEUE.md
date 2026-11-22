@@ -108,7 +108,7 @@ waves. Once wave two begins, wave one cannot resume. Endpoint billing and the
 account-wide provider cap are separate from this campaign meter.
 
 ```sh
-python3 -I -B apparatus/c10/host_queue.py /var/lib/stewart/queue \
+python3 -I -B alignment/messages/procedure/host_queue.py /var/lib/stewart/queue \
   --config "$HOME/commission/queue.json" --once
 ```
 

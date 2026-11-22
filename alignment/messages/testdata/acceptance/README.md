@@ -21,7 +21,7 @@ sabotage controls, 21 firing driver controls and 403 passing selfchecks on each
 architecture. Its source was `0fdac9450aa0d1a72d1465b17b7e3e5038796c71`.
 The earlier result reports exit 0 while marking `c12.run-refusals` and
 `c19.bounds.paths` as `skipped`; all four credential cases still pass.
-The [qualification index](../../qualified.md) owns the qualification history.
+The [qualification index](../../../../apparatus/qualified.md) owns the qualification history.
 
 The selected build records are the complete two-byte exit records for
 `build-release`, `build-test`, `static-stewart`, `static-stewart-test`,

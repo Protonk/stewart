@@ -821,7 +821,7 @@ class PacketTests(unittest.TestCase):
 
     def test_material_copies_preserve_example_bytes(self):
         for item in strict_json(read_file(HERE/'specimen-provenance.json')):
-            self.assertEqual(read_file(HERE/item['copy']),read_file(HERE.parents[1]/item['source']))
+            self.assertEqual(read_file(HERE/item['copy']),read_file(HERE.parents[2]/item['source']))
 
     def test_question_binding_preserves_body_and_selected_family(self):
         packet=proposal('example-model')
@@ -1546,7 +1546,7 @@ class HostQueueTests(unittest.TestCase):
 
     def test_large_capture_reservation_covers_retry_and_terminal_estimates(self):
         from billing import worst_case
-        rates = json.loads((Path(__file__).resolve().parents[2]/'alignment/messages/pricing-2026-11-21.json').read_bytes())
+        rates = json.loads((Path(__file__).resolve().parents[3]/'alignment/messages/pricing-2026-11-21.json').read_bytes())
         limits = {'turns':16,'input_tokens':1000000,'output_tokens':24000}
         for model, cents in [('claude-haiku-5-5',482),('claude-opus-5-5',3852)]:
             with self.subTest(model=model):
@@ -2024,8 +2024,8 @@ class ContinuationTests(unittest.TestCase):
             else:
                 path.mkdir(parents=True)
         for name in ['placements','operations']:
-            (cls.repo/'apparatus/c10'/(name+'.py')).write_text('# fixture stand-in; the fake container never runs it\n')
-        (cls.repo/'apparatus/sanity/session.py').write_text('# fixture\n')
+            (cls.repo/'alignment/messages/procedure'/(name+'.py')).write_text('# fixture stand-in; the fake container never runs it\n')
+        (cls.repo/'alignment/messages/launcher/session.py').write_text('# fixture\n')
         def git(*argv):
             subprocess.run(['git','-c','user.name=fixture','-c','user.email=fixture@example.invalid',
                             '-c','commit.gpgsign=false',*argv],cwd=cls.repo,check=True,capture_output=True)
@@ -2146,8 +2146,8 @@ class ContinuationTests(unittest.TestCase):
         for audit,_ in exports:
             (self.work/'c10-private'/audit).mkdir(parents=True)
             self.plans[audit]=self.plan(audit)
-        (self.work/'code/apparatus/c10').mkdir(parents=True)
-        (self.work/'code/apparatus/c10/operations.py').write_text('# launch-time source, without continuation support\n')
+        (self.work/'code/alignment/messages/procedure').mkdir(parents=True)
+        (self.work/'code/alignment/messages/procedure/operations.py').write_text('# launch-time source, without continuation support\n')
         self.configure()
 
     def plan(self,audit,placement=2,**changes):
@@ -2250,7 +2250,7 @@ class ContinuationTests(unittest.TestCase):
         with tarfile.open(record/'staging/source.tar') as source:
             expected={member.name:source.extractfile(member).read() for member in source if member.isfile()}
         self.assertEqual(self.tree(code),{**expected,'.ready':b''})
-        self.assertIn('apparatus/c10/placements.py',expected)
+        self.assertIn('alignment/messages/procedure/placements.py',expected)
         self.assertEqual(self.tree(self.work/'code'),launch_time)
         # Packet: exact bytes, in a directory this record folder alone owns.
         self.assertEqual(read_file(self.work/'continuation-packets/later-01/commission.json'),read_file(packet))
@@ -2265,7 +2265,7 @@ class ContinuationTests(unittest.TestCase):
         placement=strict_json(read_file(record/'host/placement.argv.json'))
         self.assertEqual(placement,['podman','exec','--interactive',self.container,'env','-i',
             'PATH=/usr/local/bin:/usr/bin:/bin','HOME=/work','python3','-I','-B',
-            '/work/'+code.name+'/apparatus/c10/placements.py','rehearse','--binary','/bin-in/stewart',
+            '/work/'+code.name+'/alignment/messages/procedure/placements.py','rehearse','--binary','/bin-in/stewart',
             '--packet','/work/continuation-packets/later-01/commission.json'])
         # The key travelled only on the placement's standard input.
         self.assertEqual(self.calls('placement-stdin.jsonl'),[{'audit':'control-continue-cap','mode':'rehearse',
@@ -2544,18 +2544,18 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual((failed,first['code']['created']),(False,True))
         # The same committed source is already there: accepted as it is, not rewritten.
         code=self.work/first['code']['directory'][len('/work/'):]
-        stamp=(code/'apparatus/c10/placements.py').stat().st_mtime_ns
+        stamp=(code/'alignment/messages/procedure/placements.py').stat().st_mtime_ns
         failed,second=self.run_continuation(self.args(self.packet(audits[1],'b.json'),'later-02'))
         self.assertEqual((failed,second['code']),(False,{**first['code'],'created':False}))
-        self.assertEqual((code/'apparatus/c10/placements.py').stat().st_mtime_ns,stamp)
+        self.assertEqual((code/'alignment/messages/procedure/placements.py').stat().st_mtime_ns,stamp)
         original=self.tree(code)
         for change in ['changed','extra','missing']:
             if change=='changed':
-                (code/'apparatus/c10/placements.py').write_text('# altered inside the container\n')
+                (code/'alignment/messages/procedure/placements.py').write_text('# altered inside the container\n')
             elif change=='extra':
-                (code/'apparatus/c10/unlisted.py').write_text('# not in the committed source\n')
+                (code/'alignment/messages/procedure/unlisted.py').write_text('# not in the committed source\n')
             else:
-                (code/'apparatus/sanity/session.py').unlink()
+                (code/'alignment/messages/launcher/session.py').unlink()
             altered=self.tree(code)
             with self.subTest(change=change):
                 record='later-'+change
@@ -2668,11 +2668,11 @@ class ContinuationTests(unittest.TestCase):
             return status,self.calls()[-1]
         # The original launch's own record names no code directory: its launch-time source is used.
         self.assertEqual(control(self.evidence,'status'),(0,['exec',self.container,'env','-i',
-            'PATH=/usr/local/bin:/usr/bin:/bin','python3','-I','-B','/work/code/apparatus/c10/operations.py',
+            'PATH=/usr/local/bin:/usr/bin:/bin','python3','-I','-B','/work/code/alignment/messages/procedure/operations.py',
             'control-continue-cap','status']))
-        self.assertEqual(control(record,'status')[1][8],code+'/apparatus/c10/operations.py')
+        self.assertEqual(control(record,'status')[1][8],code+'/alignment/messages/procedure/operations.py')
         status,argv=control(record,'collect','synthetic')
-        self.assertEqual((status,argv[:2],argv[9]),(0,['exec','--interactive'],code+'/apparatus/c10/operations.py'))
+        self.assertEqual((status,argv[:2],argv[9]),(0,['exec','--interactive'],code+'/alignment/messages/procedure/operations.py'))
         self.assertEqual((self.bin/'operations-stdin.sha256').read_text(),digest(self.key.encode()))
         # The export lands in the original folder through /out, so both trees are scanned.
         for suffix in ['.scan.json','.evidence-scan.json']:

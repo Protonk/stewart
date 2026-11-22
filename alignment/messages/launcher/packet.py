@@ -21,11 +21,11 @@ def main():
     parser.add_argument('output', type=Path)
     parser.add_argument('--qualification', required=True)
     args = parser.parse_args()
-    repo = Path(__file__).resolve().parents[2]
+    repo = Path(__file__).resolve().parents[3]
     if not args.output.is_absolute() or args.output.exists():
         parser.error('output must be a new absolute file in an existing private directory')
     env = host_environment()
-    if subprocess.check_output(['git', 'status', '--porcelain', '--', 'apparatus/sanity', 'apparatus/driver/credential_observer.py'], cwd=repo, env=env):
+    if subprocess.check_output(['git', 'status', '--porcelain', '--', 'alignment/messages/launcher', 'apparatus/driver/credential_observer.py'], cwd=repo, env=env):
         parser.error('commit the launch apparatus and specimen before binding a packet')
     if subprocess.run(['python3', '-I', '-B', 'apparatus/qualified.py', 'check'], cwd=repo, env=env, stdout=subprocess.DEVNULL).returncode:
         parser.error('qualification record check failed')

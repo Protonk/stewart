@@ -7,7 +7,7 @@ It executes nothing. The [independent observer](CLAUDE-CODE-OBSERVER.md) serves
 this fixture on the sockets that the gated binary's relay and hook helpers
 reach, using the
 [specified private transport](../../docs/claude-code/CONTRACT.md#private-helper-transport-for-independent-fixtures).
-The [supplied-surface controller](../claude-code/README.md#supplied-surface-controller)
+The [supplied-surface controller](../../alignment/claude-code/README.md#supplied-surface-controller)
 prepares each comparison with this module.
 
 ```sh
@@ -39,7 +39,7 @@ the fixture and the specification-derived helpers it uses into `sources/`.
 path, size and SHA-256. It excludes itself, `OBSERVATION.json` and a separately
 supplied `CHECK.json` to avoid digest cycles. Links and special files refuse.
 The module exports the required check inventory, `REQUIRED_CHECKS`, for the
-[profile producer](../claude-code/README.md).
+[profile producer](../../alignment/claude-code/README.md).
 
 This fixture never writes `OBSERVATION.json`, `CHECK.json` or an eligible
 profile. A separately commissioned real-harness observation and independent

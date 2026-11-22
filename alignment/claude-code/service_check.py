@@ -19,7 +19,7 @@ import sys
 import time
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / 'driver'))
+sys.path.insert(0, str(HERE.parents[1] / 'apparatus/driver'))
 import claude_code_service_witness as witness
 import answer_witness as answer
 spec = importlib.util.spec_from_file_location('service_profile', HERE / 'profile.py')
@@ -27,9 +27,9 @@ p = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(p)
 sys.path.insert(0, str(HERE))
 import campaign
-SOURCES = ('claude-code/service_check.py', 'claude-code/campaign.py', 'claude-code/profile.py', 'claude-code/pin.py',
-           'driver/claude_code_service_witness.py', 'driver/answer_witness.py',
-           'driver/claude_code.py', 'driver/driver_core.py', 'driver/rawjson.py')
+SOURCES = ('alignment/claude-code/service_check.py', 'alignment/claude-code/campaign.py', 'alignment/claude-code/profile.py', 'alignment/claude-code/pin.py',
+           'apparatus/driver/claude_code_service_witness.py', 'apparatus/driver/answer_witness.py',
+           'apparatus/driver/claude_code.py', 'apparatus/driver/driver_core.py', 'apparatus/driver/rawjson.py')
 ENV = {'PATH': '/usr/bin:/bin', 'TMPDIR': '/tmp', 'LANG': 'C.UTF-8'}
 CLOCK_NAME = 'CLOCK_MONOTONIC'
 CLOCK = time.CLOCK_MONOTONIC
@@ -177,7 +177,7 @@ def prepare(output, preparation, reference, folder, writer, mode='real-harness',
     for name in SOURCES:
         dest = sources / name
         dest.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-        p.publish(dest, p.read_file(HERE.parent / name))
+        p.publish(dest, p.read_file(HERE.parents[1] / name))
     (output / 'inputs').mkdir(mode=0o700)
     snapshot(folder, output / 'inputs/submission')
     p.publish(output / 'inputs/prepare.json', p.read_file(preparation))
@@ -274,7 +274,7 @@ def verify(packet):
 
 
 def frozen_executor(packet, manifest):
-    require(Path(__file__).resolve() == packet / 'sources/claude-code/service_check.py'
+    require(Path(__file__).resolve() == packet / 'sources/alignment/claude-code/service_check.py'
             and str(Path(sys.executable).resolve()) == manifest['python'],
             'use the frozen controller and its bound Python interpreter')
 
@@ -1286,7 +1286,7 @@ def rehearse(suite, approved_digest):
         packet = suite / kind
         manifest = manifests[kind]
         return command(host, kind + '-' + label,
-            [manifest['python'], '-I', '-B', str(packet / 'sources/claude-code/service_check.py'),
+            [manifest['python'], '-I', '-B', str(packet / 'sources/alignment/claude-code/service_check.py'),
              action, '--packet', str(packet), '--placement', str(placement), *extra], 180)
 
     def refusal(kind, label, placement, digest, reason):
@@ -1454,7 +1454,7 @@ def rehearse_interruptions(suite, digest):
         if not results:
             frozen_executor(packet, manifest)
         def invoke(action, index, reviewed=None):
-            argv = [manifest['python'], '-I', '-B', str(packet / 'sources/claude-code/service_check.py'),
+            argv = [manifest['python'], '-I', '-B', str(packet / 'sources/alignment/claude-code/service_check.py'),
                     action, '--packet', str(packet), '--placement', str(index)]
             if reviewed:
                 argv += ['--reviewed-review', reviewed]

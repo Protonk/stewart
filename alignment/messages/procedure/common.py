@@ -8,12 +8,12 @@ import stat
 import sys
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parents[1]
-for folder in ['driver', 'sanity']:
-    sys.path.insert(0, str(HERE.parent / folder))
+REPO = HERE.parents[2]
+sys.path.insert(0, str(REPO / 'apparatus/driver'))
+sys.path.insert(0, str(HERE.parent / 'launcher'))
 from session_support import credential_bytes, digest, scan_tree, write_json
 
-SOURCE_PATHS = ['apparatus/c10', 'apparatus/sanity',
+SOURCE_PATHS = ['alignment/messages/procedure', 'alignment/messages/launcher',
     'apparatus/driver/credential_observer.py', 'apparatus/driver/driver_core.py',
     'apparatus/driver/rawjson.py', 'apparatus/driver/answer_witness.py']
 FILE_SIZE_LIMIT = 131072

@@ -306,7 +306,7 @@ def validate_observation(root):
     supplied-surface comparison whose every required check was observed with
     retained, manifest-bound evidence. Returns its exact bytes, value and members."""
     # This inventory is owned by the implementation-independent fixture author.
-    sys.path.insert(0, str(HERE.parent / 'driver'))
+    sys.path.insert(0, str(HERE.parents[1] / 'apparatus/driver'))
     from claude_code_surface import REQUIRED_CHECKS
 
     raw = read_file(root / 'OBSERVATION.json')

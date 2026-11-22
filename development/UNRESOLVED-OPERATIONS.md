@@ -346,7 +346,7 @@ over the same ledger and limits. The runtime's rules are in
 
 - **Known:** live Messages captures are Stewart-owned, and only rehearsal has
   an independent provider witness
-  ([C10 limits](../apparatus/c10/README.md#evidence-and-review-limits)).
+  ([C10 limits](../alignment/messages/procedure/README.md#evidence-and-review-limits)).
   Harness captures are service-owned.
 - **Unknown:** *witness:* an independent view of live traffic. An apparatus
   CONNECT proxy would supply one but would change the commissioned route.

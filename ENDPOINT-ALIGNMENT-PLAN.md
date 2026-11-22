@@ -1,8 +1,8 @@
 # Endpoint alignment
 
-The mechanism's sources are the Messages small-commission apparatus (`apparatus/c10`, with
-parts of `apparatus/sanity`) and the harness profile and check tooling
-(`apparatus/claude-code`, with the independent `apparatus/driver/claude_code_*`
+The mechanism's sources are the Messages small-commission apparatus (`alignment/messages/procedure`, with
+parts of `alignment/messages/launcher`) and the harness profile and check tooling
+(`alignment/claude-code`, with the independent `apparatus/driver/claude_code_*`
 fixtures).
 
 Stewart talks to two Anthropic endpoints: the Messages API, from the distributed
@@ -41,7 +41,7 @@ The adapter's rules are [INTERFACE 6.1–6.6](docs/INTERFACE.md#6-the-run-adapte
 The stand-ins are the release driver's fake provider
 (`apparatus/driver/fake_provider.py`, with the captured bodies in
 `apparatus/driver/testdata/messages/`) and the rehearsal fake shared by C10 and
-sanity (`apparatus/sanity/exercise.py`, `apparatus/c10/fake.py`). Every run is
+sanity (`alignment/messages/launcher/exercise.py`, `alignment/messages/procedure/fake.py`). Every run is
 compared on every row it reaches. Rows A1–A13 name the shape, the adapter's
 assumption, what the stand-ins replay, the witnessing capture, and what retained
 live captures already show.
@@ -177,12 +177,12 @@ uses the qualified shipping writer.
 ## 2. Build the mechanism in `alignment/`
 
 - [ ] Create `alignment/messages/` from what the specified check uses of
-  `apparatus/c10` and `apparatus/sanity`: packet preparation, the custody-guarded
+  `alignment/messages/procedure` and `alignment/messages/launcher`: packet preparation, the custody-guarded
   launcher and export, the procedural reviewer with its controls, and the host
   queue's saved-connection route. Bring their tests, update DEVELOPMENT's rows,
-  rehearse on Linux, then delete the rest of `apparatus/c10`,
-  `apparatus/sanity` and `apparatus/testdata/acceptance/`.
-- [ ] Create `alignment/claude-code/` from `apparatus/claude-code`: pin, profile,
+  rehearse on Linux, then delete the rest of `alignment/messages/procedure`,
+  `alignment/messages/launcher` and `alignment/messages/testdata/acceptance/`.
+- [ ] Create `alignment/claude-code/` from `alignment/claude-code`: pin, profile,
   bounded launch, and the surface and service checks. The independent observer,
   peer, surface fixture and service witness stay in `apparatus/driver/` under
   the independence rule; changes to them need a specification-only author.

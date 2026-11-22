@@ -103,10 +103,10 @@ The development and launcher accounts have distinct Podman stores and
 subordinate UID/GID ranges. The maintainer installs reviewed code and writers
 for the launcher. The queue accepts authorized requests from the development
 user. Launches use the launcher's private Linux keyring. See the
-[C10 instructions](../c10/README.md) for loading a provider connection and
-the [queue guide](../c10/HOST-QUEUE.md) for placing requests. Enter the
+[C10 instructions](../../alignment/messages/procedure/README.md) for loading a provider connection and
+the [queue guide](../../alignment/messages/procedure/HOST-QUEUE.md) for placing requests. Enter the
 dedicated harness login with the pinned Linux executable as its intended
-user. Follow the [maintainer sign-in procedure](../claude-code/README.md#maintainer-sign-in)
+user. Follow the [maintainer sign-in procedure](../../alignment/claude-code/README.md#maintainer-sign-in)
 for its dedicated configuration directory.
 
 See [Building and testing](../../development/DEVELOPMENT.md) for the

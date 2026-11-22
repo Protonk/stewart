@@ -29,7 +29,7 @@ forwarded. All model usage in its report is synthetic.
 The final credential and launch path is exercised with:
 
 ```sh
-python3 -I -B apparatus/sanity/launch.py rehearse "$PWD/.scratch/sanity-launch-NN" --qualification ACCEPTANCE_ID
+python3 -I -B alignment/messages/launcher/launch.py rehearse "$PWD/.scratch/sanity-launch-NN" --qualification ACCEPTANCE_ID
 ```
 
 Use a fresh evidence folder and the qualification ID for the executable being
@@ -72,7 +72,7 @@ persistent keyring. Pipe input goes to container stdin, then the one-use
 descriptor selected by Stewart's `run --key-fd`. The launch environment
 selects the direct endpoint explicitly and excludes ambient credentials and
 proxies. Retain the qualified executable until the audit closes.
-[Saved provider connections](../c10/README.md#saved-provider-connections)
+[Saved provider connections](../procedure/README.md#saved-provider-connections)
 
 1. **Freeze the launch packet.** Copy this specimen into a new retained run.
    Fill the exact approved model, destination and cumulative limits; preserve

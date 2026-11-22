@@ -263,7 +263,7 @@ class LaunchTests(unittest.TestCase):
                                 'workspace_id': 'synthetic-workspace', 'credential_label': 'synthetic-key'}
             raw = (json.dumps(value) + '\n').encode()
             packet.write_bytes(raw)
-            out = Path(__file__).resolve().parents[2] / '.scratch/test-live-must-not-exist'
+            out = Path(__file__).resolve().parents[3] / '.scratch/test-live-must-not-exist'
             argv = ['launch.py', 'live', str(out), '--qualification', 'unused',
                 '--commission', str(packet), '--approved-commission', digest(raw)]
             stderr = io.StringIO()

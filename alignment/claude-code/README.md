@@ -20,7 +20,7 @@ and evidence directories. The harness owns its `.credentials.json`.
 The profile apparatus launches no processes against the login.
 
 ```sh
-python3 -I -B apparatus/claude-code/profile.py prepare \
+python3 -I -B alignment/claude-code/profile.py prepare \
   --pin-receipt /absolute/retained-pin/pin.json --output /absolute/new-installation \
   --config-directory /absolute/dedicated-login --home /absolute/home \
   --temporary-directory /absolute/temporary
@@ -34,7 +34,7 @@ attestation needed for a subsequent service comparison. Synthetic rehearsals
 cannot. No live runner or live commission is supplied by the profile producer.
 
 ```sh
-python3 -I -B apparatus/claude-code/profile.py assemble \
+python3 -I -B alignment/claude-code/profile.py assemble \
   --installation-directory /absolute/installation \
   --observation-directory /absolute/observation --review /absolute/CHECK.json \
   --output /absolute/new-profile.json
@@ -97,10 +97,10 @@ Only the fixture's declared `record_account` effect is implemented. This is
 supplied-surface compatibility; service behavior and compaction remain separate.
 
 ```sh
-python3 -I -B apparatus/claude-code/surface_check.py prepare \
+python3 -I -B alignment/claude-code/surface_check.py prepare \
   --output /absolute/new-packet --binary /absolute/gated-stewart \
   --installation-directory /absolute/installation --model SELECTED_MODEL
-python3 -I -B apparatus/claude-code/surface_check.py inspect --packet /absolute/new-packet
+python3 -I -B alignment/claude-code/surface_check.py inspect --packet /absolute/new-packet
 ```
 
 The emitted `COMMISSION.json` binds the ordered invocation budget and names its
@@ -111,7 +111,7 @@ confer none. Only after explicit bounded approval, use the printed frozen
 controller with the packet's bound Python interpreter:
 
 ```sh
-ABS_PYTHON -I -B /absolute/new-packet/sources/apparatus/claude-code/surface_check.py run \
+ABS_PYTHON -I -B /absolute/new-packet/sources/alignment/claude-code/surface_check.py run \
   --packet /absolute/new-packet --approved-commission EXACT_APPROVED_SHA256 \
   --extra-usage-disabled
 ```
@@ -136,7 +136,7 @@ positive/denial/invariance effects, exact bindings and process records. After
 that review, an identified reviewer can record the exact observation digest:
 
 ```sh
-ABS_PYTHON -I -B /absolute/new-packet/sources/apparatus/claude-code/surface_check.py attest \
+ABS_PYTHON -I -B /absolute/new-packet/sources/alignment/claude-code/surface_check.py attest \
   --packet /absolute/new-packet --reviewed-observation OBSERVATION_SHA256 \
   --reviewer REVIEWER --output /absolute/new-packet/observation/CHECK.json
 ```
@@ -150,7 +150,7 @@ authority to start a service placement.
 ### Synthetic controller rehearsal
 
 `prepare-rehearsal --output /absolute/new-packet --binary /absolute/gated-stewart`
-constructs a fixed [synthetic peer](../driver/CLAUDE-CODE-PEER.md) wrapper instead
+constructs a fixed [synthetic peer](../../apparatus/driver/CLAUDE-CODE-PEER.md) wrapper instead
 of accepting a real installation. Run its frozen controller with
 `run-rehearsal --packet /absolute/new-packet`. It accepts no live approval.
 The three scenarios are `normal`, `bad-init` and `wrong-auth`; the latter two
@@ -179,7 +179,7 @@ bounds, not product limits. The current controller refuses superseded packet
 schemas; retained historical packets keep their original frozen source.
 
 ```sh
-python3 -I -B apparatus/claude-code/service_check.py prepare \
+python3 -I -B alignment/claude-code/service_check.py prepare \
   --output /absolute/fresh-packet --preparation /absolute/prepare-reply.json \
   --reference stw1:... --folder /absolute/submission --writer /absolute/stewart
 ```
@@ -190,7 +190,7 @@ to approve the packet. The extra-usage flag conveys the account-setting
 assertion; it does not verify billing or change a setting.
 
 ```sh
-ABS_PYTHON -I -B /absolute/fresh-packet/sources/claude-code/service_check.py run \
+ABS_PYTHON -I -B /absolute/fresh-packet/sources/alignment/claude-code/service_check.py run \
   --packet /absolute/fresh-packet --placement 1 \
   --approved-commission EXACT_APPROVED_SHA256 --extra-usage-disabled
 ```
@@ -302,7 +302,7 @@ receipt and checking that a further start is refused.
 Exercise the four actions and the missed-trigger control with
 `prepare-interruptions --output FRESH_SUITE --writer GATED_BINARY --work FRESH_WORK`.
 Use a Linux filesystem supported for audit storage. Run the first packet's
-frozen `sources/claude-code/service_check.py rehearse-interruptions --suite FRESH_SUITE
+frozen `sources/alignment/claude-code/service_check.py rehearse-interruptions --suite FRESH_SUITE
 --rehearsal-sha256 SHA256` with the digest of `REHEARSAL.json`.
 The signal comparisons include a reviewed continuation. All five comparisons
 require verified delivery and closure.
@@ -311,7 +311,7 @@ require verified delivery and closure.
 
 `bounded.py` supplies launch controls for the supplied-surface controller. The
 library has no live command-line entry or built-in commission. The
-[independent observer](../driver/CLAUDE-CODE-OBSERVER.md) owns stream validation,
+[independent observer](../../apparatus/driver/CLAUDE-CODE-OBSERVER.md) owns stream validation,
 fixture sockets and comparison assessments. `prepare(root, budget)`
 freezes `BUDGET.json` without executing anything. The
 `stewart.claude-code.invocation-budget/1` record names a purpose, mode, overall
@@ -383,7 +383,7 @@ download=$(mktemp)
 curl --fail --location --proto '=https' --proto-redir '=https' \
   "https://downloads.claude.ai/claude-code-releases/2.1.322/$platform/claude" \
   --output "$download" &&
-python3 -I -B apparatus/claude-code/pin.py /absolute/new-pin-evidence --source "$download"
+python3 -I -B alignment/claude-code/pin.py /absolute/new-pin-evidence --source "$download"
 ```
 
 With an existing installation at `~/.local/share/claude/versions/2.1.322`,
@@ -408,11 +408,11 @@ CLAUDE_CONFIG_DIR="$HOME/.config/stewart-harness" \
 Run these offline checks from the repository root:
 
 ```sh
-python3 -I -B apparatus/claude-code/test_pin.py
-python3 -I -B apparatus/claude-code/test_profile.py
-python3 -I -B apparatus/claude-code/test_bounded.py
-python3 -I -B apparatus/claude-code/test_surface_check.py
-python3 -I -B apparatus/claude-code/test_service_check.py
+python3 -I -B alignment/claude-code/test_pin.py
+python3 -I -B alignment/claude-code/test_profile.py
+python3 -I -B alignment/claude-code/test_bounded.py
+python3 -I -B alignment/claude-code/test_surface_check.py
+python3 -I -B alignment/claude-code/test_service_check.py
 ```
 
 Pin and profile controls use [captured local verification output](testdata/verification/README.md)

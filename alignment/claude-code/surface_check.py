@@ -28,17 +28,17 @@ def sibling(name):
 
 p, bounded = sibling('profile'), sibling('bounded')
 campaign = sibling('campaign')
-sys.path.insert(0, str(HERE.parent / 'driver'))
+sys.path.insert(0, str(HERE.parents[1] / 'apparatus/driver'))
 import claude_code_surface as surface
 import claude_code_observer as observer
 
 KINDS = observer.KINDS
 SCHEMA = 'stewart.claude-code.surface-commission/1'
-CONTROLLER = 'sources/apparatus/claude-code/surface_check.py'
-SOURCE_FILES = ('claude-code/surface_check.py', 'claude-code/campaign.py', 'claude-code/bounded.py', 'claude-code/profile.py', 'claude-code/pin.py',
-                'driver/claude_code_observer.py', 'driver/claude_code_surface.py', 'driver/claude_code.py',
-                'driver/driver_core.py', 'driver/rawjson.py', 'driver/claude_code_peer.py',
-                'driver/fixture_expectations.py')
+CONTROLLER = 'sources/alignment/claude-code/surface_check.py'
+SOURCE_FILES = ('alignment/claude-code/surface_check.py', 'alignment/claude-code/campaign.py', 'alignment/claude-code/bounded.py', 'alignment/claude-code/profile.py', 'alignment/claude-code/pin.py',
+                'apparatus/driver/claude_code_observer.py', 'apparatus/driver/claude_code_surface.py', 'apparatus/driver/claude_code.py',
+                'apparatus/driver/driver_core.py', 'apparatus/driver/rawjson.py', 'apparatus/driver/claude_code_peer.py',
+                'apparatus/driver/fixture_expectations.py')
 
 
 def save(path, value):
@@ -106,7 +106,7 @@ def prepare_packet(packet, writer, model, family='open-inquiry', installation=No
     python = str(Path(sys.executable).resolve())
     packet.mkdir(mode=0o700)
     for name in SOURCE_FILES:
-        copy_file(HERE.parent / name, packet / 'sources/apparatus' / name)
+        copy_file(HERE.parents[1] / name, packet / 'sources' / name)
     if installation is not None:
         installation = p.absolute(installation)
         for name in ('launch.json', 'installation.json', 'PREPARATION.json'):
@@ -356,7 +356,7 @@ def run_packet(packet, approved=None, extra_usage_disabled=False, rehearsal=Fals
             copy_file(path, out / 'execution' / path.relative_to(packet / 'invocations'))
     copy_file(packet / 'COMMISSION.json', out / 'commission.json')
     for name in SOURCE_FILES:
-        copy_file(packet / 'sources/apparatus' / name, out / 'controller-sources/apparatus' / name)
+        copy_file(packet / 'sources' / name, out / 'controller-sources' / name)
     result = {'schema': 'stewart.claude-code.surface-run/1', 'mode': mode, 'commission_sha256': p.sha(raw),
         'attempted_cases': attempted, 'completed_cases': [case.case_id for case in cases], 'failures': failures,
         'outcome': 'failed',

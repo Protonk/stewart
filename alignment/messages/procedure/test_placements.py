@@ -1,6 +1,6 @@
 """Offline controls for witnessed interruption, continuation, attempt admission and allowance arithmetic.
 
-The export guard's table, one- and two-placement alike, is in apparatus/sanity/test_launch.py
+The export guard's table, one- and two-placement alike, is in alignment/messages/launcher/test_launch.py
 with the code it tests.
 
 No Stewart binary, model, network or container. A shell stub stands in for

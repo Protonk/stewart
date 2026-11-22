@@ -10,7 +10,7 @@ import sys
 import tarfile
 
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'apparatus/c10'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'alignment/messages/procedure'))
 from common import strict_json
 
 

@@ -13,7 +13,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'driver'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'apparatus/driver'))
 from claude_code import group_observation
 from os_fixtures import group_probe
 

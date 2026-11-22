@@ -189,7 +189,7 @@ def rehearsal_commission():
 
 
 def submission_identity(repo):
-    root = Path(repo) / 'apparatus/sanity/submission'
+    root = Path(repo) / 'alignment/messages/launcher/submission'
     files = []
     for path in sorted(root.rglob('*')):
         if path.is_symlink():

@@ -2,8 +2,8 @@
 
 [`c10.py`](c10.py) prepares bounded batches, retains every audit and reviews
 immutable evidence exports. It uses the real Stewart binary through its CLI.
-The procedural obligations come from [ACCEPTANCE C10](../../ACCEPTANCE.md#the-endpoint-alignment-tier),
-[INTERFACE](../../docs/INTERFACE.md) and [QUESTION-FORMS](../../docs/QUESTION-FORMS.md).
+The procedural obligations come from [ACCEPTANCE C10](../../../ACCEPTANCE.md#the-endpoint-alignment-tier),
+[INTERFACE](../../../docs/INTERFACE.md) and [QUESTION-FORMS](../../../docs/QUESTION-FORMS.md).
 It assigns no answer-quality grade and never declares a model qualified.
 
 Every launch performs one placement of each audit it names. It covers small
@@ -56,7 +56,7 @@ from the driver's self-test. These are experiment inputs, not product settings.
 From the committed apparatus checkout, bind the retained acceptance evidence:
 
 ```sh
-python3 -I -B apparatus/c10/c10.py study-build \
+python3 -I -B alignment/messages/procedure/c10.py study-build \
   /absolute/interface.json /absolute/acceptance-folder /absolute/expected.json \
   /absolute/study-build.json --qualification BASE_QUALIFICATION_ID
 ```
@@ -110,7 +110,7 @@ For each named model, select a specimen from each family and include inadequate
 evidence somewhere in that set. Check one explicitly requested effort on an
 already selected family audit. The scripted tier checks every supported spelling
 at the fake provider. Provider compaction has a separate evidence requirement.
-[Endpoint alignment](../../ACCEPTANCE.md#the-endpoint-alignment-tier)
+[Endpoint alignment](../../../ACCEPTANCE.md#the-endpoint-alignment-tier)
 
 Placements and provider request attempts are separate counts. An interrupted audit needs more
 than one placement: its first is launched with a witnessed interruption and each
@@ -123,9 +123,9 @@ spending authority.
 From the repository root:
 
 ```sh
-python3 -I -B apparatus/c10/test_c10.py
-python3 -I -B apparatus/c10/test_placements.py
-python3 -I -B apparatus/sanity/test_launch.py
+python3 -I -B alignment/messages/procedure/test_c10.py
+python3 -I -B alignment/messages/procedure/test_placements.py
+python3 -I -B alignment/messages/launcher/test_launch.py
 python3 -I -B apparatus/check_links.py
 ```
 
@@ -139,13 +139,13 @@ Native iteration uses an existing native binary and a new absolute directory.
 Run it where the fake provider can listen on loopback. It makes no model calls.
 
 ```sh
-python3 -I -B apparatus/c10/smoke.py \
+python3 -I -B alignment/messages/procedure/smoke.py \
   --binary "$PWD/service/target/debug/stewart" \
   --evidence "$PWD/.scratch/c10-native-NN" --check-operations
-python3 -I -B apparatus/c10/check_review.py \
+python3 -I -B alignment/messages/procedure/check_review.py \
   "$PWD/.scratch/c10-native-NN/private/open-ordinary-r1" \
   "$PWD/.scratch/c10-review-controls-NN"
-python3 -I -B apparatus/c10/check_reporting.py \
+python3 -I -B alignment/messages/procedure/check_reporting.py \
   "$PWD/.scratch/c10-native-NN/results" "$PWD/.scratch/c10-report-controls-NN"
 ```
 
@@ -162,9 +162,9 @@ aarch64 executable. The launcher checks the qualification record and refuses
 dirty apparatus source, mismatched bindings and reused evidence directories.
 
 ```sh
-python3 -I -B apparatus/c10/c10.py rehearse \
+python3 -I -B alignment/messages/procedure/c10.py rehearse \
   "$PWD/.scratch/c10-launch-NN" --qualification QUALIFICATION_ID
-python3 -I -B apparatus/c10/c10.py review "$PWD/.scratch/c10-launch-NN"
+python3 -I -B alignment/messages/procedure/c10.py review "$PWD/.scratch/c10-launch-NN"
 ```
 
 The rehearsal uses rootless Podman 5.x, the preloaded qualified arm64 Python manifest,
@@ -300,10 +300,10 @@ a 900-second watchdog per audit. Select cases explicitly for a minimal trial;
 review and adjust the allowances before authorization.
 
 ```sh
-python3 -I -B apparatus/c10/c10.py list
-python3 -I -B apparatus/c10/c10.py propose --model EXACT_MODEL_ID \
+python3 -I -B alignment/messages/procedure/c10.py list
+python3 -I -B alignment/messages/procedure/c10.py propose --model EXACT_MODEL_ID \
   --case open-ordinary --output "$PWD/.scratch/c10-proposal.json"
-python3 -I -B apparatus/c10/c10.py packet \
+python3 -I -B alignment/messages/procedure/c10.py packet \
   "$PWD/.scratch/c10-proposal.json" "$PWD/.scratch/c10-packet.json" \
   --qualification QUALIFICATION_ID
 ```
@@ -332,7 +332,7 @@ authorize a live run:
 
 ```sh
 sha256sum .scratch/c10-packet.json
-python3 -I -B apparatus/c10/c10.py live "$PWD/.scratch/c10-live-NN" \
+python3 -I -B alignment/messages/procedure/c10.py live "$PWD/.scratch/c10-live-NN" \
   --qualification QUALIFICATION_ID --commission "$PWD/.scratch/c10-packet.json" \
   --approved-commission APPROVED_SHA256 --rehearsal "$PWD/.scratch/c10-launch-NN"
 ```
@@ -353,8 +353,8 @@ mask grants access to the launcher UID. A label starts with an ASCII letter
 or digit and contains up to 80 letters, digits, dots, underscores or hyphens.
 
 ```sh
-python3 -I -B apparatus/c10/c10.py connection store stewart-haiku
-python3 -I -B apparatus/c10/c10.py connection status stewart-haiku
+python3 -I -B alignment/messages/procedure/c10.py connection store stewart-haiku
+python3 -I -B alignment/messages/procedure/c10.py connection status stewart-haiku
 ```
 
 For each placement the launcher scans its staged Git archive, commission and
@@ -389,8 +389,8 @@ A complete saved-connection rehearsal uses a new process for follow-up
 collection and for each of the eight continuation controls.
 
 ```sh
-python3 -I -B apparatus/c10/c10.py connection store stewart-synthetic
-python3 -I -B apparatus/c10/c10.py rehearse "$PWD/.scratch/c10-launch-NN" \
+python3 -I -B alignment/messages/procedure/c10.py connection store stewart-synthetic
+python3 -I -B alignment/messages/procedure/c10.py rehearse "$PWD/.scratch/c10-launch-NN" \
   --qualification QUALIFICATION_ID --connection stewart-synthetic
 ```
 
@@ -419,7 +419,7 @@ An inquiry label is required. Omit `varies` for a baseline without an earlier
 audit; a supplied reference is preserved as the manager's attributed note.
 
 ```sh
-python3 -I -B apparatus/c10/c10.py propose --model EXACT_MODEL_ID \
+python3 -I -B alignment/messages/procedure/c10.py propose --model EXACT_MODEL_ID \
   --submission problem-a /absolute/submission-a \
   --output "$PWD/.scratch/study-proposal.json"
 ```
@@ -440,7 +440,7 @@ copies remain in the new evidence folder; original source folders are unchanged.
 The Linux rehearsal must include each template hash proposed for live use:
 
 ```sh
-python3 -I -B apparatus/c10/c10.py rehearse "$PWD/.scratch/c10-launch-NN" \
+python3 -I -B alignment/messages/procedure/c10.py rehearse "$PWD/.scratch/c10-launch-NN" \
   --qualification QUALIFICATION_ID --connection stewart-synthetic \
   --submission problem-a /absolute/submission-a \
   --submission problem-b /absolute/submission-b
@@ -511,7 +511,7 @@ A study audit's first placement can be commissioned to stop at a witnessed
 point. Add both options to a one-submission study proposal:
 
 ```sh
-python3 -I -B apparatus/c10/c10.py propose --model EXACT_MODEL_ID \
+python3 -I -B alignment/messages/procedure/c10.py propose --model EXACT_MODEL_ID \
   --submission problem-a /absolute/submission-a \
   --interrupt-after reminder_notice --max-placements 2 \
   --output "$PWD/.scratch/interrupted-proposal.json"
@@ -563,7 +563,7 @@ signal has been sent, which makes `written_unanswered` certain. The fourth,
 native runs of that control all four timings occurred. Native timing says
 nothing about Linux or a real provider.
 
-Size the allowances for the charged case. [INTERFACE 6.4](../../docs/INTERFACE.md#64-limits-reminder-and-notice)
+Size the allowances for the charged case. [INTERFACE 6.4](../../../docs/INTERFACE.md#64-limits-reminder-and-notice)
 charges a request aborted after any byte was written one estimated turn,
 ceil(body bytes / 3) input tokens and its whole `max_tokens`, which is the
 lesser of 16,000 and the remaining output allowance. The audit's output
@@ -577,10 +577,10 @@ decides.
 ### Prepare and approve
 
 ```sh
-python3 -I -B apparatus/c10/c10.py propose-continuation \
+python3 -I -B alignment/messages/procedure/c10.py propose-continuation \
   "$PWD/.scratch/c10-live-NN" --max-placements 2 \
   --output "$PWD/.scratch/continuation-proposal.json"
-python3 -I -B apparatus/c10/c10.py packet \
+python3 -I -B alignment/messages/procedure/c10.py packet \
   "$PWD/.scratch/continuation-proposal.json" "$PWD/.scratch/continuation-packet.json" \
   --qualification QUALIFICATION_ID
 sha256sum .scratch/continuation-packet.json
@@ -614,7 +614,7 @@ rehearsal must include that template and build, as its first launch did. With
 `--connection`, the rehearsal must have used a saved synthetic connection too.
 
 ```sh
-python3 -I -B apparatus/c10/c10.py continue live \
+python3 -I -B alignment/messages/procedure/c10.py continue live \
   "$PWD/.scratch/c10-live-NN" "$PWD/.scratch/c10-continue-NN" \
   --packet "$PWD/.scratch/continuation-packet.json" --approved-packet APPROVED_SHA256 \
   --rehearsal "$PWD/.scratch/c10-launch-NN" --qualification QUALIFICATION_ID \
@@ -738,10 +738,10 @@ that has been continued. All four commands below avoid model calls. `close` ends
 is the intended disposition of an unsubmitted audit.
 
 ```sh
-python3 -I -B apparatus/c10/c10.py control "$PWD/.scratch/c10-live-NN" AUDIT_ID status
-python3 -I -B apparatus/c10/c10.py control "$PWD/.scratch/c10-live-NN" AUDIT_ID close
-python3 -I -B apparatus/c10/c10.py control "$PWD/.scratch/c10-live-NN" AUDIT_ID inspect
-python3 -I -B apparatus/c10/c10.py control "$PWD/.scratch/c10-live-NN" AUDIT_ID collect
+python3 -I -B alignment/messages/procedure/c10.py control "$PWD/.scratch/c10-live-NN" AUDIT_ID status
+python3 -I -B alignment/messages/procedure/c10.py control "$PWD/.scratch/c10-live-NN" AUDIT_ID close
+python3 -I -B alignment/messages/procedure/c10.py control "$PWD/.scratch/c10-live-NN" AUDIT_ID inspect
+python3 -I -B alignment/messages/procedure/c10.py control "$PWD/.scratch/c10-live-NN" AUDIT_ID collect
 ```
 
 `status` reports authoring state and its first end reason, run state, seal
@@ -827,7 +827,7 @@ reconciliation, independent observation of live authoring, a killed process and
 its reconciliation, and real signed-summary compaction need their own evidence
 and explicit disposition.
 Preserve every failed attempt, original and witness through review under
-[the retention rules](../../development/DEVELOPMENT.md#evidence-and-retention). Nothing here
+[the retention rules](../../../development/DEVELOPMENT.md#evidence-and-retention). Nothing here
 removes containers or evidence.
 
 ## Assemble an experiment report
@@ -856,7 +856,7 @@ iteration use `results/PLAN.json`. The proposal is ordinary UTF-8 Markdown.
 ```
 
 ```sh
-python3 -I -B apparatus/c10/c10.py report /absolute/block.json /absolute/return-01
+python3 -I -B alignment/messages/procedure/c10.py report /absolute/block.json /absolute/return-01
 ```
 
 The new output directory contains `report.md` and the matching `report.json`.
@@ -883,7 +883,7 @@ and bind it to the `technical_sha256` in the technical return:
 ```
 
 ```sh
-python3 -I -B apparatus/c10/c10.py report /absolute/block.json /absolute/return-02 \
+python3 -I -B alignment/messages/procedure/c10.py report /absolute/block.json /absolute/return-02 \
   --assessment /absolute/assessment.json
 ```
 
@@ -903,3 +903,5 @@ Pending interpretation alone does not make it fail. All source identities and
 checked details remain inspectable in JSON; earlier dated observations are not
 replaced by a new account. Neither output establishes independent billing or
 author authenticity.
+
+The compaction specimen generator accepts `--trace-count N`. Its default eight 64 KiB traces reproduce the release specimen. Actual provider usage establishes whether a run reaches the trigger.

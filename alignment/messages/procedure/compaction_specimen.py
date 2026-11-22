@@ -62,13 +62,21 @@ def trace(number):
     return header + bytes(rows[:width]) + b'\n' + footer
 
 
-def generate(folder):
+def generate(folder, trace_count=8):
+    require(type(trace_count) is int and trace_count > 0, 'trace count must be a positive integer')
+    question = QUESTION
+    if trace_count == 1:
+        question = question.replace('the eight supplied transfer traces', 'the supplied transfer trace')
+        question = question.replace('all eight trace files', 'the trace file').replace(
+            'Request the eight independent reads together when\npossible; ', '')
+    elif trace_count != 8:
+        question = question.replace('eight', str(trace_count))
     require(folder.is_absolute() and not folder.exists(), 'use a new absolute submission folder')
     folder.mkdir(mode=0o700)
     materials = folder/'materials'
     materials.mkdir(mode=0o700)
     (materials/'00-rule.txt').write_bytes(RULE)
-    for number in range(1, 9):
+    for number in range(1, trace_count + 1):
         (materials/f'trace-{number:02d}.txt').write_bytes(trace(number))
     (folder/'question.md').write_text('''---
 stewart: question/2
@@ -80,11 +88,11 @@ limit-input-tokens: 1000000
 limit-output-tokens: 24000
 inquiry: large-trace-compaction
 ---
-''' + QUESTION, encoding='utf-8')
+''' + question, encoding='utf-8')
     inspect_submission(folder, 'large-traces')
     return {'submission': str(folder), 'sha256': tree_hash(folder),
             'material_bytes': sum(item.get('bytes', 0) for item in inventory(materials)),
-            'trace_files': 8, 'bytes_per_trace': 65536, 'model_calls': 0,
+            'trace_files': trace_count, 'bytes_per_trace': 65536, 'model_calls': 0,
             'token_count': None, 'trigger_reached': None}
 
 
@@ -92,4 +100,8 @@ if __name__ == '__main__':
     import json
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', type=Path, help='New absolute submission folder')
-    print(json.dumps(generate(parser.parse_args().output), indent=2))
+    parser.add_argument('--trace-count', type=int, default=8, help='Number of 64 KiB traces (default 8)')
+    args = parser.parse_args()
+    if args.trace_count < 1:
+        parser.error('--trace-count must be positive')
+    print(json.dumps(generate(args.output, args.trace_count), indent=2))

@@ -154,7 +154,7 @@ def recorded_not_started(path,mode,audit,placement):
 
 def placement_argv(name,code,mode,packet_path):
     return ['podman','exec','--interactive',name,'env','-i','PATH=/usr/local/bin:/usr/bin:/bin','HOME=/work',
-            'python3','-I','-B',code+'/apparatus/c10/placements.py',mode,'--binary','/bin-in/stewart','--packet',packet_path]
+            'python3','-I','-B',code+'/alignment/messages/procedure/placements.py',mode,'--binary','/bin-in/stewart','--packet',packet_path]
 
 
 def continuation_session(path,mode,audit,placement):
@@ -710,10 +710,10 @@ def launch_batch(args):
         if mode=='live':
             step('network-preflight',network_preflight(name))
         write_json(host/'operator.json',{'schema':'stewart.c10-operator/1','container':name,'audits':[r['id'] for r in packet['runs']],'code':'/work/code',
-            'command':['python3','-I','-B','apparatus/c10/c10.py','control',str(out),'AUDIT','status'],
+            'command':['python3','-I','-B','alignment/messages/procedure/c10.py','control',str(out),'AUDIT','status'],
             'close_ends_authoring':True,'automatic_continuation':False})
         argv=['podman','exec','--interactive',name,'env','-i','PATH=/usr/local/bin:/usr/bin:/bin','HOME=/work',
-              'python3','-I','-B','/work/code/apparatus/c10/batch.py',mode,'--binary','/bin-in/stewart','--packet','/in/commission.json']
+              'python3','-I','-B','/work/code/alignment/messages/procedure/batch.py',mode,'--binary','/bin-in/stewart','--packet','/in/commission.json']
         if supplied_runs(packet):
             argv+=['--submissions','/in/submissions']
         write_json(host/'session.argv.json',argv)
@@ -893,7 +893,7 @@ def continue_placement(args,*,synthetic_key=None):
         if mode=='live':
             step('network-preflight',network_preflight(name))
         write_json(host/'operator.json',{'schema':'stewart.c10-operator/1','container':name,'audits':[audit],'code':code,'evidence':str(evidence),
-            'placement':placement,'attempt':attempt,'command':['python3','-I','-B','apparatus/c10/c10.py','control',str(out),'AUDIT','status'],
+            'placement':placement,'attempt':attempt,'command':['python3','-I','-B','alignment/messages/procedure/c10.py','control',str(out),'AUDIT','status'],
             'close_ends_authoring':True,'automatic_continuation':False})
         argv=placement_argv(name,code,mode,target)
         write_json(host/'placement.argv.json',argv)
@@ -1103,7 +1103,7 @@ def host_control(args):
         connection=validate_label(connection or packet['account']['credential_label'],packet)
     argv=['podman','exec']+(['--interactive'] if args.operation=='collect' else [])+[meta['container'],
         'env','-i','PATH=/usr/local/bin:/usr/bin:/bin','python3','-I','-B',
-        code+'/apparatus/c10/operations.py',args.audit,args.operation]
+        code+'/alignment/messages/procedure/operations.py',args.audit,args.operation]
     if args.confirm is not None:
         require(args.operation=='close' and re.fullmatch(r'[A-Za-z0-9._:-]{1,512}',args.confirm),'confirmation requires close')
         argv+=['--confirm',args.confirm]

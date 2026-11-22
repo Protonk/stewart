@@ -472,7 +472,7 @@ class Session:
         return reply, rc, timed_out
 
     def observe_process(self, pid):
-        helper = Path(__file__).parents[1] / 'driver' / 'credential_observer.py'
+        helper = Path(__file__).resolve().parents[3] / 'apparatus/driver' / 'credential_observer.py'
         observations = []
         initializations = []
         for uid in [1000, 1001]:

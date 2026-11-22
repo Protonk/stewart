@@ -62,7 +62,7 @@ def main():
     parser.add_argument('--approved-commission', metavar='SHA256', help='live only: the exact packet digest authorized by the principal')
     parser.add_argument('--connection', help='Saved connection label for rehearsal or the bound live credential label')
     args = parser.parse_args()
-    repo = Path(__file__).resolve().parents[2]
+    repo = Path(__file__).resolve().parents[3]
     out = args.evidence
     if not out.is_absolute() or out.parent != repo / '.scratch' or out.exists():
         parser.error('evidence must be a new absolute path directly under this checkout\'s .scratch')
@@ -94,9 +94,9 @@ def main():
             commission['account']['credential_label'] = connections.validate_label(connection)
     except connections.ConnectionError as error:
         parser.error(str(error))
-    dirty = subprocess.check_output(['git', 'status', '--porcelain', '--', 'apparatus/sanity', 'apparatus/driver/credential_observer.py'], cwd=repo, env=env)
+    dirty = subprocess.check_output(['git', 'status', '--porcelain', '--', 'alignment/messages/launcher', 'apparatus/driver/credential_observer.py'], cwd=repo, env=env)
     if dirty:
-        parser.error('commit apparatus/sanity first; the container uses committed source')
+        parser.error('commit the Messages launcher first; the container uses committed source')
     try:
         qualification, binary_dir = select_qualification(repo, args.qualification)
         image = podman.qualified_image(qualification)
@@ -145,19 +145,19 @@ def main():
     proc = None
     try:
         podman.check_engine(step, host)
-        step('archive', ['git', 'archive', '--format=tar', '-o', str(staging / 'source.tar'), 'HEAD', 'apparatus/sanity', 'apparatus/driver/credential_observer.py'])
+        step('archive', ['git', 'archive', '--format=tar', '-o', str(staging / 'source.tar'), 'HEAD', 'alignment/messages/launcher', 'apparatus/driver/credential_observer.py'])
         report['source_archive_sha256'] = digest((staging / 'source.tar').read_bytes())
         podman.start(step, host, name, image, staging, binary_dir, exported, args.mode == 'rehearse')
         # Independent operator calls can run while the foreground session is busy.
         operator_base = ['podman', 'exec', name, 'env', '-i', 'PATH=/usr/local/bin:/usr/bin:/bin',
-            'python3', '-I', '-B', '/work/code/apparatus/sanity/control.py']
+            'python3', '-I', '-B', '/work/code/alignment/messages/launcher/control.py']
         write_json(host / 'operator.json', {'container': name, 'status': operator_base + ['status'],
             'close': operator_base + ['close'], 'close_ends_authoring': True,
             'private_records': '/work/private', 'no_automatic_continuation': True})
         print('Retained container ' + name + '; operator commands: ' + str(host / 'operator.json'), flush=True)
         argv = ['podman', 'exec', '--interactive', name, 'env', '-i',
                 'PATH=/usr/local/bin:/usr/bin:/bin', 'HOME=/work', 'python3', '-I', '-B',
-                '/work/code/apparatus/sanity/session.py', args.mode, '--binary', '/bin-in/stewart',
+                '/work/code/alignment/messages/launcher/session.py', args.mode, '--binary', '/bin-in/stewart',
                 '--packet', '/in/commission.json']
         write_json(host / 'session.argv.json', argv)
         with (host / 'container.stdout').open('xb') as stdout, (host / 'container.stderr').open('xb') as stderr:

@@ -17,7 +17,7 @@ The self-test uses synthetic stream events and socketpairs, with synthetic
 authentication and process-result controls. It launches no subprocess or
 Claude. Actual Unix listeners, helper connections and a launched peer are
 exercised by the [supplied-surface controller's synthetic
-rehearsal](../claude-code/README.md#synthetic-controller-rehearsal).
+rehearsal](../../alignment/claude-code/README.md#synthetic-controller-rehearsal).
 
 Control startup, rate, result, authentication, MCP and hook inputs use the
 [documented C1 capture projections](testdata/README.md#runtime-c1-surface-observer-captures).
@@ -130,7 +130,7 @@ writes at 256 MiB per case. Events name their observer and shared kernel clock.
 invariance observers in that order. The caller explicitly declares
 `synthetic-rehearsal` or `real-harness`; this is a provenance declaration, never
 permission. The function writes the existing `EVIDENCE.json` and `OBSERVATION.json`
-forms consumed by the [profile producer](../claude-code/README.md), binding exact
+forms consumed by the [profile producer](../../alignment/claude-code/README.md), binding exact
 launch, surface, tools, model, input files, case evidence and source snapshots.
 It never writes a reviewed `CHECK.json` or profile. Independent review is still
 required, and the producer refuses rehearsal observations.

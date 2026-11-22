@@ -52,9 +52,9 @@ Select the rows the change touches. Never run the whole matrix by default.
 
 Each catalog case has an inadequate-evidence variant. Use it when the change
 concerns what the auditor can say when the evidence is limited. The
-[C10 catalog](../apparatus/c10/README.md#cases-and-counts) holds the cases, and
+[C10 catalog](../alignment/messages/procedure/README.md#cases-and-counts) holds the cases, and
 its guide lists the
-[witnessed interruption points](../apparatus/c10/README.md#interrupt-a-first-placement-at-a-witnessed-point)
+[witnessed interruption points](../alignment/messages/procedure/README.md#interrupt-a-first-placement-at-a-witnessed-point)
 it supports.
 
 ## Define the test
@@ -81,7 +81,7 @@ request whose size is known only afterwards, plus the whole output limit, at
 the model's prices ([INTERFACE 6.4](../docs/INTERFACE.md#64-limits-reminder-and-notice)).
 An aborted request is charged its whole `max_tokens`, up to 16,000, so size an
 interrupted audit's output allowance as the
-[C10 guide](../apparatus/c10/README.md#interrupt-a-first-placement-at-a-witnessed-point)
+[C10 guide](../alignment/messages/procedure/README.md#interrupt-a-first-placement-at-a-witnessed-point)
 describes. Otherwise the continuation ends `limit_reached` before it sends
 anything.
 
@@ -107,9 +107,9 @@ The Messages route's controls are technical:
 - a dedicated API key used only for Stewart live tests, in its own workspace,
   with a provider-side spending limit no higher than the plan's budget;
 - the key reached only through a
-  [saved connection](../apparatus/c10/README.md#saved-provider-connections),
+  [saved connection](../alignment/messages/procedure/README.md#saved-provider-connections),
   never in argv, the environment or chat;
-- a [host queue](../apparatus/c10/HOST-QUEUE.md) campaign configuration
+- a [host queue](../alignment/messages/procedure/HOST-QUEUE.md) campaign configuration
   carrying the envelope's placement ceiling and budget.
 
 A test whose card fits the envelope runs without further approval. A test
@@ -133,9 +133,9 @@ automatically.
 2. Use a writer the route accepts. The Messages apparatus launches only a
    writer in the [qualification record](../apparatus/qualified.md), inside its
    retained Linux container, with a current rehearsal of the committed
-   apparatus ([C10](../apparatus/c10/README.md#prepare-a-concrete-live-commission)).
+   apparatus ([C10](../alignment/messages/procedure/README.md#prepare-a-concrete-live-commission)).
    The harness route runs a Linux gated build with a reviewed profile through
-   the [service procedure](../apparatus/claude-code/README.md#service-comparison-procedure).
+   the [service procedure](../alignment/claude-code/README.md#service-comparison-procedure).
    Today, qualifying the changed source is the main cost of a Messages test.
 3. Propose, packet and launch as the apparatus guide describes, through the
    host queue under the plan's envelope.

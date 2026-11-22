@@ -13,7 +13,7 @@ The qualification record, [`qualified.json`](qualified.json), is the tracked
 account of what the suites have shown; [`qualified.py`](qualified.py) keeps it
 and generates [`qualified.md`](qualified.md) from it.
 
-The [small-commission apparatus](c10/README.md) prepares all three question
+The [small-commission apparatus](../alignment/messages/procedure/README.md) prepares all three question
 families, runs bounded retained batches and reviews immutable exports. Its
 offline rehearsal uses synthetic credentials and a local fake provider; live
 launch needs a matching rehearsal and an explicitly authorized packet. Its
@@ -23,7 +23,7 @@ The [standalone runtime driver](driver/CLAUDE-CODE.md) checks the gated Claude
 Code adapter against a synthetic executable. It has its own self-test, case
 list and native runtime command, and invokes no real harness or provider.
 `runtime-acceptance.sh` builds two gated binaries, checks their markers and runs these
-runtime cases on both Linux architectures. The separate [profile apparatus](claude-code/README.md)
+runtime cases on both Linux architectures. The separate [profile apparatus](../alignment/claude-code/README.md)
 prepares installation evidence and runtime profiles.
 
 ## Running the scripts
