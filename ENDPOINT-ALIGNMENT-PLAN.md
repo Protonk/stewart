@@ -27,7 +27,7 @@ Keep open audits and their exact writers until closure or explicit disposition.
 
 ## 1. Specify the alignment check
 
-Complete the per-model comparison record before counting a release gate as passed. The first two catalog observations are available for this work.
+Complete the per-model comparison record before counting a release gate as passed. The six catalog observations and both model-specific compaction observations are available for this work.
 
 - [x] Fix the initial comparison, release coverage and proposed reservation table.
 - [x] Inventory the historical captures and resolve the ordinary and summary usage comparisons. The [comparison procedure](alignment/messages/README.md) identifies the captured and synthetic shapes.
@@ -51,10 +51,10 @@ live captures already show.
 | A1 | Request acceptance: `anthropic-version: 2026-10-21`, `anthropic-beta: compact-2026-09-04`; `model`, `max_tokens`, `system`, `tools`, `messages`; `output_config.effort` when the manager sets a level; `compaction` on summary requests | HTTP 200 | Both fakes check the headers and accept | `request-<n>.json`; attempt status and `request-id` | Explicit `medium` in the [Haiku](apparatus/qualified.md#framing-medium-01) and [Opus](apparatus/qualified.md#opus-framing-medium-01) framing audits, Haiku omitted (`c10-live-*`), Haiku `high` (`sanity-live-05`), Opus omitted (`opus-live-*`, `readiness-m4-live-01`) |
 | A2 | Message envelope | `content`, `stop_reason`, `usage` once each; `model` recorded; the rest raw | Driver: configurable members. C10 fake: minimal, no `container`, `diagnostics` or `stop_details` | `response-<r>-<a>.bin` | `id`, `type`, `role`, `stop_sequence`, `stop_details: null`, `container: null`, `diagnostics: null` (m2/m3/m4 fixtures) |
 | A3 | Content blocks | `tool_use` (`id`, `name`, `input`), `text`, signed `thinking`, unknown types echoed byte for byte | Driver: all, plus redacted and unknown blocks. C10 fake: tool use, text, one signed thinking cap | Response captures | Signed thinking with empty text; text; tool use |
-| A4 | Stop reasons | `tool_use`, `end_turn`, `max_tokens` with and without tool use, `compaction`, `refusal`, `model_context_window_exceeded`; others are `protocol_anomaly` | Driver: any. C10 fake: the scripted ones | Response captures; `run_ended` | `tool_use`, `end_turn`, thinking-only `max_tokens` (Haiku, M2/M3 fixtures), `compaction` (Opus m4). Not seen: `refusal`, window exhaustion, `pause_turn` |
+| A4 | Stop reasons | `tool_use`, `end_turn`, `max_tokens` with and without tool use, `compaction`, `refusal`, `model_context_window_exceeded`; others are `protocol_anomaly` | Driver: any. C10 fake: the scripted ones | Response captures; `run_ended` | `tool_use`, `end_turn`, thinking-only `max_tokens` (Haiku, M2/M3 fixtures), `compaction` (Haiku and Opus). Not seen: `refusal`, window exhaustion, `pause_turn` |
 | A5 | Ordinary usage | Integer top-level input and output; cache counts zero, null or absent; when `iterations` is present, its sums replace the top-level totals | Driver `Usage`, iterations optional. C10 fake: no `iterations` and no unknown usage members | Response captures; attempt `usage` | One `message` iteration equal to the top-level counts; unknown `cache_creation{ephemeral_5m,ephemeral_1h}`, `output_tokens_details.thinking_tokens`, `service_tier`, `inference_geo`, `speed` |
-| A6 | Summary usage | At least one `compaction` iteration; the charge comes from the iteration sums | Driver replays the m4 body unchanged. C10 fake: nonzero top-level counts with `message` and `compaction` iterations | Summary response capture | Top-level 0/0 and one `compaction` iteration (Opus m4). Mixed iterations are covered separately by the C10 summation control. |
-| A7 | Compaction protocol | Triggered by ≥150,000 counted tokens. The summary request carries the same model, system, tools and effort plus `{"type":"summarize"}`. The reply is `stop_reason: "compaction"` with exactly one `compaction` block carrying `content` and `signature`. The signed block is reused byte for byte, followed by the post-compaction notice. Recorded work is kept | Driver: captured m4 case. C10 fake: synthetic summaries with an unknown `opaque` member | Summary request and response captures, reset request, log | Opus, effort omitted, one compaction (m4). Not seen: Haiku, effort set, a second compaction |
+| A6 | Summary usage | At least one `compaction` iteration; the charge comes from the iteration sums | Driver replays the m4 body unchanged. C10 fake: nonzero top-level counts with `message` and `compaction` iterations | Summary response capture | Top-level 0/0 and one charged `compaction` iteration on both release models. Mixed iterations are covered separately by the C10 summation control. |
+| A7 | Compaction protocol | Triggered by ≥150,000 counted tokens. The summary request carries the same model, system, tools and effort plus `{"type":"summarize"}`. The reply is `stop_reason: "compaction"` with exactly one `compaction` block carrying `content` and `signature`. The signed block is reused byte for byte, followed by the post-compaction notice. Recorded work is kept | Driver: captured m4 case. C10 fake: synthetic summaries with an unknown `opaque` member | Summary request and response captures, reset request, log | Both models, omitted effort. Each reused one signed block, retrieved the original entry and delivered its revised version. |
 | A8 | Charges and cost | Charges as INTERFACE 6.4 states, priced at the dated rate card; Haiku's rate band chosen per request; no cache tokens, because no `cache_control` is sent | Fakes report synthetic usage | Attempt records; principal's billing observation | Zero cache counts (m4); `c10-live-*` calculated cost; Console USD 0.01 for `sanity-live-02` |
 | A9 | Errors | `{"type":"error","error":{"type","message"},"request_id"}`. 408/429/5xx/529 retried with `retry-after`; others are `provider_rejected` | Driver: every status and form. Sanity/C10 fake: 401 only | Response captures; `run_ended.provider` | 401 `authentication_error` (`sanity-live-03`, captured). Others are not inducible inside the commission: compared when observed, otherwise a stated limitation |
 | A10 | Transport | Framing by `content-length`, chunking or close; only `content-type`, `request-id` and `retry-after` retained; 600-second timeout | Driver: every framing (`testdata/wire`) | Attempt timing and three headers; framing itself is not retained | Durations only. Live framing is unwitnessed on the direct route |
@@ -102,7 +102,7 @@ inadequate evidence, and the two request forms. [Completed open inquiries](appar
 | open-ordinary | Haiku and Opus | Open-inquiry submission | Omitted | H1 and O1 verified and closed |
 | framing-inadequate | Haiku and Opus | Framing submission with inadequate evidence and explicit wire setting | `medium` | Both verified and closed. [Haiku](apparatus/qualified.md#framing-medium-01) settled at $0.02 and [Opus](apparatus/qualified.md#opus-framing-medium-01) at $0.23. |
 | comparison-ordinary | Haiku and Opus | Comparison submission | Omitted | [Both verified and closed](apparatus/qualified.md#final-four-comparisons-01). Haiku settled at $0.01 and Opus at $0.20. |
-| Compaction, ordinary open inquiry | Haiku and Opus | Signed summary, reset, accounting and entry continuity | Omitted | Pending a separately rehearsed bound |
+| Compaction, ordinary open inquiry | Haiku and Opus | Signed summary, reset, accounting and entry continuity | Omitted | [Both verified and closed](apparatus/qualified.md#final-four-compaction-cells-01). Haiku settled at $0.36 and Opus at $2.95. |
 
 Catalog placements have 16 turns, 115,000 input tokens and 32,000 output
 tokens, a 900-second watchdog and a 131,072-byte per-file limit. Their
@@ -119,11 +119,7 @@ price, including cache writes, for the allowance and terminal overrun. It
 also reserves remaining output plus one request's maximum output and rounds
 up per placement. Settle each placement from its reviewed capture.
 
-Both compaction observations remain required for release. The current launcher refuses paid
-packets that can enter server compaction. Establish and rehearse a separate
-bound for summary iterations, retries, large capture files and interrupted
-estimates before pricing or commissioning these two rows. Historical
-compaction is input for this rehearsal.
+The [compaction commission record](apparatus/qualified.md#final-four-compaction-cells-01) binds both original exports, their independent reviews, the exact-template Linux rehearsal and the queue settlements.
 
 The paired trial record includes the digest and location of the historical
 shape inventory used for comparison. Its original sources include 40 exports
@@ -185,8 +181,6 @@ The [Messages comparison procedure](alignment/messages/README.md) covers the his
 
 Remaining mechanism work includes:
 - Assemble reviewed attempt, fixture, and custody observations into each model's final comparison record.
-- The existing ordinary-placement reservation check and a separately demonstrated
-  compaction bound before either compaction row is admitted.
 - A trace-count option for `compaction_specimen.py`.
 - The `alignment` record kind.
 - Fixture feedback with provenance into `apparatus/driver/testdata/messages/`,
@@ -244,9 +238,8 @@ its offline controls fire, and the retired apparatus is gone.
 
 ## 3. Align and record
 
-- [ ] For each model the first release will name, prepare the packet with a dated
-  cost estimate. Execute the commissioned runs, review the observations and
-  record the result. Resolve each difference with an adapter fix, a stand-in
+- [ ] For each release model, assemble the reviewed family and compaction
+  observations into its current alignment record. Resolve each difference with an adapter fix, a stand-in
   fixture or a stated release limitation before counting the record as current.
 - [ ] Align the harness pin the development build uses, through the Linux route,
   producing its profile check.

@@ -2634,6 +2634,25 @@
         "reason": "Review the original attempts, citation checks and delivery before completing the per-model alignment records.",
         "until": "The release alignment is reviewed or the models are retired and these originals have no further inspection purpose."
       }
+    },
+    {
+      "id": "final-four-compaction-cells-01",
+      "kind": "experiment",
+      "date": "2026-11-22T00:11:14Z",
+      "date_from": "EXIT.json field at",
+      "summary": "Final Messages commission with both comparisons and two witnessed signed-summary resets. All four audits submitted, verified, closed and settled.",
+      "result": {
+        "path": "EXIT.json",
+        "sha256": "0a3e661576f9924698b5543cbb18e226d89d4b82abd057688e9c4c35227fd3aa"
+      },
+      "evidence": {
+        "path": ".scratch/final-four-compaction-cells-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Review per-model compaction, original signed bytes, entry continuity and the four-placement settlement for release alignment.",
+        "until": "The model alignment records have been reviewed or the models are retired and these originals have no remaining inspection purpose."
+      }
     }
   ]
 }

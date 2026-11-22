@@ -905,3 +905,10 @@ Haiku and Opus ordinary comparisons, both auditor-submitted, verified, closed an
 
 - Evidence: `.scratch/final-four-comparisons-01/EXIT.json` (recorded 2026-11-22T00:00:09Z).
 - Retained purpose: Review the original attempts, citation checks and delivery before completing the per-model alignment records.; until The release alignment is reviewed or the models are retired and these originals have no further inspection purpose.
+
+### final-four-compaction-cells-01
+
+Final Messages commission with both comparisons and two witnessed signed-summary resets. All four audits submitted, verified, closed and settled.
+
+- Evidence: `.scratch/final-four-compaction-cells-01/EXIT.json` (recorded 2026-11-22T00:11:14Z).
+- Retained purpose: Review per-model compaction, original signed bytes, entry continuity and the four-placement settlement for release alignment.; until The model alignment records have been reviewed or the models are retired and these originals have no remaining inspection purpose.
