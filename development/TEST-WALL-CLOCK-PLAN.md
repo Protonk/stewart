@@ -1,7 +1,5 @@
 # Test wall-clock time
 
-Deferred until after the first release.
-
 Shorten the checks that delay development or qualification while preserving
 the [acceptance evidence](../ACCEPTANCE.md).
 
