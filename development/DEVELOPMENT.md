@@ -421,8 +421,7 @@ usage records, and the attributed assessment needed to inspect the finding.
 Keep unresolved limits visible. A paid call alone is not a reason to retain it.
 Old synthetic environments are not needed merely to read a completed encounter.
 
-Use explicit pins in the existing qualification index for selected evaluations
-and inputs; state their current purpose and release condition. Citations are
+Keep a study in the working index only while a current claim, test, or unresolved comparison needs its originals. At review, remove its pin when that use ends and narrow any claim that depended on it. Preserve fixture bytes and their provenance when current tests still read them. Citations are
 navigation and do not preserve entire folders. `qualified.py candidates` lists
 unselected folders without deleting them; resolve missing-record warnings before
 acting. A pin protects its named original result, not unrelated caches or

@@ -4,9 +4,8 @@ The [local wire captures](wire/README.md) preserve independent HTTP framing,
 CONNECT acceptance and an authentication challenge, with observations from
 both ends of the successful tunnel.
 
-The `.scratch/` paths below identify originals by their locations in the Mac
-checkout. The Linux VM receives the tracked fixtures with the clone. A retained
-original is available there only after its separate evidence transfer.
+The `.scratch/` paths below identify where the Mac checkout recorded the
+source material. A clone carries the fixtures used by the driver.
 
 For the `messages/` and `citations/` cases documented here, the release binary
 and the clean test binary each exercise every fixture variant and cross-fixture
@@ -78,12 +77,12 @@ changed signed bytes, retained old context and ignored iteration usage. The fake
 provider retains its own transmitted response and received request bytes outside
 Stewart's archive.
 Fixture self-tests pin the original bytes, exact changed fields and literal
-expected charges. No test reads the retained study directory or invokes a model.
+expected charges. The tests run offline using the tracked response.
 
 ### M2/M3 cap and replacement forms
 
 These originals come from `claude-haiku-5-5`, effort omitted, on 2026-11-13
-(M2) and 2026-11-15 (M3). Their shared retained export is
+(M2) and 2026-11-15 (M3). Their shared source export was
 `.scratch/readiness-m2-live-sw3z-default-01/container/m2-sw3z-default/export-0009/work.tar`:
 4608000 bytes, SHA-256
 `1c30749b8ea004762c1abebeab3674fc9a97cc6c65e2772e5a143c76a9bb757b`.
@@ -131,7 +130,7 @@ better response cap nor live continuation, cancellation, delivery or close.
 ### M3 ordinary ending and citation recovery
 
 The following originals come from the 2026-11-15 `claude-haiku-5-5` encounter,
-effort omitted. The export is
+effort omitted. The source export was
 `.scratch/readiness-m3-live-reminder-02/container/m3-reminder/export-0004/work.tar`:
 788480 bytes, SHA-256
 `0c9551f2e56266d5e6eaf9337bb5b61bf2afb4376306af6c880a9c650c9e35c4`.
@@ -177,12 +176,10 @@ These comparisons do not exercise live interruption, delivery or close.
 ## `runtime/`: C1 surface-observer captures
 
 These inputs come from the 2026-11-13 macOS C1 supplied-surface encounter,
-CLI `2.1.322`, model `claude-haiku-5-5`, effort omitted. Originals live under
-`.scratch/readiness-c1-01/packet/observation/cases/`; the
-[qualification index](../../qualified.md#readiness-c1-01) binds that retained
-encounter. These are separately observed harness/helper bytes, not provider
-HTTP capture. Authentication is the already sanitized three-member receipt,
-not raw authentication output.
+CLI `2.1.322`, model `claude-haiku-5-5`, effort omitted. The observer recorded
+the harness and helper bytes under `.scratch/readiness-c1-01/packet/observation/cases/`.
+Provider HTTP traffic was outside its scope. The authentication fixture derives
+from the sanitized three-member receipt.
 
 | Fixture | Original relative path / slice | Original bytes | Original SHA-256 |
 | --- | --- | ---: | --- |

@@ -10,7 +10,7 @@ target IDs. Fixture readers never signal or inspect stored process IDs.
 The four `env-*.bin` files are complete stdout from `/usr/bin/env -0` on
 2026-11-16, Darwin 25.6.0 ARM64. Each invocation received only the explicit
 environment below; no caller variables were forwarded.
-The saved capture script and command/environment records are in
+The observer saved the capture script and command/environment records under
 `.tmp/readiness-os-fixtures-01/capture-20261116T180112Z-1f5f1540/`.
 
 | Capture | Explicit environment | Expected difference |
@@ -33,8 +33,8 @@ what the shell and Python add to their controlled launch environments.
 `ProcessLookupError`, errno 3, after the child exited and was reaped. The observer
 created one Python child in a new session. `owned-child.json` preserves its
 source and independent ready/acknowledgement/wait observations. The child had no
-descendants. This capture is in the same 2026-11-16 directory as the environment
-observations; the ready and acknowledgement stdout witnesses remain there.
+descendants. The observer recorded the ready and acknowledgement stdout in the
+same 2026-11-16 directory as the environment observations.
 
 `denied-group.json` comes from
 `.tmp/readiness-os-fixtures-01/system-group-observation/observation.json` at
@@ -84,8 +84,8 @@ tested descriptors 3 through 11 before opening a file containing 37 known bytes.
 The Python OCI index was
 `2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`.
 Both userlands ran on the VM's aarch64 kernel, with networking disabled. The
-recorded image manifests and original command, file identities and home
-inventories are beside the observations identified by [ORIGINS.json](ORIGINS.json).
+observer recorded the image manifests, original command, file identities and home
+inventories beside the observations identified by [ORIGINS.json](ORIGINS.json).
 
 | Linux userland | Registry manifest (SHA-256) | Cmdline at dumpable 1, then 0 | Startup descriptors and subsequent reuse |
 | --- | --- | --- | --- |

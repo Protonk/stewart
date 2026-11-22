@@ -179,13 +179,9 @@ through the specification and tests. A reading never changes a completed
 outcome and never becomes certification. It never becomes a Stewart mechanism
 conditioned on what an answer says.
 
-When a conclusion depends on a count, check which individual cases meet the
-rule in the question. In one reviewed audit the long run covered all 48 cases
-and its return verified. Its summary reported eight matched receipts. Sixteen
-met the supplied matching rule, of which eight also had an acknowledgment.
-Comparing the summary with the individual accounts exposed the change of
-criterion. The `content_finding` in `COMPARISON.json` identifies the eight
-additional cases. [Reviewed comparison](../apparatus/qualified.md#readiness-c4-01)
+When a conclusion depends on a count, check the individual cases against the
+criterion in the question. A verified delivery establishes the bytes received.
+The accuracy of a count in the answer requires a separate comparison.
 
 Retain evidence under [evidence and retention](DEVELOPMENT.md#evidence-and-retention).
 A defect a live test finds becomes a scripted regression test; the live run is

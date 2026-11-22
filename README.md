@@ -121,24 +121,12 @@ The Messages release writer has current alignment records for
 [Haiku 5.5](apparatus/qualified.md#messages-alignment-haiku-01) and
 [Opus 5.5](apparatus/qualified.md#messages-alignment-opus-01). Each model
 submitted in all three families and delivered a revised entry after provider compaction.
-Bounded Messages continuations preserved recorded work; one audit
-submitted and another exhausted its allowance with a partial account later
-sealed and closed by the manager. In witnessed Sonnet Messages trials, the
-auditor resumed after preparation and submitted the same selection. A manager
-close at preparation produced a verified return with manager attribution.
-A bounded Opus encounter preserved an account
-through real provider compaction, revised it and submitted a verified return.
-The [qualification record](apparatus/qualified.md)
-identifies those builds and results.
 
-The default-off Claude Code adapter is available in source builds. On Linux
-aarch64, Sonnet 5.5 on Claude Code 2.1.322 completed five open inquiries with
-verified returns. Three audits continued after a deadline or signal. In one,
-the auditor prepared the same two entries again and submitted them. In another
-audit the manager closed at preparation and received those prepared bytes with
-manager attribution. All eight service placements ended with an unknown usage
-interval. A bounded macOS encounter also delivered full 64 KiB material pages
-whole. [Linux trial record](apparatus/qualified.md#cc-trials-02)
+The optional Claude Code adapter is available in source builds. In the Linux
+aarch64 alignment, Sonnet 5.5 on Claude Code 2.1.322 submitted two entries
+in one open inquiry. The delivered package passed all 18 comparisons and the
+audit closed. The placement ended without a final usage frame.
+[Linux harness alignment](apparatus/qualified.md#claude-code-alignment-linux-01)
 
 Stewart is a single Rust binary, supported on Linux x86_64 and aarch64. See [building and testing](development/DEVELOPMENT.md), the
 [crate guide](service/README.md) and [contributing](AGENTS.md), or read the [design](DESIGN.md),

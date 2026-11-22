@@ -50,9 +50,8 @@ The harness is launched with a pinned executable, profile and launch surface
 ### Question bytes before startup validation
 
 - **Known:** the contract wants a configuration check before the first message.
-  Under the selected launch, `system/init` arrives only after input, as the
-  macOS and Linux harness captures showed. Stewart checks the startup inventory
-  against the profile and stops on a mismatch.
+  In the Linux alignment, `system/init` followed the first input. Stewart checks
+  the startup inventory against the profile and stops on a mismatch.
 - **Unknown:** whether the question has already reached the provider when a
   mismatch is found. *Inaccessible:* only a provider or network witness could
   show it, and the credential boundary excludes both.
@@ -93,11 +92,7 @@ The harness is launched with a pinned executable, profile and launch surface
   `tool_use` of a response, in order. The runtime executes calls one at a time
   in arrival order, queueing those that arrive while another is pending. Exact
   version handles make a stale edit refuse rather than overwrite.
-  On Linux with Claude Code 2.1.322 and Sonnet 5.5, 11 assistant messages
-  contained multiple calls. In every group, tool IDs arrived in assistant
-  stream order, with a reply captured before the next call arrived.
-  [Linux trial record](../apparatus/qualified.md#cc-trials-02)
-- **Unknown:** *behavior:* whether another harness pin dispatches grouped calls
+- **Unknown:** *behavior:* whether the harness dispatches grouped calls
   in a different order or overlaps them.
 - **Elicited by:** any harness run in which an assistant message carries two or
   more tool calls.
@@ -116,9 +111,7 @@ The harness is launched with a pinned executable, profile and launch surface
 
 ### Recovery after tool and provider errors in the harness
 
-- **Known:** macOS encounters recovered from quotation refusals, and showed
-  one harness-reported output-cap sequence. The synthetic suite covers error
-  replies.
+- **Known:** the synthetic suite covers tool refusals and error replies.
 - **Unknown:** *behavior:* how the harness proceeds after provider errors such
   as overload or rate limits, and whether result frames with usage still
   arrive.
@@ -140,9 +133,7 @@ for the runtime, in its
   log link had begun completes; others are refused `placement_stopped`. The
   synthetic suite exercises cancellation. Outside observers on both routes can
   act on a published placement start or auditor preparation and compare the
-  stopped ledger with the witnessed records. On the Messages route, a macOS
-  control against a fake provider produced all four timings of a witnessed
-  signal.
+  stopped ledger with the witnessed records.
 - **Unknown:** *behavior:*
   - when the harness sends `notifications/cancelled`;
   - whether a tool handler in flight receives a usable cancellation signal;
@@ -183,17 +174,9 @@ for the runtime, in its
   `stopped_by_close`. The runtime's owner orders a close before a signal and a
   signal before the deadline. Close seals the
   selection current at its request. The scripted tier closes from every state.
-  In a live Sonnet Messages audit,
-  close at preparation stopped a fully written, unanswered request. Stewart
-  estimated its usage, attributed the seal to the manager and verified delivery.
-  The exact writer then accepted ordinary close confirmation. At the same
-  point on Linux Claude Code, the manager's request stopped the placement.
-  Both delivered answer files matched the outside witness's prepared bytes.
-  Close confirmed, and a subsequent run was refused `reference_closed`.
-  [Paired trial record](../apparatus/qualified.md#cc-trials-02)
-- **Unknown:** *behavior:* the timing of requests at other close points.
+- **Unknown:** *behavior:* the timing of requests at a witnessed close point.
 - **Elicited by:** close at a witnessed point during a placement.
-- **Next step:** investigate another close point only if its timing matters
+- **Next step:** investigate a close point only if its timing matters
   to a custody decision.
 - **Outcomes:** a manager seal claiming auditor submission, or a mutation
   linked after the request, would be a defect. Otherwise, narrow to the points
@@ -236,17 +219,7 @@ over the same ledger and limits. The runtime's rules are in
 ### Re-entry after total context loss
 
 - **Known:** the scripted tier checks recovery of recorded work (ACCEPTANCE C4
-  and C13). After a witnessed interruption, a Haiku 5.5 Messages continuation
-  called `what_am_i_working_with` first. It recovered all three entry handles,
-  corrected a refused edit to one entry, and submitted with the other two
-  intact. The reminder had already been spent. See `INDEPENDENT-REVIEW.json`
-  in the [reviewed continuation](../apparatus/qualified.md#readiness-m3-02-continue-reminder-p2-01).
-  In two Sonnet Messages continuations the auditor checked its work before
-  editing an empty ledger and consulted re-entry before preparing an existing
-  three-entry selection without edits. All three Linux Claude Code continuations
-  consulted re-entry. One added entries to an empty ledger. The other two
-  submitted the existing selections of one and two entries without edits.
-  [Paired trial record](../apparatus/qualified.md#cc-trials-02)
+  and C13). A continuation can recover entry handles and prepare the current selection again.
 - **Unknown:** *behavior:* how a continuing Sonnet auditor on either route
   handles a populated ledger when it chooses to edit.
 - **Elicited by:** any continuation; passive.
@@ -259,8 +232,8 @@ over the same ledger and limits. The runtime's rules are in
 ### Compaction in the harness
 
 - **Known:**
-  - on the Messages route, one Opus encounter preserved and revised an account
-    through real provider compaction;
+  - the Haiku and Opus Messages alignments each verified delivery of a revised
+    entry after real provider compaction;
   - the synthetic harness suite exercises compaction against the core;
   - the contract pins a post-compaction notice, but its delivery point with the
     real harness is undemonstrated, so long-run iteration stays unqualified.
@@ -270,7 +243,6 @@ over the same ledger and limits. The runtime's rules are in
   - *behavior:* what the harness exposes at a compaction boundary, where the
     notice lands, and whether the one-reminder policy holds.
 
-  A later conformance of the Messages route needs a comparable boundary.
 - **Elicited by:** a placement long enough to compact. No cheap trigger is
   known.
 - **Next step:** contract analysis, then instrument development for a cheap
@@ -282,10 +254,8 @@ over the same ledger and limits. The runtime's rules are in
 ### Usage across placements in the harness
 
 - **Known:** the contract keeps a separate series per session, and leaves a
-  missing final result unknown rather than estimating it. The retained macOS encounters
-  captured partial usage. On Linux, all three continued audits counted both
-  placements and both unknown usage intervals. Across eight placements Stewart
-  captured no final result frame. [Linux trial record](../apparatus/qualified.md#cc-trials-02)
+  missing final result unknown. The Linux alignment recorded one submitting placement
+  without a final usage frame.
 - **Unknown:** *behavior:* how often a real continuation supplies a usable
   final result frame.
 - **Elicited by:** any continued harness audit; passive.
@@ -295,9 +265,7 @@ over the same ledger and limits. The runtime's rules are in
 
 ### The final interval of a submitting placement
 
-- **Known:** the placement stops after the auditor's seal. In the four
-  auditor-submitted Linux trials, Stewart captured no final result frame
-  before stopping. A later arrival lies outside these observations.
+- **Known:** the placement stops after the auditor seals the answer.
 - **Unknown:** *behavior:* whether and when that frame arrives. *Decision:*
   whether to wait for it.
 - **Elicited by:** any auditor-submitted harness placement; passive.
@@ -309,8 +277,7 @@ over the same ledger and limits. The runtime's rules are in
 
 ### Turn and output caps
 
-- **Known:** caps are pinned as supporting controls in harness units. One
-  harness-reported output-cap sequence has been observed.
+- **Known:** caps are pinned as supporting controls in harness units.
 - **Unknown:** *behavior:* whether `--max-turns` gates a model call before
   consumption, and whether a crash's zeroed totals leave lost internal-call
   consumption boundable.
@@ -357,7 +324,6 @@ over the same ledger and limits. The runtime's rules are in
 
 ## Coverage not yet sought
 
-The real harness has run only the open-inquiry family, with Haiku on macOS, and Sonnet is the model selected for its trials. Other families,
-the inadequate-evidence variants and other models in the harness have no live
-harness evidence. They become questions here only when a design comes to depend
-on how they behave.
+The Linux harness alignment covers one open inquiry with Sonnet 5.5.
+Other families, inadequate-evidence variants and other models fall outside that
+record. Investigate them when a design depends on their behavior.

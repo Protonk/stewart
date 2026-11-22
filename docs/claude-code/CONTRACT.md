@@ -39,11 +39,7 @@ positive effects, denial and invariance, publication after closure, startup
 mismatch, owner/relay loss, unknown usage, cumulative placement limits and
 continuation. An independent author derives driver cases from this contract.
 Native checks support iteration. Container qualification applies to
-the recorded synthetic comparisons. On Linux aarch64, Claude Code 2.1.322
-with Sonnet 5.5 exercised auditor submission, deadline and signal interruption,
-continuation, and manager close at a witnessed preparation. Each delivered
-selection verified, and all five audits closed.
-[Linux trial record](../../apparatus/qualified.md#cc-trials-02)
+the recorded synthetic comparisons.
 
 Endpoint alignment for the harness is a reviewed check of the pinned version, recorded as the profile's `check`, with the documented facts
 below rechecked. The [Linux harness alignment](../../apparatus/qualified.md#claude-code-alignment-linux-01) binds the supplied-surface and service observations to their originals. A changed pin needs its own check. Messages API results do not
@@ -54,8 +50,7 @@ Not yet demonstrated with the real harness under the selected launch:
 
 - a supported configuration check before the first message is sent; the
   observed `system/init` arrives only after input;
-- failure recovery beyond the observed quotation refusals and a
-  harness-reported output-cap sequence, and complete provider accounting;
+- recovery from provider errors and complete provider accounting;
 - relay loss, MCP cancellation, usage checkpoints across placements, and
   compaction with re-entry, its notice and the one-reminder policy; the
   synthetic suite exercises each against the actual core, which says nothing
@@ -115,13 +110,9 @@ The annotation exists because the harness's documented default persists a
 successful text result above 50,000 characters to a file and gives the
 conversation a pointer and short preview instead; the per-tool annotation
 raises that threshold up to 500,000 characters, and `MAX_MCP_OUTPUT_TOKENS`
-alone does not change it. Without the annotation, a macOS encounter saw both
-full 64 KiB material pages replaced by previews in the conversation while the
-MCP replies were exact, and the harness wrote the full replies under its
-configuration directory despite `--no-session-persistence`. With it, one
-bounded encounter on macOS delivered the same pages whole. The
-[qualification record](../../apparatus/qualified.md) identifies both
-encounters (`readiness-c3-01`, `readiness-pages-service-01`).
+alone does not change it. The driver replays full and previewed tool results
+to exercise the comparison against the supplied reply bytes.
+[Driver fixtures](../../apparatus/driver/testdata/README.md)
 
 The harness may add reminders, built-in instructions or managed policy that
 Stewart cannot fully inspect. Accordingly, this profile promises exact capture
@@ -288,11 +279,7 @@ Harness-native resume/fork/clear and automatic restart are excluded.
 
 The continuation notice directs the auditor to check its work. Re-entry shows
 the recorded entries and recent edits. A continuing auditor can prepare the
-current selection again to obtain a handle for submission. In the witnessed
-Sonnet 5.5 trials on Messages and Claude Code, the auditor consulted re-entry
-and prepared again. The revision and both prepared digests matched the first
-preparation on each route. These cases support the existing notice and
-re-entry text. [Paired trial record](../../apparatus/qualified.md#cc-trials-02)
+current selection again to obtain a handle for submission.
 
 Harness-managed compaction within a placement does not grant a new slot, reset
 the deadline or replace ledger state. Record exposed boundaries and summaries
@@ -317,16 +304,10 @@ input shape and pinned texts that Stewart supplies to the harness. Retain the
 exact synthetic prompt and result with it. Do not hash or copy the credential
 store. Profile validation, installation verification and assembly from separately
 reviewed evidence are implemented in the [profile apparatus](../../alignment/claude-code/README.md).
-The independent fixture exercises actual helpers offline. A bounded invocation
-library, observer, integrated controller and review workflow passed synthetic
-rehearsals on macOS using the actual helpers and independent traffic witnesses.
-A reviewed macOS real-harness supplied-surface comparison produced a profile
-for the open-inquiry surface on that installation. The
-[evidence record](../../apparatus/qualified.md) identifies its bindings and scope.
-The [demonstrated status](../../README.md#status) also identifies real-service use
-on macOS and its limits.
-Synthetic driver attestations exercise validation and are not real-harness
-commissioning evidence.
+The independent fixture exercises the helpers offline. The
+[Linux harness alignment](../../apparatus/qualified.md#claude-code-alignment-linux-01)
+identifies the reviewed installation, profile, supplied tools and launch conditions
+for the open-inquiry surface.
 
 The check is bound to what the harness is given, not to the `stewart` binary
 that gives it. A rebuild that leaves the launch surface unchanged keeps its
@@ -347,7 +328,7 @@ check is proposed. Recheck after an observable input changes or a startup mismat
 show the check's date and scope without assigning an unsupported expiry period.
 
 A prior check cannot freeze server-managed policy or prove the next session's
-configuration. The macOS and Linux comparisons saw `system/init` only after input. Validate
+configuration. The Linux alignment saw `system/init` only after input. Validate
 each actual startup and keep the MCP data/authoring gate closed until it matches,
 but acknowledge that its system prompt and first question may already have
 reached the harness/provider before a mismatch is reported. Do not describe this

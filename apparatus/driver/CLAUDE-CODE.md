@@ -163,15 +163,14 @@ the exact source bytes, including each tail label:
 | `two-pages.txt`, start 0 | 65,536 | `e68bd1dcda95edf47c668475d810f587ad80c382afe00cc8bfa8f36ae969ca2a` |
 | `two-pages.txt`, start 65536 | 65,536 | `7f451bbeacea11971c367fd63b96f513ddbdeea38edf74bd68e7c8fbfec12a92` |
 
-Original sources and MCP/assistant/hook/conversation captures are retained in the
-[C3 and annotated-page evidence](../qualified.md#readiness-c3-01). The two C3
-conversation substitution strings have original decoded UTF-8 digests
+The two source runs, `readiness-c3-01` and `readiness-pages-service-01`,
+captured the MCP replies, assistant and hook records, and conversation output.
+The two substitution strings in the C3 conversation had decoded UTF-8 digests
 `40567555b890b8d1ac20737aa03b0c479fad1a088834e45bec027ca78be9642c` and
 `c3bf6e1d68e7a60e891adca34be624d411dcad44daa231a4752e4d8ca8cc6f75`.
 The fixture replaces only each absolute external filename with
 `/synthetic/external/tool-result.json`; the notice and truncated preview stay
-unchanged. No fixture opens or creates that named file. The runnable driver has
-no dependency on the retained run directories.
+unchanged. No fixture opens or creates that named file.
 
 `runtime-reply-fidelity` sends each actual Stewart reply through correlated
 assistant, admitted hook, MCP metadata and conversation records. It checks the
@@ -396,16 +395,15 @@ The case checks time values against the configured bound; it does not measure
 subsecond rounding or the exact threshold crossing.
 
 This notice fixture is grounded in C4's short placement on 2026-11-14, using
-Claude Code 2.1.322 and `claude-haiku-5-5`. Its retained input is
+Claude Code 2.1.322 and `claude-haiku-5-5`. The source archive recorded the input at
 `.scratch/readiness-c4-01/short/packet/closure/service-archive/audits/ah3m7bxzpowsvmtfn/runs/1/runtime-316-input.bin`:
 283 bytes, SHA-256 `1e6192fe759bc3a8bd0a20708601f7afcad94dddda72290a4ab271adc95c1adf`.
-The corresponding `log/20.json` is 569 bytes, SHA-256
+The corresponding `log/20.json` was 569 bytes, SHA-256
 `31c4884f8012889f53657eba16c58403ddfe8debc1682288f4d1038e55fb1443`.
 The self-test reconstructs the original 12-second/two-start input byte for byte;
 runtime variants change the deadline and, for continuation, exit upon receipt
-of the notice. They use synthetic inputs and a fixed partial account,
-and do not replay the live audit or depend on its retained directory. The
-original input was a service-owned capture, not a provider-network witness.
+of the notice. They use synthetic inputs and a fixed partial account. Stewart
+witnessed the original input. Its observer could not see provider network traffic.
 
 The timing case uses the [captured C4 partial account](testdata/README.md#c4-partial-account-in-the-timing-comparison)
 as its one authored entry. Its complete arguments, retained payload and exact
@@ -428,8 +426,8 @@ All variants author and submit the same supplied account after the cap,
 then close without changing its package. The cap text is harness output, never
 Stewart's input or an English-text instruction to its accounting logic.
 
-The originals are from 2026-11-15, Claude Code 2.1.322 and `claude-haiku-5-5`,
-under `.scratch/readiness-c5-01/checklist/archive/audits/aplifuihi4h2xrht5/runs/1/`.
+On 2026-11-15 Stewart captured the Claude Code 2.1.322 output for
+`claude-haiku-5-5` under `.scratch/readiness-c5-01/checklist/archive/audits/aplifuihi4h2xrht5/runs/1/`.
 Concatenating stdout chunks in numeric order gives 611,370 bytes with SHA-256
 `0e4f7791fa55bc78eb8dbb124262b478c966bdd65f4e20b6be45907ff682736a`.
 The selected LF-terminated assistant frames have these offsets and digests:

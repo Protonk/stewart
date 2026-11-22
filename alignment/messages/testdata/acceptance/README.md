@@ -14,7 +14,7 @@ every source path, original size/digest and stored size/digest.
 | `readiness-01/driver-arm64/evidence/RESULT.json` | 757555 | `095467ffeec573c10eeeb1e10fa67030d736217d83d9997a85b94e37456600aa` |
 | `readiness-02/driver-{arm64,amd64}/selftest.stdout` | 12950 each | `d8ec77aa5934e3d933e9ef2621fd946432c9b0b54d20d436a0a6b9b304955e22` |
 
-The originals are under `.scratch/acceptance-readiness-02/` and
+The fixture sources were captured under `.scratch/acceptance-readiness-02/` and
 `.scratch/acceptance-readiness-01/`. The later run completed on 2026-11-13,
 with 133 ARM cases and 131 emulated x86 cases, no skipped cases, 79 firing
 sabotage controls, 21 firing driver controls and 403 passing selfchecks on each
@@ -30,7 +30,7 @@ both architectures. The negative build controls (`static-stewart-glibc`
 and `cmp-release-test`) record exit 1; the others record exit 0. The fixtures
 also include the complete selftest and evidence-copy exit records. These are
 the fields consumed by the tested reader; they do not reproduce compilation or
-ELF inspection. The original build diagnostics remain in the source run.
+ELF inspection.
 
 ## Comparisons and limits
 

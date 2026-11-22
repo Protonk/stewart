@@ -8,9 +8,9 @@ successful CONNECT replies end at the blank line preceding the tunnel.
 
 The [checksums](SHA256SUMS) cover the selected bytes and the
 [acquisition record](observation.json), which identifies the library sources,
-input digests, timestamps and upstream-open counts. The complete original
-observations and WEBrick log are in `.tmp/readiness-wire-01/capture-01/`.
-Its parent holds the acquisition script.
+input digests, timestamps and upstream-open counts. The collector wrote the
+complete observations and WEBrick log to `.tmp/readiness-wire-01/capture-01/`.
+The acquisition script was stored in its parent directory.
 A checkout needs only the selected files to replay the comparisons.
 
 ## HTTP framing
