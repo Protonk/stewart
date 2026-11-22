@@ -871,6 +871,14 @@ Five Sonnet 5.5 audits on Linux Claude Code 2.1.322 closed with verified returns
 - Evidence: `.scratch/cc-trials-02/EXIT-LEDGER.json` (recorded 2026-11-21T20:34:59Z).
 - Retained purpose: Inspect the paired interruption witnesses, prepared and delivered bytes, closed returns and partial usage with the campaign report.; until The maintainer has reviewed these comparisons and no unresolved inspection requires the originals.
 
+### claude-code-alignment-linux-01
+
+Claude Code 2.1.322 on linux-aarch64 with claude-sonnet-5-5 passed the supplied-surface check. The auditor submitted 2 entries, the package passed 18 comparisons and the audit closed.
+
+[Endpoint comparison and evidence digests](../alignment/claude-code/records/claude-code-alignment-linux-01.json)
+
+Private evidence is retained in `.scratch/claude-code-alignment-linux-01`.
+
 ### alignment-pair-01
 
 Haiku 5.5 and Opus 5.5 each submitted and closed the ordinary open inquiry with omitted effort through the qualified release writer.
@@ -910,7 +918,7 @@ Haiku and Opus ordinary comparisons, both auditor-submitted, verified, closed an
 
 claude-haiku-5-5 reached auditor submission, delivery and closure for all three families and signed compaction. 35 reported attempts, 0 estimated. The queue settled $0.41.
 
-[Per-model comparison and evidence digests](../alignment/messages/records/messages-alignment-haiku-01.json)
+[Endpoint comparison and evidence digests](../alignment/messages/records/messages-alignment-haiku-01.json)
 
 Private evidence is retained in `.scratch/messages-alignment-haiku-01`.
 
@@ -918,7 +926,7 @@ Private evidence is retained in `.scratch/messages-alignment-haiku-01`.
 
 claude-opus-5-5 reached auditor submission, delivery and closure for all three families and signed compaction. 23 reported attempts, 0 estimated. The queue settled $3.55.
 
-[Per-model comparison and evidence digests](../alignment/messages/records/messages-alignment-opus-01.json)
+[Endpoint comparison and evidence digests](../alignment/messages/records/messages-alignment-opus-01.json)
 
 Private evidence is retained in `.scratch/messages-alignment-opus-01`.
 

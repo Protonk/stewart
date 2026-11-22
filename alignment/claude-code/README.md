@@ -449,3 +449,9 @@ within one observer only.
 
 Keep the original failed and successful observations through review under
 [evidence and retention](../../development/DEVELOPMENT.md#evidence-and-retention).
+
+## Register a harness alignment
+
+Revalidate the exact installed executable against the signed manifest. Reassemble the profile offline from the original installation, observation and attributed check. Compare its bytes with the profile captured by the service audit. Verify all three supplied-surface cases and the auditor's own submission, witness comparison, unchanged delivery and closure. Record the documentation review, its date, any differences, and the limits of the live observations.
+
+Keep the reviewed decision in `records/<id>.json`, and retain an identical `ALIGNMENT.json` with its private, digest-bound witnesses under `.scratch/<id>/`. Use `python3 -I -B apparatus/qualified.py alignment --endpoint claude-code .scratch/<id> --reason TEXT --until TEXT` followed by `python3 -I -B apparatus/qualified.py check`. A changed installation, model, launch surface or supplied tool inventory needs a new reviewed check. Starting a live harness still requires its own commission.

@@ -46,7 +46,7 @@ selection verified, and all five audits closed.
 [Linux trial record](../../apparatus/qualified.md#cc-trials-02)
 
 Endpoint alignment for the harness is a reviewed check of the pinned version, recorded as the profile's `check`, with the documented facts
-below rechecked; a changed pin needs its own. Messages API results do not
+below rechecked. The [Linux harness alignment](../../apparatus/qualified.md#claude-code-alignment-linux-01) binds the supplied-surface and service observations to their originals. A changed pin needs its own check. Messages API results do not
 qualify the harness profile. The common
 [rules every check follows](../../ACCEPTANCE.md#rules-every-check-follows) apply.
 
@@ -365,13 +365,7 @@ verified billing state.
 These are statements of Anthropic's documentation for the pinned version, not
 observed behavior. Recheck them at every harness pin.
 
-- **Credential precedence.** Cloud-provider selection, `ANTHROPIC_AUTH_TOKEN`,
-  `ANTHROPIC_API_KEY`, `apiKeyHelper`, `CLAUDE_CODE_OAUTH_TOKEN`, profile or
-  federation credentials, then the `/login` credential. Under `-p` a present
-  API key is always used, and a run given no credential uses whatever login its
-  configuration directory holds; either direction can select a billing route
-  silently. Hence the explicit child environment and the authentication-status
-  and `apiKeySource` checks.
+- **Credential selection.** A signed-in Claude apps gateway can take priority over cloud providers and API credentials. On the direct route, cloud-provider selection, bearer token, API key, key helper, explicit OAuth token and selected profile or federation credentials can take priority over the subscription login. An unselected CLI profile ranks below that login. The observed launch used the dedicated login and reported no API-key source. Revalidate authentication and startup for every authorized invocation. [Authentication](https://code.claude.com/docs/en/authentication)
 - **Bare mode excludes subscription login.** It never reads the stored OAuth login or `CLAUDE_CODE_OAUTH_TOKEN`, and it disables configured hooks,
   so this route is non-bare and controls hooks, skills, plugins, MCP discovery,
   memory, instruction files and background tasks individually. The
@@ -381,9 +375,7 @@ observed behavior. Recheck them at every harness pin.
   managed and server-managed policy still load. The pinned binary's three
   built-in plugins (an instruction loader, a privacy guard and plugin-authoring
   support) remain, by decision, with the privacy guard preserved.
-- **Hook exit status.** A `PreToolUse` command hook that exits 2 blocks the
-  tool call, with its stderr as the reason. Any other non-zero status is a
-  non-blocking error and the call proceeds, so the hook helper fails only with 2.
+- **Hook exit status.** Stewart's command hook uses exit 2 to deny a tool call and supplies the reason on stderr. Other failure statuses with plain-text output allow the call under the selected hook configuration. The harness also supports explicit failure policies and structured hook decisions. [Hooks reference](https://code.claude.com/docs/en/hooks)
 - **Login storage.** On Linux the harness keeps its `/login` credential in
   `.credentials.json` under the configuration directory. The harness owns
   this directory. Keep it separate from submissions, archives, destinations

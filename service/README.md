@@ -19,7 +19,7 @@ The dependencies are six crates pinned to exact versions in `Cargo.toml`:
 `libc`, `sha2`, `rustls` with its `ring` provider, `webpki-roots`, `secrecy`
 and `zeroize`.
 `Cargo.lock` pins the whole graph, and builds use the vendored sources in
-`vendor/`, which is not tracked.
+`vendor/`, supplied in the [offline source archive](../development/DEVELOPMENT.md#build-from-a-release-source-archive).
 
 ## Modules by role
 

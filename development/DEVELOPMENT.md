@@ -14,6 +14,39 @@ The product is one statically linked binary for Linux x86_64 and aarch64
 containers. Develop in the dedicated Linux guest. The guest setup covers the
 accounts, rootless container storage and Git transport. [Provisioning and access](../apparatus/lima/README.md)
 
+## Build from a release source archive
+
+Verify the signed checksums as described in the [installation instructions](../README.md#install-and-verify-a-linux-release). Unpack the source archive, enter the extracted `stewart-VERSION/service` directory, and use a Linux Rust toolchain with Cargo and a C compiler. The crate's Cargo configuration selects the dependencies shipped in `vendor/`.
+
+```sh
+sha256sum --check VENDOR-SHA256SUMS
+cargo build --locked --offline --release
+cargo test --locked --offline
+./target/release/stewart help
+```
+
+Those commands exercise a native development build. To compare a shipping binary byte for byte, use the toolchain image and musl target for its platform from the [qualification index](../apparatus/qualified.md). Build at `/work/service` with `cargo build --locked --offline --release --target ARCH-unknown-linux-musl`, replacing `ARCH` with `aarch64` or `x86_64`. Compare the resulting executable with the corresponding digest in the signed checksum file.
+
+## Prepare release artifacts
+
+From a clean release checkout with the qualified Linux binaries, vendor tree and retained suite records, run:
+
+```sh
+python3 -I -B development/package_release.py --qualification ACCEPTANCE_ID --toolchain TOOLCHAIN_ID --output /absolute/new-directory
+```
+
+The recipe checks the qualification record, both binary hashes, the crate tree and the vendor file listing. It packages the commit's tracked tree, the checked vendored sources and their original digest listing. The archive's global tar header identifies the source commit. Local run directories, credentials and build outputs are outside the tracked tree.
+
+The maintainer places the selected public key in `allowed_signers` at the repository root, using the OpenSSH principal `stewart-release`. Fix the candidate commit and regenerate and verify the artifacts after adding the signer. From the resulting artifact directory the maintainer signs the exact `SHA256SUMS` bytes:
+
+```sh
+ssh-keygen -Y sign -f "$RELEASE_SIGNING_KEY" -n file SHA256SUMS
+ssh-keygen -Y verify -f "$SIGNERS" -I stewart-release -n file -s SHA256SUMS.sig < SHA256SUMS
+sha256sum --check SHA256SUMS
+```
+
+Publication is a separate maintainer decision. A local signing rehearsal uses a disposable key and a separate directory.
+
 ## What to run for what you changed
 
 Find each kind of change you made in the table and run what its row names, from
@@ -62,6 +95,7 @@ sandbox that denies the bind fails those tests.
 
 | What changed | What to run |
 | --- | --- |
+| `development/package_release.py` | Stage twice from the same commit and compare bytes. Verify both shipped binaries and the vendor population, build from the unpacked source offline, and check the signature procedure with a disposable key. |
 | Prose or Markdown anywhere | The link check. |
 | `docs/QUESTION-FORMS.md` | The link check and release driver's self-test. From `service/`, run `cargo test --locked --offline --lib forms::tests::` for the family tables, tool descriptions and pinned texts. |
 | `docs/INTERFACE.md` | The link check and release driver's self-test, which checks the worked manifest. For changes to Appendix C, also run `CARGO_TARGET_DIR=target-test cargo test --locked --offline --features fault-injection,sabotage --lib fault::tests::` from `service/` to compare the test-build registries with the specification. |

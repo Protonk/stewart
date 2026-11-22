@@ -17,6 +17,7 @@ obligations, excuse unreported failures or turn intended behavior into evidence.
   the reasons for boundaries. INTERFACE and
   [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) define the exact interface
   and forms. [ACCEPTANCE.md](ACCEPTANCE.md) states the evidence owed.
+- **Source archives.** Start in `service/` with the included dependencies. The [offline build instructions](development/DEVELOPMENT.md#build-from-a-release-source-archive) include native tests and explain how to compare a shipping binary.
 - **Builds and checks.** [DEVELOPMENT](development/DEVELOPMENT.md) covers
   building from the vendored crates, the Cargo configurations, the independent
   drivers and the container suites. Use the unprivileged development account in the Linux guest for iteration.

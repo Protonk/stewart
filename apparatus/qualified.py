@@ -1322,9 +1322,78 @@ def experiment_entry(ctx, run_id, result_rel, summary, date_rel=None):
             "result": result, "evidence": evidence_field(run_id), "pin": None}
 
 
-def alignment_document(ctx, run_id, entries):
+def harness_decision(doc, entries, require):
+    check, service, files = doc["profile_check"], doc["service"], doc["files"]
+    writer = doc["development_writer"]
+    require(any(e["kind"] == "suite" and e["id"] == writer["qualification_id"] and e["suite"] == "runtime" and
+                e["platforms"].get(doc["platform"], {}).get("outcome") == "qualified" and
+                e["platforms"][doc["platform"]]["runtime"]["development_sha256"] == writer["binary_sha256"]
+                for e in entries), "development writer lacks matching platform qualification")
+    require(check["outcome"] == "observed" and check["model"] == doc["model"] and
+            files["surface/CHECK.json"] == check["evidence_sha256"], "unbound profile check")
+    cases = [(c["case"], c["hook_allowed"], c["effects"]) for c in doc["surface_cases"]]
+    require(cases == [("positive", True, 1), ("closed-gate", False, 0), ("invariance", True, 1)],
+            "supplied-surface comparison incomplete")
+    counts = service["package_checks"]
+    require(service["starts"] == 1 and service["ending"] == "sealed" and service["auditor_submitted"] is True and
+            service["closed"] is True and service["verified_delivery"] is True and
+            counts["checks"] == counts["passed"] > 0 and counts["failed"] == counts["skipped"] == 0,
+            "service submission, verified delivery or closure missing")
+    require(doc["currency"] and doc["limitations"] and doc["documentation"]["sources"] and
+            datetime.date.fromisoformat(doc["documentation"]["checked_on"]), "missing documentation review or scope")
+    return ("Claude Code %s on %s with %s passed the supplied-surface check. The auditor submitted %d entries, "
+            "the package passed %d comparisons and the audit closed." %
+            (doc["harness_version"], doc["platform"], doc["model"], service["selection_entries"], counts["checks"]))
+
+
+def verify_harness_alignment(ev, doc):
+    try:
+        profile = ev.json("profile.json")
+        attestation, observation = ev.json("surface/CHECK.json"), ev.json("surface/OBSERVATION.json")
+        review, closure = ev.json("service-review.json"), ev.json("closure.json")
+        ledger = ev.json("ledger.json")
+        trial = next(r for r in ledger["trials"] if r["trial"] == doc["service"]["audit"])
+        row, service, files = trial["rows"][0], doc["service"], doc["files"]
+        if (doc["profile_check"] != profile["check"] or doc["installation"] != profile["installation"] or
+                doc["harness_version"] != profile["launch"]["version"] or doc["platform"] != profile["launch"]["platform"] or
+                trial["binding"]["writer_sha256"] != doc["development_writer"]["binary_sha256"] or
+                files["profile.json"] != files["service-profile.json"] or files["profile.json"] != trial["binding"]["profile_sha256"]):
+            ev.problem("installation, writer or profile differs")
+        for key in ("model", "launch_sha256", "tools_sha256", "surface_sha256"):
+            if attestation[key] != observation[key] or attestation[key] != profile["check"][key]:
+                ev.problem("attested binding differs: " + key)
+        if (attestation["observation_sha256"] != files["surface/OBSERVATION.json"] or
+                observation["evidence_manifest_sha256"] != files["surface/EVIDENCE.json"] or
+                observation["mode"] != "real-harness" or observation["stopping"] != "observed" or
+                any(r["outcome"] != "observed" for r in observation["checks"]) or
+                ev.json("reviewer.json")["comparisons"] != doc["surface_cases"]):
+            ev.problem("supplied-surface observation or independent review differs")
+        for item in ev.json("surface/EVIDENCE.json")["members"]:
+            if files.get("surface/" + item["path"]) != item["sha256"]:
+                ev.problem("surface inventory differs: " + item["path"])
+        for ref, path in [(row["review"], "service-review.json"), (row["execution"], "placement/RESULT.json"),
+                          (trial["commission"], "service-commission.json"), (trial["closure"], "closure.json"),
+                          (ledger["preflight"]["independent_review"], "reviewer.json")]:
+            if ref["sha256"] != files[path]:
+                ev.problem("campaign digest differs: " + path)
+        if (review["outcome"] != "observed" or review["failure"] or review["auditor_submitted"] is not True or
+                review["selected_entries"] != service["selection_entries"] or review["last_run"]["ending"] != "sealed" or
+                review["package_review"]["witness_sha256"] != files["package-witness.json"] or
+                review["package_review"]["counts"] != service["package_checks"] or
+                closure["outcome"] != "closed" or closure["package_unchanged"] is not True or
+                trial["delivered_files_sha256"] != service["delivered_files_sha256"] or
+                any(files["delivered/" + k] != v for k, v in trial["delivered_files_sha256"].items())):
+            ev.problem("service review, delivered bytes or closure differs")
+    except (KeyError, TypeError, AttributeError, IndexError, StopIteration) as exc:
+        ev.problem("invalid harness evidence (%s)" % exc)
+    if ev.problems:
+        raise ExtractError(doc["id"], ev.problems)
+
+
+def alignment_document(ctx, run_id, entries, kind="alignment"):
     """Read the distributable decision even in a clone without the private audit exports."""
-    rel = "alignment/messages/records/%s.json" % run_id
+    endpoint = "claude-code" if kind == "harness-alignment" else "messages"
+    rel = "alignment/%s/records/%s.json" % (endpoint, run_id)
     data = read_regular(os.path.join(ctx.root, rel), rel)
     if data is None:
         raise Refusal("%s is missing" % rel)
@@ -1341,6 +1410,13 @@ def alignment_document(ctx, run_id, entries):
     try:
         doc = parse_json(data)
         require(nesting_depth(doc) <= MAX_DEPTH, "document nested too deeply")
+        if kind == "harness-alignment":
+            require(doc["schema"] == "stewart.harness-alignment/1" and doc["id"] == run_id and utc(doc["at"]) and
+                    digest_map(doc["files"]), "invalid harness record identity or evidence manifest")
+            summary = harness_decision(doc, entries, require)
+            return {"id": run_id, "kind": kind, "date": utc(doc["at"]), "date_from": "ALIGNMENT.json field at",
+                    "summary": summary, "result": {"path": "ALIGNMENT.json", "sha256": sha256(data)},
+                    "evidence": evidence_field(run_id), "pin": None}, doc
         require(doc["schema"] == "stewart.messages-alignment/1" and doc["id"] == run_id,
                 "schema or record identity differs")
         settings, files, runs = doc["settings"], doc["files"], doc["runs"]
@@ -1432,6 +1508,9 @@ def verify_alignment_files(ctx, entry, doc):
             ev.problem("%s: missing or changed alignment evidence" % rel)
     if ev.problems:
         raise ExtractError(entry["id"], ev.problems)
+    if entry["kind"] == "harness-alignment":
+        verify_harness_alignment(ev, doc)
+        return
     for slot, run in doc["runs"].items():
         packet = ev.json(slot + "/packet.json")
         report = ev.json(slot + "/review.json")
@@ -1502,9 +1581,10 @@ def verify_alignment_files(ctx, entry, doc):
 def cmd_alignment(ctx, args, out=print):
     run_id = run_folder(ctx, args.run_dir)
     record = load_record(ctx)
-    entry, doc = alignment_document(ctx, run_id, record["entries"])
+    kind = "harness-alignment" if args.endpoint == "claude-code" else "alignment"
+    entry, doc = alignment_document(ctx, run_id, record["entries"], kind)
     verify_alignment_files(ctx, entry, doc)
-    if any(old["id"] == run_id and old["kind"] != "alignment" for old in record["entries"]):
+    if any(old["id"] == run_id and old["kind"] != kind for old in record["entries"]):
         raise Refusal("%s already names another kind of evidence" % run_id)
     entry["pin"] = {"reason": one_line(args.reason, "--reason"), "until": one_line(args.until, "--until")}
     record["entries"] = [old for old in record["entries"] if old["id"] != run_id] + [entry]
@@ -1763,7 +1843,7 @@ def record_problems(record):
             else:
                 _fields(e, suite_fields(e["suite"]), where, probs,
                         checked_elsewhere=("id", "kind", "suite", "date", "evidence"))
-        elif e.get("kind") in ("experiment", "alignment"):
+        elif e.get("kind") in ("experiment", "alignment", "harness-alignment"):
             _fields(e, EXPERIMENT_FIELDS, where, probs,
                     checked_elsewhere=tuple(k for k in EXPERIMENT_FIELDS if k != "pin"))
             if pin is None:
@@ -1785,7 +1865,7 @@ def record_problems(record):
             elif date_from != "DONE" and clean_rel(date_file(date_from)) != date_file(date_from):
                 probs.append("%s: date_from names a path that is not normalized" % where)
         else:
-            probs.append("%s: kind is not suite, experiment or alignment" % where)
+            probs.append("%s: unknown qualification record kind" % where)
     return probs
 
 
@@ -2218,8 +2298,9 @@ def render(record):
             L += ["- Evidence: `%s` (%s)" % (e["evidence"]["path"], e["evidence"]["where"]),
                   "- Pin: %s" % pin_text, ""]
             L += render_platform_rows(e)
-        elif e["kind"] == "alignment":
-            L += [cell(e["summary"]), "", "[Per-model comparison and evidence digests](../alignment/messages/records/%s.json)" % e["id"], "",
+        elif e["kind"] in ("alignment", "harness-alignment"):
+            endpoint = "claude-code" if e["kind"] == "harness-alignment" else "messages"
+            L += [cell(e["summary"]), "", "[Endpoint comparison and evidence digests](../alignment/%s/records/%s.json)" % (endpoint, e["id"]), "",
                   "Private evidence is retained in %s." % code(e["evidence"]["path"])]
         else:
             r = e["result"]
@@ -2386,9 +2467,9 @@ def run_check(ctx, strict=False, out=print, with_drift=True, require_evidence=Fa
                 fails.append(("commit", "%s: source commit %s is not in this repository" % (e["id"], e["source_commit"])))
             else:
                 out("ok   %s: source commit %s is in the repository" % (e["id"], e["source_commit"][:12]))
-        if e["kind"] == "alignment":
+        if e["kind"] in ("alignment", "harness-alignment"):
             try:
-                fresh, alignment_doc = alignment_document(ctx, e["id"], entries)
+                fresh, alignment_doc = alignment_document(ctx, e["id"], entries, e["kind"])
             except Refusal as exc:
                 fails.append(("alignment", str(exc)))
                 continue
@@ -2427,7 +2508,7 @@ def run_check(ctx, strict=False, out=print, with_drift=True, require_evidence=Fa
         try:
             if e["kind"] == "suite":
                 fresh = extract_suite(ctx, e["id"], e["suite"])
-            elif e["kind"] == "alignment":
+            elif e["kind"] in ("alignment", "harness-alignment"):
                 verify_alignment_files(ctx, fresh, alignment_doc)
             else:
                 fresh = experiment_entry(ctx, e["id"], e["result"]["path"], e["summary"], date_file(e["date_from"]))
@@ -2441,7 +2522,7 @@ def run_check(ctx, strict=False, out=print, with_drift=True, require_evidence=Fa
         else:
             out("ok   %s matches its local evidence (re-extracted: %s)" % (
                 e["id"], "digests, counts and outcome" if e["kind"] == "suite" else
-                "comparison and %d evidence digests" % len(alignment_doc["files"]) if e["kind"] == "alignment" else
+                "comparison and %d evidence digests" % len(alignment_doc["files"]) if e["kind"] in ("alignment", "harness-alignment") else
                 "result digest and date" if "files" not in e["result"] else
                 "listing digest of %d files, and date" % e["result"]["files"]))
     mismatches = toolchain_mismatches(entries)
@@ -4112,7 +4193,8 @@ def main(argv=None):
                         "when the folder has no DONE with a time (default: the result, if a JSON file)")
     p.add_argument("--reason", required=True, help="why the record is kept")
     p.add_argument("--until", required=True, help="the condition, in words, under which it can be released")
-    p = sub.add_parser("alignment", help="verify and pin a per-model Messages comparison and its evidence")
+    p = sub.add_parser("alignment", help="verify and pin an endpoint comparison and its evidence")
+    p.add_argument("--endpoint", choices=["messages", "claude-code"], default="messages")
     p.add_argument("run_dir", metavar="RUN_DIR", help="private evidence folder directly under .scratch")
     p.add_argument("--reason", required=True, help="purpose of retaining this model series")
     p.add_argument("--until", required=True, help="when to release this pin")

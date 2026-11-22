@@ -308,5 +308,35 @@ class ProfileControls(unittest.TestCase):
         self.refused('duplicate JSON')
 
 
+class HarnessRecordTests(unittest.TestCase):
+    def test_registration_requires_denial_and_auditor_submission(self):
+        sys.path.insert(0, str(HERE.parents[1] / 'apparatus'))
+        import qualified
+        suites = [{'id': 'suite', 'kind': 'suite', 'suite': 'runtime', 'platforms': {
+            'test-platform': {'outcome': 'qualified', 'runtime': {'development_sha256': 'writer'}}}}]
+        doc = {'model': 'model', 'platform': 'test-platform', 'harness_version': 'version',
+               'development_writer': {'qualification_id': 'suite', 'binary_sha256': 'writer'},
+               'profile_check': {'outcome': 'observed', 'model': 'model', 'evidence_sha256': 'digest'},
+               'files': {'surface/CHECK.json': 'digest'}, 'service': {'starts': 1, 'ending': 'sealed',
+               'auditor_submitted': True, 'closed': True, 'verified_delivery': True, 'selection_entries': 1,
+               'package_checks': {'checks': 1, 'passed': 1, 'failed': 0, 'skipped': 0}},
+               'surface_cases': [{'case': k, 'hook_allowed': allowed, 'effects': int(allowed)} for k, allowed in
+                                 [('positive', True), ('closed-gate', False), ('invariance', True)]],
+               'currency': 'unchanged bindings', 'limitations': ['wire unobserved'],
+               'documentation': {'sources': ['source'], 'checked_on': '2026-01-01'}}
+        def require(ok, message):
+            if not ok:
+                raise ValueError(message)
+        self.assertIn('auditor submitted', qualified.harness_decision(doc, suites, require))
+        for key in ('denial', 'submission'):
+            changed = copy.deepcopy(doc)
+            if key == 'denial':
+                changed['surface_cases'][1]['effects'] = 1
+            else:
+                changed['service']['auditor_submitted'] = False
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                qualified.harness_decision(changed, suites, require)
+
+
 if __name__ == '__main__':
     unittest.main()

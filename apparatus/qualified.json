@@ -2541,6 +2541,25 @@
       }
     },
     {
+      "id": "claude-code-alignment-linux-01",
+      "kind": "harness-alignment",
+      "date": "2026-11-21T20:34:59Z",
+      "date_from": "ALIGNMENT.json field at",
+      "summary": "Claude Code 2.1.322 on linux-aarch64 with claude-sonnet-5-5 passed the supplied-surface check. The auditor submitted 2 entries, the package passed 18 comparisons and the audit closed.",
+      "result": {
+        "path": "ALIGNMENT.json",
+        "sha256": "40aef3714e237a4ca67d4116aab45fe00d994f91e06a83065ef362044322a89e"
+      },
+      "evidence": {
+        "path": ".scratch/claude-code-alignment-linux-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Development runtime alignment for the checked Linux installation and launch surface.",
+        "until": "A changed pin or launch surface supersedes this reviewed check."
+      }
+    },
+    {
       "id": "alignment-pair-01",
       "kind": "experiment",
       "date": "2026-11-21T21:07:44Z",

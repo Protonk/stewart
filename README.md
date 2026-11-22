@@ -8,6 +8,24 @@ materials, an answer form and limits. Stewart preserves the inputs, gives the
 auditor tools to investigate them, and delivers its recorded answer as structured
 data and readable Markdown.
 
+## Install and verify a Linux release
+
+For a published version, get `stewart-linux-aarch64` or `stewart-linux-x86_64`, `SHA256SUMS` and `SHA256SUMS.sig` from the same [release](https://github.com/Protonk/stewart/releases). The source archive is covered by the same signature. Obtain `allowed_signers` from a trusted checkout of the release repository and verify the signer's public fingerprint through a channel you trust.
+
+From the download directory on Linux, run the following with OpenSSH and GNU coreutils. Set `SIGNERS` to the trusted file.
+
+```sh
+set -e
+binary="stewart-linux-$(uname -m)"
+test -f "$binary"
+ssh-keygen -Y verify -f "$SIGNERS" -I stewart-release -n file -s SHA256SUMS.sig < SHA256SUMS
+sha256sum --check --ignore-missing SHA256SUMS
+install -Dm755 "$binary" "$HOME/.local/bin/stewart"
+"$HOME/.local/bin/stewart" help
+```
+
+Use a local ext4, xfs or btrfs directory for the audit archive. The first three steps of the [inquiry walkthrough](#run-an-inquiry) exercise intake and preparation without a key. The [build guide](development/DEVELOPMENT.md#build-from-a-release-source-archive) covers the offline source build.
+
 ## Choose a question form
 
 | Form | Example question |
